@@ -18,14 +18,6 @@ export async function loader({ params }) {
   };
 }
 
-interface ParentSitemap {
-  webPages?: Array<{
-    id: string;
-    name: string;
-    filePath: string;
-    cleanRoute?: string;
-  }>;
-}
 
 export default function CreateDefaultNotFoundPage({
   loaderData,
