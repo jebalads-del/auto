@@ -1,13 +1,22 @@
 {
   "name": "web",
   "private": true,
+  "version": "1.0.0",
+  "description": "Web application built with React and React Router",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "react-router dev",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "lint": "tsc --noEmit",
+    "prepare": "npm run typecheck"
   },
   "dependencies": {
     "@auth/core": "^0.37.2",
@@ -98,5 +107,13 @@
   },
   "overrides": {
     "next-themes": "^0.3.0"
-  }
+  },
+  "keywords": [
+    "react",
+    "react-router",
+    "vite",
+    "typescript"
+  ],
+  "author": "jebalads-del",
+  "license": "ISC"
 }
