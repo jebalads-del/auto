@@ -10,7 +10,6 @@
   },
   "scripts": {
     "dev": "react-router dev",
-    "build": "react-router build",
     "preview": "vite preview",
     "typecheck": "react-router typegen && tsc --noEmit",
     "test": "vitest",
