@@ -87,7 +87,7 @@ function CarCard({ car, onClick }) {
           <Car size={48} color="#E5E7EB" />
         </div>
       )}
-      <div className="p-3">
+      <div className="p-3 sm:p-4">
         <h3 className="text-base font-bold text-gray-900 text-right mb-2">
           {car.brand} {car.model}
         </h3>
