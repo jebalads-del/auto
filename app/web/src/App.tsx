@@ -252,28 +252,22 @@ export default function HomePage() {
     } catch {}
   };
 
-  const fetchCars = async (customFilters, customSearch) => {
-    try {
-      setLoading(true);
-      const f = customFilters || filters;
-      const s = customSearch !== undefined ? customSearch : searchQuery;
-      let url = "/api/cars?status=approved";
-      if (s) url += `&search=${encodeURIComponent(s)}`;
-      if (f.brand) url += `&brand=${encodeURIComponent(f.brand)}`;
-      if (f.year) url += `&year=${f.year}`;
-      if (f.color) url += `&color=${encodeURIComponent(f.color)}`;
-      if (f.maxKilometers) url += `&maxKilometers=${f.maxKilometers}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setCars(data.cars || []);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchCars = async () => {
+  try {
+    setLoading(true);
+    const supabase = createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_ANON_KEY
+    );
+    const { data, error } = await supabase.from('cars').select('*');
+    if (error) throw error;
+    setCars(data || []);
+  } catch (error) {
+    console.error('Error:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const resetFilters = () => {
     const empty = { brand: "", year: "", color: "", maxKilometers: "" };
