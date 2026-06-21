@@ -44,7 +44,7 @@ function BannerAd({ banners }) {
       <img
         src={banner.image_url}
         alt={banner.title}
-        className="w-full h-24 object-cover"
+        className="w-full h-20 sm:h-24 object-cover"
       />
       <span className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-md font-bold">
         إعلان
@@ -68,7 +68,7 @@ function CarCard({ car, onClick }) {
   return (
     <div
       onClick={() => onClick(car)}
-      className={`bg-white rounded-xl border ${car.is_featured ? "border-2 border-yellow-400" : "border-gray-200"} overflow-hidden cursor-pointer hover:shadow-md transition-shadow`}
+      className={`bg-white rounded-xl border ${car.is_featured ? "border-2 border-yellow-400" : "border-gray-200"} overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300`}
     >
       {car.is_featured && (
         <div className="bg-yellow-50 px-3 py-1.5 flex items-center justify-end gap-1.5">
@@ -80,15 +80,15 @@ function CarCard({ car, onClick }) {
         <img
           src={car.images[0]}
           alt={`${car.brand} ${car.model}`}
-          className="w-full h-32 object-cover"
+          className="w-full h-32 sm:h-40 md:h-48 object-cover"
         />
       ) : (
-        <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+        <div className="w-full h-32 sm:h-40 md:h-48 bg-gray-100 flex items-center justify-center">
           <Car size={48} color="#E5E7EB" />
         </div>
       )}
-      <div className="p-3">
-        <h3 className="text-base font-bold text-gray-900 text-right mb-2">
+      <div className="p-3 sm:p-4">
+        <h3 className="text-sm sm:text-base font-bold text-gray-900 text-right mb-2">
           {car.brand} {car.model}
         </h3>
         <div className="flex flex-wrap justify-end gap-1.5 mb-2">
@@ -106,7 +106,7 @@ function CarCard({ car, onClick }) {
           ))}
         </div>
         {car.price && (
-          <p className="text-base font-bold text-blue-400 text-right">
+          <p className="text-base sm:text-lg font-bold text-blue-400 text-right">
             {GULF_CURRENCIES[currency]?.flag}{" "}
             {parseFloat(car.price).toLocaleString()} {currency}
           </p>
@@ -130,13 +130,12 @@ function CarModal({ car, onClose }) {
         onClick={(e) => e.stopPropagation()}
         dir="rtl"
       >
-        {/* صور */}
         {car.images && car.images.length > 0 ? (
           <div className="relative">
             <img
               src={car.images[currentImg]}
               alt=""
-              className="w-full h-60 object-cover rounded-t-2xl"
+              className="w-full h-48 sm:h-60 object-cover rounded-t-2xl"
             />
             {car.images.length > 1 && (
               <div className="flex gap-2 p-2 overflow-x-auto">
@@ -152,7 +151,7 @@ function CarModal({ car, onClose }) {
             )}
           </div>
         ) : (
-          <div className="w-full h-60 bg-gray-100 flex items-center justify-center rounded-t-2xl">
+          <div className="w-full h-48 sm:h-60 bg-gray-100 flex items-center justify-center rounded-t-2xl">
             <Car size={64} color="#E5E7EB" />
           </div>
         )}
@@ -259,25 +258,26 @@ export default function HomePage() {
   };
 
   const fetchCars = async (customFilters, customSearch) => {
-  try {
-    setLoading(true);
-    const f = customFilters || filters;
-    const s = customSearch !== undefined ? customSearch : searchQuery;
-    let query = supabase.from('cars').select('*').eq('status', 'approved');
-    if (s) query = query.ilike('brand', `%${s}%`);
-    if (f.brand) query = query.eq('brand', f.brand);
-    if (f.year) query = query.eq('year', parseInt(f.year));
-    if (f.color) query = query.eq('color', f.color);
-    if (f.maxKilometers) query = query.lte('kilometers', parseInt(f.maxKilometers));
-    const { data, error } = await query;
-    if (error) throw error;
-    setCars(data || []);
-  } catch (error) {
-    console.error('Error fetching cars:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+      const f = customFilters || filters;
+      const s = customSearch !== undefined ? customSearch : searchQuery;
+      let query = supabase.from('cars').select('*').eq('status', 'approved');
+      if (s) query = query.ilike('brand', `%${s}%`);
+      if (f.brand) query = query.eq('brand', f.brand);
+      if (f.year) query = query.eq('year', parseInt(f.year));
+      if (f.color) query = query.eq('color', f.color);
+      if (f.maxKilometers) query = query.lte('kilometers', parseInt(f.maxKilometers));
+      const { data, error } = await query;
+      if (error) throw error;
+      setCars(data || []);
+    } catch (error) {
+      console.error('Error fetching cars:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetFilters = () => {
     const empty = { brand: "", year: "", color: "", maxKilometers: "" };
     setFilters(empty);
@@ -297,7 +297,6 @@ export default function HomePage() {
           animation: spin 0.8s linear infinite;
         }
       `}</style>
-      {/* هيدر */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-3">
@@ -319,7 +318,6 @@ export default function HomePage() {
             <h1 className="text-xl font-bold text-gray-900">🚗 سوق السيارات</h1>
           </div>
 
-          {/* شريط البحث */}
           <div className="flex gap-2">
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -346,7 +344,6 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* فلاتر متقدمة */}
           {showFilters && (
             <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
               <p className="text-xs font-bold text-gray-700 mb-2 text-right">
@@ -397,9 +394,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* المحتوى */}
       <main className="max-w-3xl mx-auto px-4 py-5">
-        {/* بانر علوي */}
         {topBanners.length > 0 && <BannerAd banners={topBanners} />}
 
         {loading ? (
@@ -413,7 +408,7 @@ export default function HomePage() {
             <p className="mt-4 text-base">لا توجد سيارات متاحة حالياً</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {cars.map((car, idx) => {
               const showBottomBanner =
                 (idx + 1) % 5 === 0 && bottomBanners.length > 0;
@@ -431,7 +426,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* بانر سفلي */}
         {!loading && bottomBanners.length > 0 && (
           <div className="mt-4">
             <BannerAd banners={bottomBanners} />
@@ -439,11 +433,9 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* مودال تفاصيل السيارة */}
       {selectedCar && (
         <CarModal car={selectedCar} onClose={() => setSelectedCar(null)} />
       )}
     </div>
   );
 }
-
