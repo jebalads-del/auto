@@ -80,7 +80,7 @@ function CarCard({ car, onClick }) {
         <img
           src={car.images[0]}
           alt={`${car.brand} ${car.model}`}
-          className="w-full h-48 object-cover"
+          className="w-full h-32 object-cover"
         />
       ) : (
         <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
