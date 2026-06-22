@@ -1,5 +1,15 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import HomePage from './app/page';
+
+// استيراد الصفحة الرئيسية مباشرة
+function HomePage() {
+  return (
+    <div style={{ textAlign: 'center', direction: 'rtl', padding: '20px' }}>
+      <h1>🚗 سوق السيارات</h1>
+      <p>الموقع يعمل الآن!</p>
+      <a href="/login">تسجيل الدخول</a>
+    </div>
+  );
+}
 
 function App() {
   return (
