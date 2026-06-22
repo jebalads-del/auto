@@ -1,7 +1,7 @@
 import { HashRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import AdminPage from './admin/page';
+import AdminPage from './app/app/admin/page';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
