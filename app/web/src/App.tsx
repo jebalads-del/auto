@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LoginPage from './login/page';
 
-// استيراد الصفحة الرئيسية مباشرة
 function HomePage() {
   return (
     <div style={{ textAlign: 'center', direction: 'rtl', padding: '20px' }}>
@@ -16,9 +16,9 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<HomePage />} />
-        <Route path="/account/signin" element={<HomePage />} />
-        <Route path="/account/signup" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/account/signin" element={<LoginPage />} />
+        <Route path="/account/signup" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>
   );
