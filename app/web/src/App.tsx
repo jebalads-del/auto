@@ -1,5 +1,5 @@
 import { HashRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -7,11 +7,41 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 function HomePage() {
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => listener?.subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '#/';
+  };
+
   return (
     <div style={{ textAlign: 'center', direction: 'rtl', padding: '20px' }}>
       <h1>🚗 سوق السيارات</h1>
-      <p>مرحباً بك!</p>
-      <a href="#/login">تسجيل الدخول</a> | <a href="#/signup">إنشاء حساب</a>
+      {session ? (
+        <div>
+          <p>مرحباً، {session.user.email}!</p>
+          <button onClick={handleLogout} style={{ padding: '10px 20px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '5px' }}>
+            تسجيل خروج
+          </button>
+        </div>
+      ) : (
+        <div>
+          <p>الموقع يعمل الآن!</p>
+          <a href="#/login">تسجيل الدخول</a> | <a href="#/signup">إنشاء حساب</a>
+        </div>
+      )}
     </div>
   );
 }
@@ -36,7 +66,7 @@ function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
-      navigate('/'); // توجيه إلى الصفحة الرئيسية
+      navigate('/');
     }
     setLoading(false);
   };
@@ -78,7 +108,68 @@ function LoginPage() {
 }
 
 function SignupPage() {
-  // ... (نفس الكود السابق)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      alert('تم إنشاء الحساب! تحقق من بريدك الإلكتروني للتأكيد.');
+      navigate('/login');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ textAlign: 'center', direction: 'rtl', padding: '50px' }}>
+      <h1>📝 إنشاء حساب</h1>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <form onSubmit={handleSignup}>
+        <div style={{ marginBottom: '15px' }}>
+          <input
+            type="email"
+            placeholder="البريد الإلكتروني"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ width: '300px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}
+            required
+          />
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <input
+            type="password"
+            placeholder="كلمة المرور"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ width: '300px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}
+            required
+          />
+        </div>
+        <button type="submit" disabled={loading} style={{ padding: '10px 30px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '5px' }}>
+          {loading ? 'جاري...' : 'إنشاء حساب'}
+        </button>
+      </form>
+      <p style={{ marginTop: '20px' }}>
+        لديك حساب؟ <a href="#/login">تسجيل الدخول</a>
+      </p>
+      <p>
+        <a href="#/">العودة للرئيسية</a>
+      </p>
+    </div>
+  );
 }
 
 function App() {
