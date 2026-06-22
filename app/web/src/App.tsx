@@ -33,7 +33,10 @@ function HomePage() {
       {session ? (
         <div>
           <p>مرحباً، {session.user.email}!</p>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href="#/admin" style={{ padding: '10px 20px', background: '#8b5cf6', color: 'white', textDecoration: 'none', borderRadius: '5px' }}>
+              👑 لوحة التحكم
+            </a>
             <button onClick={handleLogout} style={{ padding: '10px 20px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '5px' }}>
               تسجيل خروج
             </button>
@@ -182,6 +185,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </HashRouter>
   );
