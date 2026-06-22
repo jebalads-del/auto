@@ -309,7 +309,7 @@ export default function HomePage() {
               </a>
               <span className="text-gray-300">|</span>
               <a
-                href="account/signup"
+                href="/account/signup"
                 className="text-sm text-blue-400 hover:text-blue-600 font-medium"
               >
                 إنشاء حساب
