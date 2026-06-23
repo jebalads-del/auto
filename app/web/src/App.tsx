@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import AdminPage from './app/app/make-admin/page';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -32,9 +33,14 @@ function HomePage() {
       {session ? (
         <div>
           <p>مرحباً، {session.user.email}!</p>
-          <button onClick={handleLogout} style={{ padding: '10px 20px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '5px' }}>
-            تسجيل خروج
-          </button>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href="#/admin" style={{ padding: '10px 20px', background: '#8b5cf6', color: 'white', textDecoration: 'none', borderRadius: '5px' }}>
+              👑 لوحة التحكم
+            </a>
+            <button onClick={handleLogout} style={{ padding: '10px 20px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '5px' }}>
+              تسجيل خروج
+            </button>
+          </div>
         </div>
       ) : (
         <div>
@@ -179,6 +185,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </HashRouter>
   );
