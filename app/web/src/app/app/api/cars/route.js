@@ -9,7 +9,7 @@ export async function GET(request) {
     const year = searchParams.get("year");
     const color = searchParams.get("color");
     const maxKilometers = searchParams.get("maxKilometers");
-    const status = searchParams.get("status") || "approved"; // افتراضياً نعرض الإعلانات المقبولة فقط
+    const status = searchParams.get("status") || "معتمد"; // افتراضياً نعرض الإعلانات المقبولة فقط
     const search = searchParams.get("search");
     const featured = searchParams.get("featured");
     const paymentStatus = searchParams.get("payment_status");
