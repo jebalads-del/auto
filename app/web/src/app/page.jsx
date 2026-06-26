@@ -263,7 +263,7 @@ export default function HomePage() {
       setLoading(true);
       const f = customFilters || filters;
       const s = customSearch !== undefined ? customSearch : searchQuery;
-      let url = "/api/cars?status=approved";
+      let url = "/api/cars?status=all";
       if (s) url += `&search=${encodeURIComponent(s)}`;
       if (f.brand) url += `&brand=${encodeURIComponent(f.brand)}`;
       if (f.year) url += `&year=${f.year}`;
