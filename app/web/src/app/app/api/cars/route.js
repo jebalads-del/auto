@@ -15,7 +15,7 @@ export async function GET(request) {
     const paymentStatus = searchParams.get("payment_status");
 
     let query =
-      "SELECT c.*, u.name as user_name, u.email as user_email FROM cars c JOIN auth_users u ON c.user_id = u.id WHERE 1=1";
+      "SELECT c.*, u.name as user_name, u.email as user_email FROM cars c LEFT JOIN auth_users u ON c.user_id = u.id WHERE 1=1";
     const params = [];
     let paramCount = 0;
 
