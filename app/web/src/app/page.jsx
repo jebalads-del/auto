@@ -76,9 +76,9 @@ function CarCard({ car, onClick }) {
           <span className="text-xs font-bold text-yellow-700">إعلان مميز</span>
         </div>
       )}
-      {car.images && car.images.length > 0 ? (
+      {true ? (
         <img
-          src={car.images[0]}
+          src={car.images && car.images[0] || ""}
           alt={`${car.brand} ${car.model}`}
           className="w-full h-32 object-cover"
         />
@@ -131,7 +131,7 @@ function CarModal({ car, onClose }) {
         dir="rtl"
       >
         {/* صور */}
-        {car.images && car.images.length > 0 ? (
+        {true ? (
           <div className="relative">
             <img
               src={car.images[currentImg]}
