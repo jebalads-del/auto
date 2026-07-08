@@ -1,20 +1,24 @@
-async function upload({
-  url,
-  buffer,
-  base64
-}) {
-  const response = await fetch(`https://api.anything.com/v0/upload`, {
-    method: "POST",
-    headers: {
-      "Content-Type": buffer ? "application/octet-stream" : "application/json"
-    },
-    body: buffer ? buffer : JSON.stringify({ base64, url })
-  });
-  const data = await response.json();
-  return {
-    url: data.url,
-    mimeType: data.mimeType || null
-  };
+import { put } from '@vercel/blob';
+
+export async function uploadFile(file) {
+  if (!file) {
+    throw new Error('لم يتم توفير ملف للرفع');
+  }
+
+  try {
+    // توليد مسار واسم فريد لكل صورة سيارة منعاً للتكرار
+    const fileName = `cars/${Date.now()}-${file.name || 'image.jpg'}`;
+
+    // الرفع المباشر إلى مخازن Vercel السحابية العامة
+    const blob = await put(fileName, file, {
+      access: 'public',
+    });
+
+    // إرجاع الرابط الدائم والآمن (https://...) لتقوم قاعدة البيانات بحفظه وعرضه للزوار
+    return blob.url;
+  } catch (error) {
+    console.error('خطأ أثناء الرفع السحابي عبر Vercel Blob:', error);
+    throw new Error('فشل رفع الصورة إلى السحابة');
+  }
 }
-export { upload };
-export default upload;
+
