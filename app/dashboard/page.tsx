@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface Ad {
   id: number
@@ -10,6 +11,7 @@ interface Ad {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [ads, setAds] = useState<Ad[]>([])
   const [loading, setLoading] = useState(true)
   const [isLoggedIn] = useState(true)
@@ -27,10 +29,6 @@ export default function DashboardPage() {
       })
   }, [])
 
-  const handleAction = (actionType: string, adTitle: string) => {
-    alert(`تم الضغط على زر ال${actionType} الخاص بـ: ${adTitle}. سيتم ربطه بصفحة الإجراء قريباً!`)
-  }
-
   if (!isLoggedIn) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -40,10 +38,9 @@ export default function DashboardPage() {
     )
   }
 
-  // حساب إجمالي المبالغ والسيارات المسجلة فعلياً
   const totalAds = ads.length
-  const activeUsers = 45 // قيمة افتراضية من التصميم السابق
-  const totalSales = "2.5M" // قيمة افتراضية من التصميم السابق
+  const activeUsers = 45
+  const totalSales = "2.5M"
 
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', direction: 'rtl' }}>
@@ -99,7 +96,7 @@ export default function DashboardPage() {
                   </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #ddd' }}>
                     <button 
-                      onClick={() => handleAction(index % 3 === 2 ? 'مراجعة' : 'تعديل', ad.title)}
+                      onClick={() => router.push(`/dashboard/edit/${ad.id}`)}
                       style={{ 
                         backgroundColor: index % 3 === 2 ? '#e67e22' : '#0070f3', 
                         color: 'white', 
