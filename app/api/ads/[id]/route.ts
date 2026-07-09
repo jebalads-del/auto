@@ -16,13 +16,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     `;
 
     if (result.length === 0) {
-      return NextResponse.json({ success: false, error: 'الإعلان غير موجود في جدول قاعدة البيانات' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'الإعلان غير موجود' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, message: `تم تحديث قاعدة بيانات Neon بنجاح فورياً` })
+    return NextResponse.json({ success: true, message: `تم التحديث بنجاح` })
   } catch (error) {
     console.error("Neon PUT Error:", error)
-    return NextResponse.json({ success: false, error: 'فشل في تحديث البيانات سحابياً' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'فشل في تحديث البيانات' }, { status: 500 })
   }
 }
 
@@ -31,18 +31,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const resolvedParams = await params
     const id = Number(resolvedParams.id)
     
-    console.log("Fetching detailed info for URL:", request.url)
-    
     const adArray = await sql`SELECT * FROM ads WHERE id = ${id}`;
 
     if (adArray.length === 0) {
       return NextResponse.json({ error: 'الإعلان غير موجود' }, { status: 404 })
     }
 
-    // هنا الإصلاح القاطع: نرسل العنصر الأول من المصفوفة مباشرة ككائن مفرد لتفهمه واجهة المتصفح
+    // إرجاع العنصر الأول ككائن منفرد لتجنب انهيار واجهة المتصفح
     return NextResponse.json(adArray[0])
   } catch (error) {
     console.error("Neon Single GET Error:", error)
-    return NextResponse.json({ error: 'خطأ في جلب تفاصيل الإعلان من Neon' }, { status: 500 })
+    return NextResponse.json({ error: 'خطأ في جلب تفاصيل الإعلان' }, { status: 500 })
   }
 }
