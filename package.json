@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "@vercel/blob": "^2.6.0"
+    "@vercel/blob": "^2.6.1"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
   }
 }
