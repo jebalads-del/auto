@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Auto App",
+  description: "Auto App",
 };
 
 export default function RootLayout({
@@ -10,7 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html>
+    <html lang="en">
+      <head />
       <body>
         {children}
       </body>
