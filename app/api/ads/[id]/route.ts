@@ -7,7 +7,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const body = await request.json()
     const { title, price, description } = body
 
-    // هنا كود تحديث قاعدة البيانات الخاص بك
+    // طباعة المتغيرات ليتأكد مفسر TypeScript من استخدامها
+    console.log("Updating ad:", id, { title, price, description })
+
+    // هنا كود تحديث قاعدة البيانات الخاص بك مستقبلاً
     return NextResponse.json({ success: true, message: `تم تحديث الإعلان رقم ${id} بنجاح` })
   } catch (error) {
     return NextResponse.json({ success: false, error: 'فشل في تحديث البيانات' }, { status: 500 })
