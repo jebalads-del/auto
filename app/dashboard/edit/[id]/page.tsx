@@ -13,44 +13,53 @@ export default function EditAdPage({ params }: { params: Promise<{ id: string }>
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    // جلب بيانات الإعلان الحالية لتعبئة الحقول تلقائياً
-    fetch(`/api/ads`)
+    // جلب بيانات الإعلان الحالي من قاعدة البيانات السحابية
+    fetch(`/api/ads/${id}`)
       .then(res => res.json())
       .then(data => {
-        // البحث عن السيارة المحددة داخل مصفوفة الإعلانات
-        const currentAd = data.find((item: any) => item.id === Number(id))
-        if (currentAd) {
-          setTitle(currentAd.title)
-          setPrice(currentAd.price)
-          setDescription(currentAd.description || '')
+        // فحص مرن لتجنب الانهيار: سواء كانت البيانات كائناً مفرداً أو مصفوفة من قاعدة البيانات
+        const targetAd = Array.isArray(data) ? data[0] : data;
+        
+        if (targetAd) {
+          setTitle(targetAd.title || '')
+          setPrice(targetAd.price || '')
+          setDescription(targetAd.description || '')
         }
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((err) => {
+        console.error("Error fetching ad detail:", err)
+        setLoading(false)
+      })
   }, [id])
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
 
-    const res = await fetch(`/api/ads/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, price, description })
-    })
+    try {
+      const res = await fetch(`/api/ads/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, price, description })
+      })
 
-    const result = await res.json()
-    setSaving(false)
+      const result = await res.json()
+      setSaving(false)
 
-    if (result.success) {
-      alert('تم حفظ التعديلات بنجاح في قاعدة البيانات!')
-      router.push('/dashboard')
-    } else {
-      alert('حدث خطأ أثناء الحفظ.')
+      if (result.success) {
+        alert('تم حفظ التعديلات بنجاح في قاعدة بيانات Neon الحقيقية!')
+        router.push('/dashboard')
+      } else {
+        alert('حدث خطأ أثناء الحفظ سحابياً.')
+      }
+    } catch (err) {
+      alert('فشل الاتصال بالسيرفر أثناء الحفظ.')
+      setSaving(false)
     }
   }
 
-  if (loading) return <p style={{ padding: '20px', textAlign: 'center' }}>جاري تحميل بيانات الإعلان...</p>
+  if (loading) return <p style={{ padding: '20px', textAlign: 'center' }}>جاري تحميل بيانات الإعلان من قاعدة البيانات...</p>
 
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', direction: 'rtl' }}>
