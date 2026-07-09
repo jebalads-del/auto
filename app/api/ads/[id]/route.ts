@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import sql from '../../../lib/db'
+import sql from '../../../../../lib/db'
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -39,8 +39,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'الإعلان غير موجود' }, { status: 404 })
     }
 
-    // إرجاع أول عنصر من المصفوفة مباشرة
-    return NextResponse.json(ad[0])
+    return NextResponse.json(ad)
   } catch (error) {
     console.error("Neon Single GET Error:", error)
     return NextResponse.json({ error: 'خطأ في جلب تفاصيل الإعلان من Neon' }, { status: 500 })
