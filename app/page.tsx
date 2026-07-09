@@ -1,5 +1,4 @@
 'use client'
-
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
@@ -46,21 +45,23 @@ export default function Home() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginTop: '20px' }}>
             {ads.map(ad => (
-              <div key={ad.id} style={{ 
-                border: '1px solid #ddd', 
-                padding: '15px', 
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                backgroundColor: '#f9f9f9',
-                transition: 'transform 0.2s',
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                <h3 style={{ margin: '0 0 10px 0' }}>{ad.title}</h3>
-                <p style={{ color: '#666', margin: '0 0 10px 0' }}>{ad.description}</p>
-                <p style={{ color: '#e74c3c', fontWeight: 'bold', margin: 0, fontSize: '18px' }}>{ad.price}</p>
-              </div>
+              <Link href={`/dashboard`} key={ad.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={{
+                  border: '1px solid #ddd',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  backgroundColor: '#f9f9f9',
+                  transition: 'transform 0.2s',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                  <h3 style={{ margin: '0 0 10px 0' }}>{ad.title}</h3>
+                  <p style={{ color: '#666', margin: '0 0 10px 0' }}>{ad.description}</p>
+                  <p style={{ color: '#e74c3c', fontWeight: 'bold', margin: 0, fontSize: '18px' }}>{ad.price}</p>
+                </div>
+              </Link>
             ))}
           </div>
         )}
