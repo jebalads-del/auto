@@ -33,13 +33,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     
     console.log("Fetching detailed info for URL:", request.url)
     
-    const ad = await sql`SELECT * FROM ads WHERE id = ${id}`;
+    const adArray = await sql`SELECT * FROM ads WHERE id = ${id}`;
 
-    if (ad.length === 0) {
+    if (adArray.length === 0) {
       return NextResponse.json({ error: 'الإعلان غير موجود' }, { status: 404 })
     }
 
-    return NextResponse.json(ad)
+    // هنا الإصلاح القاطع: نرسل العنصر الأول من المصفوفة مباشرة ككائن مفرد لتفهمه واجهة المتصفح
+    return NextResponse.json(adArray[0])
   } catch (error) {
     console.error("Neon Single GET Error:", error)
     return NextResponse.json({ error: 'خطأ في جلب تفاصيل الإعلان من Neon' }, { status: 500 })
