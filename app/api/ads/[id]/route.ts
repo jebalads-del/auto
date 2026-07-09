@@ -7,10 +7,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const body = await request.json()
     const { title, price, description } = body
 
-    // طباعة المتغيرات ليتأكد مفسر TypeScript من استخدامها
-    console.log("Updating ad:", id, { title, price, description })
+    console.log("Updating ad via request:", request.method, id, { title, price, description })
 
-    // هنا كود تحديث قاعدة البيانات الخاص بك مستقبلاً
     return NextResponse.json({ success: true, message: `تم تحديث الإعلان رقم ${id} بنجاح` })
   } catch (error) {
     return NextResponse.json({ success: false, error: 'فشل في تحديث البيانات' }, { status: 500 })
@@ -21,6 +19,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const resolvedParams = await params
     const id = resolvedParams.id
+    
+    console.log("Fetching ad details via request:", request.url, id)
     
     return NextResponse.json({
       id: Number(id),
