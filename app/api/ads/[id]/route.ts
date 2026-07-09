@@ -1,34 +1,48 @@
 import { NextResponse } from 'next/server'
+import sql from '@/lib/db'
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params
-    const id = resolvedParams.id
+    const id = Number(resolvedParams.id)
     const body = await request.json()
     const { title, price, description } = body
 
-    console.log("Updating ad via request:", request.method, id, { title, price, description })
+    const result = await sql`
+      UPDATE ads 
+      SET title = ${title}, price = ${price}, description = ${description || ''} 
+      WHERE id = ${id}
+      RETURNING *
+    `;
 
-    return NextResponse.json({ success: true, message: `تم تحديث الإعلان رقم ${id} بنجاح` })
+    if (result.length === 0) {
+      return NextResponse.json({ success: false, error: 'الإعلان غير موجود في جدول قاعدة البيانات' }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true, message: `تم تحديث قاعدة بيانات Neon بنجاح فورياً` })
   } catch (error) {
-    return NextResponse.json({ success: false, error: 'فشل في تحديث البيانات' }, { status: 500 })
+    console.error("Neon PUT Error:", error)
+    return NextResponse.json({ success: false, error: 'فشل في تحديث البيانات سحابياً' }, { status: 500 })
   }
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params
-    const id = resolvedParams.id
+    const id = Number(resolvedParams.id)
     
-    console.log("Fetching ad details via request:", request.url, id)
+    console.log("Fetching detailed info for URL:", request.url)
     
-    return NextResponse.json({
-      id: Number(id),
-      title: 'سيارة محددة',
-      price: '100,000',
-      description: 'وصف السيارة الحالي من قاعدة البيانات'
-    })
+    const ad = await sql`SELECT * FROM ads WHERE id = ${id}`;
+
+    if (ad.length === 0) {
+      return NextResponse.json({ error: 'الإعلان غير موجود' }, { status: 404 })
+    }
+
+    // الـ API يتوقع كائن مفرداً وليس مصفوفة، لذا نرجع أول عنصر
+    return NextResponse.json(ad[0])
   } catch (error) {
-    return NextResponse.json({ error: 'خطأ في جلب البيانات' }, { status: 500 })
+    console.error("Neon Single GET Error:", error)
+    return NextResponse.json({ error: 'خطأ في جلب تفاصيل الإعلان من Neon' }, { status: 500 })
   }
 }
