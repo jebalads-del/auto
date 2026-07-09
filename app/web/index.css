@@ -1,7 +1,7 @@
 :root {
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: #000;
+  background-color: #fff;
 }
 
 body {
@@ -11,20 +11,22 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-family: system-ui, -apple-system, sans-serif;
+  padding: 2rem;
 }
 
 #root {
   width: 100%;
-  padding: 2rem;
   text-align: center;
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+  color: #333;
 }
 
 p {
   margin-top: 0.5rem;
   font-size: 1.2em;
+  color: #666;
 }
