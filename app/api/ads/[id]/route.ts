@@ -16,17 +16,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     `;
 
     if (result.length === 0) {
-      return NextResponse.json({ success: false, error: 'الإعلان غير موجود' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'الإعلان غير موجود في جدول قاعدة البيانات' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, message: `تم التحديث بنجاح` })
+    return NextResponse.json({ success: true, message: `تم تحديث قاعدة بيانات Neon بنجاح فورياً` })
   } catch (error) {
     console.error("Neon PUT Error:", error)
-    return NextResponse.json({ success: false, error: 'فشل في تحديث البيانات' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'فشل في تحديث البيانات سحابياً' }, { status: 500 })
   }
 }
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params
     const id = Number(resolvedParams.id)
@@ -37,10 +37,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'الإعلان غير موجود' }, { status: 404 })
     }
 
-    // إرجاع العنصر الأول ككائن منفرد لتجنب انهيار واجهة المتصفح
+    // إرجاع أول عنصر فقط من المصفوفة ككائن مفرد لمنع انهيار واجهة المستخدم (Client-side exception)
     return NextResponse.json(adArray[0])
   } catch (error) {
     console.error("Neon Single GET Error:", error)
-    return NextResponse.json({ error: 'خطأ في جلب تفاصيل الإعلان' }, { status: 500 })
+    return NextResponse.json({ error: 'خطأ في جلب تفاصيل الإعلان من Neon' }, { status: 500 })
   }
 }
