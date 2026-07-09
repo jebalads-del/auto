@@ -1,5 +1,4 @@
 export async function GET() {
-  // بيانات مؤقتة من قاعدة البيانات
   const ads = [
     { id: 1, title: 'BMW 2020', description: 'حالة ممتازة', price: '150,000 ر.س' },
     { id: 2, title: 'Toyota Corolla', description: 'موثوقة وآمنة', price: '80,000 ر.س' },
