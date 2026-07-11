@@ -8,7 +8,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const [ads, setAds] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'ads' | 'create_ad' | 'users' | 'payment' | 'settings'>('ads')
+  const [activeTab, setActiveTab] = useState<'ads' | 'create_ad' | 'payment'>('ads')
 
   const [newTitle, setNewTitle] = useState('')
   const [newPrice, setNewPrice] = useState('')
@@ -18,11 +18,6 @@ export default function DashboardPage() {
   const [paypalEmail, setPaypalEmail] = useState('jebal.payments@gmail.com')
   const [westernName, setWesternName] = useState('Jebal Ads Company')
   const [westernCountry, setWesternCountry] = useState('Yemen')
-
-  const mockUsers = [
-    { id: 1, name: 'Admin Jebal', email: 'jebal.ads@gmail.com', role: 'Admin' },
-    { id: 2, name: 'Ahmed Ali', email: 'ahmed@email.com', role: 'User' }
-  ]
 
   const fetchAds = () => {
     setLoading(true)
@@ -75,36 +70,23 @@ export default function DashboardPage() {
   return (
     <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f5f7fb', padding: '15px', boxSizing: 'border-box' }}>
       
-      <div style={{ backgroundColor: '#1e293b', color: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+      <div style={{ backgroundColor: '#1e293b', color: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
         <h2 style={{ textAlign: 'center', margin: '0 0 15px 0', color: '#38bdf8', fontSize: '20px' }}>Dashboard</h2>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <button onClick={() => setActiveTab('ads')} style={{ padding: '10px', backgroundColor: activeTab === 'ads' ? '#0ea5e9' : '#334155', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>
-              Ads ({ads.length})
-            </button>
-            <button onClick={() => setActiveTab('create_ad')} style={{ padding: '10px', backgroundColor: activeTab === 'create_ad' ? '#10b981' : '#334155', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>
-              + Create Ad
-            </button>
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <button onClick={() => setActiveTab('payment')} style={{ padding: '10px', backgroundColor: activeTab === 'payment' ? '#f59e0b' : '#334155', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>
-              Payments
-            </button>
-            <button onClick={() => setActiveTab('users')} style={{ padding: '10px', backgroundColor: activeTab === 'users' ? '#0ea5e9' : '#334155', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>
-              Users
-            </button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <button onClick={() => setActiveTab('settings')} style={{ padding: '10px', backgroundColor: activeTab === 'settings' ? '#0ea5e9' : '#334155', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>
-              Settings
-            </button>
-            <Link href="/" style={{ padding: '10px', textAlign: 'center', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold' }}>
-              Exit
-            </Link>
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+          <button onClick={() => setActiveTab('ads')} style={{ padding: '10px', backgroundColor: activeTab === 'ads' ? '#0ea5e9' : '#334155', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>
+            Ads ({ads.length})
+          </button>
+          <button onClick={() => setActiveTab('create_ad')} style={{ padding: '10px', backgroundColor: activeTab === 'create_ad' ? '#10b981' : '#334155', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>
+            + Create Ad
+          </button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <button onClick={() => setActiveTab('payment')} style={{ padding: '10px', backgroundColor: activeTab === 'payment' ? '#f59e0b' : '#334155', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>
+            Payments
+          </button>
+          <Link href="/" style={{ padding: '10px', textAlign: 'center', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold' }}>
+            Exit
+          </Link>
         </div>
       </div>
 
@@ -160,18 +142,22 @@ export default function DashboardPage() {
         {activeTab === 'payment' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h3 style={{ color: '#334155', margin: 0 }}>Payment Gateways</h3>
-            
             <div style={{ border: '1px solid #cbd5e1', padding: '15px', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
-              <h4 style={{ margin: '0 0 10px 0', color: '#003087' }}>PayPal Setup</h4>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px' }}>Merchant Email:</label>
-              <input type="email" value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box', backgroundColor: '#fff' }} />
+              <h4 style={{ margin: '0 0 10px 0', color: '#003087' }}>PayPal</h4>
+              <input type="email" value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }} />
             </div>
-
             <div style={{ border: '1px solid #cbd5e1', padding: '15px', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
-              <h4 style={{ margin: '0 0 10px 0', color: '#ffb300' }}>Western Union Setup</h4>
-              <div style={{ marginBottom: '10px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px' }}>Full Name:</label>
-                <input type="text" value={westernName} onChange={(e) => setWesternName(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box', backgroundColor: '#fff' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '13px' }}>Country / City:</label>
+              <h4 style={{ margin: '0 0 10px 0', color: '#ffb300' }}>Western Union</h4>
+              <input type="text" value={westernName} onChange={(e) => setWesternName(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box', marginBottom: '10px' }} />
+              <input type="text" value={westernCountry} onChange={(e) => setWesternCountry(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }} />
+            </div>
+            <button onClick={() => alert('Saved!')} style={{ padding: '12px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', width: '100%' }}>
+              Save Settings
+            </button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}
