@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [ads, setAds] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'ads' | 'create_ad' | 'payment'>('ads')
@@ -35,7 +37,16 @@ export default function DashboardPage() {
     }).catch(() => setLoading(false))
   }
 
-  useEffect(() => { fetchAds() }, [])
+  // 🔐 جدار الحماية: منع أي زائر غير مسجل من دخول لوحة التحكم مباشرة
+  useEffect(() => {
+    const isAdmin = localStorage.getItem('isAdmin')
+    if (isAdmin !== 'true') {
+      alert('غير مسموح لك بالدخول! الرجاء تسجيل الدخول أولاً.')
+      router.push('/login')
+    } else {
+      fetchAds()
+    }
+  }, [])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return
@@ -91,7 +102,6 @@ export default function DashboardPage() {
     if (!newTitle || !newPrice) return alert('الرجاء كتابة العنوان والسعر')
     setFormLoading(true)
     try {
-      // إرسال كافة تفاصيل السيارة الجديدة إلى السيرفر
       const res = await fetch('/api/ads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -118,6 +128,12 @@ export default function DashboardPage() {
     } catch { alert('خطأ في الاتصال') } finally { setFormLoading(false) }
   }
 
+  // 🚪 دالة الخروج ومسح الجلسة الأمنية
+  const handleLogout = () => {
+    localStorage.removeItem('isAdmin')
+    router.push('/login')
+  }
+
   return (
     <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f5f7fb', padding: '15px', boxSizing: 'border-box' }}>
       <div style={{ backgroundColor: '#1e293b', color: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
@@ -128,7 +144,7 @@ export default function DashboardPage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           <button onClick={() => setActiveTab('payment')} style={{ padding: '10px', backgroundColor: activeTab === 'payment' ? '#f59e0b' : '#334155', color: 'white', border: 'none', borderRadius: '6px' }}>💳 طرق الدفع</button>
-          <Link href="/" style={{ padding: '10px', textAlign: 'center', backgroundColor: '#ef4444', color: 'white', borderRadius: '6px', textDecoration: 'none' }}>🏠 خروج للموقع</Link>
+          <button onClick={handleLogout} style={{ padding: '10px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>🔒 تسجيل الخروج</button>
         </div>
       </div>
 
@@ -168,7 +184,6 @@ export default function DashboardPage() {
             
             <input type="text" placeholder="عنوان السيارة" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
             
-            {/* الحقول المضافة حديثاً بتنسيق مطابق لموقعك */}
             <select value={brand} onChange={(e) => setBrand(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} required>
               <option value="">اختر ماركة السيارة</option>
               <option value="toyota">تويوتا</option>
@@ -183,7 +198,3 @@ export default function DashboardPage() {
             
             <input type="number" placeholder="سنة الصنع (مثال: 2024)" value={year} onChange={(e) => setYear(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
             
-            <input type="text" placeholder="اللون الخارجي" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} />
-            
-            <input type="number" placeholder="المسافة المقطوعة بالكيلومترات (الممشى)" value={mileage} onChange={(e) => setMileage(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
-
