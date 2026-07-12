@@ -10,7 +10,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'ads' | 'create_ad' | 'payment'>('ads')
 
-  // الحقول القديمة والجديدة لإعلان السيارة
   const [newTitle, setNewTitle] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newDesc, setNewDesc] = useState('')
@@ -18,7 +17,7 @@ export default function DashboardPage() {
   const [model, setModel] = useState('')
   const [year, setYear] = useState('')
   const [color, setColor] = useState('')
-  const [mileage, setMileage] = useState('')
+  const [mileageRange, setMileageRange] = useState('')
   const [extraInfo, setExtraInfo] = useState('')
 
   const [planType, setPlanType] = useState<'free' | 'paid'>('free')
@@ -37,7 +36,6 @@ export default function DashboardPage() {
     }).catch(() => setLoading(false))
   }
 
-  // 🔐 جدار الحماية: منع أي زائر غير مسجل من دخول لوحة التحكم مباشرة
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin')
     if (isAdmin !== 'true') {
@@ -99,7 +97,9 @@ export default function DashboardPage() {
 
   const handleCreateAd = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newTitle || !newPrice) return alert('الرجاء كتابة العنوان والسعر')
+    if (!newTitle || !newPrice || !brand || !year || !mileageRange) {
+      return alert('الرجاء ملء الحقول الأساسية: العنوان، السعر، الماركة، السنة، والممشى')
+    }
     setFormLoading(true)
     try {
       const res = await fetch('/api/ads', {
@@ -113,38 +113,39 @@ export default function DashboardPage() {
           model: model,
           year: Number(year),
           color: color,
-          mileage: Number(mileage),
+          mileage: mileageRange, 
           extra_info: extraInfo,
           image_url: images.length > 0 ? JSON.stringify(images) : ''
         })
       })
       const result = await res.json()
       if (result.success) {
-        alert('تم نشر الإعلان بنجاح! هو الآن قيد المراجعة الإدارية للموافقة عليه واظهاره.')
+        alert('تم نشر الإعلان بنجاح! هو الآن قيد المراجعة الإدارية.')
         setNewTitle(''); setNewPrice(''); setNewDesc(''); setImages([]);
-        setBrand(''); setModel(''); setYear(''); setColor(''); setMileage(''); setExtraInfo('');
+        setBrand(''); setModel(''); setYear(''); setColor(''); setMileageRange(''); setExtraInfo('');
         fetchAds(); setActiveTab('ads')
       } else { alert('فشل النشر') }
     } catch { alert('خطأ في الاتصال') } finally { setFormLoading(false) }
   }
 
-  // 🚪 دالة الخروج ومسح الجلسة الأمنية
   const handleLogout = () => {
     localStorage.removeItem('isAdmin')
     router.push('/login')
   }
+
+  const yearsArray = Array.from(new Array(28), (val, index) => 2027 - index);
 
   return (
     <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f5f7fb', padding: '15px', boxSizing: 'border-box' }}>
       <div style={{ backgroundColor: '#1e293b', color: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
         <h2 style={{ textAlign: 'center', margin: '0 0 15px 0', color: '#38bdf8' }}>🛠️ لوحة تحكم الإدارة والموافقة</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
-          <button onClick={() => setActiveTab('ads')} style={{ padding: '10px', backgroundColor: activeTab === 'ads' ? '#0ea5e9' : '#334155', color: 'white', border: 'none', borderRadius: '6px' }}>🚗 الإعلانات المرفوعة ({ads.length})</button>
-          <button onClick={() => setActiveTab('create_ad')} style={{ padding: '10px', backgroundColor: activeTab === 'create_ad' ? '#10b981' : '#334155', color: 'white', border: 'none', borderRadius: '6px' }}>➕ إنشاء إعلان</button>
+          <button type="button" onClick={() => setActiveTab('ads')} style={{ padding: '10px', backgroundColor: activeTab === 'ads' ? '#0ea5e9' : '#334155', color: 'white', border: 'none', borderRadius: '6px' }}>🚗 الإعلانات المرفوعة ({ads.length})</button>
+          <button type="button" onClick={() => setActiveTab('create_ad')} style={{ padding: '10px', backgroundColor: activeTab === 'create_ad' ? '#10b981' : '#334155', color: 'white', border: 'none', borderRadius: '6px' }}>➕ إنشاء إعلان</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <button onClick={() => setActiveTab('payment')} style={{ padding: '10px', backgroundColor: activeTab === 'payment' ? '#f59e0b' : '#334155', color: 'white', border: 'none', borderRadius: '6px' }}>💳 طرق الدفع</button>
-          <button onClick={handleLogout} style={{ padding: '10px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>🔒 تسجيل الخروج</button>
+          <button type="button" onClick={() => setActiveTab('payment')} style={{ padding: '10px', backgroundColor: activeTab === 'payment' ? '#f59e0b' : '#334155', color: 'white', border: 'none', borderRadius: '6px' }}>💳 طرق الدفع</button>
+          <button type="button" onClick={handleLogout} style={{ padding: '10px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>🔒 تسجيل الخروج</button>
         </div>
       </div>
 
@@ -162,10 +163,10 @@ export default function DashboardPage() {
                       <div style={{ fontSize: '12px', color: ad.status === 'active' ? 'green' : 'orange', fontWeight: 'bold' }}>الحالة: {ad.status === 'active' ? 'موافق عليه ونشط' : 'قيد المراجعة'}</div>
                     </div>
                     <div style={{ display: 'flex', gap: '5px' }}>
-                      <button onClick={() => handleStatusUpdate(ad.id, ad.status)} style={{ padding: '6px 10px', backgroundColor: ad.status === 'active' ? '#64748b' : '#0ea5e9', color: 'white', border: 'none', borderRadius: '4px' }}>
+                      <button type="button" onClick={() => handleStatusUpdate(ad.id, ad.status)} style={{ padding: '6px 10px', backgroundColor: ad.status === 'active' ? '#64748b' : '#0ea5e9', color: 'white', border: 'none', borderRadius: '4px' }}>
                         {ad.status === 'active' ? 'تعطيل' : 'موافقة'}
                       </button>
-                      <button onClick={() => handleDeleteAd(ad.id)} style={{ padding: '6px 10px', backgroundColor: 'red', color: 'white', border: 'none', borderRadius: '4px' }}>حذف</button>
+                      <button type="button" onClick={() => handleDeleteAd(ad.id)} style={{ padding: '6px 10px', backgroundColor: 'red', color: 'white', border: 'none', borderRadius: '4px' }}>حذف</button>
                     </div>
                   </div>
                 ))}
@@ -177,24 +178,28 @@ export default function DashboardPage() {
         {activeTab === 'create_ad' && (
           <form onSubmit={handleCreateAd} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <h3>➕ نشر إعلان سيارة جديد</h3>
+            
+            <label style={{ fontWeight: 'bold', marginBottom: '-10px' }}>نوع باقة الإعلان:</label>
             <select value={planType} onChange={(e) => { setPlanType(e.target.value as 'free' | 'paid'); setImages([]); }} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
               <option value="free">باقة مجانية (حد أقصى 2 صور)</option>
               <option value="paid">باقة مدفوعة متميزة (حد أقصى 5 صور)</option>
             </select>
             
-            <input type="text" placeholder="عنوان السيارة" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
+            <label style={{ fontWeight: 'bold', marginBottom: '-10px' }}>عنوان الإعلان:</label>
+            <input type="text" placeholder="مثال: تويوتا كامري 2024 نظيفة جداً للبيع" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
             
+            <label style={{ fontWeight: 'bold', marginBottom: '-10px' }}>الماركة:</label>
             <select value={brand} onChange={(e) => setBrand(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} required>
               <option value="">اختر ماركة السيارة</option>
-              <option value="toyota">تويوتا</option>
-              <option value="hyundai">هيونداي</option>
-              <option value="nissan">نيسان</option>
-              <option value="kia">كيا</option>
-              <option value="mercedes">مرسيدس</option>
-              <option value="bmw">بي إم دبليو</option>
+              <option value="تويوتا">تويوتا (Toyota)</option>
+              <option value="هيونداي">هيونداي (Hyundai)</option>
+              <option value="نيسان">نيسان (Nissan)</option>
+              <option value="كيا">كيا (Kia)</option>
+              <option value="مرسيدس">مرسيدس (Mercedes)</option>
+              <option value="بي إم دبليو">بي إم دبليو (BMW)</option>
+              <option value="فورد">فورد (Ford)</option>
+              <option value="لكزس">لكزس (Lexus)</option>
+              <option value="هوندا">هوندا (Honda)</option>
+              <option value="آخر">ماركة أخرى</option>
             </select>
 
-            <input type="text" placeholder="الموديل (مثال: كامري، النترا)" value={model} onChange={(e) => setModel(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
-            
-            <input type="number" placeholder="سنة الصنع (مثال: 2024)" value={year} onChange={(e) => setYear(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
-            
