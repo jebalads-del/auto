@@ -1,96 +1,105 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
-export default function Home() {
-  const [ads, setAds] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function HomePage() {
+  const [ads, setAds] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/ads")
+    fetch('/api/ads')
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) setAds(data);
-        setLoading(false);
+        if (Array.isArray(data)) {
+          // عرض الإعلانات النشطة والموافق عليها فقط للزوار
+          const activeAds = data.filter(ad => ad.status === 'active')
+          setAds(activeAds)
+        }
+        setLoading(false)
       })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, []);
+      .catch(() => setLoading(false))
+  }, [])
 
   return (
-    <div style={{ fontFamily: "sans-serif", direction: "rtl", padding: "15px", maxWidth: "600px", margin: "0 auto", backgroundColor: "#f8fafc", minHeight: "100vh" }}>
-      
-      {/* شريط التنقل العلوي الأنيق */}
-      <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#fff", padding: "12px", borderRadius: "10px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)", marginBottom: "20px" }}>
-        <div style={{ fontSize: "20px", fontWeight: "bold", color: "#1e293b" }}>🚗 سيارتي</div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <Link href="/login" style={{ padding: "8px 14px", backgroundColor: "#0070f3", color: "white", borderRadius: "6px", textDecoration: "none", fontSize: "14px", fontWeight: "bold" }}>
-            تسجيل الدخول
-          </Link>
-          <Link href="/dashboard" style={{ padding: "8px 14px", backgroundColor: "#f1f5f9", color: "#334155", borderRadius: "6px", textDecoration: "none", fontSize: "14px", fontWeight: "bold" }}>
-            لوحة التحكم
-          </Link>
-        </div>
-      </nav>
+    <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '20px' }}>
+      {/* الهيدر العلوي للموقع */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e293b', padding: '15px 20px', borderRadius: '8px', marginBottom: '25px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+        <h1 style={{ color: '#38bdf8', margin: 0, fontSize: '24px' }}>🚗 موقع سيارتي (Sayarty Store)</h1>
+        <Link href="/login" style={{ backgroundColor: '#0ea5e9', color: 'white', padding: '8px 16px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>🛠️ لوحة التحكم</Link>
+      </header>
 
-      {/* عنوان المعرض */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-        <h2 style={{ color: '#1e293b', margin: 0, fontSize: "18px" }}>🚗 السيارات المعروضة حديثاً</h2>
-        <Link href="/dashboard" style={{ padding: "6px 12px", backgroundColor: "#10b981", color: "white", borderRadius: "6px", textDecoration: "none", fontSize: "13px", fontWeight: "bold" }}>➕ أرسل إعلانك</Link>
-      </div>
-      
-      {/* عرض السيارات المرفوعة */}
-      {loading ? (
-        <p style={{ textAlign: "center", color: "#64748b" }}>جاري تحميل السيارات من السحابة...</p>
-      ) : ads.length === 0 ? (
-        <p style={{ textAlign: "center", color: "#94a3b8", padding: "30px", backgroundColor: "#fff", borderRadius: "10px" }}>لا توجد سيارات معروضة حالياً.</p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-          {ads.map((ad: any) => {
-            // تفكيك مصفوفة الصور المخزنة في قاعدة البيانات بأمان
-            let carImages: string[] = [];
-            try {
-              if (ad.image_url && ad.image_url.startsWith("[")) {
-                carImages = JSON.parse(ad.image_url);
-              } else if (ad.image_url) {
-                carImages = [ad.image_url];
+      {/* قسم الإعلانات الحية */}
+      <main>
+        <h2 style={{ color: '#1e293b', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>السيارات المعروضة للبيع حديثاً</h2>
+        
+        {loading ? (
+          <p style={{ textAlign: 'center', color: '#64748b', fontSize: '18px' }}>جاري تحميل السيارات...</p>
+        ) : ads.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#64748b', fontSize: '16px', backgroundColor: 'white', padding: '30px', borderRadius: '8px' }}>لا توجد سيارات معروضة حالياً في المعرض.</p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+            {ads.map((ad) => {
+              // معالجة الصور المحفوظة (سواء نص مصفوفة أو رابط واحد)
+              let carImages: string[] = []
+              try {
+                if (ad.image_url) {
+                  carImages = JSON.parse(ad.image_url)
+                }
+              } catch {
+                if (ad.image_url) carImages = [ad.image_url]
               }
-            } catch {
-              carImages = [];
-            }
 
-            return (
-              <div key={ad.id} style={{ border: "1px solid #e2e8f0", borderRadius: "10px", overflow: "hidden", backgroundColor: "#fff", boxShadow: "0 4px 6px rgba(0,0,0,0.02)" }}>
-                
-                {/* عرض الصور المرفوعة من المعرض إن وجدت أو صورة افتراضية */}
-                {carImages.length > 0 ? (
-                  <div style={{ display: "flex", gap: "5px", padding: "8px", overflowX: "auto", backgroundColor: "#f1f5f9" }}>
-                    {carImages.map((imgUrl: string, index: number) => (
-                      <img key={index} src={imgUrl} style={{ width: "100%", height: "200px", objectFit: "cover", borderRadius: "6px", flexShrink: 0 }} alt="Car" />
-                    ))}
+              return (
+                <div key={ad.id} style={{ backgroundColor: 'white', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+                  {/* صورة السيارة */}
+                  <div style={{ width: '100%', height: '200px', backgroundColor: '#cbd5e1', position: 'relative' }}>
+                    {carImages.length > 0 ? (
+                      <img src={carImages[0]} alt={ad.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#64748b' }}>📸 لا توجد صور متوفرة</div>
+                    )}
                   </div>
-                ) : (
-                  <div style={{ height: "160px", backgroundColor: "#cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>لا توجد صور متوفرة للسيارة</div>
-                )}
 
-                {/* تفاصيل السيارة */}
-                <div style={{ padding: "15px" }}>
-                  <h3 style={{ margin: "0 0 8px 0", color: "#1e293b", fontSize: "16px" }}>{ad.title}</h3>
-                  <div style={{ color: "#0070f3", fontWeight: "bold", fontSize: "15px", marginBottom: "10px" }}>السعر: {ad.price} $</div>
-                  <p style={{ color: "#475569", margin: 0, fontSize: "14px", lineHeight: "1.5", backgroundColor: "#f8fafc", padding: "10px", borderRadius: "6px" }}>
-                    <strong>الوصف والمواصفات:</strong> {ad.description || "لا توجد تفاصيل إضافية مضافة."}
-                  </p>
+                  {/* تفاصيل وبيانات السيارة */}
+                  <div style={{ padding: '15px', flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <h3 style={{ margin: 0, color: '#0f172a', fontSize: '18px' }}>{ad.title}</h3>
+                    
+                    {/* شبكة المواصفات الجديدة */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', backgroundColor: '#f1f5f9', padding: '10px', borderRadius: '6px', fontSize: '13px', color: '#334155' }}>
+                      <div>🔖 <strong>الماركة:</strong> {ad.brand || 'غير محدد'}</div>
+                      <div>🚘 <strong>الموديل:</strong> {ad.model || 'غير محدد'}</div>
+                      <div>📅 <strong>السنة:</strong> {ad.year || 'غير محدد'}</div>
+                      <div>🎨 <strong>اللون:</strong> {ad.color || 'غير محدد'}</div>
+                      <div style={{ gridColumn: 'span 2' }}>🛣️ <strong>الممشى:</strong> {ad.mileage || 'غير محدد'}</div>
+                    </div>
+
+                    {/* الوصف العام */}
+                    {ad.description && (
+                      <p style={{ margin: 0, color: '#475569', fontSize: '14px', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxTruncate: 'vertical', overflow: 'hidden' }}>
+                        {ad.description}
+                      </p>
+                    )}
+
+                    {/* ميزات وصندوق معلومات إضافية */}
+                    {ad.extra_info && (
+                      <div style={{ backgroundColor: '#f0f9ff', borderRight: '3px solid #0ea5e9', padding: '8px', borderRadius: '4px', fontSize: '13px', color: '#0369a1' }}>
+                        📋 <strong>ميزات إضافية:</strong> {ad.extra_info}
+                      </div>
+                    )}
+
+                    {/* السعر في الأسفل */}
+                    <div style={{ marginTop: 'auto', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9' }}>
+                      <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#10b981' }}>{ad.price.toLocaleString()} $</span>
+                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>المعرف: #{ad.id}</span>
+                    </div>
+                  </div>
                 </div>
-
-              </div>
-            );
-          })}
-        </div>
-      )}
-
+              )
+            })}
+          </div>
+        )}
+      </main>
     </div>
-  );
+  )
 }
