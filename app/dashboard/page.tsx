@@ -19,7 +19,7 @@ export default function DashboardPage() {
   const [mileageRange, setMileageRange] = useState('')
   const [extraInfo, setExtraInfo] = useState('')
 
-  const [planType, setPlanType] = useState<'free' | 'paid'>('free')
+  const [planType] = useState<'free' | 'paid'>('free')
   const [images, setImages] = useState<string[]>([])
   const [formLoading, setFormLoading] = useState(false)
 
