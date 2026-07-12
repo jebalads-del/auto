@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function DashboardPage() {
-  const router = useRouter()
   const [ads, setAds] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'ads' | 'create_ad' | 'payment'>('ads')
