@@ -76,7 +76,7 @@ export default function HomePage() {
 
                     {/* الوصف العام */}
                     {ad.description && (
-                      <p style={{ margin: 0, color: '#475569', fontSize: '14px', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxTruncate: 'vertical', overflow: 'hidden' }}>
+                      <p style={{ margin: 0, color: '#475569', fontSize: '14px', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {ad.description}
                       </p>
                     )}
