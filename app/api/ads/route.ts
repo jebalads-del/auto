@@ -14,18 +14,25 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { title, price, description, image_url } = body
+    // استقبال الحقول القديمة والجديدة من لوحة التحكم
+    const { title, price, description, image_url, brand, model, year, color, mileage, extra_info } = body
 
     const result = await sql`
-      INSERT INTO ads (title, price, description, image_url, status)
-      VALUES (${title}, ${price}, ${description || ''}, ${image_url || ''}, 'pending')
+      INSERT INTO ads (
+        title, price, description, image_url, status, 
+        brand, model, year, color, mileage, extra_info
+      )
+      VALUES (
+        ${title}, ${price}, ${description || ''}, ${image_url || ''}, 'pending',
+        ${brand || ''}, ${model || ''}, ${year ? Number(year) : null}, ${color || ''}, ${mileage ? Number(mileage) : null}, ${extra_info || ''}
+      )
       RETURNING *
     `;
 
     return NextResponse.json({ success: true, data: result })
   } catch (error) {
     console.error(error)
-    return NextResponse.json({ success: false }, { status: 500 })
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 })
   }
 }
 
