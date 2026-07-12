@@ -11,6 +11,10 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // 🛠️ يمكنك تغيير البريد وكلمة المرور الخاصة بك من هنا
+  const ADMIN_EMAIL = 'admin@sayarty.store'
+  const ADMIN_PASSWORD = 'JebalPassword2026' 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -22,11 +26,18 @@ export default function LoginPage() {
         setLoading(false)
         return
       }
-      
-      console.log('محاولة تسجيل دخول:', { email, password })
-      // التوجيه التلقائي المباشر والمستقر إلى لوحة التحكم فور الضغط على الزر
-      router.push('/dashboard')
-      
+
+      console.log('محاولة تسجيل دخول:', { email })
+
+      // 🔐 التحقق الفعلي من البيانات قبل السماح بالدخول
+      if (email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
+        // إذا كانت البيانات صحيحة، يتم حفظ جلسة مؤقتة في المتصفح لمنع التخطي وتوجيهه
+        localStorage.setItem('isAdmin', 'true')
+        router.push('/dashboard')
+      } else {
+        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة!')
+      }
+
     } catch (err) {
       setError('حدث خطأ غير متوقع أثناء تسجيل الدخول')
     } finally {
@@ -41,17 +52,17 @@ export default function LoginPage() {
       </header>
 
       <div style={{ maxWidth: '400px', margin: '60px auto', padding: '30px', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', backgroundColor: '#fff' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>تسجيل الدخول</h1>
+        <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>تسجيل الدخول والإدارة</h1>
 
         {error && (
-          <div style={{ backgroundColor: '#fee', padding: '10px', borderRadius: '5px', color: '#c33', marginBottom: '20px', textAlign: 'center' }}>
+          <div style={{ backgroundColor: '#fee', padding: '10px', borderRadius: '5px', color: '#c33', marginBottom: '20px', textAlign: 'center', fontWeight: 'bold' }}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>البريد الإلكتروني:</label>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>البريد الإلكتروني للإدارة:</label>
             <input
               type="email"
               value={email}

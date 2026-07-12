@@ -8,9 +8,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'ads' | 'create_ad' | 'payment'>('ads')
 
+  // الحقول القديمة والجديدة لإعلان السيارة
   const [newTitle, setNewTitle] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newDesc, setNewDesc] = useState('')
+  const [brand, setBrand] = useState('')
+  const [model, setModel] = useState('')
+  const [year, setYear] = useState('')
+  const [color, setColor] = useState('')
+  const [mileage, setMileage] = useState('')
+  const [extraInfo, setExtraInfo] = useState('')
+
   const [planType, setPlanType] = useState<'free' | 'paid'>('free')
   const [images, setImages] = useState<string[]>([])
   const [formLoading, setFormLoading] = useState(false)
@@ -83,18 +91,28 @@ export default function DashboardPage() {
     if (!newTitle || !newPrice) return alert('الرجاء كتابة العنوان والسعر')
     setFormLoading(true)
     try {
+      // إرسال كافة تفاصيل السيارة الجديدة إلى السيرفر
       const res = await fetch('/api/ads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          title: newTitle, price: Number(newPrice), description: newDesc,
+        body: JSON.stringify({
+          title: newTitle, 
+          price: Number(newPrice), 
+          description: newDesc,
+          brand: brand,
+          model: model,
+          year: Number(year),
+          color: color,
+          mileage: Number(mileage),
+          extra_info: extraInfo,
           image_url: images.length > 0 ? JSON.stringify(images) : ''
         })
       })
       const result = await res.json()
       if (result.success) {
         alert('تم نشر الإعلان بنجاح! هو الآن قيد المراجعة الإدارية للموافقة عليه واظهاره.')
-        setNewTitle(''); setNewPrice(''); setNewDesc(''); setImages([])
+        setNewTitle(''); setNewPrice(''); setNewDesc(''); setImages([]);
+        setBrand(''); setModel(''); setYear(''); setColor(''); setMileage(''); setExtraInfo('');
         fetchAds(); setActiveTab('ads')
       } else { alert('فشل النشر') }
     } catch { alert('خطأ في الاتصال') } finally { setFormLoading(false) }
@@ -143,35 +161,29 @@ export default function DashboardPage() {
         {activeTab === 'create_ad' && (
           <form onSubmit={handleCreateAd} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <h3>➕ نشر إعلان سيارة جديد</h3>
-            <select value={planType} onChange={(e) => { setPlanType(e.target.value as 'free' | 'paid'); setImages([]); }} style={{ width: '100%', padding: '10px' }}>
+            <select value={planType} onChange={(e) => { setPlanType(e.target.value as 'free' | 'paid'); setImages([]); }} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
               <option value="free">باقة مجانية (حد أقصى 2 صور)</option>
               <option value="paid">باقة مدفوعة متميزة (حد أقصى 5 صور)</option>
             </select>
-            <input type="text" placeholder="عنوان السيارة" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} style={{ width: '100%', padding: '10px' }} required />
-            <input type="number" placeholder="السعر ($)" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} style={{ width: '100%', padding: '10px' }} required />
-            <input type="file" accept="image/*" multiple onChange={handleImageChange} style={{ width: '100%', padding: '10px' }} />
-            <p>الصور المختارة: {images.length} من {planType === 'free' ? 2 : 5}</p>
-            <textarea placeholder="مواصفات وتفاصيل السيارة" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} rows={4} style={{ width: '100%', padding: '10px' }}></textarea>
-            <button type="submit" disabled={formLoading} style={{ padding: '12px', backgroundColor: '#10b981', color: 'white', fontWeight: 'bold' }}>{formLoading ? 'جاري الحفظ...' : 'نشر الإعلان فوراً 🚀'}</button>
-          </form>
-        )}
+            
+            <input type="text" placeholder="عنوان السيارة" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
+            
+            {/* الحقول المضافة حديثاً بتنسيق مطابق لموقعك */}
+            <select value={brand} onChange={(e) => setBrand(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} required>
+              <option value="">اختر ماركة السيارة</option>
+              <option value="toyota">تويوتا</option>
+              <option value="hyundai">هيونداي</option>
+              <option value="nissan">نيسان</option>
+              <option value="kia">كيا</option>
+              <option value="mercedes">مرسيدس</option>
+              <option value="bmw">بي إم دبليو</option>
+            </select>
 
-        {activeTab === 'payment' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h3>💳 بوابات تحويل واستقبال الأموال</h3>
-            <div style={{ border: '1px solid #cbd5e1', padding: '15px', borderRadius: '8px' }}>
-              <h4>PayPal</h4>
-              <input type="email" value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} style={{ width: '100%', padding: '10px' }} />
-            </div>
-            <div style={{ border: '1px solid #cbd5e1', padding: '15px', borderRadius: '8px' }}>
-              <h4>Western Union</h4>
-              <input type="text" value={westernName} onChange={(e) => setWesternName(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '10px' }} />
-              <input type="text" value={westernCountry} onChange={(e) => setWesternCountry(e.target.value)} style={{ width: '100%', padding: '10px' }} />
-            </div>
-            <button onClick={() => alert('تم التحديث!')} style={{ padding: '12px', backgroundColor: '#f59e0b', color: 'white', fontWeight: 'bold' }}>حفظ التعديلات</button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+            <input type="text" placeholder="الموديل (مثال: كامري، النترا)" value={model} onChange={(e) => setModel(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
+            
+            <input type="number" placeholder="سنة الصنع (مثال: 2024)" value={year} onChange={(e) => setYear(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
+            
+            <input type="text" placeholder="اللون الخارجي" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} />
+            
+            <input type="number" placeholder="المسافة المقطوعة بالكيلومترات (الممشى)" value={mileage} onChange={(e) => setMileage(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} required />
+
