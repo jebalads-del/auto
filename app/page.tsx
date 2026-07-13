@@ -44,7 +44,7 @@ export default function HomePage() {
           return (
             <div key={ad.id} style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
               <div style={{ width: '100%', height: '180px', backgroundColor: '#cbd5e1' }}>
-                {imgs.length > 0 ? <img src={imgs} alt={ad.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#64748b' }}>📸 بلا صور</div>}
+                {imgs.length > 0 ? <img src={imgs[0]} alt={ad.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#64748b' }}>📸 بلا صور</div>}
               </div>
               <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>{ad.title}</h3>
