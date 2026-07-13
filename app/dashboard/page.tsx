@@ -1,138 +1,76 @@
-'use client'
+"use client";
+import { useState } from "react";
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState("ads");
+  const [brand, setBrand] = useState("");
 
-export default function DashboardPage() {
-  const router = useRouter()
-  const [ads, setAds] = useState<any[]>([])
-  const [, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'ads' | 'create_ad' | 'payment'>('ads')
-
-  const [newTitle, setNewTitle] = useState('')
-  const [newPrice, setNewPrice] = useState('')
-  const [newDesc, setNewDesc] = useState('')
-  const [brand, setBrand] = useState('')
-  const [model, setModel] = useState('')
-  const [year, setYear] = useState('')
-  const [color, setColor] = useState('')
-  const [mileageRange, setMileageRange] = useState('')
-  const [extraInfo, setExtraInfo] = useState('')
-
-  const [planType] = useState<'free' | 'paid'>('free')
-  const [images, setImages] = useState<string[]>([])
-  const [formLoading, setFormLoading] = useState(false)
-
-  const fetchAds = () => {
-    setLoading(true)
-    fetch('/api/ads').then((res) => res.json()).then((data) => {
-      if (Array.isArray(data)) setAds(data)
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    if (localStorage.getItem('isAdmin') !== 'true') {
-      alert('الرجاء تسجيل الدخول أولاً.')
-      router.push('/login')
-    } else {
-      fetchAds()
-    }
-  }, [])
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return
-    const files = Array.from(e.target.files)
-    const maxAllowed = planType === 'free' ? 2 : 5
-    if (images.length + files.length > maxAllowed) return alert('تجاوزت حد الصور!')
-    files.forEach((file) => {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') setImages((prev) => [...prev, reader.result as string])
-      }
-      reader.readAsDataURL(file)
-    })
-  }
-
-  const handleStatusUpdate = async (id: number, currentStatus: string) => {
-    const nextStatus = currentStatus === 'pending' ? 'active' : 'pending'
-    fetch('/api/ads', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status: nextStatus }) }).then(() => fetchAds())
-  }
-
-  const handleDeleteAd = async (id: number) => {
-    if (confirm('هل أنت متأكد؟')) fetch(`/api/ads?id=${id}`, { method: 'DELETE' }).then(() => fetchAds())
-  }
-
-  const handleCreateAd = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newTitle || !newPrice || !brand || !year || !mileageRange) return alert('ملء الحقول المطلوبة')
-    setFormLoading(true)
-    try {
-      const res = await fetch('/api/ads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle, price: Number(newPrice), description: newDesc, brand, model, year: Number(year), color, mileage: mileageRange, extra_info: extraInfo, image_url: images.length > 0 ? JSON.stringify(images) : '' })
-      })
-      if ((await res.json()).success) {
-        alert('تم النشر بنجاح!')
-        setNewTitle(''); setNewPrice(''); setNewDesc(''); setImages([]); setBrand(''); setModel(''); setYear(''); setColor(''); setMileageRange(''); setExtraInfo('');
-        fetchAds(); setActiveTab('ads')
-      }
-    } catch { alert('خطأ') } finally { setFormLoading(false) }
-  }
+  const brands = ["مرسيدس", "نيسان", "فورد", "تويوتا"];
+  const models: { [key: string]: string[] } = {
+    "مرسيدس": ["C200", "E200", "S500"],
+    "نيسان": ["صني", "ألتيما", "باترول"],
+    "فورد": ["موستانج", "فوكس"],
+    "تويوتا": ["كورولا", "كامري"]
+  };
 
   return (
-    <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f5f7fb', padding: '15px' }}>
-      <div style={{ backgroundColor: '#1e293b', color: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-        <h2 style={{ textAlign: 'center', margin: '0 0 15px 0', color: '#38bdf8' }}>🛠️ لوحة تحكم الإدارة</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <button type="button" onClick={() => setActiveTab('ads')} style={{ padding: '10px', backgroundColor: activeTab === 'ads' ? '#0ea5e9' : '#334155', color: 'white', border: 'none', borderRadius: '6px' }}>🚗 الإعلانات ({ads.length})</button>
-          <button type="button" onClick={() => setActiveTab('create_ad')} style={{ padding: '10px', backgroundColor: activeTab === 'create_ad' ? '#10b981' : '#334155', color: 'white', border: 'none', borderRadius: '6px' }}>➕ إنشاء إعلان</button>
+    <div className="min-h-screen bg-slate-50 p-4" style={{ direction: 'rtl', textAlign: 'right' }}>
+      <div className="max-w-xl mx-auto bg-slate-950 text-white rounded-xl p-4 shadow-md mb-4">
+        <h1 className="text-xl font-bold text-center mb-4">🛠️ لوحة تحكم الإدارة</h1>
+        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+          <button onClick={() => setActiveTab("ads")} className={`p-2 rounded ${activeTab === "ads" ? "bg-blue-600" : "bg-slate-800"}`}>🚗 الإعلانات</button>
+          <button onClick={() => setActiveTab("users")} className={`p-2 rounded ${activeTab === "users" ? "bg-blue-600" : "bg-slate-800"}`}>👥 المستخدمين</button>
+          <button onClick={() => setActiveTab("settings")} className={`p-2 rounded ${activeTab === "settings" ? "bg-blue-600" : "bg-slate-800"}`}>⚙️ إعدادات الدفع</button>
         </div>
       </div>
 
-      <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '10px' }}>
-        {activeTab === 'ads' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {ads.map((ad) => (
-              <div key={ad.id} style={{ padding: '12px', border: '1px solid #edf2f7', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div><strong>{ad.title}</strong><div style={{ color: '#0ea5e9' }}>{ad.price} $</div></div>
-                <div style={{ display: 'flex', gap: '5px' }}>
-                  <button type="button" onClick={() => handleStatusUpdate(ad.id, ad.status)} style={{ padding: '6px 10px', backgroundColor: '#0ea5e9', color: 'white', border: 'none', borderRadius: '4px' }}>{ad.status === 'active' ? 'تعطيل' : 'موافقة'}</button>
-                  <button type="button" onClick={() => handleDeleteAd(ad.id)} style={{ padding: '6px 10px', backgroundColor: 'red', color: 'white', border: 'none', borderRadius: '4px' }}>حذف</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <form onSubmit={handleCreateAd} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <h3>➕ نشر إعلان سيارة جديد</h3>
-            <select value={brand} onChange={(e) => setBrand(e.target.value)} style={{ width: '100%', padding: '10px' }} required>
+      <div className="max-w-xl mx-auto bg-white rounded-xl p-4 shadow-sm border">
+        {activeTab === "ads" && (
+          <div className="space-y-3">
+            <h2 className="font-bold text-lg">إضافة إعلان جديد</h2>
+            <select value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full p-2 border rounded bg-slate-50">
               <option value="">اختر ماركة السيارة</option>
-              <option value="تويوتا">تويوتا (Toyota)</option>
-              <option value="هيونداي">هيونداي (Hyundai)</option>
-              <option value="نيسان">نيسان (Nissan)</option>
-              <option value="كيا">كيا (Kia)</option>
-              <option value="آخر">ماركة أخرى</option>
+              {brands.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
-            <input type="text" placeholder="الموديل أو الفئة" value={model} onChange={(e) => setModel(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} required />
-            <input type="number" placeholder="سنة الصنع" value={year} onChange={(e) => setYear(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} required />
-            <input type="text" placeholder="اللون الخارجي" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} />
-            <select value={mileageRange} onChange={(e) => setMileageRange(e.target.value)} style={{ width: '100%', padding: '10px' }} required>
-              <option value="">اختر الممشى الحالي</option>
-              <option value="0 كم (وكالة)">0 كم (وكالة)</option>
-              <option value="أقل من 50,000 كم">أقل من 50,000 كم</option>
-              <option value="50,000 - 100,000 كم">50,000 - 100,000 كم</option>
-              <option value="أكثر من 100,000 كم">أكثر من 100,000 كم</option>
+            <select disabled={!brand} className="w-full p-2 border rounded bg-slate-50 disabled:opacity-50">
+              <option value="">اختر الموديل</option>
+              {brand && models[brand]?.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
-            <input type="number" placeholder="السعر المطلوب ($)" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }} required />
-            <input type="file" accept="image/*" multiple onChange={handleImageChange} style={{ width: '100%', padding: '10px' }} />
-            <textarea placeholder="الوصف العام للسيارة" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} rows={2} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}></textarea>
-            <textarea placeholder="📋 صندوق ميزات ومعلومات إضافية (فتحة سقف، شاشة...)" value={extraInfo} onChange={(e) => setExtraInfo(e.target.value)} rows={3} style={{ width: '100%', padding: '10px', border: '2px dashed #0ea5e9', borderRadius: '4px', backgroundColor: '#f0f9ff' }}></textarea>
-            <button type="submit" disabled={formLoading} style={{ padding: '12px', backgroundColor: '#10b981', color: 'white', fontWeight: 'bold', border: 'none', borderRadius: '6px' }}>{formLoading ? 'جاري النشر...' : 'نشر الإعلان'}</button>
-          </form>
+            <input type="number" placeholder="السنة (مثال: 2024)" className="w-full p-2 border rounded bg-slate-50" />
+            <input type="number" placeholder="الكيلومترات" className="w-full p-2 border rounded bg-slate-50" />
+            <input type="text" placeholder="اللون" className="w-full p-2 border rounded bg-slate-50" />
+            <textarea placeholder="معلومات إضافية..." rows={3} className="w-full p-2 border rounded bg-slate-50"></textarea>
+            <button className="w-full bg-emerald-600 text-white p-2 rounded font-bold">نشر الإعلان</button>
+          </div>
+        )}
+
+        {activeTab === "users" && (
+          <div>
+            <h2 className="font-bold text-lg mb-2">إدارة مستخدمين الموقع</h2>
+            <p className="text-sm text-slate-500 mb-2">قائمة الأعضاء المسجلين:</p>
+            <div className="p-2 border rounded flex justify-between items-center text-sm mb-2">
+              <div><b>أحمد محمد</b> (ahmed@example.com)</div>
+              <button className="bg-red-500 text-white text-xs px-2 py-1 rounded">حظر</button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="font-bold text-lg mb-2">بوابة PayPal</h2>
+              <input type="email" placeholder="حساب PayPal المستلم" className="w-full p-2 border rounded bg-slate-50" />
+            </div>
+            <div className="border-t pt-3">
+              <h2 className="font-bold text-lg mb-2">بوابة Western Union</h2>
+              <input type="text" placeholder="اسم المستلم الكامل" className="w-full p-2 border rounded bg-slate-50 mb-2" />
+              <input type="text" placeholder="الدولة والمدينة" className="w-full p-2 border rounded bg-slate-50 mb-2" />
+              <input type="text" placeholder="رقم الهاتف" className="w-full p-2 border rounded bg-slate-50" />
+            </div>
+            <button className="w-full bg-blue-600 text-white p-2 rounded font-bold">حفظ الإعدادات</button>
+          </div>
         )}
       </div>
     </div>
-  )
+  );
 }
