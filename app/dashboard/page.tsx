@@ -13,125 +13,120 @@ export default function AdminDashboard() {
     "تويوتا": ["كورولا", "كامري"]
   };
 
+  // تصميم مدمج لضمان الألوان والمحاذاة بدون تيلويند
+  const styles = {
+    container: { direction: "rtl" as const, textAlign: "right" as const, padding: "15px", fontFamily: "sans-serif", backgroundColor: "#f8fafc", minHeight: "100vh" },
+    header: { backgroundColor: "#0f172a", color: "#ffffff", padding: "20px", borderRadius: "12px", marginBottom: "20px", textAlign: "center" as const },
+    btnContainer: { display: "flex", flexWrap: "wrap" as const, gap: "8px", marginTop: "15px", justifyContent: "center" },
+    btn: (active: boolean) => ({ flex: 1, minWidth: "90px", padding: "10px", borderRadius: "8px", border: "none", fontSize: "14px", fontWeight: "bold", cursor: "pointer", backgroundColor: active ? "#2563eb" : "#1e293b", color: active ? "#ffffff" : "#cbd5e1" }),
+    card: { backgroundColor: "#ffffff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" },
+    formGroup: { marginBottom: "15px" },
+    label: { display: "block", fontSize: "13px", fontWeight: "bold", color: "#475569", marginBottom: "5px" },
+    input: { width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1", backgroundColor: "#f8fafc", boxSizing: "border-box" as const, fontSize: "15px", color: "#334155" },
+    submitBtn: { width: "100%", padding: "12px", borderRadius: "8px", border: "none", backgroundColor: "#059669", color: "#ffffff", fontSize: "16px", fontWeight: "bold", cursor: "pointer", marginTop: "10px" }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 p-4 w-full" style={{ direction: 'rtl' }}>
+    <div style={styles.container}>
       {/* الهيدر العلوي */}
-      <div className="max-w-xl mx-auto bg-slate-900 text-white rounded-xl p-5 shadow-md mb-5 text-center">
-        <h1 className="text-xl font-bold mb-4 flex items-center justify-center gap-2">
-          🛠️ لوحة تحكم الإدارة
-        </h1>
-        {/* أزرار القسم العلوي متناسقة للهاتف */}
-        <div className="flex flex-wrap gap-2 justify-center w-full">
-          <button 
-            onClick={() => setActiveTab("ads")} 
-            className={`flex-1 min-w-[100px] text-sm py-2 px-3 rounded-lg font-medium transition ${activeTab === "ads" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"}`}
-          >
-            🚗 الإعلانات
-          </button>
-          <button 
-            onClick={() => setActiveTab("users")} 
-            className={`flex-1 min-w-[100px] text-sm py-2 px-3 rounded-lg font-medium transition ${activeTab === "users" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"}`}
-          >
-            👥 المستخدمين
-          </button>
-          <button 
-            onClick={() => setActiveTab("settings")} 
-            className={`flex-1 min-w-[100px] text-sm py-2 px-3 rounded-lg font-medium transition ${activeTab === "settings" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"}`}
-          >
-            ⚙️ إعدادات الدفع
-          </button>
+      <div style={styles.header}>
+        <h1 style={{ fontSize: "22px", margin: 0 }}>🛠️ لوحة تحكم الإدارة</h1>
+        <div style={styles.btnContainer}>
+          <button onClick={() => setActiveTab("ads")} style={styles.btn(activeTab === "ads")}>🚗 الإعلانات</button>
+          <button onClick={() => setActiveTab("users")} style={styles.btn(activeTab === "users")}>👥 المستخدمين</button>
+          <button onClick={() => setActiveTab("settings")} style={styles.btn(activeTab === "settings")}>⚙️ إعدادات الدفع</button>
         </div>
       </div>
 
       {/* صندوق المحتوى الرئيسي */}
-      <div className="max-w-xl mx-auto bg-white rounded-xl p-5 shadow-sm border border-slate-200 text-right">
+      <div style={styles.card}>
         
-        {/* قسم إضافة إعلان جديد */}
+        {/* قسم الإعلانات */}
         {activeTab === "ads" && (
-          <div className="space-y-4 w-full">
-            <h2 className="font-bold text-lg text-slate-800 pb-2 border-b">إضافة إعلان جديد</h2>
+          <div>
+            <h2 style={{ fontSize: "18px", color: "#1e293b", margin: "0 0 15px 0", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>إضافة إعلان جديد</h2>
             
-            <div className="w-full">
-              <label className="block text-xs font-bold text-slate-600 mb-1">ماركة السيارة</label>
-              <select value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full p-3 border rounded-lg bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div style={styles.formGroup}>
+              <label style={styles.label}>ماركة السيارة</label>
+              <select value={brand} onChange={(e) => setBrand(e.target.value)} style={styles.input}>
                 <option value="">اختر ماركة السيارة</option>
                 {brands.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
 
-            <div className="w-full">
-              <label className="block text-xs font-bold text-slate-600 mb-1">الموديل</label>
-              <select disabled={!brand} className="w-full p-3 border rounded-lg bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+            <div style={styles.formGroup}>
+              <label style={styles.label}>الموديل</label>
+              <select disabled={!brand} style={{ ...styles.input, opacity: brand ? 1 : 0.5 }}>
                 <option value="">اختر الموديل</option>
                 {brand && models[brand]?.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
 
-            <div className="w-full">
-              <label className="block text-xs font-bold text-slate-600 mb-1">السنة</label>
-              <input type="number" placeholder="مثال: 2024" className="w-full p-3 border rounded-lg bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" />
+            <div style={styles.formGroup}>
+              <label style={styles.label}>السنة</label>
+              <input type="number" placeholder="مثال: 2024" style={styles.input} />
             </div>
 
-            <div className="w-full">
-              <label className="block text-xs font-bold text-slate-600 mb-1">الكيلومترات</label>
-              <input type="number" placeholder="أدخل المسافة المقطوعة" className="w-full p-3 border rounded-lg bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" />
+            <div style={styles.formGroup}>
+              <label style={styles.label}>الكيلومترات</label>
+              <input type="number" placeholder="أدخل المسافة المقطوعة" style={styles.input} />
             </div>
 
-            <div className="w-full">
-              <label className="block text-xs font-bold text-slate-600 mb-1">اللون</label>
-              <input type="text" placeholder="لون السيارة" className="w-full p-3 border rounded-lg bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" />
+            <div style={styles.formGroup}>
+              <label style={styles.label}>اللون</label>
+              <input type="text" placeholder="لون السيارة" style={styles.input} />
             </div>
 
-            <div className="w-full">
-              <label className="block text-xs font-bold text-slate-600 mb-1">معلومات إضافية</label>
-              <textarea placeholder="اكتب تفاصيل إضافية هنا..." rows={3} className="w-full p-3 border rounded-lg bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-right"></textarea>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>معلومات إضافية</label>
+              <textarea placeholder="اكتب تفاصيل إضافية هنا..." rows={3} style={{ ...styles.input, resize: "vertical" }}></textarea>
             </div>
 
-            <button className="w-full bg-emerald-600 text-white p-3 rounded-lg font-bold hover:bg-emerald-700 transition shadow-sm">
-              نشر الإعلان
-            </button>
+            <button style={styles.submitBtn}>نشر الإعلان</button>
           </div>
         )}
 
-        {/* قسم إدارة المستخدمين */}
+        {/* قسم المستخدمين */}
         {activeTab === "users" && (
-          <div className="w-full space-y-3">
-            <h2 className="font-bold text-lg text-slate-800 pb-2 border-b">إدارة مستخدمين الموقع</h2>
-            <div className="p-3 border rounded-lg bg-slate-50 flex justify-between items-center text-sm">
+          <div>
+            <h2 style={{ fontSize: "18px", color: "#1e293b", margin: "0 0 15px 0", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>إدارة مستخدمين الموقع</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", backgroundColor: "#f8fafc" }}>
               <div>
-                <div className="font-bold text-slate-800">أحمد محمد</div>
-                <div className="text-xs text-slate-500">ahmed@example.com</div>
+                <div style={{ fontWeight: "bold", color: "#1e293b" }}>أحمد محمد</div>
+                <div style={{ fontSize: "12px", color: "#64748b" }}>ahmed@example.com</div>
               </div>
-              <button className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-md transition">حظر</button>
+              <button style={{ backgroundColor: "#ef4444", color: "#ffffff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "12px" }}>حظر</button>
             </div>
           </div>
         )}
 
-        {/* قسم إعدادات الدفع */}
+        {/* قسم الإعدادات */}
         {activeTab === "settings" && (
-          <div className="w-full space-y-4">
-            <div>
-              <h2 className="font-bold text-lg text-slate-800 mb-1">بوابة PayPal</h2>
-              <p className="text-xs text-slate-500 mb-2">أدخل البريد الإلكتروني المخصص لاستلام الأموال آلياً.</p>
-              <input type="email" placeholder="example@paypal.com" className="w-full p-3 border rounded-lg bg-slate-50 text-left" style={{ direction: 'ltr' }} />
+          <div>
+            <h2 style={{ fontSize: "18px", color: "#1e293b", margin: "0 0 15px 0", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>بوابة PayPal</h2>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>حساب PayPal المستلم</label>
+              <input type="email" placeholder="example@paypal.com" style={{ ...styles.input, textAlign: "left", direction: "ltr" }} />
             </div>
             
-            <div className="border-t pt-3">
-              <h2 className="font-bold text-lg text-slate-800 mb-1">بوابة Western Union</h2>
-              <p className="text-xs text-slate-500 mb-3">بيانات الدفع اليدوي التي ستظهر للمشترين.</p>
-              
-              <div className="space-y-3">
-                <input type="text" placeholder="اسم المستلم الكامل (باللغة الإنجليزية)" className="w-full p-3 border rounded-lg bg-slate-50 text-right" />
-                <input type="text" placeholder="الدولة والمدينة" className="w-full p-3 border rounded-lg bg-slate-50 text-right" />
-                <input type="text" placeholder="رقم الهاتف مع رمز الدولة" className="w-full p-3 border rounded-lg bg-slate-50 text-right" />
-              </div>
+            <h2 style={{ fontSize: "18px", color: "#1e293b", margin: "20px 0 15px 0", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" }}>بوابة Western Union</h2>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>اسم المستلم الكامل (باللغة الإنجليزية)</label>
+              <input type="text" placeholder="أدخل الاسم الكامل" style={styles.input} />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>الدولة والمدينة</label>
+              <input type="text" placeholder="مثال: مصر، القاهرة" style={styles.input} />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>رقم الهاتف مع رمز الدولة</label>
+              <input type="text" placeholder="مثال: 002012345678" style={styles.input} />
             </div>
             
-            <button className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-sm">
-              حفظ الإعدادات بالكامل
-            </button>
+            <button style={{ ...styles.submitBtn, backgroundColor: "#2563eb" }}>حفظ الإعدادات بالكامل</button>
           </div>
         )}
+
       </div>
     </div>
   );
