@@ -22,12 +22,12 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ direction: "rtl", textAlign: "right", padding: "15px", fontFamily: "sans-serif" }}>
-      <div style={{ backgroundColor: "#0f172a", color: "#fff", padding: "15px", borderRadius: "12px", textCenter: "center", marginBottom: "15px" }}>
+      <div style={{ backgroundColor: "#0f172a", color: "#fff", padding: "15px", borderRadius: "12px", textAlign: "center", marginBottom: "15px" }}>
         <h2 style={{ textAlign: "center", margin: "0 0 10px 0" }}>🛠️ لوحة التحكم</h2>
         <div style={{ display: "flex", gap: "5px" }}>
-          <button onClick={() => setTab("ads")} style={{ flex: 1, padding: "8px", bg: "#2563eb" }}>🚗 الإعلانات</button>
-          <button onClick={() => setTab("users")} style={{ flex: 1, padding: "8px" }}>👥 المستخدمين</button>
-          <button onClick={() => setTab("pay")} style={{ flex: 1, padding: "8px" }}>⚙️ الدفع</button>
+          <button onClick={() => setTab("ads")} style={{ flex: 1, padding: "8px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "6px" }}>🚗 الإعلانات</button>
+          <button onClick={() => setTab("users")} style={{ flex: 1, padding: "8px", backgroundColor: "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>👥 المستخدمين</button>
+          <button onClick={() => setTab("pay")} style={{ flex: 1, padding: "8px", backgroundColor: "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>⚙️ الدفع</button>
         </div>
       </div>
 
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
             <select style={sty.in}><option>المسافة (كم)</option><option>0 (وكالة)</option><option>1-50 ألف</option><option>50-100 ألف</option><option>+100 ألف</option></select>
             <select style={sty.in}><option>اختر اللون</option><option>أبيض</option><option>أسود</option><option>فضي</option><option>رمادي</option><option>أزرق</option></select>
             
-            <div style={{ border: "2px dashed #ccc", padding: "10px", borderRadius: "8px", textCenter: "center", marginBottom: "12px", cursor: "pointer" }}>
+            <div style={{ border: "2px dashed #ccc", padding: "10px", borderRadius: "8px", marginBottom: "12px", cursor: "pointer" }}>
               <input type="file" multiple accept="image/*" onChange={(e) => setImgCount(e.target.files?.length || 0)} style={{ display: "none" }} id="files" />
               <label htmlFor="files" style={{ display: "block", textAlign: "center", cursor: "pointer" }}>
                 📷 {imgCount > 0 ? `تم اختيار ${imgCount} صور` : "اضغط هنا لاختيار صور السيارة"}
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {tab === "users" && <div style={{ padding: "10px", border: "1px solid #ddd" }}><b>أحمد محمد</b> (ahmed@example.com) <button style={{ background: "red", color: "white" }}>حظر</button></div>}
+        {tab === "users" && <div style={{ padding: "10px", border: "1px solid #ddd" }}><b>أحمد محمد</b> (ahmed@example.com)</div>}
 
         {tab === "pay" && (
           <div>
