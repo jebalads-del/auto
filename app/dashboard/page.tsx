@@ -35,9 +35,7 @@ export default function AdminDashboard() {
   useEffect(() => { loadData(); }, []);
 
   async function handlePublish() {
-    if (!brand || !model || !price || !year) return alert("الرجاء تحديد الماركة والموديل والسعر والسنة");
-    
-    // تطابق كامل مع الحقول المطلوبة في ملف الـ API الخلفي لموقعك
+    if (!brand || !model || !price || !year) return alert("امْلأ الماركة والموديل والسعر والسنة");
     const payload = {
       title: `${brand} ${model} ${year}`,
       price: parseFloat(price),
@@ -48,27 +46,41 @@ export default function AdminDashboard() {
       color: color || "غير محدد",
       mileage: parseInt(mileage) || 0,
       extra_info: extraInfo,
-      image_url: "" // سيتم إرسال رابط الصورة الفعلي هنا بعد تفعيل خادم الصور لاحقاً
+      image_url: ""
     };
-
     try {
       const res = await fetch("/api/ads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      const resData = await res.json();
-      
-      if (resData.success) { 
-        alert("🎉 تم نشر الإعلان بنجاح في قاعدة البيانات وبانتظار الموافقة!"); 
+      if (res.ok) { 
+        alert("🎉 تم النشر بنجاح! انتقل لقسم الإعلانات لتفعيله."); 
         setBrand(""); setModel(""); setPrice(""); setYear(""); setMileage(""); setColor(""); setExtraInfo(""); setImgCount(0);
         loadData(); 
-      } else {
-        alert("فشل نشر الإعلان: " + (resData.error || "خطأ غير معروف"));
       }
-    } catch(err) {
-      alert("فشل الإرسال، تحقق من اتصال الإنترنت");
-    }
+    } catch(err) { alert("خطأ في الاتصال"); }
+  }
+
+  // دالة الموافقة وتفعيل الإعلان وعرضه للزوار
+  async function handleApprove(id: number) {
+    try {
+      const res = await fetch("/api/ads", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: "active" })
+      });
+      if (res.ok) { alert("✓ تم تفعيل الإعلان بنجاح ويظهر للزوار الآن!"); loadData(); }
+    } catch (e) { alert("فشل التفعيل"); }
+  }
+
+  // دالة حذف الإعلان نهائياً من قاعدة البيانات
+  async function handleDelete(id: number) {
+    if (!confirm("هل أنت متأكد من حذف هذا الإعلان نهائياً؟")) return;
+    try {
+      const res = await fetch(`/api/ads?id=${id}`, { method: "DELETE" });
+      if (res.ok) { alert("🗑️ تم حذف الإعلان بنجاح!"); loadData(); }
+    } catch (e) { alert("فشل الحذف"); }
   }
 
   async function handleSave() {
@@ -87,9 +99,9 @@ export default function AdminDashboard() {
       <div style={{ backgroundColor: "#0f172a", color: "#fff", padding: "15px", borderRadius: "12px", marginBottom: "15px", textAlign: "center" }}>
         <h2>🛠️ لوحة التحكم الحية</h2>
         <div style={{ display: "flex", gap: "5px", marginTop: "10px" }}>
-          <button onClick={() => setTab("ads")} style={{ flex: 1, padding: "8px", backgroundColor: tab === "ads" ? "#2563eb" : "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>🚗 إنشاء إعلان</button>
-          <button onClick={() => setTab("list")} style={{ flex: 1, padding: "8px", backgroundColor: tab === "list" ? "#2563eb" : "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>📋 الإعلانات ({adsList.length})</button>
-          <button onClick={() => setTab("pay")} style={{ flex: 1, padding: "8px", backgroundColor: tab === "pay" ? "#2563eb" : "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>⚙️ الدفع</button>
+          <button onClick={() => setTab("ads")} style={{ flex: 1, padding: "8px", backgroundColor: tab === "ads" ? "#2563eb" : "#1e293b", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}>🚗 إنشاء إعلان</button>
+          <button onClick={() => setTab("list")} style={{ flex: 1, padding: "8px", backgroundColor: tab === "list" ? "#2563eb" : "#1e293b", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}>📋 الإعلانات ({adsList.length})</button>
+          <button onClick={() => setTab("pay")} style={{ flex: 1, padding: "8px", backgroundColor: tab === "pay" ? "#2563eb" : "#1e293b", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer" }}>⚙️ الدفع</button>
         </div>
       </div>
 
@@ -97,49 +109,36 @@ export default function AdminDashboard() {
         {tab === "ads" && (
           <div>
             <h3>إضافة إعلان جديد</h3>
-            <select value={brand} onChange={(e) => { setBrand(e.target.value); setModel(""); }} style={styIn}>
-              <option value="">اختر الماركة</option>
-              {Object.keys(data).map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-            <select value={model} onChange={(e) => setModel(e.target.value)} disabled={!brand} style={styIn}>
-              <option value="">اختر الموديل</option>
-              {brand && data[brand].map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <select value={brand} onChange={(e) => { setBrand(e.target.value); setModel(""); }} style={styIn}><option value="">اختر الماركة</option>{Object.keys(data).map(b => <option key={b} value={b}>{b}</option>)}</select>
+            <select value={model} onChange={(e) => setModel(e.target.value)} disabled={!brand} style={styIn}><option value="">اختر الموديل</option>{brand && data[brand].map(m => <option key={m} value={m}>{m}</option>)}</select>
             <input type="number" placeholder="السعر ($) - يدوي" value={price} onChange={(e) => setPrice(e.target.value)} style={styIn} />
-            <select value={year} onChange={(e) => setYear(e.target.value)} style={styIn}>
-              <option value="">اختر السنة</option>
-              {Array.from({ length: 27 }, (_, i) => String(2026 - i)).map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-            <input type="number" placeholder="المسافة المقطوعة (بالكيلومترات عدداً)" value={mileage} onChange={(e) => setMileage(e.target.value)} style={styIn} />
-            <select value={color} onChange={(e) => setColor(e.target.value)} style={styIn}>
-              <option value="">اختر اللون</option>
-              <option value="أبيض">أبيض</option>
-              <option value="أسود">أسود</option>
-              <option value="فضي">فضي</option>
-              <option value="رمادي">رمادي</option>
-            </select>
-            
-            {/* إستعادة زر اختيار الصور للهاتف مع عداد ذكي */}
-            <div style={{ border: "2px dashed #ccc", padding: "12px", borderRadius: "8px", marginBottom: "12px", cursor: "pointer" }}>
-              <input type="file" multiple accept="image/*" onChange={(e) => setImgCount(e.target.files?.length || 0)} style={{ display: "none" }} id="files" />
-              <label htmlFor="files" style={{ display: "block", textAlign: "center", cursor: "pointer", color: "#334155" }}>
-                📷 {imgCount > 0 ? `تم اختيار ${imgCount} صور للسيارة` : "اضغط هنا لاختيار صور السيارة من جهازك"}
-              </label>
-            </div>
-
-            <textarea placeholder="معلومات إضافية ومواصفات..." rows={3} value={extraInfo} onChange={(e) => setExtraInfo(e.target.value)} style={styIn}></textarea>
-            <button onClick={handlePublish} style={{ width: "100%", padding: "12px", backgroundColor: "#059669", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>نشر الإعلان فعلياً</button>
+            <select value={year} onChange={(e) => setYear(e.target.value)} style={styIn}><option value="">اختر السنة</option>{Array.from({ length: 27 }, (_, i) => String(2026 - i)).map(y => <option key={y} value={y}>{y}</option>)}</select>
+            <input type="number" placeholder="المسافة المقطوعة (بالكيلومترات)" value={mileage} onChange={(e) => setMileage(e.target.value)} style={styIn} />
+            <select value={color} onChange={(e) => setColor(e.target.value)} style={styIn}><option value="">اختر اللون</option><option value="أبيض">أبيض</option><option value="أسود">أسود</option><option value="فضي">فضي</option><option value="رمادي">رمادي</option></select>
+            <div style={{ border: "2px dashed #ccc", padding: "12px", borderRadius: "8px", marginBottom: "12px" }}><input type="file" multiple accept="image/*" onChange={(e) => setImgCount(e.target.files?.length || 0)} style={{ display: "none" }} id="files" /><label htmlFor="files" style={{ display: "block", textAlign: "center", cursor: "pointer" }}>📷 {imgCount > 0 ? `تم اختيار ${imgCount} صور` : "اضغط هنا لاختيار صور السيارة"}</label></div>
+            <textarea placeholder="معلومات إضافية..." rows={3} value={extraInfo} onChange={(e) => setExtraInfo(e.target.value)} style={styIn}></textarea>
+            <button onClick={handlePublish} style={{ width: "100%", padding: "12px", backgroundColor: "#059669", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>نشر الإعلان</button>
           </div>
         )}
 
         {tab === "list" && (
           <div>
             <h3>الإعلانات بموقعك</h3>
-            {adsList.length === 0 ? <p>لا توجد إعلانات حالياً.</p> : adsList.map((ad: any, i: number) => (
-              <div key={i} style={{ padding: "10px", border: "1px solid #eee", borderRadius: "8px", marginBottom: "8px" }}>
-                <b>{ad.title || ad.name || `${ad.brand} ${ad.model}`}</b> - <span style={{ color: "#2563eb" }}>${ad.price}</span>
-                <div style={{ fontSize: "12px", color: "#666" }}>السنة: {ad.year || "غير محدد"} | اللون: {ad.color || "غير محدد"} | العداد: {ad.mileage || 0} كم</div>
-                <div style={{ fontSize: "11px", color: ad.status === "active" ? "#059669" : "#d97706", marginTop: "4px" }}>حالة الإعلان: {ad.status === "active" ? "✓ نشط ومقبول" : "⏰ في انتظار المراجعة"}</div>
+            {adsList.length === 0 ? <p>لا توجد إعلانات.</p> : adsList.map((ad: any, i: number) => (
+              <div key={i} style={{ padding: "12px", border: "1px solid #eee", borderRadius: "8px", marginBottom: "10px" }}>
+                <b>{ad.title || `${ad.brand} ${ad.model}`}</b> - <span style={{ color: "#2563eb", fontWeight: "bold" }}>${ad.price}</span>
+                <div style={{ fontSize: "12px", color: "#666", margin: "4px 0" }}>السنة: {ad.year || "غير محدد"} | اللون: {ad.color || "غير محدد"}</div>
+                
+                {/* أزرار التحكم الديناميكية لكل إعلان */}
+                <div style={{ display: "flex", gap: "5px", marginTop: "8px" }}>
+                  {ad.status !== "active" && (
+                    <button onClick={() => handleApprove(ad.id)} style={{ flex: 1, padding: "6px", backgroundColor: "#059669", color: "#fff", border: "none", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>✓ موافقة ونشر</button>
+                  )}
+                  {ad.status === "active" && (
+                    <span style={{ flex: 1, color: "#059669", fontSize: "12px", fontWeight: "bold", alignSelf: "center" }}>✓ الإعلان نشط حالياً</span>
+                  )}
+                  <button onClick={() => handleDelete(ad.id)} style={{ padding: "6px 12px", backgroundColor: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", fontSize: "12px", cursor: "pointer" }}>🗑️ حذف</button>
+                </div>
               </div>
             ))}
           </div>
@@ -153,7 +152,7 @@ export default function AdminDashboard() {
             <input placeholder="اسم المستلم الكامل" value={wName} onChange={(e) => setWName(e.target.value)} style={styIn} />
             <input placeholder="الدولة والمدينة" value={wCountry} onChange={(e) => setWCountry(e.target.value)} style={styIn} />
             <input placeholder="رقم الهاتف" value={wPhone} onChange={(e) => setWPhone(e.target.value)} style={styIn} />
-            <button onClick={handleSave} style={{ width: "100%", padding: "12px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>حفظ الإعدادات كاملة</button>
+            <button onClick={handleSave} style={{ width: "100%", padding: "12px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>حفظ الإعدادات</button>
           </div>
         )}
       </div>
