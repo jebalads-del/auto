@@ -24,21 +24,47 @@ export default function AdminDashboard() {
     "هيونداي": ["إلنترا", "سوناتا", "توسان"]
   };
 
-  useEffect(() => {
+  function loadData() {
     fetch("/api/ads").then(r => r.json()).then(d => setAdsList(Array.isArray(d) ? d : [])).catch(e => console.log(e));
     fetch("/api/settings").then(r => r.json()).then(d => {
       if(d) { setPaypal(d.paypal_email||""); setWName(d.western_name||""); setWCountry(d.western_country||""); setWPhone(d.western_phone||""); }
     }).catch(e => console.log(e));
-  }, []);
+  }
+
+  useEffect(() => { loadData(); }, []);
 
   async function handlePublish() {
-    if (!brand || !model || !price || !year) return alert("امْلأ الحقول الأساسية");
-    const res = await fetch("/api/ads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ brand, model, price: parseFloat(price), year: parseInt(year), kilometers, color, details, name: `${brand} ${model}` })
-    });
-    if (res.ok) { alert("🚗 تم النشر!"); fetch("/api/ads").then(r => r.json()).then(d => setAdsList(Array.isArray(d) ? d : [])); }
+    if (!brand || !model || !price) return alert("الرجاء تحديد الماركة والموديل السعر");
+    
+    // إرسال الاسم مدمجاً ليتوافق مع الحقل القديم في الـ API وقاعدة البيانات لديك
+    const carName = brand + " " + model;
+
+    try {
+      const res = await fetch("/api/ads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          name: carName, 
+          price: parseFloat(price), 
+          year: parseInt(year) || 2024, 
+          kilometers: kilometers || "غير محدد", 
+          color: color || "غير محدد", 
+          details: details || "",
+          brand: brand,
+          model: model
+        })
+      });
+      
+      if (res.ok) { 
+        alert("🎉 تم نشر الإعلان بنجاح!"); 
+        setBrand(""); setModel(""); setPrice(""); setYear(""); setKilometers(""); setColor(""); setDetails("");
+        loadData(); 
+      } else {
+        alert("خطأ من السيرفر: لم يتم قبول الإعلان");
+      }
+    } catch(err) {
+      alert("فشل الإرسال، تحقق من الاتصال");
+    }
   }
 
   async function handleSave() {
@@ -57,9 +83,9 @@ export default function AdminDashboard() {
       <div style={{ backgroundColor: "#0f172a", color: "#fff", padding: "15px", borderRadius: "12px", marginBottom: "15px", textAlign: "center" }}>
         <h2>🛠️ لوحة التحكم الحية</h2>
         <div style={{ display: "flex", gap: "5px", marginTop: "10px" }}>
-          <button onClick={() => setTab("ads")} style={{ flex: 1, padding: "8px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "6px" }}>🚗 إنشاء إعلان</button>
-          <button onClick={() => setTab("list")} style={{ flex: 1, padding: "8px", backgroundColor: "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>📋 الإعلانات ({adsList.length})</button>
-          <button onClick={() => setTab("pay")} style={{ flex: 1, padding: "8px", backgroundColor: "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>⚙️ الدفع</button>
+          <button onClick={() => setTab("ads")} style={{ flex: 1, padding: "8px", backgroundColor: tab === "ads" ? "#2563eb" : "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>🚗 إنشاء إعلان</button>
+          <button onClick={() => setTab("list")} style={{ flex: 1, padding: "8px", backgroundColor: tab === "list" ? "#2563eb" : "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>📋 الإعلانات ({adsList.length})</button>
+          <button onClick={() => setTab("pay")} style={{ flex: 1, padding: "8px", backgroundColor: tab === "pay" ? "#2563eb" : "#1e293b", color: "#fff", border: "none", borderRadius: "6px" }}>⚙️ الدفع</button>
         </div>
       </div>
 
@@ -95,7 +121,7 @@ export default function AdminDashboard() {
               <option value="رمادي">رمادي</option>
             </select>
             <textarea placeholder="معلومات إضافية..." rows={3} value={details} onChange={(e) => setDetails(e.target.value)} style={styIn}></textarea>
-            <button onClick={handlePublish} style={{ width: "100%", padding: "12px", backgroundColor: "#059669", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold" }}>نشر الإعلان فعلياً</button>
+            <button onClick={handlePublish} style={{ width: "100%", padding: "12px", backgroundColor: "#059669", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>نشر الإعلان فعلياً</button>
           </div>
         )}
 
@@ -105,7 +131,7 @@ export default function AdminDashboard() {
             {adsList.length === 0 ? <p>لا توجد إعلانات حالياً.</p> : adsList.map((ad: any, i: number) => (
               <div key={i} style={{ padding: "10px", border: "1px solid #eee", borderRadius: "8px", marginBottom: "8px" }}>
                 <b>{ad.name || `${ad.brand} ${ad.model}`}</b> - <span style={{ color: "#2563eb" }}>${ad.price}</span>
-                <div style={{ fontSize: "12px", color: "#666" }}>السنة: {ad.year} | اللون: {ad.color || "غير محدد"}</div>
+                <div style={{ fontSize: "12px", color: "#666" }}>السنة: {ad.year || "غير محدد"} | اللون: {ad.color || "غير محدد"}</div>
               </div>
             ))}
           </div>
@@ -119,7 +145,7 @@ export default function AdminDashboard() {
             <input placeholder="اسم المستلم الكامل" value={wName} onChange={(e) => setWName(e.target.value)} style={styIn} />
             <input placeholder="الدولة والمدينة" value={wCountry} onChange={(e) => setWCountry(e.target.value)} style={styIn} />
             <input placeholder="رقم الهاتف" value={wPhone} onChange={(e) => setWPhone(e.target.value)} style={styIn} />
-            <button onClick={handleSave} style={{ width: "100%", padding: "12px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold" }}>حفظ الإعدادات كاملة</button>
+            <button onClick={handleSave} style={{ width: "100%", padding: "12px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>حفظ الإعدادات كاملة</button>
           </div>
         )}
       </div>
