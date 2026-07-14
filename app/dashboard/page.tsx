@@ -10,12 +10,15 @@ export default function AdminDashboard() {
   const [mileage, setMileage] = useState("");
   const [color, setColor] = useState("");
   const [extraInfo, setExtraInfo] = useState("");
-  const [imgCount, setImgCount] = useState(0);
   const [adsList, setAdsList] = useState<any[]>([]);
   const [paypal, setPaypal] = useState("");
   const [wName, setWName] = useState("");
   const [wCountry, setWCountry] = useState("");
   const [wPhone, setWPhone] = useState("");
+  
+  // حالة حفظ كود الصورة المشفر
+  const [encodedImage, setEncodedImage] = useState("");
+  const [imgStatus, setImgStatus] = useState("اضغط هنا لاختيار صورة السيارة");
 
   const data: { [key: string]: string[] } = {
     "تويوتا": ["كامري", "كورولا", "لاندكروزر"],
@@ -34,8 +37,23 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadData(); }, []);
 
+  // دالة ذكية لتحويل الصورة المرفوعة من هاتف المستخدم إلى كود نصي مشفر
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setImgStatus("جاري تحضير الصورة...");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEncodedImage(reader.result as string);
+      setImgStatus("📷 تم تجهيز الصورة بنجاح!");
+    };
+    reader.readAsDataURL(file);
+  };
+
   async function handlePublish() {
     if (!brand || !model || !price || !year) return alert("امْلأ الماركة والموديل والسعر والسنة");
+    
     const payload = {
       title: `${brand} ${model} ${year}`,
       price: parseFloat(price),
@@ -46,23 +64,27 @@ export default function AdminDashboard() {
       color: color || "غير محدد",
       mileage: parseInt(mileage) || 0,
       extra_info: extraInfo,
-      image_url: ""
+      image_url: encodedImage // إرسال نص الصورة المشفر ليتم حفظه في قاعدة البيانات مباشرة
     };
+
     try {
       const res = await fetch("/api/ads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      if (res.ok) { 
-        alert("🎉 تم النشر بنجاح! انتقل لقسم الإعلانات لتفعيله."); 
-        setBrand(""); setModel(""); setPrice(""); setYear(""); setMileage(""); setColor(""); setExtraInfo(""); setImgCount(0);
+      const resData = await res.json();
+      
+      if (resData.success) { 
+        alert("🎉 تم نشر الإعلان وحفظ الصورة بنجاح! تفضل بتفعيله من القائمة."); 
+        setBrand(""); setModel(""); setPrice(""); setYear(""); setMileage(""); setColor(""); setExtraInfo(""); setEncodedImage(""); setImgStatus("اضغط هنا لاختيار صورة السيارة");
         loadData(); 
+      } else {
+        alert("فشل نشر الإعلان: " + (resData.error || "خطأ من السيرفر"));
       }
-    } catch(err) { alert("خطأ في الاتصال"); }
+    } catch(err) { alert("خطأ في اتصال الإنترنت"); }
   }
 
-  // دالة الموافقة وتفعيل الإعلان وعرضه للزوار
   async function handleApprove(id: number) {
     try {
       const res = await fetch("/api/ads", {
@@ -70,16 +92,15 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: "active" })
       });
-      if (res.ok) { alert("✓ تم تفعيل الإعلان بنجاح ويظهر للزوار الآن!"); loadData(); }
+      if (res.ok) { alert("✓ تم تفعيل الإعلان بنجاح ويظهر للزوار الآن بالصور!"); loadData(); }
     } catch (e) { alert("فشل التفعيل"); }
   }
 
-  // دالة حذف الإعلان نهائياً من قاعدة البيانات
   async function handleDelete(id: number) {
-    if (!confirm("هل أنت متأكد من حذف هذا الإعلان نهائياً؟")) return;
+    if (!confirm("هل أنت متأكد من الحذف؟")) return;
     try {
       const res = await fetch(`/api/ads?id=${id}`, { method: "DELETE" });
-      if (res.ok) { alert("🗑️ تم حذف الإعلان بنجاح!"); loadData(); }
+      if (res.ok) { alert("🗑️ تم حذف الإعلان!"); loadData(); }
     } catch (e) { alert("فشل الحذف"); }
   }
 
@@ -115,7 +136,15 @@ export default function AdminDashboard() {
             <select value={year} onChange={(e) => setYear(e.target.value)} style={styIn}><option value="">اختر السنة</option>{Array.from({ length: 27 }, (_, i) => String(2026 - i)).map(y => <option key={y} value={y}>{y}</option>)}</select>
             <input type="number" placeholder="المسافة المقطوعة (بالكيلومترات)" value={mileage} onChange={(e) => setMileage(e.target.value)} style={styIn} />
             <select value={color} onChange={(e) => setColor(e.target.value)} style={styIn}><option value="">اختر اللون</option><option value="أبيض">أبيض</option><option value="أسود">أسود</option><option value="فضي">فضي</option><option value="رمادي">رمادي</option></select>
-            <div style={{ border: "2px dashed #ccc", padding: "12px", borderRadius: "8px", marginBottom: "12px" }}><input type="file" multiple accept="image/*" onChange={(e) => setImgCount(e.target.files?.length || 0)} style={{ display: "none" }} id="files" /><label htmlFor="files" style={{ display: "block", textAlign: "center", cursor: "pointer" }}>📷 {imgCount > 0 ? `تم اختيار ${imgCount} صور` : "اضغط هنا لاختيار صور السيارة"}</label></div>
+            
+            {/* واجهة اختيار الملف الفورية */}
+            <div style={{ border: "2px dashed #ccc", padding: "12px", borderRadius: "8px", marginBottom: "12px", backgroundColor: "#f8fafc" }}>
+              <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} id="files" />
+              <label htmlFor="files" style={{ display: "block", textAlign: "center", cursor: "pointer", fontWeight: "bold", color: "#334155" }}>
+                {imgStatus}
+              </label>
+            </div>
+
             <textarea placeholder="معلومات إضافية..." rows={3} value={extraInfo} onChange={(e) => setExtraInfo(e.target.value)} style={styIn}></textarea>
             <button onClick={handlePublish} style={{ width: "100%", padding: "12px", backgroundColor: "#059669", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>نشر الإعلان</button>
           </div>
@@ -129,13 +158,12 @@ export default function AdminDashboard() {
                 <b>{ad.title || `${ad.brand} ${ad.model}`}</b> - <span style={{ color: "#2563eb", fontWeight: "bold" }}>${ad.price}</span>
                 <div style={{ fontSize: "12px", color: "#666", margin: "4px 0" }}>السنة: {ad.year || "غير محدد"} | اللون: {ad.color || "غير محدد"}</div>
                 
-                {/* أزرار التحكم الديناميكية لكل إعلان */}
                 <div style={{ display: "flex", gap: "5px", marginTop: "8px" }}>
                   {ad.status !== "active" && (
                     <button onClick={() => handleApprove(ad.id)} style={{ flex: 1, padding: "6px", backgroundColor: "#059669", color: "#fff", border: "none", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>✓ موافقة ونشر</button>
                   )}
                   {ad.status === "active" && (
-                    <span style={{ flex: 1, color: "#059669", fontSize: "12px", fontWeight: "bold", alignSelf: "center" }}>✓ الإعلان نشط حالياً</span>
+                    <span style={{ flex: 1, color: "#059669", fontSize: "12px", fontWeight: "bold", alignSelf: "center" }}>✓ الإعلان نشط بالواجهة</span>
                   )}
                   <button onClick={() => handleDelete(ad.id)} style={{ padding: "6px 12px", backgroundColor: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", fontSize: "12px", cursor: "pointer" }}>🗑️ حذف</button>
                 </div>
@@ -150,12 +178,3 @@ export default function AdminDashboard() {
             <input placeholder="حساب PayPal المستلم" value={paypal} onChange={(e) => setPaypal(e.target.value)} style={styIn} />
             <h4>Western Union</h4>
             <input placeholder="اسم المستلم الكامل" value={wName} onChange={(e) => setWName(e.target.value)} style={styIn} />
-            <input placeholder="الدولة والمدينة" value={wCountry} onChange={(e) => setWCountry(e.target.value)} style={styIn} />
-            <input placeholder="رقم الهاتف" value={wPhone} onChange={(e) => setWPhone(e.target.value)} style={styIn} />
-            <button onClick={handleSave} style={{ width: "100%", padding: "12px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>حفظ الإعدادات</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
