@@ -32,9 +32,28 @@ export default function HomePage() {
 
   return (
     <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '15px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e293b', padding: '12px', borderRadius: '8px', marginBottom: '20px', color: 'white' }}>
-        <h1 style={{ color: '#38bdf8', margin: 0, fontSize: '20px' }}>🚗 موقع سيارتي</h1>
-        <Link href="/login" style={{ backgroundColor: '#0ea5e9', color: 'white', padding: '6px 12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}>لوحة التحكم</Link>
+      
+      {/* شريط التنقل العلوي المطور والمعدل بالكامل للهواتف */}
+      <header style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '12px', marginBottom: '20px', color: 'white' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <h1 style={{ color: '#38bdf8', margin: 0, fontSize: '20px', fontWeight: 'bold' }}>🚗 موقع سيارتي</h1>
+          
+          {/* زر نشر إعلان مجاني */}
+          <Link href="/dashboard" style={{ backgroundColor: '#059669', color: 'white', padding: '6px 12px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}>
+            ➕ إعلان مجاني
+          </Link>
+        </div>
+
+        {/* روابط الحساب الإضافية المنسقة عمودياً وأفقياً للموبايل */}
+        <div style={{ display: 'flex', gap: '12px', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #334155', fontSize: '13px', color: '#cbd5e1' }}>
+          <Link href="/login" style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: 'bold' }}>دخول</Link>
+          <span style={{ color: '#475569' }}>|</span>
+          <Link href="/register-page" style={{ color: '#cbd5e1', textDecoration: 'none' }}>تسجيل</Link>
+          <span style={{ color: '#475569' }}>|</span>
+          <Link href="/profile-page" style={{ color: '#cbd5e1', textDecoration: 'none' }}>حسابي</Link>
+          <span style={{ color: '#475569' }}>|</span>
+          <Link href="/dashboard" style={{ color: '#cbd5e1', textDecoration: 'none' }}>لوحة التحكم</Link>
+        </div>
       </header>
 
       <main style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
