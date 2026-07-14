@@ -7,9 +7,10 @@ export default function AdminDashboard() {
   const [model, setModel] = useState("");
   const [price, setPrice] = useState("");
   const [year, setYear] = useState("");
-  const [kilometers, setKilometers] = useState("");
+  const [mileage, setMileage] = useState("");
   const [color, setColor] = useState("");
-  const [details, setDetails] = useState("");
+  const [extraInfo, setExtraInfo] = useState("");
+  const [imgCount, setImgCount] = useState(0);
   const [adsList, setAdsList] = useState<any[]>([]);
   const [paypal, setPaypal] = useState("");
   const [wName, setWName] = useState("");
@@ -34,36 +35,39 @@ export default function AdminDashboard() {
   useEffect(() => { loadData(); }, []);
 
   async function handlePublish() {
-    if (!brand || !model || !price) return alert("الرجاء تحديد الماركة والموديل السعر");
+    if (!brand || !model || !price || !year) return alert("الرجاء تحديد الماركة والموديل والسعر والسنة");
     
-    // إرسال الاسم مدمجاً ليتوافق مع الحقل القديم في الـ API وقاعدة البيانات لديك
-    const carName = brand + " " + model;
+    // تطابق كامل مع الحقول المطلوبة في ملف الـ API الخلفي لموقعك
+    const payload = {
+      title: `${brand} ${model} ${year}`,
+      price: parseFloat(price),
+      description: extraInfo || `${brand} ${model} موديل ${year}`,
+      brand: brand,
+      model: model,
+      year: parseInt(year),
+      color: color || "غير محدد",
+      mileage: parseInt(mileage) || 0,
+      extra_info: extraInfo,
+      image_url: "" // سيتم إرسال رابط الصورة الفعلي هنا بعد تفعيل خادم الصور لاحقاً
+    };
 
     try {
       const res = await fetch("/api/ads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          name: carName, 
-          price: parseFloat(price), 
-          year: parseInt(year) || 2024, 
-          kilometers: kilometers || "غير محدد", 
-          color: color || "غير محدد", 
-          details: details || "",
-          brand: brand,
-          model: model
-        })
+        body: JSON.stringify(payload)
       });
+      const resData = await res.json();
       
-      if (res.ok) { 
-        alert("🎉 تم نشر الإعلان بنجاح!"); 
-        setBrand(""); setModel(""); setPrice(""); setYear(""); setKilometers(""); setColor(""); setDetails("");
+      if (resData.success) { 
+        alert("🎉 تم نشر الإعلان بنجاح في قاعدة البيانات وبانتظار الموافقة!"); 
+        setBrand(""); setModel(""); setPrice(""); setYear(""); setMileage(""); setColor(""); setExtraInfo(""); setImgCount(0);
         loadData(); 
       } else {
-        alert("خطأ من السيرفر: لم يتم قبول الإعلان");
+        alert("فشل نشر الإعلان: " + (resData.error || "خطأ غير معروف"));
       }
     } catch(err) {
-      alert("فشل الإرسال، تحقق من الاتصال");
+      alert("فشل الإرسال، تحقق من اتصال الإنترنت");
     }
   }
 
@@ -106,13 +110,7 @@ export default function AdminDashboard() {
               <option value="">اختر السنة</option>
               {Array.from({ length: 27 }, (_, i) => String(2026 - i)).map(y => <option key={y} value={y}>{y}</option>)}
             </select>
-            <select value={kilometers} onChange={(e) => setKilometers(e.target.value)} style={styIn}>
-              <option value="">المسافة المقطوعة</option>
-              <option value="0 (وكالة)">0 (وكالة)</option>
-              <option value="1-50 ألف كم">1-50 ألف كم</option>
-              <option value="50-100 ألف كم">50-100 ألف كم</option>
-              <option value="+100 ألف كم">+100 ألف كم</option>
-            </select>
+            <input type="number" placeholder="المسافة المقطوعة (بالكيلومترات عدداً)" value={mileage} onChange={(e) => setMileage(e.target.value)} style={styIn} />
             <select value={color} onChange={(e) => setColor(e.target.value)} style={styIn}>
               <option value="">اختر اللون</option>
               <option value="أبيض">أبيض</option>
@@ -120,7 +118,16 @@ export default function AdminDashboard() {
               <option value="فضي">فضي</option>
               <option value="رمادي">رمادي</option>
             </select>
-            <textarea placeholder="معلومات إضافية..." rows={3} value={details} onChange={(e) => setDetails(e.target.value)} style={styIn}></textarea>
+            
+            {/* إستعادة زر اختيار الصور للهاتف مع عداد ذكي */}
+            <div style={{ border: "2px dashed #ccc", padding: "12px", borderRadius: "8px", marginBottom: "12px", cursor: "pointer" }}>
+              <input type="file" multiple accept="image/*" onChange={(e) => setImgCount(e.target.files?.length || 0)} style={{ display: "none" }} id="files" />
+              <label htmlFor="files" style={{ display: "block", textAlign: "center", cursor: "pointer", color: "#334155" }}>
+                📷 {imgCount > 0 ? `تم اختيار ${imgCount} صور للسيارة` : "اضغط هنا لاختيار صور السيارة من جهازك"}
+              </label>
+            </div>
+
+            <textarea placeholder="معلومات إضافية ومواصفات..." rows={3} value={extraInfo} onChange={(e) => setExtraInfo(e.target.value)} style={styIn}></textarea>
             <button onClick={handlePublish} style={{ width: "100%", padding: "12px", backgroundColor: "#059669", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>نشر الإعلان فعلياً</button>
           </div>
         )}
@@ -130,8 +137,9 @@ export default function AdminDashboard() {
             <h3>الإعلانات بموقعك</h3>
             {adsList.length === 0 ? <p>لا توجد إعلانات حالياً.</p> : adsList.map((ad: any, i: number) => (
               <div key={i} style={{ padding: "10px", border: "1px solid #eee", borderRadius: "8px", marginBottom: "8px" }}>
-                <b>{ad.name || `${ad.brand} ${ad.model}`}</b> - <span style={{ color: "#2563eb" }}>${ad.price}</span>
-                <div style={{ fontSize: "12px", color: "#666" }}>السنة: {ad.year || "غير محدد"} | اللون: {ad.color || "غير محدد"}</div>
+                <b>{ad.title || ad.name || `${ad.brand} ${ad.model}`}</b> - <span style={{ color: "#2563eb" }}>${ad.price}</span>
+                <div style={{ fontSize: "12px", color: "#666" }}>السنة: {ad.year || "غير محدد"} | اللون: {ad.color || "غير محدد"} | العداد: {ad.mileage || 0} كم</div>
+                <div style={{ fontSize: "11px", color: ad.status === "active" ? "#059669" : "#d97706", marginTop: "4px" }}>حالة الإعلان: {ad.status === "active" ? "✓ نشط ومقبول" : "⏰ في انتظار المراجعة"}</div>
               </div>
             ))}
           </div>
