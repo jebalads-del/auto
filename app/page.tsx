@@ -102,4 +102,3 @@ const [name, setName] = useState('')
     </div>
   )
 }
-EOF
