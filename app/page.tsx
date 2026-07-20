@@ -3,18 +3,15 @@ cat > app/page.tsx << 'EOF'
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("home"); 
-
-  const [name, setName] = useState('')
+const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
   useEffect(() => {
     // تحميل الإعلانات (اختياري)
     setLoading(false);
