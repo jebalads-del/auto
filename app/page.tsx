@@ -1,5 +1,3 @@
-cd ~/auto
-cat > app/page.tsx << 'EOF'
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
