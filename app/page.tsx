@@ -1,9 +1,10 @@
+cd ~/auto
+cat > app/page.tsx << 'EOF'
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 export default function HomePage() {
-  const [ads, setAds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("home"); 
 
@@ -15,17 +16,15 @@ export default function HomePage() {
   const [success, setSuccess] = useState('')
 
   useEffect(() => {
-    fetch('/api/ads').then(r => r.json()).then(d => {
-      if (Array.isArray(d)) setAds(d.filter(a => a.status === 'active'));
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    // تحميل الإعلانات (اختياري)
+    setLoading(false);
   }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(''); setSuccess(''); setLoading(true)
     try {
-      const response = await fetch('/api/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
@@ -44,7 +43,7 @@ export default function HomePage() {
     e.preventDefault()
     setError(''); setLoading(true)
     try {
-      const response = await fetch('/api/verify-otp', {
+      const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
@@ -71,10 +70,10 @@ export default function HomePage() {
         </div>
       </header>
 
-      {error && <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>}
-      {success && <div style={{ color: 'green', textAlign: 'center' }}>{success}</div>}
+      {error && <div style={{ color: 'red', textAlign: 'center', marginBottom: '15px' }}>❌ {error}</div>}
+      {success && <div style={{ color: 'green', textAlign: 'center', marginBottom: '15px' }}>✅ {success}</div>}
 
-      {view === "home" && <main>قائمة السيارات والموقع الرئيسي جاهز...</main>}
+      {view === "home" && <main style={{ textAlign: 'center', padding: '20px' }}>قائمة السيارات والموقع الرئيسي جاهز...</main>}
 
       {view === "reg" && (
         <div style={{ display: "flex", justifyContent: "center" }}>
@@ -82,9 +81,9 @@ export default function HomePage() {
             <h3>إنشاء حساب جديد</h3>
             <input placeholder="الاسم" value={name} onChange={e=>setName(e.target.value)} style={styIn} required />
             <input type="email" placeholder="البريد" value={email} onChange={e=>setEmail(e.target.value)} style={styIn} required />
-            <input type="password" placeholder="كلمة السر" value={password} onChange={e=>setPassword(e.target.value)} style={styIn} required />
-            <button type="submit" style={{ width: "100%", padding: "10px", backgroundColor: "#2563eb", color: "#fff", border: "none", borderRadius: "8px" }}>
-              {loading ? 'جاري التحقق...' : 'سجل الآن'}
+            <input type="password" placeholder="كلمة المرور" value={password} onChange={e=>setPassword(e.target.value)} style={styIn} required />
+            <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px", backgroundColor: loading ? "#93c5fd" : "#2563eb", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}>
+              {loading ? "جاري..." : "تسجيل"}
             </button>
           </form>
         </div>
@@ -93,12 +92,19 @@ export default function HomePage() {
       {view === "otp" && (
         <div style={{ display: "flex", justifyContent: "center" }}>
           <form onSubmit={handleVerifyOtp} style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "12px", width: "100%", maxWidth: "350px" }}>
-            <h3>تأكيد رمز التحقق OTP</h3>
-            <input placeholder="أدخل الرمز" value={otp} onChange={e=>setOtp(e.target.value)} style={styIn} required />
-            <button type="submit" style={{ width: "100%", padding: "10px", backgroundColor: "#10b981", color: "#fff", border: "none", borderRadius: "8px" }}>تأكيد</button>
+            <h3>التحقق من البريد</h3>
+            <p style={{ textAlign: 'center', color: '#666' }}>الكود أُرسل إلى: <strong>{email}</strong></p>
+            <input type="text" placeholder="أدخل الكود (6 أرقام)" value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g, ''))} maxLength={6} style={styIn} required />
+            <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px", backgroundColor: loading ? "#93c5fd" : "#10b981", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer", marginBottom: "10px" }}>
+              {loading ? "جاري..." : "✅ تحقق"}
+            </button>
+            <button type="button" onClick={() => setView("reg")} style={{ width: "100%", padding: "10px", backgroundColor: "#e5e7eb", color: "#374151", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>
+              ← العودة
+            </button>
           </form>
         </div>
       )}
     </div>
   )
 }
+EOF
