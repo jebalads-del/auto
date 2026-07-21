@@ -1,9 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function VerifyPage() {
+// مكون منفصل يستخدم useSearchParams
+function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
@@ -132,5 +134,14 @@ export default function VerifyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// المكون الرئيسي مع Suspense
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">جاري التحميل...</div>}>
+      <VerifyContent />
+    </Suspense>
   );
 }
