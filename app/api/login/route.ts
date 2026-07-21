@@ -12,24 +12,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // البحث عن المستخدم في قاعدة البيانات
-    const result = await db.query(
-      `SELECT id, email, password, role, status 
-       FROM users 
-       WHERE email = $1`,
-      [email]
-    );
+    const result = await sql`
+      SELECT id, email, password, role, status 
+      FROM users 
+      WHERE email = ${email}
+    `;
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return NextResponse.json(
         { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
         { status: 401 }
       );
     }
 
-    const user = result.rows[0];
+    const user = result[0];
 
-    // التحقق من كلمة المرور
     if (password !== user.password) {
       return NextResponse.json(
         { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
@@ -37,7 +34,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // التحقق من حالة الحساب
     if (user.status !== 'active') {
       return NextResponse.json(
         { success: false, message: 'الحساب غير مفعّل. يرجى التحقق من بريدك الإلكتروني' },
@@ -45,7 +41,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // التحقق من دور المستخدم
     if (user.role !== 'admin') {
       return NextResponse.json(
         { success: false, message: 'ليس لديك صلاحية الدخول إلى لوحة التحكم' },
@@ -53,7 +48,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // تسجيل الدخول ناجح
     return NextResponse.json({
       success: true,
       user: {
