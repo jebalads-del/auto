@@ -130,6 +130,7 @@ export default function CarsManagement() {
                 <th style={{ padding: '10px', textAlign: 'right' }}>المالك</th>
                 <th style={{ padding: '10px', textAlign: 'right' }}>الحالة</th>
                 <th style={{ padding: '10px', textAlign: 'right' }}>الدفع</th>
+                <th style={{ padding: '10px', textAlign: 'right' }}>التاريخ</th>
                 <th style={{ padding: '10px', textAlign: 'center' }}>الإجراءات</th>
               </tr>
             </thead>
@@ -151,6 +152,7 @@ export default function CarsManagement() {
                     {car.payment_method === 'western_union' ? '💵 ويسترن يونيون' : 
                      car.payment_method === 'paypal' ? '💳 باي بال' : '❌ لم يحدد'}
                   </td>
+                  <td style={{ padding: '10px', fontSize: '12px' }}>{formatDate(car.created_at)}</td>
                   <td style={{ padding: '10px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
                       {car.status === 'pending' && (
