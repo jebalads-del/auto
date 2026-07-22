@@ -43,23 +43,43 @@ export async function POST(request: Request) {
       RETURNING id, email, name
     `;
 
-    // إرسال OTP عبر Resend
+    console.log('✅ تم إنشاء المستخدم:', email);
+
+    // ✅ إرسال OTP عبر Resend مع النطاق الخاص
     try {
-      await resend.emails.send({
-        from: 'onboarding@resend.dev',
+      const { data, error } = await resend.emails.send({
+        from: 'noreply@sayarty.store', // ✅ تم التغيير إلى النطاق الخاص
         to: [email],
-        subject: 'رمز التحقق لتسجيل حساب في Sayarty',
+        subject: '🔐 رمز التحقق - Sayarty',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px;">
-            <h1 style="color: #4F46E5;">مرحباً بك في Sayarty! 🎉</h1>
-            <p>رمز التحقق الخاص بك هو:</p>
-            <div style="background: #F3F4F6; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; border-radius: 10px;">
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb; border-radius: 12px;">
+            <h1 style="color: #2563eb; text-align: center; margin-bottom: 20px;">🚗 Sayarty</h1>
+            <h2 style="text-align: center; color: #1e293b;">مرحباً بك! 🎉</h2>
+            <p style="text-align: center; font-size: 16px; color: #333;">رمز التحقق الخاص بك هو:</p>
+            <div style="background: white; padding: 20px; text-align: center; font-size: 36px; font-weight: bold; letter-spacing: 12px; border-radius: 10px; border: 1px solid #e2e8f0; margin: 20px 0;">
               ${otpCode}
             </div>
-            <p>هذا الرمز صالح لمدة 10 دقائق.</p>
+            <p style="text-align: center; color: #64748b; font-size: 14px;">
+              ⏳ هذا الرمز صالح لمدة 10 دقائق فقط.
+            </p>
+            <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 20px;">
+              إذا لم تقم بإنشاء هذا الحساب، يرجى تجاهل هذا البريد.
+            </p>
           </div>
         `,
       });
+
+      if (error) {
+        console.error('❌ خطأ Resend:', error);
+        return NextResponse.json({
+          success: true,
+          userId: result[0].id,
+          email: result[0].email,
+          warning: 'تم التسجيل لكن فشل إرسال البريد: ' + error.message,
+        });
+      }
+
+      console.log('✅ تم إرسال OTP إلى:', email, 'ID:', data?.id);
 
       return NextResponse.json({
         success: true,
@@ -69,17 +89,17 @@ export async function POST(request: Request) {
       });
 
     } catch (emailError) {
-      console.error('فشل إرسال البريد:', emailError);
+      console.error('❌ فشل إرسال البريد:', emailError);
       return NextResponse.json({
         success: true,
         userId: result[0].id,
         email: result[0].email,
-        warning: 'تم التسجيل لكن فشل إرسال البريد',
+        warning: 'تم التسجيل لكن فشل إرسال البريد. حاول مرة أخرى.',
       });
     }
 
   } catch (error) {
-    console.error('خطأ في التسجيل:', error);
+    console.error('❌ خطأ في التسجيل:', error);
     return NextResponse.json(
       { error: 'حدث خطأ أثناء التسجيل' },
       { status: 500 }
