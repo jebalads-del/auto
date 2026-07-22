@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     // توليد OTP جديد
     const otpCode = generateOTP();
     const otpExpiry = new Date();
-    otpExpiry.setMinutes(otpExpiry.getMinutes() + 10);
+    otpExpiry.setMinutes(otpExpiry.getMinutes() + 30);
 
     // تحديث OTP في قاعدة البيانات
     await sql`
