@@ -1,4 +1,4 @@
-'use client';
+l'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -12,12 +12,9 @@ export default function HomePage() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     setLoading(false);
-    // التحقق من حالة تسجيل الدخول
-    setIsLoggedIn(localStorage.getItem('isAdmin') === 'true');
   }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
