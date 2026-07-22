@@ -11,6 +11,6 @@ export async function GET() {
     return NextResponse.json({ success: true, users });
   } catch (error) {
     console.error('Error:', error);
-    return NextResponse.json({ success: false, message: 'Error' });
+    return NextResponse.json({ success: false, message: 'خطأ في جلب المستخدمين' });
   }
 }
