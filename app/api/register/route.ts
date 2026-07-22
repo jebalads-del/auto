@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     // توليد OTP
     const otpCode = generateOTP();
     const otpExpiry = new Date();
-    otpExpiry.setMinutes(otpExpiry.getMinutes() + 10);
+    otpExpiry.setMinutes(otpExpiry.getMinutes() + 30);
 
     // إدراج المستخدم
     const result = await sql`
