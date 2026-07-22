@@ -14,19 +14,21 @@ export default function NewCarPage() {
   const [imagePreview, setImagePreview] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
-    marca: '',
+    brand: '',        // ✅ الماركة
     model: '',
     year: new Date().getFullYear(),
     price: '',
-    mileage: '',
+    kilometers: '',   // ✅ الممشى
     color: '',
     description: '',
     payment_method: 'western_union',
-    is_free: true,
+    is_featured: false,
+    featured_price: '',
+    currency: 'USD',
   });
 
   // قوائم الماركات والموديلات
-  const brands = ['تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو', 'سيات', 'كيا', 'ميتسوبيشي', 'سوبارو', 'فولفو'];
+  const brands = ['تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو', 'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو'];
   
   const colors = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي'];
 
@@ -56,9 +58,15 @@ export default function NewCarPage() {
     setSuccess('');
 
     try {
+      if (!formData.brand || !formData.model || !formData.price) {
+        setError('الماركة، الموديل، والسعر مطلوبة');
+        setLoading(false);
+        return;
+      }
+
       const userId = localStorage.getItem('userId') || '1';
 
-      // تحويل الصور إلى Base64 (للتخزين المؤقت)
+      // تحويل الصور إلى Base64
       const imageBase64 = await Promise.all(
         images.map(file => {
           return new Promise<string>((resolve) => {
@@ -69,22 +77,33 @@ export default function NewCarPage() {
         })
       );
 
+      const payload = {
+        brand: formData.brand,
+        model: formData.model,
+        year: parseInt(formData.year.toString()) || null,
+        price: parseFloat(formData.price),
+        kilometers: formData.kilometers ? parseFloat(formData.kilometers) : null,
+        color: formData.color || null,
+        description: formData.description || null,
+        images: imageBase64,
+        user_id: parseInt(userId),
+        payment_method: formData.payment_method || 'western_union',
+        is_featured: isPaid,
+        featured_price: isPaid ? parseFloat(formData.price) * 0.1 : null,
+        currency: 'USD',
+      };
+
+      console.log('جاري إرسال:', payload);
+
       const response = await fetch('/api/admin/cars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price) || 0,
-          mileage: formData.mileage ? parseFloat(formData.mileage) : null,
-          user_id: parseInt(userId),
-          is_free: !isPaid,
-          images: imageBase64,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setSuccess('✅ تم إرسال الإعلان للمراجعة بنجاح!');
         setTimeout(() => {
           router.push('/dashboard/cars');
@@ -92,7 +111,8 @@ export default function NewCarPage() {
       } else {
         setError(data.message || 'حدث خطأ أثناء نشر الإعلان');
       }
-    } catch {
+    } catch (error) {
+      console.error('خطأ:', error);
       setError('خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);
@@ -143,8 +163,8 @@ export default function NewCarPage() {
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الماركة *</label>
             <select
               required
-              value={formData.marca}
-              onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
+              value={formData.brand}
+              onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
               style={styIn}
             >
               <option value="">اختر الماركة</option>
@@ -202,6 +222,7 @@ export default function NewCarPage() {
               style={styIn}
               placeholder="0"
               min="0"
+              step="0.01"
             />
           </div>
 
@@ -210,8 +231,8 @@ export default function NewCarPage() {
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الممشى (كم)</label>
             <input
               type="number"
-              value={formData.mileage}
-              onChange={(e) => setFormData({ ...formData, mileage: e.target.value })}
+              value={formData.kilometers}
+              onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })}
               style={styIn}
               placeholder="0"
               min="0"
