@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import sql from '../../db';
 
 export async function GET() {
@@ -20,30 +20,67 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const body = await request.json();
+    console.log('📦 البيانات المستلمة من الواجهة:', body);
+    
+    // ✅ استقبال الحقول بالاسم الصحيح
     const { 
-      marca, model, year, price, mileage, color, 
-      description, images, user_id, payment_method 
-    } = await request.json();
+      brand,        // الماركة
+      model,        // الموديل
+      year,         // السنة
+      price,        // السعر
+      kilometers,   // الممشى
+      color,        // اللون
+      description,  // الوصف
+      images,       // الصور
+      user_id,      // معرف المستخدم
+      payment_method, // طريقة الدفع
+      is_featured,  // هل هو مميز؟
+      featured_price, // سعر التميز
+      currency      // العملة
+    } = body;
 
-    if (!marca || !model || !price) {
+    // ✅ التحقق من الحقول المطلوبة
+    if (!brand || !model || price === undefined || price === null || price === '') {
+      console.log('❌ الحقول المطلوبة مفقودة:', { brand, model, price });
       return NextResponse.json(
         { success: false, message: 'الماركة، الموديل، والسعر مطلوبة' },
         { status: 400 }
       );
     }
 
+    // التحقق من وجود user_id
+    const userId = user_id || 1;
+
+    // التحقق من وجود المستخدم
+    const userCheck = await sql`
+      SELECT id FROM users WHERE id = ${userId}
+    `;
+
+    if (userCheck.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'المستخدم غير موجود' },
+        { status: 400 }
+      );
+    }
+
+    // إدراج الإعلان في قاعدة البيانات
     const result = await sql`
       INSERT INTO cars (
-        marca, model, year, price, mileage, color, 
-        description, images, user_id, payment_method, status
+        brand, model, year, price, kilometers, color, 
+        description, images, user_id, payment_method, 
+        is_featured, featured_price, currency, status
       ) VALUES (
-        ${marca}, ${model}, ${year}, ${price}, ${mileage}, ${color},
-        ${description}, ${images}, ${user_id}, ${payment_method}, 'pending'
+        ${brand}, ${model}, ${year || null}, ${parseFloat(price)}, ${kilometers || null}, ${color || null},
+        ${description || null}, ${images || null}, ${userId}, ${payment_method || 'western_union'},
+        ${is_featured || false}, ${featured_price || null}, ${currency || 'USD'}, 'pending'
       )
       RETURNING *
     `;
+
+    console.log('✅ تم إنشاء الإعلان:', result[0]);
 
     return NextResponse.json({ 
       success: true, 
@@ -52,9 +89,9 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('خطأ في إنشاء الإعلان:', error);
+    console.error('❌ خطأ في إنشاء الإعلان:', error);
     return NextResponse.json(
-      { success: false, message: 'حدث خطأ أثناء إنشاء الإعلان' },
+      { success: false, message: 'حدث خطأ أثناء إنشاء الإعلان: ' + (error as Error).message },
       { status: 500 }
     );
   }
