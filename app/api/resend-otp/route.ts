@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     // إرسال OTP عبر Resend
     try {
-      const { data, error } = await resend.emails.send({
+      const { error } = await resend.emails.send({
         from: 'noreply@sayarty.store',
         to: [email],
         subject: '🔐 إعادة إرسال رمز التحقق - Sayarty',
