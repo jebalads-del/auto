@@ -22,20 +22,21 @@ export default function HomePage() {
     setSuccess('')
     setLoading(true)
     try {
-      const response = await fetch('/api/auth/register', {
+      // ✅ تم التعديل: المسار الصحيح هو /api/register
+      const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       })
       const data = await response.json()
       if (response.ok && data.success) {
-        setSuccess('تم إرسال كود التحقق بنجاح!')
+        setSuccess('✅ تم إرسال كود التحقق بنجاح!')
         setView("otp")
       } else {
         setError(data.error || 'خطأ في التسجيل')
       }
     } catch {
-      setError('خطأ في الاتصال')
+      setError('❌ خطأ في الاتصال')
     } finally {
       setLoading(false)
     }
@@ -46,7 +47,8 @@ export default function HomePage() {
     setError('')
     setLoading(true)
     try {
-      const response = await fetch('/api/auth/verify-otp', {
+      // ✅ تم التعديل: المسار الصحيح هو /api/verify-otp
+      const response = await fetch('/api/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
@@ -75,50 +77,71 @@ export default function HomePage() {
 
   return (
     <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '15px', textAlign: 'right' }}>
-      <header style={{ backgroundColor: '#1e293b', padding: '12px', borderRadius: '12px', marginBottom: '20px', color: 'white' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 onClick={() => setView("home")} style={{ color: '#38bdf8', margin: 0, fontSize: '18px', cursor: 'pointer' }}>🚗 سيارتي</h1>
-          <Link href="/dashboard" style={{ backgroundColor: '#059669', color: 'white', padding: '6px 12px', borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' }}>➕ إعلان مجاني</Link>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '10px', fontSize: '12px', color: '#cbd5e1' }}>
-          <Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none' }}>دخول</Link>
-          <span>|</span>
-          <span onClick={() => setView("reg")} style={{ cursor: "pointer", color: view === "reg" ? "#38bdf8" : "#fff" }}>تسجيل</span>
-        </div>
-      </header>
+      
+      {/* 🔥🔥🔥 رسالة ثابتة للتحقق من التحديث 🔥🔥🔥 */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        background: '#dc2626',
+        color: 'white',
+        padding: '14px',
+        fontSize: '22px',
+        zIndex: 9999,
+        textAlign: 'center',
+        fontWeight: 'bold',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
+      }}>
+        ✅ النسخة الجديدة 2.0 - تم التحديث بنجاح! 🚀
+      </div>
 
-      {error && <div style={{ color: 'red', textAlign: 'center', marginBottom: '15px' }}>❌ {error}</div>}
-      {success && <div style={{ color: 'green', textAlign: 'center', marginBottom: '15px' }}>✅ {success}</div>}
+      {/* إضافة هامش علوي حتى لا تخفي الرسالة المحتوى */}
+      <div style={{ paddingTop: '70px' }}>
+        <header style={{ backgroundColor: '#1e293b', padding: '12px', borderRadius: '12px', marginBottom: '20px', color: 'white' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h1 onClick={() => setView("home")} style={{ color: '#38bdf8', margin: 0, fontSize: '18px', cursor: 'pointer' }}>🚗 سيارتي</h1>
+            <Link href="/dashboard" style={{ backgroundColor: '#059669', color: 'white', padding: '6px 12px', borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' }}>➕ إعلان مجاني</Link>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px', fontSize: '12px', color: '#cbd5e1' }}>
+            <Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none' }}>دخول</Link>
+            <span>|</span>
+            <span onClick={() => setView("reg")} style={{ cursor: "pointer", color: view === "reg" ? "#38bdf8" : "#fff" }}>تسجيل</span>
+          </div>
+        </header>
 
-      {view === "home" && <main style={{ textAlign: 'center', padding: '20px' }}>قائمة السيارات والموقع الرئيسي جاهز...</main>}
+        {error && <div style={{ color: 'red', textAlign: 'center', marginBottom: '15px' }}>❌ {error}</div>}
+        {success && <div style={{ color: 'green', textAlign: 'center', marginBottom: '15px' }}>✅ {success}</div>}
 
-      {view === "reg" && (
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <form onSubmit={handleRegister} style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "12px", width: "100%", maxWidth: "350px" }}>
-            <h3>إنشاء حساب جديد</h3>
-            <input placeholder="الاسم" value={name} onChange={e => setName(e.target.value)} style={styIn} required />
-            <input type="email" placeholder="البريد" value={email} onChange={e => setEmail(e.target.value)} style={styIn} required />
-            <input type="password" placeholder="كلمة المرور" value={password} onChange={e => setPassword(e.target.value)} style={styIn} required />
-            <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px", backgroundColor: loading ? "#93c5fd" : "#2563eb", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}>
-              {loading ? "2جاري الإرسال..." : "إرسال الكود"}
-            </button>
-          </form>
-        </div>
-      )}
+        {view === "home" && <main style={{ textAlign: 'center', padding: '20px' }}>قائمة السيارات والموقع الرئيسي جاهز...</main>}
 
-      {view === "otp" && (
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <form onSubmit={handleVerifyOtp} style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "12px", width: "100%", maxWidth: "350px" }}>
-            <h3>التحقق من البريد</h3>
-            <p style={{ textAlign: "center", color: "#666" }}>الكود أُرسل إلى: <strong>{email}</strong></p>
-            <input type="text" placeholder="أدخل الكود (6 أرقام)" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} maxLength={6} style={styIn} required />
-            <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px", backgroundColor: loading ? "#93c5fd" : "#10b981", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}>
-              {loading ? "جاري التحقق..." : "تحقق"}
-            </button>
-          </form>
-        </div>
-      )}
-    
-   </div>
+        {view === "reg" && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <form onSubmit={handleRegister} style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "12px", width: "100%", maxWidth: "350px" }}>
+              <h3>إنشاء حساب جديد</h3>
+              <input placeholder="الاسم" value={name} onChange={e => setName(e.target.value)} style={styIn} required />
+              <input type="email" placeholder="البريد" value={email} onChange={e => setEmail(e.target.value)} style={styIn} required />
+              <input type="password" placeholder="كلمة المرور" value={password} onChange={e => setPassword(e.target.value)} style={styIn} required />
+              <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px", backgroundColor: loading ? "#93c5fd" : "#2563eb", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}>
+                {loading ? "جاري الإرسال..." : "إرسال الكود 2 ✅"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {view === "otp" && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <form onSubmit={handleVerifyOtp} style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "12px", width: "100%", maxWidth: "350px" }}>
+              <h3>التحقق من البريد</h3>
+              <p style={{ textAlign: "center", color: "#666" }}>الكود أُرسل إلى: <strong>{email}</strong></p>
+              <input type="text" placeholder="أدخل الكود (6 أرقام)" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} maxLength={6} style={styIn} required />
+              <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px", backgroundColor: loading ? "#93c5fd" : "#10b981", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}>
+                {loading ? "جاري التحقق..." : "تحقق"}
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
