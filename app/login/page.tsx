@@ -12,42 +12,39 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    try {
-      if (!email || !password) {
-        setError('الرجاء ملء جميع الحقول');
-        setLoading(false);
-        return;
-      }
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-      // ✅ الاتصال بـ API للتحقق من قاعدة البيانات
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    const data = await response.json();
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // حفظ جلسة المستخدم
-        localStorage.setItem('isAdmin', 'true');
-        localStorage.setItem('userEmail', email);
-        router.push('/dashboard');
-      } else {
-        setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة!');
-      }
-    } catch (err) {
-      setError('حدث خطأ غير متوقع أثناء تسجيل الدخول');
-    } finally {
-      setLoading(false);
+    if (response.ok && data.success) {
+      // ✅ حفظ جلسة المستخدم
+      localStorage.setItem('isAdmin', 'true');
+      localStorage.setItem('userEmail', email);
+      localStorage.setItem('userId', data.user.id.toString());
+      
+      // ✅ الحصول على مسار إعادة التوجيه
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectPath = searchParams.get('redirect') || '/dashboard';
+      
+      router.push(redirectPath);
+    } else {
+      setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة!');
     }
-  };
+  } catch (err) {
+    setError('حدث خطأ غير متوقع أثناء تسجيل الدخول');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{ padding: '20px', direction: 'rtl', fontFamily: 'sans-serif' }}>
