@@ -22,7 +22,6 @@ export default function HomePage() {
     setSuccess('')
     setLoading(true)
     try {
-      // ✅ تم التعديل: المسار الصحيح هو /api/register
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,7 +46,6 @@ export default function HomePage() {
     setError('')
     setLoading(true)
     try {
-      // ✅ تم التعديل: المسار الصحيح هو /api/verify-otp
       const response = await fetch('/api/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,7 +76,7 @@ export default function HomePage() {
   return (
     <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '15px', textAlign: 'right' }}>
       
-      {/* 🔥🔥🔥 رسالة ثابتة للتحقق من التحديث 🔥🔥🔥 */}
+      {/* رسالة ثابتة للتحقق */}
       <div style={{
         position: 'fixed',
         top: 0,
@@ -96,12 +94,14 @@ export default function HomePage() {
         ✅ النسخة الجديدة 2.0 - تم التحديث بنجاح! 🚀
       </div>
 
-      {/* إضافة هامش علوي حتى لا تخفي الرسالة المحتوى */}
       <div style={{ paddingTop: '70px' }}>
         <header style={{ backgroundColor: '#1e293b', padding: '12px', borderRadius: '12px', marginBottom: '20px', color: 'white' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h1 onClick={() => setView("home")} style={{ color: '#38bdf8', margin: 0, fontSize: '18px', cursor: 'pointer' }}>🚗 سيارتي</h1>
-            <Link href="/dashboard" style={{ backgroundColor: '#059669', color: 'white', padding: '6px 12px', borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' }}>➕ إعلان مجاني</Link>
+            {/* ✅ الرابط الصحيح لنشر الإعلان */}
+            <Link href="/dashboard/cars/new" style={{ backgroundColor: '#059669', color: 'white', padding: '6px 12px', borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' }}>
+              ➕ إعلان مجاني
+            </Link>
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px', fontSize: '12px', color: '#cbd5e1' }}>
             <Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none' }}>دخول</Link>
