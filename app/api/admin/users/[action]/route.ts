@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import sql from '../../../db';
 
 export async function POST(
-  request: Request,
-  { params }: { params: { action: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ action: string }> }
 ) {
   try {
     const { userId } = await request.json();
-    const { action } = params;
+    const { action } = await params;
 
     if (!userId) {
       return NextResponse.json(
