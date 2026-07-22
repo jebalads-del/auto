@@ -100,7 +100,7 @@ export default function HomePage() {
             <input type="email" placeholder="البريد" value={email} onChange={e => setEmail(e.target.value)} style={styIn} required />
             <input type="password" placeholder="كلمة المرور" value={password} onChange={e => setPassword(e.target.value)} style={styIn} required />
             <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px", backgroundColor: loading ? "#93c5fd" : "#2563eb", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}>
-              {loading ? "جاري الإرسال..." : "إرسال الكود"}
+              {loading ? "2جاري الإرسال..." : "إرسال الكود"}
             </button>
           </form>
         </div>
