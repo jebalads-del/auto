@@ -41,23 +41,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ السماح للجميع، لكن توجيه المستخدم العادي إلى صفحة مختلفة
-if (user.role === 'admin') {
-  // توجيه إلى لوحة التحكم
-  return NextResponse.json({
-    success: true,
-    user: { id: user.id, email: user.email, role: user.role },
-    redirect: '/dashboard'
-  });
-} else {
-  // توجيه المستخدم العادي إلى صفحة الإعلانات أو الملف الشخصي
-  return NextResponse.json({
-    success: true,
-    user: { id: user.id, email: user.email, role: user.role },
-    redirect: '/'
-  });
+    
+// ✅ منع المستخدم العادي من دخول لوحة التحكم
+if (user.role !== 'admin') {
+  return NextResponse.json(
+    { success: false, message: 'ليس لديك صلاحية الدخول إلى لوحة التحكم' },
+    { status: 403 }
+  );
 }
 
+return NextResponse.json({
+  success: true,
+  user: { id: user.id, email: user.email, role: user.role },
+});
     return NextResponse.json({
       success: true,
       user: {
