@@ -2,11 +2,10 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // التحقق من وجود جلسة نشطة
   const isLoggedIn = request.cookies.get('isAdmin')?.value === 'true';
   const path = request.nextUrl.pathname;
   
-  // المسارات المحمية (تتطلب تسجيل الدخول)
+  // المسارات المحمية
   const protectedPaths = [
     '/dashboard',
     '/dashboard/cars',
@@ -15,12 +14,10 @@ export function middleware(request: NextRequest) {
     '/dashboard/settings',
   ];
 
-  // التحقق مما إذا كان المسار محمياً
   const isProtected = protectedPaths.some(p => path.startsWith(p));
 
-  // إذا كان المسار محمياً والمستخدم غير مسجل الدخول
+  // ✅ إذا كان المسار محمياً والمستخدم غير مسجل
   if (isProtected && !isLoggedIn) {
-    // حفظ المسار الذي حاول الوصول إليه للرجوع إليه بعد تسجيل الدخول
     const redirectUrl = new URL('/login', request.url);
     redirectUrl.searchParams.set('redirect', path);
     return NextResponse.redirect(redirectUrl);
