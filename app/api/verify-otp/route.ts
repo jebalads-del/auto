@@ -3,12 +3,12 @@ import sql from '../db';
 
 export async function POST(request: Request) {
   try {
-    const { email, otp } = await request.json();
+    const { email, otpCode } = await request.json();
     const users = await sql`SELECT * FROM users WHERE email = ${email}`;
     if (!users || users.length === 0) return NextResponse.json({ error: 'المستخدم غير موجود' }, { status: 404 });
 
     const user = users[0];
-    if (user.otp_code === otp) {
+    if (user.otp_code === otpCode) {
       await sql`UPDATE users SET status = 'active', otp_code = null WHERE email = ${email}`;
       return NextResponse.json({ success: true });
     }
