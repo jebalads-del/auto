@@ -3,7 +3,6 @@ import sql from '../../db';
 
 export async function GET() {
   try {
-    // جلب الإعدادات من قاعدة البيانات
     const settings = await sql`
       SELECT * FROM site_settings WHERE key IN (
         'western_union', 'paypal', 'premium_plan', 'commercial_ad'
@@ -29,7 +28,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // حفظ الإعدادات في قاعدة البيانات
     for (const [key, value] of Object.entries(body)) {
       await sql`
         INSERT INTO site_settings (key, value) 
