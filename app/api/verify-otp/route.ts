@@ -5,6 +5,9 @@ export async function POST(request: Request) {
   try {
     const { email, otpCode } = await request.json();
 
+    console.log('📩 طلب التحقق:', { email, otpCode });
+    console.log('📩 نوع otpCode:', typeof otpCode);
+
     if (!email || !otpCode) {
       return NextResponse.json(
         { error: 'البريد الإلكتروني ورمز التحقق مطلوبان' },
@@ -12,12 +15,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ استخدام استعلام آمن مع SQL
     const users = await sql`
       SELECT id, email, otp_code, otp_expires_at, status 
       FROM users 
       WHERE email = ${email} AND status = 'pending'
     `;
+
+    console.log('🔍 نتيجة البحث:', users);
 
     if (!users || users.length === 0) {
       return NextResponse.json(
@@ -28,15 +32,20 @@ export async function POST(request: Request) {
 
     const user = users[0];
 
-    // ✅ التحقق من صلاحية OTP
-    if (user.otp_code !== otpCode) {
+    // ✅ تحويل كلاهما إلى String للمقارنة
+    const dbOtp = String(user.otp_code).trim();
+    const inputOtp = String(otpCode).trim();
+
+    console.log('🔍 مقارنة:', { dbOtp, inputOtp, dbType: typeof user.otp_code, inputType: typeof otpCode });
+
+    if (dbOtp !== inputOtp) {
       return NextResponse.json(
         { error: 'رمز التحقق غير صحيح' },
         { status: 400 }
       );
     }
 
-    // ✅ التحقق من انتهاء الصلاحية
+    // ✅ التحقق من الصلاحية
     const now = new Date();
     const expiry = new Date(user.otp_expires_at);
     if (now > expiry) {
@@ -52,6 +61,8 @@ export async function POST(request: Request) {
       SET status = 'active', otp_code = NULL, otp_expires_at = NULL 
       WHERE id = ${user.id}
     `;
+
+    console.log('✅ تم تفعيل المستخدم:', email);
 
     return NextResponse.json({
       success: true,
