@@ -23,8 +23,6 @@ export default function LoginPage() {
         return;
       }
 
-      console.log('محاولة تسجيل دخول:', { email });
-
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,10 +37,8 @@ export default function LoginPage() {
         localStorage.setItem('userEmail', email);
         localStorage.setItem('userId', data.user.id?.toString() || '1');
         
-        // الحصول على مسار إعادة التوجيه
-        const searchParams = new URLSearchParams(window.location.search);
-        const redirectPath = searchParams.get('redirect') || '/dashboard';
-        
+        // ✅ التوجيه حسب الدور (المستخدم العادي أو الأدمن)
+        const redirectPath = data.redirect || '/dashboard';
         router.push(redirectPath);
       } else {
         setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة!');
@@ -142,7 +138,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* ✅ الأزرار الجديدة */}
         <div style={{ marginTop: '25px', textAlign: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
           <div style={{ marginBottom: '10px' }}>
             <Link 
@@ -173,7 +168,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* إضافة مسار للرجوع للرئيسية */}
         <div style={{ marginTop: '15px', textAlign: 'center' }}>
           <Link 
             href="/" 
