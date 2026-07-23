@@ -1,5 +1,21 @@
 'use client';
+const [cars, setCars] = useState([]);
 
+useEffect(() => {
+  fetchCars();
+}, []);
+
+const fetchCars = async () => {
+  try {
+    const response = await fetch('/api/cars');
+    const data = await response.json();
+    if (data.success) {
+      setCars(data.cars);
+    }
+  } catch (error) {
+    console.error('خطأ:', error);
+  }
+};
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
