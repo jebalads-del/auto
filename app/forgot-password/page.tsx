@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -25,8 +27,11 @@ export default function ForgotPasswordPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('✅ تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
-        setEmail('');
+        setMessage('✅ تم إرسال كود إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+        // ✅ التوجيه إلى صفحة إدخال الكود مع تمرير الإيميل
+        setTimeout(() => {
+          router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+        }, 1500);
       } else {
         setError(data.message || 'حدث خطأ، يرجى المحاولة مرة أخرى');
       }
@@ -64,7 +69,7 @@ export default function ForgotPasswordPage() {
           🔑 نسيت كلمة المرور؟
         </h2>
         <p style={{ textAlign: 'center', color: '#64748b', fontSize: '14px', marginBottom: '25px' }}>
-          أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور
+          أدخل بريدك الإلكتروني وسنرسل لك كوداً لإعادة تعيين كلمة المرور
         </p>
 
         {message && (
@@ -142,7 +147,7 @@ export default function ForgotPasswordPage() {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
+            {loading ? 'جاري الإرسال...' : 'إرسال كود إعادة التعيين'}
           </button>
         </form>
 
