@@ -5,6 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     const { carId, action } = await request.json();
 
+    console.log('📩 طلب:', { carId, action });
+
     if (!carId || !action) {
       return NextResponse.json(
         { success: false, message: 'معرف الإعلان والإجراء مطلوبان' },
@@ -19,35 +21,35 @@ export async function POST(request: NextRequest) {
       case 'approve':
         query = sql`
           UPDATE cars 
-          SET status = 'approved' 
+          SET status = 'approved', updated_at = NOW()
           WHERE id = ${carId}
         `;
-        message = 'تمت الموافقة على الإعلان بنجاح';
+        message = '✅ تمت الموافقة على الإعلان بنجاح';
         break;
 
       case 'reject':
         query = sql`
           UPDATE cars 
-          SET status = 'rejected' 
+          SET status = 'rejected', updated_at = NOW()
           WHERE id = ${carId}
         `;
-        message = 'تم رفض الإعلان';
+        message = '❌ تم رفض الإعلان';
         break;
 
       case 'sold':
         query = sql`
           UPDATE cars 
-          SET status = 'sold' 
+          SET status = 'sold', updated_at = NOW()
           WHERE id = ${carId}
         `;
-        message = 'تم وضع علامة مباع على الإعلان';
+        message = '💰 تم وضع علامة مباع على الإعلان';
         break;
 
       case 'delete':
         query = sql`
           DELETE FROM cars WHERE id = ${carId}
         `;
-        message = 'تم حذف الإعلان بنجاح';
+        message = '🗑️ تم حذف الإعلان بنجاح';
         break;
 
       default:
@@ -59,11 +61,13 @@ export async function POST(request: NextRequest) {
 
     if (query) {
       await query;
+      console.log(`✅ ${action} تم تنفيذها على السيارة ${carId}`);
     }
+    
     return NextResponse.json({ success: true, message });
 
   } catch (error) {
-    console.error('خطأ في التحكم بالإعلان:', error);
+    console.error('❌ خطأ في التحكم بالإعلان:', error);
     return NextResponse.json(
       { success: false, message: 'حدث خطأ أثناء تنفيذ الإجراء' },
       { status: 500 }
