@@ -6,7 +6,6 @@ export async function POST(request: Request) {
     const { email, otpCode } = await request.json();
 
     console.log('📩 طلب التحقق:', { email, otpCode });
-    console.log('📩 نوع otpCode:', typeof otpCode);
 
     if (!email || !otpCode) {
       return NextResponse.json(
@@ -15,28 +14,32 @@ export async function POST(request: Request) {
       );
     }
 
-    const users = await sql`
+    // ✅ البحث عن المستخدم
+    const result = await sql`
       SELECT id, email, otp_code, otp_expires_at, status 
       FROM users 
       WHERE email = ${email} AND status = 'pending'
     `;
 
-    console.log('🔍 نتيجة البحث:', users);
+    console.log('🔍 نتيجة البحث:', result);
 
-    if (!users || users.length === 0) {
+    if (result.length === 0) {
       return NextResponse.json(
         { error: 'المستخدم غير موجود أو تم التحقق منه بالفعل' },
         { status: 404 }
       );
     }
 
-    const user = users[0];
+    const user = result[0];
 
-    // ✅ تحويل كلاهما إلى String للمقارنة
+    console.log('🔍 OTP في قاعدة البيانات:', user.otp_code, 'type:', typeof user.otp_code);
+    console.log('🔍 OTP المدخل:', otpCode, 'type:', typeof otpCode);
+
+    // ✅ مقارنة الأرقام (تحويل إلى String للتأكد)
     const dbOtp = String(user.otp_code).trim();
     const inputOtp = String(otpCode).trim();
 
-    console.log('🔍 مقارنة:', { dbOtp, inputOtp, dbType: typeof user.otp_code, inputType: typeof otpCode });
+    console.log('🔍 بعد التحويل:', { dbOtp, inputOtp });
 
     if (dbOtp !== inputOtp) {
       return NextResponse.json(
@@ -45,12 +48,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ التحقق من الصلاحية
+    // ✅ التحقق من صلاحية OTP
     const now = new Date();
     const expiry = new Date(user.otp_expires_at);
+
     if (now > expiry) {
       return NextResponse.json(
-        { error: 'انتهت صلاحية رمز التحقق' },
+        { error: 'انتهت صلاحية رمز التحقق، يرجى طلب رمز جديد' },
         { status: 400 }
       );
     }
