@@ -1,23 +1,21 @@
 'use client';
-const [cars, setCars] = useState([]);
 
-useEffect(() => {
-  fetchCars();
-}, []);
-
-const fetchCars = async () => {
-  try {
-    const response = await fetch('/api/cars');
-    const data = await response.json();
-    if (data.success) {
-      setCars(data.cars);
-    }
-  } catch (error) {
-    console.error('خطأ:', error);
-  }
-};
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+
+interface Car {
+  id: number;
+  brand: string;
+  model: string;
+  year: number;
+  price: number;
+  kilometers: number;
+  color: string;
+  description: string;
+  images: string[];
+  status: string;
+  created_at: string;
+}
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
@@ -28,10 +26,26 @@ export default function HomePage() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [cars, setCars] = useState<Car[]>([]);
 
+  // جلب الإعلانات الموافق عليها
   useEffect(() => {
-    setLoading(false);
+    fetchCars();
   }, []);
+
+  const fetchCars = async () => {
+    try {
+      const response = await fetch('/api/cars');
+      const data = await response.json();
+      if (data.success) {
+        setCars(data.cars);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الإعلانات:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,13 +101,11 @@ export default function HomePage() {
   };
 
   const handleAddClick = (e: React.MouseEvent) => {
-    // التحقق من وجود جلسة نشطة
     const isLoggedIn = localStorage.getItem('isAdmin') === 'true';
     if (!isLoggedIn) {
       e.preventDefault();
       window.location.href = '/login?redirect=/dashboard/cars/new';
     }
-    // إذا كان مسجلاً، سيتم التوجيه بشكل طبيعي
   };
 
   const styIn = {
@@ -228,9 +240,73 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* ✅ عرض الإعلانات الموافق عليها */}
         {view === 'home' && (
-          <main style={{ textAlign: 'center', padding: '20px' }}>
-            قائمة السيارات والموقع الرئيسي جاهز...
+          <main>
+            <h2 style={{ fontSize: '20px', marginBottom: '15px' }}>🚗 السيارات المتاحة</h2>
+            {loading ? (
+              <p>جاري التحميل...</p>
+            ) : cars.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>
+                لا توجد سيارات متاحة حالياً
+              </p>
+            ) : (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                  gap: '20px',
+                }}
+              >
+                {cars.map((car) => (
+                  <div
+                    key={car.id}
+                    style={{
+                      backgroundColor: 'white',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      transition: 'transform 0.2s',
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.transform = 'scale(1.02)')
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.transform = 'scale(1)')
+                    }
+                  >
+                    <div style={{ padding: '15px' }}>
+                      <h3 style={{ fontSize: '18px', margin: '0 0 5px 0' }}>
+                        {car.brand} {car.model}
+                      </h3>
+                      <p style={{ color: '#2563eb', fontSize: '20px', fontWeight: 'bold', margin: '5px 0' }}>
+                        ${car.price.toLocaleString()}
+                      </p>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '5px',
+                          fontSize: '14px',
+                          color: '#64748b',
+                          marginTop: '10px',
+                        }}
+                      >
+                        <span>📅 {car.year}</span>
+                        <span>📏 {car.kilometers?.toLocaleString() || 0} كم</span>
+                        <span>🎨 {car.color || 'غير محدد'}</span>
+                        <span>📅 {new Date(car.created_at).toLocaleDateString('ar-SA')}</span>
+                      </div>
+                      {car.description && (
+                        <p style={{ fontSize: '14px', color: '#64748b', marginTop: '10px' }}>
+                          {car.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </main>
         )}
 
