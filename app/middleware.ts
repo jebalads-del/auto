@@ -2,15 +2,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
-  
   // ✅ استثناء جميع مسارات API
-  if (path.startsWith('/api/')) {
+  if (request.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
   // ✅ التحقق من تسجيل الدخول للمسارات المحمية
   const isLoggedIn = request.cookies.get('isAdmin')?.value === 'true';
+  const path = request.nextUrl.pathname;
   
   const protectedPaths = [
     '/dashboard',
@@ -31,7 +30,6 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// ✅ تطبيق الميدلوير على كل شيء ما عدا API والملفات الثابتة
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
