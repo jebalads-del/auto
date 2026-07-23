@@ -41,12 +41,13 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.role !== 'admin') {
-      return NextResponse.json(
-        { success: false, message: 'ليس لديك صلاحية الدخول إلى لوحة التحكم' },
-        { status: 403 }
-      );
-    }
+    // ✅ السماح للمستخدمين العاديين والأدمن
+if (user.role !== 'admin' && user.role !== 'user') {
+  return NextResponse.json(
+    { success: false, message: 'ليس لديك صلاحية الدخول إلى لوحة التحكم' },
+    { status: 403 }
+  );
+}
 
     return NextResponse.json({
       success: true,
