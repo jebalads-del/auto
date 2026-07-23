@@ -4,6 +4,10 @@ import sql from '../db';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 export async function POST(request: Request) {
   try {
     const { email } = await request.json();
@@ -27,37 +31,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // توليد رابط إعادة تعيين كلمة السر (مؤقت)
-    const resetToken = Math.random().toString(36).substring(2, 15);
-    const resetExpiry = new Date();
-    resetExpiry.setHours(resetExpiry.getHours() + 1);
+    // توليد OTP
+    const otpCode = generateOTP();
+    const otpExpiry = new Date();
+    otpExpiry.setMinutes(otpExpiry.getMinutes() + 30); // 30 دقيقة
 
-    // حفظ الرابط في قاعدة البيانات (يمكنك إضافة جدول password_resets)
+    // حفظ OTP في قاعدة البيانات (نفس جدول users)
     await sql`
-      INSERT INTO password_resets (email, token, expires_at)
-      VALUES (${email}, ${resetToken}, ${resetExpiry})
+      UPDATE users 
+      SET reset_otp = ${otpCode}, reset_otp_expires_at = ${otpExpiry}
+      WHERE email = ${email}
     `;
 
-    // إرسال البريد
-    const resetLink = `${process.env.NEXTAUTH_URL || 'https://sayarty.store'}/reset-password?token=${resetToken}`;
-
+    // إرسال OTP عبر البريد
     await resend.emails.send({
       from: 'noreply@sayarty.store',
       to: [email],
-      subject: '🔑 إعادة تعيين كلمة المرور',
+      subject: '🔑 إعادة تعيين كلمة المرور - كود التحقق',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb; border-radius: 12px;">
           <h1 style="color: #2563eb; text-align: center;">🔑 إعادة تعيين كلمة المرور</h1>
           <p style="text-align: center; font-size: 16px; color: #333;">
             لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بك.
           </p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetLink}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-              إعادة تعيين كلمة المرور
-            </a>
+          <p style="text-align: center; font-size: 16px; color: #333;">
+            استخدم الكود التالي لإعادة تعيين كلمة المرور:
+          </p>
+          <div style="background: white; padding: 20px; text-align: center; font-size: 36px; font-weight: bold; letter-spacing: 12px; border-radius: 10px; border: 1px solid #e2e8f0; margin: 20px 0;">
+            ${otpCode}
           </div>
           <p style="text-align: center; color: #64748b; font-size: 14px;">
-            هذا الرابط صالح لمدة ساعة واحدة فقط.
+            ⏳ هذا الكود صالح لمدة 30 دقيقة فقط.
           </p>
           <p style="text-align: center; color: #94a3b8; font-size: 12px;">
             إذا لم تقم بطلب إعادة التعيين، يرجى تجاهل هذا البريد.
@@ -68,13 +72,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
+      message: 'تم إرسال كود إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
     });
 
   } catch (error) {
     console.error('❌ خطأ في إعادة تعيين كلمة السر:', error);
     return NextResponse.json(
-      { message: 'حدث خطأ أثناء إرسال رابط إعادة التعيين' },
+      { message: 'حدث خطأ أثناء إرسال كود إعادة التعيين' },
       { status: 500 }
     );
   }
