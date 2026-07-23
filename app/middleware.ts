@@ -2,10 +2,16 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const isLoggedIn = request.cookies.get('isAdmin')?.value === 'true';
   const path = request.nextUrl.pathname;
   
-  // المسارات المحمية
+  // ✅ استثناء مسارات API من الحماية
+  if (path.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
+  const isLoggedIn = request.cookies.get('isAdmin')?.value === 'true';
+  
+  // المسارات المحمية (باستثناء API)
   const protectedPaths = [
     '/dashboard',
     '/dashboard/cars',
@@ -16,7 +22,6 @@ export function middleware(request: NextRequest) {
 
   const isProtected = protectedPaths.some(p => path.startsWith(p));
 
-  // ✅ إذا كان المسار محمياً والمستخدم غير مسجل
   if (isProtected && !isLoggedIn) {
     const redirectUrl = new URL('/login', request.url);
     redirectUrl.searchParams.set('redirect', path);
@@ -27,5 +32,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
