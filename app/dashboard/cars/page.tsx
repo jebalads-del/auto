@@ -4,16 +4,18 @@ import { useEffect, useState } from 'react';
 
 interface Car {
   id: number;
-  marca: string;
+  brand: string;
   model: string;
   year: number;
   price: number;
-  mileage: number;
+  kilometers: number;
   color: string;
-  status: string;
-  payment_method: string;
+  description: string;
+  images: string[];
   user_name: string;
   user_email: string;
+  status: string;
+  payment_method: string;
   created_at: string;
 }
 
@@ -48,6 +50,10 @@ export default function CarsManagement() {
       return;
     }
 
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
     try {
       const response = await fetch('/api/admin/cars/action', {
         method: 'POST',
@@ -59,15 +65,18 @@ export default function CarsManagement() {
 
       if (data.success) {
         setSuccess(data.message);
-        fetchCars();
+        await fetchCars();
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(data.message);
-        setTimeout(() => setError(''), 3000);
+        setError(data.message || 'حدث خطأ أثناء تنفيذ الإجراء');
+        setTimeout(() => setError(''), 5000);
       }
-    } catch {
+    } catch (err) {
+      console.error('خطأ:', err);
       setError('حدث خطأ أثناء تنفيذ الإجراء');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,14 +102,6 @@ export default function CarsManagement() {
     );
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif' }}>
       <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>🚗 إدارة الإعلانات</h1>
@@ -112,7 +113,7 @@ export default function CarsManagement() {
       )}
 
       {success && (
-        <div style={{ backgroundColor: '#efe', color: '#3c3', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>
+        <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>
           ✅ {success}
         </div>
       )}
@@ -139,7 +140,7 @@ export default function CarsManagement() {
                 <tr key={car.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '10px' }}>{index + 1}</td>
                   <td style={{ padding: '10px' }}>
-                    <div><strong>{car.marca}</strong> {car.model}</div>
+                    <div><strong>{car.brand}</strong> {car.model}</div>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>{car.year} | {car.color}</div>
                   </td>
                   <td style={{ padding: '10px' }}>${car.price.toLocaleString()}</td>
@@ -152,7 +153,9 @@ export default function CarsManagement() {
                     {car.payment_method === 'western_union' ? '💵 ويسترن يونيون' : 
                      car.payment_method === 'paypal' ? '💳 باي بال' : '❌ لم يحدد'}
                   </td>
-                  <td style={{ padding: '10px', fontSize: '12px' }}>{formatDate(car.created_at)}</td>
+                  <td style={{ padding: '10px', fontSize: '12px' }}>
+                    {new Date(car.created_at).toLocaleDateString('ar-SA')}
+                  </td>
                   <td style={{ padding: '10px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
                       {car.status === 'pending' && (
