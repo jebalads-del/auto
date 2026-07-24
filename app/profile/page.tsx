@@ -1,4 +1,4 @@
-'use client';
+l'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -10,7 +10,6 @@ interface User {
   role: string;
   status: string;
   phone: string;
-  subscription: string;
   created_at: string;
 }
 
@@ -75,15 +74,29 @@ export default function ProfilePage() {
 
   return (
     <div style={styles.container}>
+      {/* الهيدر مع زر النشر */}
       <div style={styles.header}>
         <h1 style={styles.title}>👤 حسابي</h1>
-        <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <Link href="/dashboard/cars/new" style={styles.addBtn}>
+            ➕ نشر إعلان
+          </Link>
+          <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
+        </div>
       </div>
 
+      {/* بطاقة الملف الشخصي */}
       <div style={styles.card}>
         <div style={styles.avatar}>{user?.name?.charAt(0) || 'U'}</div>
         <div style={styles.userInfo}>
-          <h2 style={styles.userName}>{user?.name || 'مستخدم'}</h2>
+          <div style={styles.nameRow}>
+            <h2 style={styles.userName}>{user?.name || 'مستخدم'}</h2>
+            {!isEditing && (
+              <button onClick={() => setIsEditing(true)} style={styles.editIconBtn}>
+                ✏️ تعديل
+              </button>
+            )}
+          </div>
           <p style={styles.userEmail}>{user?.email}</p>
           <div style={styles.badge}>
             <span style={{
@@ -104,9 +117,11 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* نموذج تعديل الملف الشخصي */}
+      {/* نموذج التعديل */}
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>✏️ تعديل الملف الشخصي</h3>
+        <h3 style={styles.sectionTitle}>
+          {isEditing ? '✏️ تعديل الملف الشخصي' : '📋 المعلومات الشخصية'}
+        </h3>
         <div style={styles.editCard}>
           {message && <p style={{ color: message.includes('✅') ? 'green' : 'red', marginBottom: '10px' }}>{message}</p>}
           
@@ -144,22 +159,20 @@ export default function ProfilePage() {
             />
           </div>
 
-          <div style={styles.buttonGroup}>
-            {!isEditing ? (
-              <button onClick={() => setIsEditing(true)} style={styles.editBtn}>
-                ✏️ تعديل
+          {isEditing ? (
+            <div style={styles.buttonGroup}>
+              <button onClick={handleUpdate} style={styles.saveBtn}>
+                💾 حفظ
               </button>
-            ) : (
-              <>
-                <button onClick={handleUpdate} style={styles.saveBtn}>
-                  💾 حفظ
-                </button>
-                <button onClick={() => { setIsEditing(false); setName(user?.name || ''); setPhone(user?.phone || ''); }} style={styles.cancelBtn}>
-                  ❌ إلغاء
-                </button>
-              </>
-            )}
-          </div>
+              <button onClick={() => { setIsEditing(false); setName(user?.name || ''); setPhone(user?.phone || ''); }} style={styles.cancelBtn}>
+                ❌ إلغاء
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setIsEditing(true)} style={styles.editBtn}>
+              ✏️ تعديل الملف الشخصي
+            </button>
+          )}
         </div>
       </div>
 
@@ -195,6 +208,7 @@ const styles = {
     alignItems: 'center',
     marginBottom: '25px',
     flexWrap: 'wrap' as const,
+    gap: '10px',
   },
   title: {
     fontSize: '28px',
@@ -209,6 +223,15 @@ const styles = {
     backgroundColor: 'white',
     borderRadius: '8px',
     border: '1px solid #e2e8f0',
+  },
+  addBtn: {
+    backgroundColor: '#059669',
+    color: 'white',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    fontSize: '14px',
+    fontWeight: 'bold',
   },
   card: {
     backgroundColor: 'white',
@@ -236,10 +259,26 @@ const styles = {
   userInfo: {
     flex: 1,
   },
+  nameRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    flexWrap: 'wrap' as const,
+  },
   userName: {
     fontSize: '22px',
     margin: 0,
     color: '#1e293b',
+  },
+  editIconBtn: {
+    backgroundColor: '#2563eb',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    padding: '4px 12px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
   },
   userEmail: {
     color: '#64748b',
