@@ -4,12 +4,12 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
-  // ✅ استثناء جميع مسارات API
+  // ✅ استثناء مسارات API
   if (path.startsWith('/api/')) {
     return NextResponse.next();
   }
 
-  // ✅ التحقق من تسجيل الدخول للمسارات المحمية
+  // ✅ التحقق من الجلسة من Cookies
   const isLoggedIn = request.cookies.get('isAdmin')?.value === 'true';
   
   const protectedPaths = [
@@ -18,6 +18,7 @@ export function middleware(request: NextRequest) {
     '/dashboard/cars/new',
     '/dashboard/users',
     '/dashboard/settings',
+    '/profile',
   ];
 
   const isProtected = protectedPaths.some(p => path.startsWith(p));
@@ -31,7 +32,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// ✅ تطبيق الميدلوير على كل شيء ما عدا API والملفات الثابتة
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$).*)'],
 };
+
