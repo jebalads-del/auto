@@ -16,8 +16,9 @@ export async function GET(
       );
     }
 
+    // ✅ تم إضافة user_phone
     const cars = await sql`
-      SELECT c.*, u.name as user_name, u.email as user_email
+      SELECT c.*, u.name as user_name, u.email as user_email, u.phone as user_phone
       FROM cars c
       LEFT JOIN users u ON c.user_id = u.id
       WHERE c.id = ${carId} AND c.status = 'approved'
