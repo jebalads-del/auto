@@ -1,10 +1,9 @@
-const userId = localStorage.getItem('userId');
-alert('🆔 userId من localStorage: ' + userId); // ✅ تنبيه
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Cookies from 'js-cookie';
 
 export default function NewCarPage() {
   const router = useRouter();
@@ -55,14 +54,10 @@ export default function NewCarPage() {
     setSuccess('');
 
     try {
-      if (!formData.brand || !formData.model || !formData.price) {
-        setError('الماركة، الموديل، والسعر مطلوبة');
-        setLoading(false);
-        return;
-      }
+      // ✅ التنبيه هنا للتحقق من userId
+      const userId = Cookies.get('userId') || localStorage.getItem('userId');
+      alert('🆔 userId من التخزين: ' + userId);
 
-      // ✅ جلب userId من localStorage
-      const userId = localStorage.getItem('userId');
       if (!userId) {
         setError('يجب تسجيل الدخول أولاً');
         setLoading(false);
@@ -72,6 +67,12 @@ export default function NewCarPage() {
       const userIdNumber = parseInt(userId);
       if (isNaN(userIdNumber) || userIdNumber === 0) {
         setError('معرف المستخدم غير صالح، يرجى تسجيل الدخول مرة أخرى');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.brand || !formData.model || !formData.price) {
+        setError('الماركة، الموديل، والسعر مطلوبة');
         setLoading(false);
         return;
       }
