@@ -14,11 +14,11 @@ export default function NewCarPage() {
   const [imagePreview, setImagePreview] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
-    brand: '',        // ✅ الماركة
+    brand: '',
     model: '',
     year: new Date().getFullYear(),
     price: '',
-    kilometers: '',   // ✅ الممشى
+    kilometers: '',
     color: '',
     description: '',
     payment_method: 'western_union',
@@ -27,7 +27,6 @@ export default function NewCarPage() {
     currency: 'USD',
   });
 
-  // قوائم الماركات والموديلات
   const brands = ['تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو', 'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو'];
   
   const colors = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي'];
@@ -64,7 +63,14 @@ export default function NewCarPage() {
         return;
       }
 
-      const userId = localStorage.getItem('userId') || '1';
+      // ✅ تحويل userId إلى رقم صحيح
+      const userId = parseInt(localStorage.getItem('userId') || '1');
+      
+      if (isNaN(userId) || userId === 0) {
+        setError('يجب تسجيل الدخول أولاً');
+        setLoading(false);
+        return;
+      }
 
       // تحويل الصور إلى Base64
       const imageBase64 = await Promise.all(
@@ -86,14 +92,14 @@ export default function NewCarPage() {
         color: formData.color || null,
         description: formData.description || null,
         images: imageBase64,
-        user_id: parseInt(userId),
+        user_id: userId, // ✅ userId رقم صحيح
         payment_method: formData.payment_method || 'western_union',
         is_featured: isPaid,
         featured_price: isPaid ? parseFloat(formData.price) * 0.1 : null,
         currency: 'USD',
       };
 
-      console.log('جاري إرسال:', payload);
+      console.log('📤 جاري إرسال:', payload);
 
       const response = await fetch('/api/admin/cars', {
         method: 'POST',
@@ -112,7 +118,7 @@ export default function NewCarPage() {
         setError(data.message || 'حدث خطأ أثناء نشر الإعلان');
       }
     } catch (error) {
-      console.error('خطأ:', error);
+      console.error('❌ خطأ:', error);
       setError('خطأ في الاتصال بالخادم');
     } finally {
       setLoading(false);
@@ -120,18 +126,16 @@ export default function NewCarPage() {
   };
 
   const styIn = {
-    width: "100%",
-    padding: "10px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    marginBottom: "12px",
-    boxSizing: "border-box" as const
+    width: '100%',
+    padding: '10px',
+    borderRadius: '8px',
+    border: '1px solid #ccc',
+    marginBottom: '12px',
+    boxSizing: 'border-box' as const,
   };
 
   return (
     <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '15px' }}>
-      
-      {/* الهيدر */}
       <header style={{ backgroundColor: '#1e293b', padding: '12px', borderRadius: '12px', marginBottom: '20px', color: 'white' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1 style={{ color: '#38bdf8', margin: 0, fontSize: '18px' }}>🚗 سيارتي</h1>
@@ -158,7 +162,6 @@ export default function NewCarPage() {
 
         <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
           
-          {/* الماركة - قائمة منسدلة */}
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الماركة *</label>
             <select
@@ -174,7 +177,6 @@ export default function NewCarPage() {
             </select>
           </div>
 
-          {/* الموديل */}
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الموديل *</label>
             <input
@@ -197,7 +199,6 @@ export default function NewCarPage() {
             </datalist>
           </div>
 
-          {/* السنة */}
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>السنة</label>
             <select
@@ -211,7 +212,6 @@ export default function NewCarPage() {
             </select>
           </div>
 
-          {/* السعر */}
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>السعر ($) *</label>
             <input
@@ -226,7 +226,6 @@ export default function NewCarPage() {
             />
           </div>
 
-          {/* الممشى */}
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الممشى (كم)</label>
             <input
@@ -239,7 +238,6 @@ export default function NewCarPage() {
             />
           </div>
 
-          {/* اللون - قائمة منسدلة */}
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>اللون</label>
             <select
@@ -254,7 +252,6 @@ export default function NewCarPage() {
             </select>
           </div>
 
-          {/* خيار الإعلان المدفوع */}
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
               <input
@@ -270,7 +267,6 @@ export default function NewCarPage() {
             </p>
           </div>
 
-          {/* رفع الصور */}
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
               📸 صور السيارة ({isPaid ? '6' : '2'} صور كحد أقصى)
@@ -299,7 +295,6 @@ export default function NewCarPage() {
             </div>
           </div>
 
-          {/* طريقة الدفع (تظهر فقط للإعلان المدفوع) */}
           {isPaid && (
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>طريقة الدفع</label>
@@ -314,7 +309,6 @@ export default function NewCarPage() {
             </div>
           )}
 
-          {/* وصف إضافي */}
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>وصف إضافي</label>
             <textarea
