@@ -42,7 +42,7 @@ export default function HomePage() {
       if (data.success) {
         setCars(data.cars);
         setCurrentPage(page);
-        setTotalPages(data.pagination.totalPages);
+        setTotalPages(data.pagination?.totalPages || 1);
       }
     } catch (error) {
       console.error('خطأ في جلب الإعلانات:', error);
@@ -262,113 +262,137 @@ export default function HomePage() {
                   }}
                 >
                   {cars.map((car) => (
-                    <Link href={`/car/${car.id}`} key={car.id} style={{ textDecoration: 'none' }}>
-                      <div
-                        style={{
-                          backgroundColor: 'white',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                          transition: 'transform 0.2s',
-                          cursor: 'pointer',
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.transform = 'scale(1.02)')
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.transform = 'scale(1)')
-                        }
-                      >
-                        {car.images && car.images.length > 0 && (
-                          <div
-                            style={{
-                              display: 'flex',
-                              gap: '5px',
-                              overflowX: 'auto',
-                              padding: '10px',
-                              backgroundColor: '#f1f5f9',
-                              borderRadius: '8px',
-                              margin: '10px',
-                            }}
-                          >
-                            {car.images.slice(0, 3).map((img, idx) => (
-                              <img
-                                key={idx}
-                                src={img}
-                                alt={`${car.brand} ${car.model}`}
-                                loading="lazy"
-                                style={{
-                                  width: '100px',
-                                  height: '70px',
-                                  objectFit: 'cover',
-                                  borderRadius: '6px',
-                                  border: '1px solid #e2e8f0',
-                                }}
-                                onError={(e) => {
-                                  console.error('خطأ في تحميل الصورة');
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ))}
-                            {car.images.length > 3 && (
-                              <span
-                                style={{
-                                  fontSize: '12px',
-                                  color: '#64748b',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  padding: '0 10px',
-                                }}
-                              >
-                                +{car.images.length - 3}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                    <div
+                      key={car.id}
+                      style={{
+                        backgroundColor: 'white',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.transform = 'scale(1.02)')
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.transform = 'scale(1)')
+                      }
+                    >
+                      {car.images && car.images.length > 0 && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '5px',
+                            overflowX: 'auto',
+                            padding: '10px',
+                            backgroundColor: '#f1f5f9',
+                            borderRadius: '8px',
+                            margin: '10px',
+                          }}
+                        >
+                          {car.images.slice(0, 3).map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt={`${car.brand} ${car.model}`}
+                              loading="lazy"
+                              style={{
+                                width: '100px',
+                                height: '70px',
+                                objectFit: 'cover',
+                                borderRadius: '6px',
+                                border: '1px solid #e2e8f0',
+                              }}
+                              onError={(e) => {
+                                console.error('خطأ في تحميل الصورة');
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ))}
+                          {car.images.length > 3 && (
+                            <span
+                              style={{
+                                fontSize: '12px',
+                                color: '#64748b',
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '0 10px',
+                              }}
+                            >
+                              +{car.images.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
 
-                        <div style={{ padding: '15px' }}>
-                          <h3 style={{ fontSize: '18px', margin: '0 0 5px 0' }}>
-                            {car.brand} {car.model}
-                          </h3>
+                      <div style={{ padding: '15px' }}>
+                        <h3 style={{ fontSize: '18px', margin: '0 0 5px 0' }}>
+                          {car.brand} {car.model}
+                        </h3>
+                        <p
+                          style={{
+                            color: '#2563eb',
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            margin: '5px 0',
+                          }}
+                        >
+                          ${car.price.toLocaleString()}
+                        </p>
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '5px',
+                            fontSize: '14px',
+                            color: '#64748b',
+                            marginTop: '10px',
+                          }}
+                        >
+                          <span>{car.year}</span>
+                          <span>{car.kilometers?.toLocaleString() || 0} كم</span>
+                          <span>{car.color || 'غير محدد'}</span>
+                          <span>{new Date(car.created_at).toLocaleDateString('ar-SA')}</span>
+                        </div>
+                        {car.description && (
                           <p
                             style={{
-                              color: '#2563eb',
-                              fontSize: '20px',
-                              fontWeight: 'bold',
-                              margin: '5px 0',
-                            }}
-                          >
-                            ${car.price.toLocaleString()}
-                          </p>
-                          <div
-                            style={{
-                              display: 'grid',
-                              gridTemplateColumns: '1fr 1fr',
-                              gap: '5px',
                               fontSize: '14px',
                               color: '#64748b',
                               marginTop: '10px',
                             }}
                           >
-                            <span>{car.year}</span>
-                            <span>{car.kilometers?.toLocaleString() || 0} كم</span>
-                            <span>{car.color || 'غير محدد'}</span>
-                            <span>{new Date(car.created_at).toLocaleDateString('ar-SA')}</span>
-                          </div>
-                          {car.description && (
-                            <p
-                              style={{
-                                fontSize: '14px',
-                                color: '#64748b',
-                                marginTop: '10px',
-                              }}
-                            >
-                              {car.description}
-                            </p>
-                          )}
+                            {car.description}
+                          </p>
+                        )}
+
+                        {/* ✅ زر المزيد */}
+                        <div style={{ marginTop: '12px', textAlign: 'left' }}>
+                          <Link
+                            href={`/car/${car.id}`}
+                            style={{
+                              display: 'inline-block',
+                              backgroundColor: '#2563eb',
+                              color: 'white',
+                              padding: '6px 16px',
+                              borderRadius: '6px',
+                              textDecoration: 'none',
+                              fontSize: '13px',
+                              fontWeight: 'bold',
+                              transition: 'background-color 0.2s',
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.backgroundColor = '#1d4ed8')
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.backgroundColor = '#2563eb')
+                            }
+                          >
+                            📖 المزيد
+                          </Link>
                         </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
 
@@ -513,20 +537,4 @@ export default function HomePage() {
                 style={{
                   width: '100%',
                   padding: '10px',
-                  backgroundColor: loading ? '#93c5fd' : '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {loading ? 'جاري التحقق...' : 'تحقق'}
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+                  backgroundColor: loading ? '#93
