@@ -1,5 +1,38 @@
 'use client';
+import { useRouter } from 'next/navigation';
 
+export default function DashboardPage() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    localStorage.clear();
+    router.push('/login');
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>📊 لوحة التحكم</h1>
+        <button 
+          onClick={handleLogout} 
+          style={{
+            backgroundColor: '#dc2626',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
+          🚪 تسجيل خروج
+        </button>
+      </div>
+      {/* ... باقي المحتوى ... */}
+    </div>
+  );
+}
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
