@@ -4,12 +4,12 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
-  // ✅ استثناء مسارات API
+  // ✅ استثناء جميع مسارات API
   if (path.startsWith('/api/')) {
     return NextResponse.next();
   }
 
-  // ✅ التحقق من الجلسة من Cookies
+  // ✅ التحقق من تسجيل الدخول للمسارات المحمية
   const isLoggedIn = request.cookies.get('isAdmin')?.value === 'true';
   
   const protectedPaths = [
@@ -35,4 +35,3 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$).*)'],
 };
-
