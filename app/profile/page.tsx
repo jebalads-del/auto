@@ -10,6 +10,7 @@ interface User {
   role: string;
   status: string;
   phone: string;
+  subscription: string;
   created_at: string;
 }
 
@@ -60,7 +61,7 @@ export default function ProfilePage() {
       if (data.success) {
         setMessage('✅ تم تحديث الملف الشخصي بنجاح');
         setIsEditing(false);
-        fetchUserData(); // تحديث البيانات
+        fetchUserData();
         setTimeout(() => setMessage(''), 3000);
       } else {
         setMessage('❌ ' + data.message);
@@ -103,7 +104,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ✅ نموذج تعديل الملف الشخصي */}
+      {/* نموذج تعديل الملف الشخصي */}
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}>✏️ تعديل الملف الشخصي</h3>
         <div style={styles.editCard}>
@@ -172,17 +173,6 @@ export default function ProfilePage() {
           <p style={styles.subscriptionDate}>
             تاريخ التسجيل: {user?.created_at ? new Date(user.created_at).toLocaleDateString('ar-SA') : 'غير معروف'}
           </p>
-        </div>
-      </div>
-
-      {/* إعلاناتي */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>🚗 إعلاناتي</h3>
-        <div style={styles.emptyState}>
-          <p>لا توجد إعلانات حالياً</p>
-          <Link href="/dashboard/cars/new" style={styles.addBtn}>
-            ➕ نشر إعلان جديد
-          </Link>
         </div>
       </div>
     </div>
@@ -355,24 +345,6 @@ const styles = {
   subscriptionDate: {
     color: '#64748b',
     marginTop: '10px',
-  },
-  emptyState: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '40px',
-    textAlign: 'center' as const,
-    color: '#64748b',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-  },
-  addBtn: {
-    display: 'inline-block',
-    marginTop: '10px',
-    padding: '10px 20px',
-    backgroundColor: '#2563eb',
-    color: 'white',
-    borderRadius: '8px',
-    textDecoration: 'none',
-    fontWeight: 'bold',
   },
   loading: {
     textAlign: 'center' as const,

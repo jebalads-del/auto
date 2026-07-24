@@ -16,6 +16,7 @@ interface Car {
   images: string[];
   user_name: string;
   user_email: string;
+  user_phone: string;
   created_at: string;
 }
 
@@ -121,6 +122,12 @@ export default function CarDetailsPage() {
             <span style={styles.detailLabel}>📧 البريد</span>
             <span style={styles.detailValue}>{car.user_email || 'غير متوفر'}</span>
           </div>
+          {car.user_phone && (
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>📱 الهاتف</span>
+              <span style={styles.detailValue}>{car.user_phone}</span>
+            </div>
+          )}
         </div>
 
         {car.description && (
@@ -130,9 +137,21 @@ export default function CarDetailsPage() {
           </div>
         )}
 
+        {/* ✅ التواصل مع البائع */}
         <div style={styles.contactSection}>
           <h3 style={styles.sectionTitle}>📞 التواصل مع البائع</h3>
           <div style={styles.contactButtons}>
+            {/* ✅ زر واتساب */}
+            {car.user_phone && (
+              <a
+                href={`https://wa.me/${car.user_phone.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.whatsappBtn}
+              >
+                💬 واتساب
+              </a>
+            )}
             <a href={`mailto:${car.user_email}`} style={styles.contactBtn}>
               📧 مراسلة البائع
             </a>
@@ -258,6 +277,17 @@ const styles = {
     display: 'flex',
     gap: '10px',
     flexWrap: 'wrap' as const,
+  },
+  whatsappBtn: {
+    padding: '10px 20px',
+    backgroundColor: '#25D366',
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    border: 'none',
+    cursor: 'pointer',
   },
   contactBtn: {
     padding: '10px 20px',
