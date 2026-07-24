@@ -9,29 +9,36 @@ interface User {
   name: string;
   role: string;
   status: string;
-  subscription: string;
+  phone: string;
   created_at: string;
 }
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userCars, setUserCars] = useState([]);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [message, setMessage] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchUserData();
-    fetchUserCars();
   }, []);
 
   const fetchUserData = async () => {
     try {
       const userId = localStorage.getItem('userId');
-      if (!userId) return;
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
 
       const response = await fetch(`/api/user/${userId}`);
       const data = await response.json();
       if (data.success) {
         setUser(data.user);
+        setName(data.user.name || '');
+        setPhone(data.user.phone || '');
       }
     } catch (error) {
       console.error('خطأ في جلب بيانات المستخدم:', error);
@@ -40,43 +47,40 @@ export default function ProfilePage() {
     }
   };
 
-  const fetchUserCars = async () => {
+  const handleUpdate = async () => {
+    setMessage('');
     try {
       const userId = localStorage.getItem('userId');
-      if (!userId) return;
-
-      const response = await fetch(`/api/user/${userId}/cars`);
+      const response = await fetch('/api/user/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, name, phone }),
+      });
       const data = await response.json();
       if (data.success) {
-        setUserCars(data.cars);
+        setMessage('✅ تم تحديث الملف الشخصي بنجاح');
+        setIsEditing(false);
+        fetchUserData(); // تحديث البيانات
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage('❌ ' + data.message);
       }
-    } catch (error) {
-      console.error('خطأ في جلب إعلانات المستخدم:', error);
+    } catch {
+      setMessage('❌ حدث خطأ في الاتصال');
     }
   };
 
-  if (loading) {
-    return (
-      <div style={styles.loading}>
-        <div style={styles.spinner}></div>
-        <p>جاري التحميل...</p>
-      </div>
-    );
-  }
+  if (loading) return <div style={styles.loading}>جاري التحميل...</div>;
 
   return (
     <div style={styles.container}>
-      {/* الهيدر */}
       <div style={styles.header}>
         <h1 style={styles.title}>👤 حسابي</h1>
         <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
       </div>
 
-      {/* بطاقة المعلومات الشخصية */}
       <div style={styles.card}>
-        <div style={styles.avatar}>
-          {user?.name?.charAt(0) || 'U'}
-        </div>
+        <div style={styles.avatar}>{user?.name?.charAt(0) || 'U'}</div>
         <div style={styles.userInfo}>
           <h2 style={styles.userName}>{user?.name || 'مستخدم'}</h2>
           <p style={styles.userEmail}>{user?.email}</p>
@@ -99,7 +103,66 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* نوع الاشتراك */}
+      {/* ✅ نموذج تعديل الملف الشخصي */}
+      <div style={styles.section}>
+        <h3 style={styles.sectionTitle}>✏️ تعديل الملف الشخصي</h3>
+        <div style={styles.editCard}>
+          {message && <p style={{ color: message.includes('✅') ? 'green' : 'red', marginBottom: '10px' }}>{message}</p>}
+          
+          <div style={styles.field}>
+            <label style={styles.label}>الاسم</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={styles.input}
+              placeholder="الاسم الكامل"
+              disabled={!isEditing}
+            />
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>البريد الإلكتروني (غير قابل للتعديل)</label>
+            <input
+              type="email"
+              value={user?.email || ''}
+              style={{ ...styles.input, backgroundColor: '#f1f5f9', cursor: 'not-allowed' }}
+              disabled
+            />
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>📱 رقم الهاتف (للتواصل عبر واتساب)</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              style={styles.input}
+              placeholder="مثال: 0501234567"
+              disabled={!isEditing}
+            />
+          </div>
+
+          <div style={styles.buttonGroup}>
+            {!isEditing ? (
+              <button onClick={() => setIsEditing(true)} style={styles.editBtn}>
+                ✏️ تعديل
+              </button>
+            ) : (
+              <>
+                <button onClick={handleUpdate} style={styles.saveBtn}>
+                  💾 حفظ
+                </button>
+                <button onClick={() => { setIsEditing(false); setName(user?.name || ''); setPhone(user?.phone || ''); }} style={styles.cancelBtn}>
+                  ❌ إلغاء
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* الاشتراك */}
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}>📦 نوع الاشتراك</h3>
         <div style={styles.subscriptionCard}>
@@ -112,45 +175,15 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* إعلانات المستخدم */}
+      {/* إعلاناتي */}
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}>🚗 إعلاناتي</h3>
-        {userCars.length === 0 ? (
-          <div style={styles.emptyState}>
-            <p>📭 لا توجد إعلانات حالياً</p>
-            <Link href="/dashboard/cars/new" style={styles.addBtn}>
-              ➕ نشر إعلان جديد
-            </Link>
-          </div>
-        ) : (
-          <div style={styles.carsGrid}>
-            {userCars.map((car: any) => (
-              <div key={car.id} style={styles.carCard}>
-                <div style={styles.carImage}>
-                  {car.images?.length > 0 ? (
-                    <img src={car.images[0]} alt={car.model} style={styles.carImg} />
-                  ) : (
-                    <div style={styles.noImage}>🚗</div>
-                  )}
-                </div>
-                <div style={styles.carInfo}>
-                  <h4>{car.brand} {car.model}</h4>
-                  <p>💰 ${car.price.toLocaleString()}</p>
-                  <span style={{
-                    ...styles.carStatus,
-                    backgroundColor: car.status === 'approved' ? '#d1fae5' : 
-                                   car.status === 'pending' ? '#fef3c7' : '#fee2e2',
-                    color: car.status === 'approved' ? '#065f46' : 
-                           car.status === 'pending' ? '#92400e' : '#991b1b',
-                  }}>
-                    {car.status === 'approved' ? '✅ مقبول' : 
-                     car.status === 'pending' ? '⏳ قيد المراجعة' : '❌ مرفوض'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <div style={styles.emptyState}>
+          <p>لا توجد إعلانات حالياً</p>
+          <Link href="/dashboard/cars/new" style={styles.addBtn}>
+            ➕ نشر إعلان جديد
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -163,7 +196,7 @@ const styles = {
     fontFamily: 'sans-serif',
     minHeight: '100vh',
     backgroundColor: '#f8fafc',
-    maxWidth: '1200px',
+    maxWidth: '800px',
     margin: '0 auto',
   },
   header: {
@@ -242,6 +275,67 @@ const styles = {
     color: '#1e293b',
     marginBottom: '15px',
   },
+  editCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '20px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+  },
+  field: {
+    marginBottom: '15px',
+  },
+  label: {
+    display: 'block',
+    fontWeight: 'bold',
+    fontSize: '14px',
+    color: '#1e293b',
+    marginBottom: '5px',
+  },
+  input: {
+    width: '100%',
+    padding: '12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    fontSize: '16px',
+    boxSizing: 'border-box' as const,
+    backgroundColor: 'white',
+  },
+  buttonGroup: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap' as const,
+    marginTop: '5px',
+  },
+  editBtn: {
+    padding: '10px 24px',
+    backgroundColor: '#2563eb',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  saveBtn: {
+    padding: '10px 24px',
+    backgroundColor: '#059669',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  cancelBtn: {
+    padding: '10px 24px',
+    backgroundColor: '#dc2626',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
   subscriptionCard: {
     backgroundColor: 'white',
     borderRadius: '12px',
@@ -262,51 +356,13 @@ const styles = {
     color: '#64748b',
     marginTop: '10px',
   },
-  carsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-    gap: '15px',
-  },
-  carCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-    transition: 'transform 0.2s',
-  },
-  carImage: {
-    height: '150px',
-    backgroundColor: '#f1f5f9',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  carImg: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover' as const,
-  },
-  noImage: {
-    fontSize: '48px',
-    color: '#94a3b8',
-  },
-  carInfo: {
-    padding: '15px',
-  },
-  carStatus: {
-    display: 'inline-block',
-    padding: '2px 10px',
-    borderRadius: '12px',
-    fontSize: '12px',
-    fontWeight: 'bold',
-    marginTop: '5px',
-  },
   emptyState: {
     backgroundColor: 'white',
     borderRadius: '12px',
     padding: '40px',
     textAlign: 'center' as const,
     color: '#64748b',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
   },
   addBtn: {
     display: 'inline-block',
@@ -319,19 +375,8 @@ const styles = {
     fontWeight: 'bold',
   },
   loading: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
+    textAlign: 'center' as const,
+    padding: '50px',
     color: '#64748b',
-  },
-  spinner: {
-    border: '4px solid #e2e8f0',
-    borderTop: '4px solid #2563eb',
-    borderRadius: '50%',
-    width: '40px',
-    height: '40px',
-    animation: 'spin 1s linear infinite',
   },
 };
