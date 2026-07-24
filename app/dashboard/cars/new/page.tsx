@@ -54,9 +54,10 @@ export default function NewCarPage() {
     setSuccess('');
 
     try {
-      // ✅ التنبيه هنا للتحقق من userId
+      // ✅ جلب userId من Cookies أولاً
       const userId = Cookies.get('userId') || localStorage.getItem('userId');
-      alert('🆔 userId من التخزين: ' + userId);
+      
+      console.log('🆔 userId من Cookies/localStorage:', userId);
 
       if (!userId) {
         setError('يجب تسجيل الدخول أولاً');
@@ -104,7 +105,7 @@ export default function NewCarPage() {
         currency: 'USD',
       };
 
-      console.log('📤 جاري إرسال:', payload);
+      console.log('📤 جاري إرسال payload:', payload);
 
       const response = await fetch('/api/admin/cars', {
         method: 'POST',
