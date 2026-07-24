@@ -36,32 +36,12 @@ export async function POST(request: Request) {
 
     if (user.status !== 'active') {
       return NextResponse.json(
-        { success: false, message: 'الحساب غير مفعّل. يرجى التحقق من بريدك الإلكتروني' },
+        { success: false, message: 'الحساب غير مفعّل' },
         { status: 403 }
       );
     }
 
-    
-// ✅ السماح للمستخدم العادي بالدخول مع توجيه مختلف
-if (user.role === 'admin') {
-  return NextResponse.json({
-    success: true,
-    user: { id: user.id, email: user.email, role: user.role },
-    redirect: '/dashboard'
-  });
-} else {
-  // ✅ المستخدم العادي يوجه إلى صفحة الملف الشخصي
-  return NextResponse.json({
-    success: true,
-    user: { id: user.id, email: user.email, role: user.role },
-    redirect: '/profile'
-  });
-}
-
-return NextResponse.json({
-  success: true,
-  user: { id: user.id, email: user.email, role: user.role },
-});
+    // ✅ إرجاع JSON مع userId
     return NextResponse.json({
       success: true,
       user: {
@@ -69,6 +49,7 @@ return NextResponse.json({
         email: user.email,
         role: user.role,
       },
+      redirect: user.role === 'admin' ? '/dashboard' : '/profile',
     });
 
   } catch (error) {
