@@ -32,12 +32,12 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // حفظ جلسة المستخدم
+        // ✅ حفظ بيانات المستخدم
         localStorage.setItem('isAdmin', 'true');
         localStorage.setItem('userEmail', email);
-        localStorage.setItem('userId', data.user.id?.toString() || '1');
-        
-        // ✅ التوجيه حسب الدور (المستخدم العادي أو الأدمن)
+        localStorage.setItem('userId', data.user.id.toString()); // ✅ حفظ userId
+
+        // التوجيه حسب الدور
         const redirectPath = data.redirect || '/dashboard';
         router.push(redirectPath);
       } else {
@@ -51,7 +51,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ padding: '20px', direction: 'rtl', fontFamily: 'sans-serif', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
+    <div style={{ 
+      padding: '20px', 
+      direction: 'rtl', 
+      fontFamily: 'sans-serif', 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      backgroundColor: '#f8fafc' 
+    }}>
       <div style={{ 
         maxWidth: '400px', 
         width: '100%',
@@ -67,7 +76,16 @@ export default function LoginPage() {
         </p>
 
         {error && (
-          <div style={{ backgroundColor: '#fee', padding: '12px', borderRadius: '8px', color: '#c33', marginBottom: '20px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px' }}>
+          <div style={{ 
+            backgroundColor: '#fee', 
+            padding: '12px', 
+            borderRadius: '8px', 
+            color: '#c33', 
+            marginBottom: '20px', 
+            textAlign: 'center', 
+            fontWeight: 'bold', 
+            fontSize: '14px' 
+          }}>
             ❌ {error}
           </div>
         )}
@@ -117,6 +135,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
+            disabled={loading}
             style={{
               width: '100%',
               padding: '14px',
@@ -130,7 +149,6 @@ export default function LoginPage() {
               opacity: loading ? 0.7 : 1,
               transition: 'background-color 0.2s'
             }}
-            disabled={loading}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
           >
