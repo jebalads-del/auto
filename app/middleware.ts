@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ✅ التحقق من تسجيل الدخول للمسارات المحمية
+  // ✅ التحقق من تسجيل الدخول
   const isLoggedIn = request.cookies.get('isAdmin')?.value === 'true';
   
   const protectedPaths = [
