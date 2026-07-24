@@ -1,3 +1,5 @@
+const userId = localStorage.getItem('userId');
+alert('🆔 userId من localStorage: ' + userId); // ✅ تنبيه
 'use client';
 
 import { useState } from 'react';
