@@ -23,58 +23,55 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('📦 البيانات المستلمة من الواجهة:', body);
+    console.log('📦 البيانات المستلمة:', body);
     
-    // ✅ استقبال الحقول بالاسم الصحيح
     const { 
-      brand,        // الماركة
-      model,        // الموديل
-      year,         // السنة
-      price,        // السعر
-      kilometers,   // الممشى
-      color,        // اللون
-      description,  // الوصف
-      images,       // الصور
-      user_id,      // معرف المستخدم
-      payment_method, // طريقة الدفع
-      is_featured,  // هل هو مميز؟
-      featured_price, // سعر التميز
-      currency      // العملة
+      brand, 
+      model, 
+      year, 
+      price, 
+      kilometers, 
+      color, 
+      description, 
+      images, 
+      user_id, 
+      payment_method,
+      is_featured,
+      featured_price,
+      currency
     } = body;
 
-    // ✅ التحقق من الحقول المطلوبة
-    if (!brand || !model || price === undefined || price === null || price === '') {
-      console.log('❌ الحقول المطلوبة مفقودة:', { brand, model, price });
+    // ✅ التحقق من user_id
+    if (!user_id || isNaN(user_id)) {
+      console.log('❌ user_id غير صالح:', user_id);
       return NextResponse.json(
-        { success: false, message: 'الماركة، الموديل، والسعر مطلوبة' },
+        { success: false, message: 'معرف المستخدم مطلوب أو غير صالح' },
         { status: 400 }
       );
     }
 
-    // التحقق من وجود user_id
-    const userId = user_id || 1;
-
-    // التحقق من وجود المستخدم
+    // ✅ التحقق من وجود المستخدم
     const userCheck = await sql`
-      SELECT id FROM users WHERE id = ${userId}
+      SELECT id FROM users WHERE id = ${user_id}
     `;
 
     if (userCheck.length === 0) {
+      console.log('❌ المستخدم غير موجود:', user_id);
       return NextResponse.json(
         { success: false, message: 'المستخدم غير موجود' },
         { status: 400 }
       );
     }
 
-    // إدراج الإعلان في قاعدة البيانات
+    // ✅ إدراج الإعلان
     const result = await sql`
       INSERT INTO cars (
         brand, model, year, price, kilometers, color, 
         description, images, user_id, payment_method, 
         is_featured, featured_price, currency, status
       ) VALUES (
-        ${brand}, ${model}, ${year || null}, ${parseFloat(price)}, ${kilometers || null}, ${color || null},
-        ${description || null}, ${images || null}, ${userId}, ${payment_method || 'western_union'},
+        ${brand}, ${model}, ${year || null}, ${price}, ${kilometers || null}, ${color || null},
+        ${description || null}, ${images || null}, ${user_id}, ${payment_method || 'western_union'},
         ${is_featured || false}, ${featured_price || null}, ${currency || 'USD'}, 'pending'
       )
       RETURNING *
