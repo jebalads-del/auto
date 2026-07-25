@@ -55,27 +55,15 @@ export default function SettingsPage() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    fetchSettings();
+    // ✅ استخدام بيانات افتراضية مؤقتاً
+    setSettings({
+      western_union: { receiver_name: '', country: '', city: '', phone: '' },
+      paypal: { email: '', merchant_id: '' },
+      premium_plan: { price: 50, max_images: 10, duration_days: 30 },
+      commercial_ad: { header_price: 100, footer_price: 75, duration_days: 30 },
+    });
+    setLoading(false);
   }, []);
-
-  const fetchSettings = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/admin/settings');
-      if (!res.ok) throw new Error('فشل في جلب الإعدادات');
-      const data = await res.json();
-      if (data.success) {
-        setSettings(data.settings);
-      } else {
-        setError(data.message || 'حدث خطأ في جلب الإعدادات');
-      }
-    } catch (err) {
-      console.error('❌ خطأ في جلب الإعدادات:', err);
-      setError('فشل الاتصال بالخادم');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
