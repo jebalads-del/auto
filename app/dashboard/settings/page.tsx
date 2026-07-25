@@ -82,11 +82,14 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success) {
         setMessage('✅ تم حفظ الإعدادات بنجاح');
+        setTimeout(() => setMessage(''), 3000);
       } else {
         setMessage('❌ حدث خطأ في حفظ الإعدادات');
+        setTimeout(() => setMessage(''), 3000);
       }
     } catch {
       setMessage('❌ خطأ في الاتصال');
+      setTimeout(() => setMessage(''), 3000);
     } finally {
       setLoading(false);
     }
