@@ -510,6 +510,7 @@ const styles = {
     display: 'flex',
     gap: '10px',
     flexWrap: 'wrap' as const,
+    flexDirection: 'row-reverse' as const,
     alignItems: 'center',
   },
   countrySelect: {
@@ -519,7 +520,6 @@ const styles = {
     fontSize: '14px',
     backgroundColor: 'white',
     minWidth: '140px',
-    order: -1,
   },
   helperText: {
     fontSize: '12px',
