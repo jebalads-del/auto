@@ -50,12 +50,11 @@ export default function SettingsPage() {
   });
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    // ✅ استخدام بيانات افتراضية مؤقتاً
+    // ✅ بيانات افتراضية
     setSettings({
       western_union: { receiver_name: '', country: '', city: '', phone: '' },
       paypal: { email: '', merchant_id: '' },
@@ -97,7 +96,6 @@ export default function SettingsPage() {
       <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>⚙️ إعدادات الدفع والإعلانات</h1>
 
       {loading && <p>جاري تحميل الإعدادات...</p>}
-      {error && <p style={{ color: 'red' }}>❌ {error}</p>}
       {message && (
         <div style={{ 
           backgroundColor: message.includes('✅') ? '#d1fae5' : '#fee2e2',
@@ -108,7 +106,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {!loading && !error && (
+      {!loading && (
         <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
           
           <h3 style={{ marginBottom: '15px' }}>💵 ويسترن يونيون</h3>
