@@ -26,6 +26,7 @@ const countries = [
   { code: '+1', name: '🇺🇸 الولايات المتحدة' },
   { code: '+44', name: '🇬🇧 المملكة المتحدة' },
   { code: '+91', name: '🇮🇳 الهند' },
+  { code: '+92', name: '🇵🇰 باكستان' },
 ];
 
 interface User {
@@ -70,7 +71,20 @@ export default function ProfilePage() {
       if (data.success) {
         setUser(data.user);
         setName(data.user.name || '');
-        setPhone(data.user.phone || '');
+        
+        // ✅ استخراج الرقم والكود
+        const phoneNumber = data.user.phone || '';
+        let displayPhone = phoneNumber;
+        let displayCode = '+966';
+        for (const country of countries) {
+          if (phoneNumber.startsWith(country.code)) {
+            displayCode = country.code;
+            displayPhone = phoneNumber.substring(country.code.length);
+            break;
+          }
+        }
+        setCountryCode(displayCode);
+        setPhone(displayPhone);
       }
     } catch (error) {
       console.error('خطأ في جلب بيانات المستخدم:', error);
@@ -228,9 +242,18 @@ export default function ProfilePage() {
               />
             </div>
 
+            {/* ✅ حقل الهاتف مع كود الدولة في اليسار */}
             <div style={styles.field}>
               <label style={styles.label}>📱 رقم الهاتف</label>
               <div style={styles.phoneContainer}>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  style={{ ...styles.input, flex: 1 }}
+                  placeholder="501234567"
+                  disabled={!isEditing}
+                />
                 <select
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
@@ -241,14 +264,6 @@ export default function ProfilePage() {
                     <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
                   ))}
                 </select>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  style={{ ...styles.input, flex: 1 }}
-                  placeholder="501234567"
-                  disabled={!isEditing}
-                />
               </div>
               <small style={styles.helperText}>📌 سيظهر رقم الهاتف في إعلاناتك للتواصل عبر واتساب</small>
             </div>
@@ -495,6 +510,7 @@ const styles = {
     display: 'flex',
     gap: '10px',
     flexWrap: 'wrap' as const,
+    flexDirection: 'row-reverse' as const,
   },
   countrySelect: {
     padding: '12px',
@@ -503,6 +519,7 @@ const styles = {
     fontSize: '14px',
     backgroundColor: 'white',
     minWidth: '140px',
+    order: 1,
   },
   helperText: {
     fontSize: '12px',
