@@ -118,7 +118,13 @@ export default function NewCarPage() {
       if (response.ok && data.success) {
         setSuccess('✅ تم إرسال الإعلان للمراجعة بنجاح!');
         setTimeout(() => {
-          router.push('/dashboard/cars');
+          // ✅ التوجيه حسب دور المستخدم
+          const userRole = localStorage.getItem('userRole') || 'user';
+          if (userRole === 'admin') {
+            router.push('/dashboard/cars');
+          } else {
+            router.push('/profile');
+          }
         }, 2000);
       } else {
         setError(data.message || 'حدث خطأ أثناء نشر الإعلان');
