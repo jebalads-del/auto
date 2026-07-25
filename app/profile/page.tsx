@@ -246,14 +246,6 @@ export default function ProfilePage() {
             <div style={styles.field}>
               <label style={styles.label}>📱 رقم الهاتف</label>
               <div style={styles.phoneContainer}>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                  style={{ ...styles.input, flex: 1 }}
-                  placeholder="501234567"
-                  disabled={!isEditing}
-                />
                 <select
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
@@ -264,6 +256,14 @@ export default function ProfilePage() {
                     <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
                   ))}
                 </select>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  style={{ ...styles.input, flex: 1 }}
+                  placeholder="501234567"
+                  disabled={!isEditing}
+                />
               </div>
               <small style={styles.helperText}>📌 سيظهر رقم الهاتف في إعلاناتك للتواصل عبر واتساب</small>
             </div>
@@ -510,7 +510,7 @@ const styles = {
     display: 'flex',
     gap: '10px',
     flexWrap: 'wrap' as const,
-    flexDirection: 'row-reverse' as const,
+    alignItems: 'center',
   },
   countrySelect: {
     padding: '12px',
@@ -519,7 +519,7 @@ const styles = {
     fontSize: '14px',
     backgroundColor: 'white',
     minWidth: '140px',
-    order: 1,
+    order: -1,
   },
   helperText: {
     fontSize: '12px',
