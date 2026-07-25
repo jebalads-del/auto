@@ -1,3 +1,4 @@
+export const runtime = 'edge'; // ✅ هذا يتجاوز الميدلوير
 import { NextRequest, NextResponse } from 'next/server';
 import sql from '../../db';
 
