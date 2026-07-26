@@ -757,4 +757,9 @@ const styles = {
     padding: '50px',
     color: '#64748b',
   },
+  form: { // ✅ تمت الإضافة
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '15px',
+  },
 };
