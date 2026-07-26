@@ -1,33 +1,104 @@
-false);
-  }, []);
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setSaving(true);
-  setMessage('');
+'use client';
 
-  try {
-    const res = await fetch('/api/admin/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings),
-    });
-    const data = await res.json();
-    if (data.success) {
-      setMessage('✅ تم حفظ الإعدادات بنجاح');
-      await fetchSettings();
-      setTimeout(() => setMessage(''), 3000);
-    } else {
-      setMessage('❌ حدث خطأ في حفظ الإعدادات');
-      setTimeout(() => setMessage(''), 3000);
+import { useState, useEffect } from 'react';
+
+interface PaymentSettings {
+  western_union: {
+    receiver_name: string;
+    country: string;
+    city: string;
+    phone: string;
+  };
+  paypal: {
+    email: string;
+    merchant_id: string;
+  };
+  premium_plan: {
+    price: number;
+    max_images: number;
+    duration_days: number;
+  };
+  commercial_ad: {
+    header_price: number;
+    footer_price: number;
+    duration_days: number;
+  };
+}
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<PaymentSettings>({
+    western_union: {
+      receiver_name: '',
+      country: '',
+      city: '',
+      phone: '',
+    },
+    paypal: {
+      email: '',
+      merchant_id: '',
+    },
+    premium_plan: {
+      price: 50,
+      max_images: 10,
+      duration_days: 30,
+    },
+    commercial_ad: {
+      header_price: 100,
+      footer_price: 75,
+      duration_days: 30,
+    },
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/settings');
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+      }
+    } catch (error) {
+      console.error('❌ خطأ في جلب الإعدادات:', error);
+    } finally {
+      setLoading(false);
     }
-  } catch {
-    setMessage('❌ خطأ في الاتصال');
-    setTimeout(() => setMessage(''), 3000);
-  } finally {
-    setSaving(false);
-  }
-};
-  
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage('✅ تم حفظ الإعدادات بنجاح');
+        await fetchSettings();
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage('❌ حدث خطأ في حفظ الإعدادات');
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch {
+      setMessage('❌ خطأ في الاتصال');
+      setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
