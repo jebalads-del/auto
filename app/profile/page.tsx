@@ -29,6 +29,10 @@ const countries = [
   { code: '+92', name: '🇵🇰 باكستان' },
 ];
 
+// ✅ شروط الصورة
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 ميجابايت
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
 interface User {
   id: number;
   email: string;
@@ -54,6 +58,14 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // ✅ إعلان تجاري
+  const [commercialAd, setCommercialAd] = useState({
+    position: 'header',
+    image: '',
+    link_url: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -162,6 +174,76 @@ export default function ProfilePage() {
       }
     } catch {
       setMessage('❌ حدث خطأ في الاتصال');
+    }
+  };
+
+  // ✅ دالة رفع الصورة
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_IMAGE_SIZE) {
+      setMessage('❌ حجم الصورة كبير جداً (الحد الأقصى 5 ميجابايت)');
+      e.target.value = '';
+      return;
+    }
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setMessage('❌ نوع الملف غير مدعوم (JPEG, PNG, WebP, GIF)');
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 600;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, 800, 600);
+        const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
+        setCommercialAd({ ...commercialAd, image: compressedImage });
+        setMessage('✅ تم رفع الصورة بنجاح');
+        setTimeout(() => setMessage(''), 3000);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ✅ دالة إرسال طلب إعلان تجاري
+  const handleCommercialAdSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setMessage('');
+    try {
+      const userId = Cookies.get('userId') || localStorage.getItem('userId');
+      if (!userId) {
+        setMessage('❌ يرجى تسجيل الدخول أولاً');
+        setSubmitting(false);
+        return;
+      }
+      const res = await fetch('/api/commercial-ads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: parseInt(userId as string),
+          position: commercialAd.position,
+          image: commercialAd.image,
+          link_url: commercialAd.link_url,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage('✅ تم إرسال طلب الإعلان بنجاح');
+        setCommercialAd({ position: 'header', image: '', link_url: '' });
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage('❌ ' + data.message);
+      }
+    } catch {
+      setMessage('❌ حدث خطأ في الاتصال');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -336,6 +418,67 @@ export default function ProfilePage() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+
+        {/* ✅ طلب إعلان تجاري */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>📢 طلب إعلان تجاري</h3>
+          <div style={styles.card}>
+            <form onSubmit={handleCommercialAdSubmit}>
+              <div style={styles.field}>
+                <label style={styles.label}>موقع الإعلان</label>
+                <select
+                  value={commercialAd.position}
+                  onChange={(e) => setCommercialAd({ ...commercialAd, position: e.target.value })}
+                  style={styles.input}
+                  required
+                >
+                  <option value="header">📌 الهيدر (أعلى الصفحة)</option>
+                  <option value="footer">📌 الفوتر (أسفل الصفحة)</option>
+                </select>
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>رابط الإعلان (اختياري)</label>
+                <input
+                  type="url"
+                  value={commercialAd.link_url}
+                  onChange={(e) => setCommercialAd({ ...commercialAd, link_url: e.target.value })}
+                  style={styles.input}
+                  placeholder="https://example.com"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>
+                  📸 صورة الإعلان
+                  <span style={styles.fileRequirements}>
+                    (JPEG, PNG, WebP, GIF - 5 ميجابايت)
+                  </span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleImageUpload}
+                  style={styles.input}
+                  required
+                />
+                {commercialAd.image && (
+                  <div style={{ marginTop: '10px' }}>
+                    <img 
+                      src={commercialAd.image} 
+                      alt="صورة الإعلان" 
+                      style={{ width: '100px', height: 'auto', borderRadius: '8px' }} 
+                    />
+                    <span style={{ fontSize: '12px', color: '#64748b', marginRight: '10px' }}>
+                      ✅ تم رفع الصورة
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button type="submit" disabled={submitting} style={styles.submitBtn}>
+                {submitting ? 'جاري الإرسال...' : '📤 إرسال طلب الإعلان'}
+              </button>
+            </form>
           </div>
         </div>
 
@@ -540,6 +683,12 @@ const styles = {
     color: '#1e293b',
     marginBottom: '5px',
   },
+  fileRequirements: {
+    fontSize: '12px',
+    color: '#64748b',
+    fontWeight: 'normal',
+    marginRight: '8px',
+  },
   input: {
     width: '100%',
     padding: '12px',
@@ -599,6 +748,16 @@ const styles = {
   cancelBtn: {
     padding: '10px 20px',
     backgroundColor: '#dc2626',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  submitBtn: {
+    padding: '10px 20px',
+    backgroundColor: '#2563eb',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
