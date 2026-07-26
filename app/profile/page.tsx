@@ -67,7 +67,6 @@ export default function ProfilePage() {
     image: '',
     link_url: '',
   });
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -452,8 +451,8 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-              <button type="submit" disabled={submitting} style={styles.submitBtn}>
-                {submitting ? 'جاري الإرسال...' : '📤 إرسال طلب الإعلان'}
+              <button type="submit" style={styles.submitBtn}>
+                📤 إرسال طلب الإعلان
               </button>
             </form>
           </div>
