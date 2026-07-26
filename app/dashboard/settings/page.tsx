@@ -63,33 +63,34 @@ export default function SettingsPage() {
     });
     setLoading(false);
   }, []);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setSaving(true);
+  setMessage('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage('');
-
-    try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMessage('✅ تم حفظ الإعدادات بنجاح');
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage('❌ حدث خطأ في حفظ الإعدادات');
-        setTimeout(() => setMessage(''), 3000);
-      }
-    } catch {
-      setMessage('❌ خطأ في الاتصال');
+  try {
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setMessage('✅ تم حفظ الإعدادات بنجاح');
+      await fetchSettings();
       setTimeout(() => setMessage(''), 3000);
-    } finally {
-      setSaving(false);
+    } else {
+      setMessage('❌ حدث خطأ في حفظ الإعدادات');
+      setTimeout(() => setMessage(''), 3000);
     }
-  };
+  } catch {
+    setMessage('❌ خطأ في الاتصال');
+    setTimeout(() => setMessage(''), 3000);
+  } finally {
+    setSaving(false);
+  }
+};
+  
 
   return (
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
