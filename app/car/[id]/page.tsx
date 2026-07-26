@@ -25,6 +25,7 @@ export default function CarDetailsPage() {
   const [car, setCar] = useState<Car | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCar = async () => {
@@ -69,101 +70,121 @@ export default function CarDetailsPage() {
 
   return (
     <div style={styles.container}>
-      <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
+      {/* ✅ الهيدر */}
+      <header style={styles.header}>
+        <div style={styles.headerContent}>
+          <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
+          <div style={styles.headerLinks}>
+            <Link href="/" style={styles.headerLink}>الرئيسية</Link>
+            <Link href="/login" style={styles.headerLink}>دخول</Link>
+          </div>
+        </div>
+      </header>
 
-      <div style={styles.gallery}>
-        {car.images && car.images.length > 0 ? (
-          <div style={styles.imageGrid}>
-            {car.images.map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`${car.brand} ${car.model}`}
-                style={styles.mainImage}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <div style={styles.noImage}>🚗 لا توجد صور</div>
-        )}
-      </div>
+      <div style={styles.content}>
+        <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
 
-      <div style={styles.infoCard}>
-        <h1 style={styles.title}>{car.brand} {car.model}</h1>
-        <div style={styles.priceTag}>💰 ${car.price.toLocaleString()}</div>
-
-        <div style={styles.detailsGrid}>
-          <div style={styles.detailItem}>
-            <span style={styles.detailLabel}>📅 السنة</span>
-            <span style={styles.detailValue}>{car.year}</span>
-          </div>
-          <div style={styles.detailItem}>
-            <span style={styles.detailLabel}>📏 الممشى</span>
-            <span style={styles.detailValue}>{car.kilometers?.toLocaleString() || 0} كم</span>
-          </div>
-          <div style={styles.detailItem}>
-            <span style={styles.detailLabel}>🎨 اللون</span>
-            <span style={styles.detailValue}>{car.color || 'غير محدد'}</span>
-          </div>
-          <div style={styles.detailItem}>
-            <span style={styles.detailLabel}>📅 النشر</span>
-            <span style={styles.detailValue}>
-              {new Date(car.created_at).toLocaleDateString('ar-SA')}
-            </span>
-          </div>
-          <div style={styles.detailItem}>
-            <span style={styles.detailLabel}>👤 الناشر</span>
-            <span style={styles.detailValue}>{car.user_name || 'مستخدم'}</span>
-          </div>
-          <div style={styles.detailItem}>
-            <span style={styles.detailLabel}>📧 البريد</span>
-            <span style={styles.detailValue}>{car.user_email || 'غير متوفر'}</span>
-          </div>
-          {car.user_phone && (
-            <div style={styles.detailItem}>
-              <span style={styles.detailLabel}>📱 الهاتف</span>
-              <span style={styles.detailValue}>{car.user_phone}</span>
+        {/* معرض الصور */}
+        <div style={styles.gallery}>
+          {car.images && car.images.length > 0 ? (
+            <div style={styles.imageGrid}>
+              {car.images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  alt={`${car.brand} ${car.model}`}
+                  style={styles.mainImage}
+                  onClick={() => setSelectedImage(img)}
+                />
+              ))}
             </div>
+          ) : (
+            <div style={styles.noImage}>🚗 لا توجد صور</div>
           )}
         </div>
 
-        {car.description && (
-          <div style={styles.descriptionSection}>
-            <h3 style={styles.sectionTitle}>📝 الوصف</h3>
-            <p style={styles.description}>{car.description}</p>
+        {/* ✅ نافذة تكبير الصورة */}
+        {selectedImage && (
+          <div style={styles.lightbox} onClick={() => setSelectedImage(null)}>
+            <span style={styles.closeBtn}>&times;</span>
+            <img src={selectedImage} alt="صورة مكبرة" style={styles.lightboxImage} />
           </div>
         )}
 
-        {/* ✅ التواصل مع البائع */}
-        <div style={styles.contactSection}>
-          <h3 style={styles.sectionTitle}>📞 التواصل مع البائع</h3>
-          <div style={styles.contactButtons}>
-            {/* ✅ زر واتساب */}
+        {/* المعلومات */}
+        <div style={styles.infoCard}>
+          <h1 style={styles.title}>{car.brand} {car.model}</h1>
+          <div style={styles.priceTag}>💰 ${car.price.toLocaleString()}</div>
+
+          <div style={styles.detailsGrid}>
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>📅 السنة</span>
+              <span style={styles.detailValue}>{car.year}</span>
+            </div>
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>📏 الممشى</span>
+              <span style={styles.detailValue}>{car.kilometers?.toLocaleString() || 0} كم</span>
+            </div>
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>🎨 اللون</span>
+              <span style={styles.detailValue}>{car.color || 'غير محدد'}</span>
+            </div>
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>📅 النشر</span>
+              <span style={styles.detailValue}>
+                {new Date(car.created_at).toLocaleDateString('ar-SA')}
+              </span>
+            </div>
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>👤 الناشر</span>
+              <span style={styles.detailValue}>{car.user_name || 'مستخدم'}</span>
+            </div>
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>📧 البريد</span>
+              <span style={styles.detailValue}>{car.user_email || 'غير متوفر'}</span>
+            </div>
             {car.user_phone && (
-              <a
-                href={`https://wa.me/${car.user_phone.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={styles.whatsappBtn}
-              >
-                💬 واتساب
-              </a>
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>📱 الهاتف</span>
+                <span style={styles.detailValue}>{car.user_phone}</span>
+              </div>
             )}
-            <a href={`mailto:${car.user_email}`} style={styles.contactBtn}>
-              📧 مراسلة البائع
-            </a>
-            <button 
-              onClick={() => {
-                navigator.clipboard.writeText(car.user_email || '');
-                alert('✅ تم نسخ البريد الإلكتروني');
-              }}
-              style={styles.copyBtn}
-            >
-              📋 نسخ البريد
-            </button>
+          </div>
+
+          {car.description && (
+            <div style={styles.descriptionSection}>
+              <h3 style={styles.sectionTitle}>📝 الوصف</h3>
+              <p style={styles.description}>{car.description}</p>
+            </div>
+          )}
+
+          {/* التواصل مع البائع */}
+          <div style={styles.contactSection}>
+            <h3 style={styles.sectionTitle}>📞 التواصل مع البائع</h3>
+            <div style={styles.contactButtons}>
+              {car.user_phone && (
+                <a
+                  href={`https://wa.me/${car.user_phone.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={styles.whatsappBtn}
+                >
+                  💬 واتساب
+                </a>
+              )}
+              <a href={`mailto:${car.user_email}`} style={styles.contactBtn}>
+                📧 مراسلة البائع
+              </a>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(car.user_email || '');
+                  alert('✅ تم نسخ البريد الإلكتروني');
+                }}
+                style={styles.copyBtn}
+              >
+                📋 نسخ البريد
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -173,13 +194,45 @@ export default function CarDetailsPage() {
 
 const styles = {
   container: {
-    direction: 'rtl' as const,
-    padding: '20px',
+    minHeight: '100vh',
+    backgroundColor: '#f8fafc',
     fontFamily: 'sans-serif',
+    direction: 'rtl' as const,
+  },
+  header: {
+    backgroundColor: '#1e293b',
+    padding: '12px 20px',
+    color: 'white',
+  },
+  headerContent: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap' as const,
+    gap: '10px',
+  },
+  headerTitle: {
+    color: '#38bdf8',
+    margin: 0,
+    fontSize: '18px',
+  },
+  headerLinks: {
+    display: 'flex',
+    gap: '15px',
+    alignItems: 'center',
+    flexWrap: 'wrap' as const,
+  },
+  headerLink: {
+    color: '#cbd5e1',
+    textDecoration: 'none',
+    fontSize: '14px',
+  },
+  content: {
     maxWidth: '900px',
     margin: '0 auto',
-    backgroundColor: '#f8fafc',
-    minHeight: '100vh',
+    padding: '20px',
   },
   backLink: {
     display: 'inline-block',
@@ -207,6 +260,8 @@ const styles = {
     height: '300px',
     objectFit: 'cover' as const,
     borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'transform 0.2s',
   },
   noImage: {
     padding: '60px',
@@ -309,6 +364,35 @@ const styles = {
     fontSize: '14px',
     fontWeight: 'bold',
     cursor: 'pointer',
+  },
+  lightbox: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+    cursor: 'pointer',
+  },
+  lightboxImage: {
+    maxWidth: '90%',
+    maxHeight: '90%',
+    objectFit: 'contain' as const,
+    borderRadius: '8px',
+  },
+  closeBtn: {
+    position: 'absolute' as const,
+    top: '20px',
+    right: '30px',
+    color: 'white',
+    fontSize: '40px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    zIndex: 10000,
   },
   loadingContainer: {
     minHeight: '100vh',
