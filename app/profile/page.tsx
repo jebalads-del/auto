@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 
+// قائمة الدول مع رموز الاتصال
 const countries = [
   { code: '+966', name: '🇸🇦 السعودية' },
   { code: '+971', name: '🇦🇪 الإمارات' },
@@ -28,9 +29,6 @@ const countries = [
   { code: '+92', name: '🇵🇰 باكستان' },
 ];
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
 interface User {
   id: number;
   email: string;
@@ -38,17 +36,6 @@ interface User {
   role: string;
   status: string;
   phone: string;
-  created_at: string;
-}
-
-interface CommercialAd {
-  id: number;
-  position: string;
-  status: string;
-  price: number;
-  duration_days: number;
-  image_url: string;
-  link_url: string;
   created_at: string;
 }
 
@@ -60,23 +47,17 @@ export default function ProfilePage() {
   const [countryCode, setCountryCode] = useState('+966');
   const [message, setMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [userCars, setUserCars] = useState<any[]>([]);
 
+  // تغيير كلمة السر
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [commercialAd, setCommercialAd] = useState({
-    position: 'header',
-    image: '',
-    link_url: '',
-  });
-  const [userCommercialAds, setUserCommercialAds] = useState<CommercialAd[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-
   useEffect(() => {
     fetchUserData();
-    fetchUserCommercialAds();
+    fetchUserCars();
   }, []);
 
   const fetchUserData = async () => {
@@ -112,14 +93,14 @@ export default function ProfilePage() {
     }
   };
 
-  const fetchUserCommercialAds = async () => {
+  const fetchUserCars = async () => {
     try {
       const userId = Cookies.get('userId') || localStorage.getItem('userId');
       if (!userId) return;
-      const res = await fetch(`/api/user/commercial-ads?userId=${userId}`);
+      const res = await fetch(`/api/user/cars?userId=${userId}`);
       const data = await res.json();
       if (data.success) {
-        setUserCommercialAds(data.ads);
+        setUserCars(data.cars);
       }
     } catch (error) {
       console.error('خطأ في جلب إعلانات المستخدم:', error);
@@ -184,99 +165,11 @@ export default function ProfilePage() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_IMAGE_SIZE) {
-      setMessage('❌ حجم الصورة كبير جداً (الحد الأقصى 5 ميجابايت)');
-      e.target.value = '';
-      return;
-    }
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setMessage('❌ نوع الملف غير مدعوم (JPEG, PNG, WebP, GIF)');
-      e.target.value = '';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 800;
-        canvas.height = 600;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, 800, 600);
-        const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
-        setCommercialAd({ ...commercialAd, image: compressedImage });
-        setMessage('✅ تم رفع الصورة بنجاح');
-        setTimeout(() => setMessage(''), 3000);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleCommercialAdSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setMessage('');
-    try {
-      const userId = Cookies.get('userId') || localStorage.getItem('userId');
-      if (!userId) {
-        setMessage('❌ يرجى تسجيل الدخول أولاً');
-        setSubmitting(false);
-        return;
-      }
-      const res = await fetch('/api/commercial-ads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: parseInt(userId as string),
-          position: commercialAd.position,
-          image: commercialAd.image,
-          link_url: commercialAd.link_url,
-        }),
-      });
-     const [userCars, setUserCars] = useState<any[]>([]);
-
-const fetchUserCars = async () => {
-  try {
-    const userId = Cookies.get('userId') || localStorage.getItem('userId');
-    if (!userId) return;
-    const res = await fetch(`/api/user/cars?userId=${userId}`);
-    const data = await res.json();
-    if (data.success) {
-      setUserCars(data.cars);
-    }
-  } catch (error) {
-    console.error('خطأ في جلب إعلانات المستخدم:', error);
-  }
-};
-
-useEffect(() => {
-  fetchUserData();
-  fetchUserCars();
-}, []);
-      const data = await res.json();
-      if (data.success) {
-        setMessage('✅ تم إرسال طلب الإعلان بنجاح');
-        setCommercialAd({ position: 'header', image: '', link_url: '' });
-        fetchUserCommercialAds();
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage('❌ ' + data.message);
-      }
-    } catch {
-      setMessage('❌ حدث خطأ في الاتصال');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   if (loading) return <div style={styles.loading}>جاري التحميل...</div>;
 
   return (
     <div style={styles.container}>
+      {/* الهيدر */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
@@ -331,6 +224,7 @@ useEffect(() => {
 
         {message && <div style={styles.message}>{message}</div>}
 
+        {/* نموذج التعديل */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>
             {isEditing ? '✏️ تعديل الملف الشخصي' : '📋 المعلومات الشخصية'}
@@ -391,6 +285,7 @@ useEffect(() => {
           </div>
         </div>
 
+        {/* تغيير كلمة السر */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>🔑 تغيير كلمة السر</h3>
           <div style={styles.card}>
@@ -444,102 +339,44 @@ useEffect(() => {
           </div>
         </div>
 
+        {/* ✅ إعلاناتي (السيارات فقط) */}
         <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>📢 طلب إعلان تجاري</h3>
+          <h3 style={styles.sectionTitle}>🚗 إعلاناتي</h3>
           <div style={styles.card}>
-            <form onSubmit={handleCommercialAdSubmit}>
-              <div style={styles.field}>
-                <label style={styles.label}>موقع الإعلان</label>
-                <select
-                  value={commercialAd.position}
-                  onChange={(e) => setCommercialAd({ ...commercialAd, position: e.target.value })}
-                  style={styles.input}
-                  required
-                >
-                  <option value="header">📌 الهيدر (أعلى الصفحة)</option>
-                  <option value="footer">📌 الفوتر (أسفل الصفحة)</option>
-                </select>
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>رابط الإعلان (اختياري)</label>
-                <input
-                  type="url"
-                  value={commercialAd.link_url}
-                  onChange={(e) => setCommercialAd({ ...commercialAd, link_url: e.target.value })}
-                  style={styles.input}
-                  placeholder="https://example.com"
-                />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  📸 صورة الإعلان
-                  <span style={styles.fileRequirements}>
-                    (JPEG, PNG, WebP, GIF - 5 ميجابايت)
-                  </span>
-                </label>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleImageUpload}
-                  style={styles.input}
-                  required
-                />
-                {commercialAd.image && (
-                  <div style={{ marginTop: '10px' }}>
-                    <img 
-                      src={commercialAd.image} 
-                      alt="صورة الإعلان" 
-                      style={{ width: '100px', height: 'auto', borderRadius: '8px' }} 
-                    />
-                    <span style={{ fontSize: '12px', color: '#64748b', marginRight: '10px' }}>
-                      ✅ تم رفع الصورة
+            {userCars.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '10px' }}>
+                لا توجد إعلانات حتى الآن
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {userCars.map((car) => (
+                  <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>
+                        {car.brand} {car.model}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        💰 ${car.price} | {car.year}
+                      </div>
+                    </div>
+                    <span style={{
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      backgroundColor: car.status === 'pending' ? '#fef3c7' : car.status === 'approved' ? '#d1fae5' : '#fee2e2',
+                      color: car.status === 'pending' ? '#92400e' : car.status === 'approved' ? '#065f46' : '#991b1b',
+                    }}>
+                      {car.status === 'pending' ? '⏳ قيد المراجعة' : car.status === 'approved' ? '✅ مقبول' : '❌ مرفوض'}
                     </span>
                   </div>
-                )}
+                ))}
               </div>
-              <button type="submit" disabled={submitting} style={styles.submitBtn}>
-                {submitting ? 'جاري الإرسال...' : '📤 إرسال طلب الإعلان'}
-              </button>
-            </form>
+            )}
           </div>
         </div>
 
-       <div style={styles.section}>
-  <h3 style={styles.sectionTitle}>🚗 إعلاناتي</h3>
-  <div style={styles.card}>
-    {userCars.length === 0 ? (
-      <p style={{ textAlign: 'center', color: '#64748b', padding: '10px' }}>
-        لا توجد إعلانات حتى الآن
-      </p>
-    ) : (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {userCars.map((car) => (
-          <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', flexWrap: 'wrap', gap: '10px' }}>
-            <div>
-              <div style={{ fontWeight: 'bold' }}>
-                {car.brand} {car.model}
-              </div>
-              <div style={{ fontSize: '14px', color: '#64748b' }}>
-                💰 ${car.price} | {car.year}
-              </div>
-            </div>
-            <span style={{
-              padding: '4px 12px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              backgroundColor: car.status === 'pending' ? '#fef3c7' : car.status === 'approved' ? '#d1fae5' : '#fee2e2',
-              color: car.status === 'pending' ? '#92400e' : car.status === 'approved' ? '#065f46' : '#991b1b',
-            }}>
-              {car.status === 'pending' ? '⏳ قيد المراجعة' : car.status === 'approved' ? '✅ مقبول' : '❌ مرفوض'}
-            </span>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-</div>
-
+        {/* نوع الاشتراك */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>📦 نوع الاشتراك</h3>
           <div style={styles.card}>
@@ -703,12 +540,6 @@ const styles = {
     color: '#1e293b',
     marginBottom: '5px',
   },
-  fileRequirements: {
-    fontSize: '12px',
-    color: '#64748b',
-    fontWeight: 'normal',
-    marginRight: '8px',
-  },
   input: {
     width: '100%',
     padding: '12px',
@@ -768,16 +599,6 @@ const styles = {
   cancelBtn: {
     padding: '10px 20px',
     backgroundColor: '#dc2626',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-  },
-  submitBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#2563eb',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
