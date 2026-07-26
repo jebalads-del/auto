@@ -33,6 +33,14 @@ export async function POST(request: NextRequest) {
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + durationDays);
 
+   // ✅ إضافة حقل payment_status
+INSERT INTO commercial_ads (
+  user_id, position, status, price, duration_days,
+  start_date, end_date, image_url, link_url, payment_status
+) VALUES (
+  ${user_id}, ${position}, 'pending_payment', ${price}, ${durationDays},
+  ${startDate}, ${endDate}, ${image}, ${link_url || null}, 'unpaid'
+)
     const result = await sql`
       INSERT INTO commercial_ads (
         user_id, position, status, price, duration_days,
