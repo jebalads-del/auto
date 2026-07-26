@@ -116,7 +116,17 @@ export default function DashboardPage() {
         }}>
           🚗 الإعلانات
         </Link>
-        
+        <Link href="/dashboard/commercial-ads" style={{ 
+  backgroundColor: '#d97706', 
+  color: 'white', 
+  padding: '10px 20px', 
+  borderRadius: '8px', 
+  textDecoration: 'none',
+  fontWeight: 'bold',
+  fontSize: '14px'
+}}>
+  📢 الإعلانات التجارية
+</Link>
         <Link href="/dashboard/settings" style={{ 
           backgroundColor: '#6b7280', 
           color: 'white', 
