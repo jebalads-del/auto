@@ -39,6 +39,17 @@ interface User {
   created_at: string;
 }
 
+interface CommercialAd {
+  id: number;
+  position: string;
+  status: string;
+  price: number;
+  duration_days: number;
+  image_url: string;
+  link_url: string;
+  created_at: string;
+}
+
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,15 +58,25 @@ export default function ProfilePage() {
   const [countryCode, setCountryCode] = useState('+966');
   const [message, setMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  
+
   // تغيير كلمة السر
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // ✅ إعلانات تجارية
+  const [commercialAd, setCommercialAd] = useState({
+    position: 'header',
+    image: '',
+    link_url: '',
+  });
+  const [userCommercialAds, setUserCommercialAds] = useState<CommercialAd[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     fetchUserData();
+    fetchUserCommercialAds();
   }, []);
 
   const fetchUserData = async () => {
@@ -71,8 +92,7 @@ export default function ProfilePage() {
       if (data.success) {
         setUser(data.user);
         setName(data.user.name || '');
-        
-        // ✅ استخراج الرقم والكود
+
         const phoneNumber = data.user.phone || '';
         let displayPhone = phoneNumber;
         let displayCode = '+966';
@@ -93,12 +113,27 @@ export default function ProfilePage() {
     }
   };
 
+  const fetchUserCommercialAds = async () => {
+    try {
+      const userId = Cookies.get('userId') || localStorage.getItem('userId');
+      if (!userId) return;
+
+      const res = await fetch(`/api/user/commercial-ads?userId=${userId}`);
+      const data = await res.json();
+      if (data.success) {
+        setUserCommercialAds(data.ads);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب إعلانات المستخدم:', error);
+    }
+  };
+
   const handleUpdate = async () => {
     setMessage('');
     try {
       const userId = Cookies.get('userId') || localStorage.getItem('userId');
       const fullPhone = countryCode + phone.replace(/^0+/, '');
-      
+
       const response = await fetch('/api/user/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,18 +190,51 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCommercialAdSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setMessage('');
+
+    try {
+      const userId = Cookies.get('userId') || localStorage.getItem('userId');
+      const res = await fetch('/api/commercial-ads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: parseInt(userId),
+          position: commercialAd.position,
+          image: commercialAd.image,
+          link_url: commercialAd.link_url,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage('✅ تم إرسال طلب الإعلان بنجاح');
+        setCommercialAd({ position: 'header', image: '', link_url: '' });
+        fetchUserCommercialAds();
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage('❌ ' + data.message);
+      }
+    } catch {
+      setMessage('❌ حدث خطأ في الاتصال');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) return <div style={styles.loading}>جاري التحميل...</div>;
 
   return (
     <div style={styles.container}>
-      {/* ✅ الهيدر */}
+      {/* الهيدر */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
           <div style={styles.headerLinks}>
             <Link href="/" style={styles.headerLink}>الرئيسية</Link>
             <Link href="/dashboard/cars/new" style={styles.headerLink}>➕ نشر إعلان</Link>
-            <button 
+            <button
               onClick={async () => {
                 await fetch('/api/logout', { method: 'POST' });
                 localStorage.clear();
@@ -242,7 +310,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* ✅ حقل الهاتف مع كود الدولة في اليسار */}
             <div style={styles.field}>
               <label style={styles.label}>📱 رقم الهاتف</label>
               <div style={styles.phoneContainer}>
@@ -279,7 +346,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* ✅ تغيير كلمة السر */}
+        {/* تغيير كلمة السر */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>🔑 تغيير كلمة السر</h3>
           <div style={styles.card}>
@@ -333,7 +400,100 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* الاشتراك */}
+        {/* ✅ طلب إعلان تجاري */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>📢 طلب إعلان تجاري</h3>
+          <div style={styles.card}>
+            <form onSubmit={handleCommercialAdSubmit} style={styles.form}>
+              <div style={styles.field}>
+                <label style={styles.label}>موقع الإعلان</label>
+                <select
+                  value={commercialAd.position}
+                  onChange={(e) => setCommercialAd({ ...commercialAd, position: e.target.value })}
+                  style={styles.input}
+                  required
+                >
+                  <option value="header">📌 الهيدر (أعلى الصفحة)</option>
+                  <option value="footer">📌 الفوتر (أسفل الصفحة)</option>
+                </select>
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>رابط الإعلان (اختياري)</label>
+                <input
+                  type="url"
+                  value={commercialAd.link_url}
+                  onChange={(e) => setCommercialAd({ ...commercialAd, link_url: e.target.value })}
+                  style={styles.input}
+                  placeholder="https://example.com"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>صورة الإعلان</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setCommercialAd({ ...commercialAd, image: reader.result as string });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  style={styles.input}
+                  required
+                />
+                {commercialAd.image && (
+                  <img src={commercialAd.image} alt="صورة الإعلان" style={{ width: '100px', height: 'auto', marginTop: '10px', borderRadius: '8px' }} />
+                )}
+              </div>
+              <button type="submit" disabled={submitting} style={styles.submitBtn}>
+                {submitting ? 'جاري الإرسال...' : '📤 إرسال طلب الإعلان'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* ✅ إعلاناتي التجارية */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>📋 إعلاناتي التجارية</h3>
+          <div style={styles.card}>
+            {userCommercialAds.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '10px' }}>
+                لا توجد إعلانات تجارية حتى الآن
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {userCommercialAds.map((ad) => (
+                  <div key={ad.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>
+                        {ad.position === 'header' ? '📌 الهيدر' : '📌 الفوتر'}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                        السعر: ${ad.price} | المدة: {ad.duration_days} يوم
+                      </div>
+                    </div>
+                    <span style={{
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      backgroundColor: ad.status === 'pending' ? '#fef3c7' : ad.status === 'approved' ? '#d1fae5' : '#fee2e2',
+                      color: ad.status === 'pending' ? '#92400e' : ad.status === 'approved' ? '#065f46' : '#991b1b',
+                    }}>
+                      {ad.status === 'pending' ? '⏳ قيد المراجعة' : ad.status === 'approved' ? '✅ مقبول' : '❌ مرفوض'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* نوع الاشتراك */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>📦 نوع الاشتراك</h3>
           <div style={styles.card}>
@@ -556,6 +716,16 @@ const styles = {
   cancelBtn: {
     padding: '10px 20px',
     backgroundColor: '#dc2626',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  submitBtn: {
+    padding: '10px 20px',
+    backgroundColor: '#2563eb',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
