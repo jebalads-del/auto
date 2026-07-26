@@ -4,9 +4,9 @@ import sql from '../db';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { user_id, position, image, link_url } = body;
+    const { user_id, position, image, link_url, payment_method } = body;
 
-    console.log('📦 البيانات المستلمة:', { user_id, position, link_url });
+    console.log('📦 البيانات المستلمة:', { user_id, position, link_url, payment_method });
 
     if (!user_id || !position || !image) {
       return NextResponse.json(
@@ -33,28 +33,21 @@ export async function POST(request: NextRequest) {
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + durationDays);
 
-   // ✅ إضافة حقل payment_status
-INSERT INTO commercial_ads (
-  user_id, position, status, price, duration_days,
-  start_date, end_date, image_url, link_url, payment_status
-) VALUES (
-  ${user_id}, ${position}, 'pending_payment', ${price}, ${durationDays},
-  ${startDate}, ${endDate}, ${image}, ${link_url || null}, 'unpaid'
-)
+    // ✅ استعلام SQL صحيح
     const result = await sql`
       INSERT INTO commercial_ads (
         user_id, position, status, price, duration_days,
-        start_date, end_date, image_url, link_url
+        start_date, end_date, image_url, link_url, payment_status
       ) VALUES (
-        ${user_id}, ${position}, 'pending', ${price}, ${durationDays},
-        ${startDate}, ${endDate}, ${image}, ${link_url || null}
+        ${user_id}, ${position}, 'pending_payment', ${price}, ${durationDays},
+        ${startDate}, ${endDate}, ${image}, ${link_url || null}, 'unpaid'
       )
       RETURNING *
     `;
 
     return NextResponse.json({
       success: true,
-      message: 'تم إرسال طلب الإعلان بنجاح',
+      message: 'تم إرسال طلب الإعلان بنجاح، في انتظار الموافقة',
       ad: result[0],
     });
   } catch (error) {
