@@ -237,6 +237,26 @@ export default function ProfilePage() {
           link_url: commercialAd.link_url,
         }),
       });
+     const [userCars, setUserCars] = useState<any[]>([]);
+
+const fetchUserCars = async () => {
+  try {
+    const userId = Cookies.get('userId') || localStorage.getItem('userId');
+    if (!userId) return;
+    const res = await fetch(`/api/user/cars?userId=${userId}`);
+    const data = await res.json();
+    if (data.success) {
+      setUserCars(data.cars);
+    }
+  } catch (error) {
+    console.error('خطأ في جلب إعلانات المستخدم:', error);
+  }
+};
+
+useEffect(() => {
+  fetchUserData();
+  fetchUserCars();
+}, []);
       const data = await res.json();
       if (data.success) {
         setMessage('✅ تم إرسال طلب الإعلان بنجاح');
@@ -484,41 +504,41 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>📋 إعلاناتي التجارية</h3>
-          <div style={styles.card}>
-            {userCommercialAds.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#64748b', padding: '10px' }}>
-                لا توجد إعلانات تجارية حتى الآن
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {userCommercialAds.map((ad) => (
-                  <div key={ad.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', flexWrap: 'wrap', gap: '10px' }}>
-                    <div>
-                      <div style={{ fontWeight: 'bold' }}>
-                        {ad.position === 'header' ? '📌 الهيدر' : '📌 الفوتر'}
-                      </div>
-                      <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        السعر: ${ad.price} | المدة: {ad.duration_days} يوم
-                      </div>
-                    </div>
-                    <span style={{
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      backgroundColor: ad.status === 'pending' ? '#fef3c7' : ad.status === 'approved' ? '#d1fae5' : '#fee2e2',
-                      color: ad.status === 'pending' ? '#92400e' : ad.status === 'approved' ? '#065f46' : '#991b1b',
-                    }}>
-                      {ad.status === 'pending' ? '⏳ قيد المراجعة' : ad.status === 'approved' ? '✅ مقبول' : '❌ مرفوض'}
-                    </span>
-                  </div>
-                ))}
+       <div style={styles.section}>
+  <h3 style={styles.sectionTitle}>🚗 إعلاناتي</h3>
+  <div style={styles.card}>
+    {userCars.length === 0 ? (
+      <p style={{ textAlign: 'center', color: '#64748b', padding: '10px' }}>
+        لا توجد إعلانات حتى الآن
+      </p>
+    ) : (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {userCars.map((car) => (
+          <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ fontWeight: 'bold' }}>
+                {car.brand} {car.model}
               </div>
-            )}
+              <div style={{ fontSize: '14px', color: '#64748b' }}>
+                💰 ${car.price} | {car.year}
+              </div>
+            </div>
+            <span style={{
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              backgroundColor: car.status === 'pending' ? '#fef3c7' : car.status === 'approved' ? '#d1fae5' : '#fee2e2',
+              color: car.status === 'pending' ? '#92400e' : car.status === 'approved' ? '#065f46' : '#991b1b',
+            }}>
+              {car.status === 'pending' ? '⏳ قيد المراجعة' : car.status === 'approved' ? '✅ مقبول' : '❌ مرفوض'}
+            </span>
           </div>
-        </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
 
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>📦 نوع الاشتراك</h3>
