@@ -540,3 +540,5 @@ const styles = {
     display: 'flex',
     gap: '15px',
     alignItems: 'center',
+    },
+};
