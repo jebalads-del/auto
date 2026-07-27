@@ -8,9 +8,10 @@ export async function POST(request: NextRequest) {
 
     console.log('📦 البيانات المستلمة:', { user_id, position, link_url, payment_method });
 
-    if (!user_id || !position || !image) {
+    // ✅ فقط user_id و position مطلوبان
+    if (!user_id || !position) {
       return NextResponse.json(
-        { success: false, message: 'جميع الحقول مطلوبة' },
+        { success: false, message: 'معرف المستخدم والموقع مطلوبان' },
         { status: 400 }
       );
     }
@@ -33,14 +34,13 @@ export async function POST(request: NextRequest) {
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + durationDays);
 
-    // ✅ استعلام SQL صحيح
     const result = await sql`
       INSERT INTO commercial_ads (
         user_id, position, status, price, duration_days,
         start_date, end_date, image_url, link_url, payment_status
       ) VALUES (
         ${user_id}, ${position}, 'pending_payment', ${price}, ${durationDays},
-        ${startDate}, ${endDate}, ${image}, ${link_url || null}, 'unpaid'
+        ${startDate}, ${endDate}, ${image || null}, ${link_url || null}, 'unpaid'
       )
       RETURNING *
     `;
