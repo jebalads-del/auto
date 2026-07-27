@@ -14,6 +14,17 @@ export default function NewCarPage() {
   { code: 'BHD', symbol: 'د.ب', name: 'دينار بحريني' },
   { code: 'OMR', symbol: 'ر.ع', name: 'ريال عماني' },
 ];
+ const [formData, setFormData] = useState({
+  brand: '',
+  model: '',
+  year: new Date().getFullYear(),
+  price: '',
+  kilometers: '',
+  color: '',
+  description: '',
+  payment_method: 'western_union',
+  currency: 'KWD', // ✅ العملة الافتراضية
+});
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
