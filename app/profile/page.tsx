@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -44,7 +45,8 @@ interface User {
   created_at: string;
 }
 
-export default function ProfilePage() {
+// مكون منفصل يستخدم useSearchParams
+function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const successMessage = searchParams.get('success');
@@ -780,3 +782,12 @@ const styles = {
     color: '#64748b',
   },
 };
+
+// المكون الرئيسي مع Suspense
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div style={styles.container}><div style={styles.loading}>جاري التحميل...</div></div>}>
+      <ProfileContent />
+    </Suspense>
+  );
+}
