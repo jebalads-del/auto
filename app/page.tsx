@@ -249,7 +249,15 @@ export default function HomePage() {
             {loading ? (
               <p>جاري التحميل...</p>
             ) : cars.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>
+             <p style={{ color: '#2563eb', fontSize: '20px', fontWeight: 'bold', margin: '5px 0' }}>
+  {car.currency === 'KWD' ? 'د.ك' : 
+   car.currency === 'SAR' ? 'ر.س' : 
+   car.currency === 'AED' ? 'د.إ' : 
+   car.currency === 'QAR' ? 'ر.ق' : 
+   car.currency === 'BHD' ? 'د.ب' : 
+   car.currency === 'OMR' ? 'ر.ع' : '$'} {car.price.toLocaleString()}
+</p>
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>
                 لا توجد سيارات متاحة حالياً
               </p>
             ) : (
