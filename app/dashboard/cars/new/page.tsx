@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 
-export default function NewCarPage() {
-  const currencies = [
+const currencies = [
   { code: 'KWD', symbol: 'د.ك', name: 'دينار كويتي' },
   { code: 'SAR', symbol: 'ر.س', name: 'ريال سعودي' },
   { code: 'AED', symbol: 'د.إ', name: 'درهم إماراتي' },
@@ -14,22 +13,8 @@ export default function NewCarPage() {
   { code: 'BHD', symbol: 'د.ب', name: 'دينار بحريني' },
   { code: 'OMR', symbol: 'ر.ع', name: 'ريال عماني' },
 ];
- const [formData, setFormData] = useState({
-  brand: '',
-  model: '',
-  year: new Date().getFullYear(),
-  price: '',
-  kilometers: '',
-  color: '',
-  description: '',
-  payment_method: 'western_union',
-  currency: 'KWD', // ✅ العملة الافتراضية
-});
-  const payload = {
-  // ...
-  currency: formData.currency,
-  // ...
-};
+
+export default function NewCarPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -47,6 +32,7 @@ export default function NewCarPage() {
     color: '',
     description: '',
     payment_method: 'western_union',
+    currency: 'KWD',
   });
 
   const brands = ['تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو', 'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو'];
@@ -78,6 +64,12 @@ export default function NewCarPage() {
     setSuccess('');
 
     try {
+      if (!formData.brand || !formData.model || !formData.price) {
+        setError('الماركة، الموديل، والسعر مطلوبة');
+        setLoading(false);
+        return;
+      }
+
       // ✅ جلب userId من Cookies أولاً
       const userId = Cookies.get('userId') || localStorage.getItem('userId');
       
@@ -92,12 +84,6 @@ export default function NewCarPage() {
       const userIdNumber = parseInt(userId);
       if (isNaN(userIdNumber) || userIdNumber === 0) {
         setError('معرف المستخدم غير صالح، يرجى تسجيل الدخول مرة أخرى');
-        setLoading(false);
-        return;
-      }
-
-      if (!formData.brand || !formData.model || !formData.price) {
-        setError('الماركة، الموديل، والسعر مطلوبة');
         setLoading(false);
         return;
       }
@@ -126,7 +112,7 @@ export default function NewCarPage() {
         payment_method: formData.payment_method || 'western_union',
         is_featured: isPaid,
         featured_price: isPaid ? parseFloat(formData.price) * 0.1 : null,
-        currency: 'USD',
+        currency: formData.currency || 'KWD',
       };
 
       console.log('📤 جاري إرسال payload:', payload);
@@ -180,22 +166,7 @@ export default function NewCarPage() {
           </Link>
         </div>
       </header>
-<div style={{ marginBottom: '15px' }}>
-  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-    💰 العملة
-  </label>
-  <select
-    value={formData.currency}
-    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-    style={styIn}
-  >
-    {currencies.map((c) => (
-      <option key={c.code} value={c.code}>
-        {c.name} ({c.symbol})
-      </option>
-    ))}
-  </select>
-</div>
+
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>🚗 نشر إعلان جديد</h1>
 
@@ -275,6 +246,24 @@ export default function NewCarPage() {
               min="0"
               step="0.01"
             />
+          </div>
+
+          {/* ✅ حقل العملة */}
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              💰 العملة
+            </label>
+            <select
+              value={formData.currency}
+              onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+              style={styIn}
+            >
+              {currencies.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name} ({c.symbol})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div style={{ marginBottom: '15px' }}>
