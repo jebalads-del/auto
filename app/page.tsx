@@ -15,6 +15,7 @@ interface Car {
   images: string[];
   status: string;
   created_at: string;
+  currency: string;
 }
 
 export default function HomePage() {
@@ -109,6 +110,18 @@ export default function HomePage() {
     if (!isLoggedIn) {
       e.preventDefault();
       window.location.href = '/login?redirect=/dashboard/cars/new';
+    }
+  };
+
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'KWD': return 'د.ك';
+      case 'SAR': return 'ر.س';
+      case 'AED': return 'د.إ';
+      case 'QAR': return 'ر.ق';
+      case 'BHD': return 'د.ب';
+      case 'OMR': return 'ر.ع';
+      default: return '$';
     }
   };
 
@@ -249,15 +262,7 @@ export default function HomePage() {
             {loading ? (
               <p>جاري التحميل...</p>
             ) : cars.length === 0 ? (
-             <p style={{ color: '#2563eb', fontSize: '20px', fontWeight: 'bold', margin: '5px 0' }}>
-  {car.currency === 'KWD' ? 'د.ك' : 
-   car.currency === 'SAR' ? 'ر.س' : 
-   car.currency === 'AED' ? 'د.إ' : 
-   car.currency === 'QAR' ? 'ر.ق' : 
-   car.currency === 'BHD' ? 'د.ب' : 
-   car.currency === 'OMR' ? 'ر.ع' : '$'} {car.price.toLocaleString()}
-</p>
-            <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>
                 لا توجد سيارات متاحة حالياً
               </p>
             ) : (
@@ -345,7 +350,7 @@ export default function HomePage() {
                             margin: '5px 0',
                           }}
                         >
-                          ${car.price.toLocaleString()}
+                          {getCurrencySymbol(car.currency)} {car.price.toLocaleString()}
                         </p>
                         <div
                           style={{
