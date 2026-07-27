@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Cookies from 'js-cookie';
 
 // قائمة الدول مع رموز الاتصال
@@ -46,6 +46,10 @@ interface User {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const successMessage = searchParams.get('success');
+  const errorMessage = searchParams.get('error');
+  
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -219,7 +223,6 @@ export default function ProfilePage() {
       setMessage('❌ يرجى تسجيل الدخول أولاً');
       return;
     }
-    // ✅ التوجيه إلى صفحة الدفع مع تمرير الموقع
     router.push(`/payment/commercial-ad?position=${commercialAd.position}`);
   };
 
@@ -249,6 +252,20 @@ export default function ProfilePage() {
       </header>
 
       <div style={styles.content}>
+        {/* ✅ رسائل النجاح والخطأ من searchParams */}
+        {successMessage && (
+          <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '12px', borderRadius: '8px', marginBottom: '15px', textAlign: 'center' }}>
+            ✅ {successMessage}
+          </div>
+        )}
+        {errorMessage && (
+          <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '8px', marginBottom: '15px', textAlign: 'center' }}>
+            ❌ {errorMessage}
+          </div>
+        )}
+
+        {message && <div style={styles.message}>{message}</div>}
+
         <div style={styles.profileCard}>
           <div style={styles.avatar}>{user?.name?.charAt(0) || 'U'}</div>
           <div style={styles.userInfo}>
@@ -279,8 +296,6 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-
-        {message && <div style={styles.message}>{message}</div>}
 
         {/* نموذج التعديل */}
         <div style={styles.section}>
@@ -475,7 +490,12 @@ export default function ProfilePage() {
                         {car.brand} {car.model}
                       </div>
                       <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        💰 ${car.price} | {car.year}
+                        💰 {car.currency === 'KWD' ? 'د.ك' : 
+                            car.currency === 'SAR' ? 'ر.س' : 
+                            car.currency === 'AED' ? 'د.إ' : 
+                            car.currency === 'QAR' ? 'ر.ق' : 
+                            car.currency === 'BHD' ? 'د.ب' : 
+                            car.currency === 'OMR' ? 'ر.ع' : '$'} {car.price} | {car.year}
                       </div>
                     </div>
                     <span style={{
