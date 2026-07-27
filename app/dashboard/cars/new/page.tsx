@@ -175,7 +175,22 @@ export default function NewCarPage() {
           </Link>
         </div>
       </header>
-
+<div style={{ marginBottom: '15px' }}>
+  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+    💰 العملة
+  </label>
+  <select
+    value={formData.currency}
+    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+    style={styIn}
+  >
+    {currencies.map((c) => (
+      <option key={c.code} value={c.code}>
+        {c.name} ({c.symbol})
+      </option>
+    ))}
+  </select>
+</div>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>🚗 نشر إعلان جديد</h1>
 
