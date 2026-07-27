@@ -93,7 +93,7 @@ function PaymentContent() {
       <div style={styles.card}>
         <h3 style={styles.cardTitle}>📌 تفاصيل الإعلان</h3>
         <p><strong>الموقع:</strong> {position === 'header' ? 'الهيدر' : 'الفوتر'}</p>
-        <p><strong>السعر:</strong> ${settings?.commercial_ad?.[position === 'header' ? 'header_price' : 'footer_price'] || 100}</p>
+        <p><strong>السعر:</strong> د.ك {settings?.commercial_ad?.[position === 'header' ? 'header_price' : 'footer_price'] || 100}</p>
         <p><strong>المدة:</strong> {settings?.commercial_ad?.duration_days || 30} يوم</p>
       </div>
 
