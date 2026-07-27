@@ -44,7 +44,7 @@ function PaymentContent() {
         return;
       }
 
-      const res = await fetch('/api/commercial-ads', {
+      const res = await fetch('/api/commercial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
