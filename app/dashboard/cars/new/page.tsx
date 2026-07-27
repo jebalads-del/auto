@@ -6,6 +6,14 @@ import Link from 'next/link';
 import Cookies from 'js-cookie';
 
 export default function NewCarPage() {
+  const currencies = [
+  { code: 'KWD', symbol: 'د.ك', name: 'دينار كويتي' },
+  { code: 'SAR', symbol: 'ر.س', name: 'ريال سعودي' },
+  { code: 'AED', symbol: 'د.إ', name: 'درهم إماراتي' },
+  { code: 'QAR', symbol: 'ر.ق', name: 'ريال قطري' },
+  { code: 'BHD', symbol: 'د.ب', name: 'دينار بحريني' },
+  { code: 'OMR', symbol: 'ر.ع', name: 'ريال عماني' },
+];
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
