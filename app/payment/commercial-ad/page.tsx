@@ -1,11 +1,13 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 
-export default function CommercialAdPayment() {
+// مكون منفصل يستخدم useSearchParams
+function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const position = searchParams.get('position') || 'header';
@@ -42,14 +44,13 @@ export default function CommercialAdPayment() {
         return;
       }
 
-      // ✅ تخزين طلب الإعلان مؤقتاً مع حالة الدفع
       const res = await fetch('/api/commercial-ads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: parseInt(userId),
           position: position,
-          image: '', // سيتم رفع الصورة لاحقاً
+          image: '',
           link_url: '',
           payment_method: paymentMethod,
         }),
@@ -143,6 +144,15 @@ export default function CommercialAdPayment() {
 
       <Link href="/profile" style={styles.backLink}>← العودة للملف الشخصي</Link>
     </div>
+  );
+}
+
+// المكون الرئيسي مع Suspense
+export default function CommercialAdPayment() {
+  return (
+    <Suspense fallback={<div style={styles.container}><h1 style={styles.title}>جاري التحميل...</h1></div>}>
+      <PaymentContent />
+    </Suspense>
   );
 }
 
