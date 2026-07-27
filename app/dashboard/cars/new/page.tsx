@@ -25,6 +25,11 @@ export default function NewCarPage() {
   payment_method: 'western_union',
   currency: 'KWD', // ✅ العملة الافتراضية
 });
+  const payload = {
+  // ...
+  currency: formData.currency,
+  // ...
+};
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
