@@ -69,6 +69,7 @@ export default function CommercialAdsPage() {
       pending: { bg: '#fef3c7', color: '#92400e', text: '⏳ قيد المراجعة' },
       approved: { bg: '#d1fae5', color: '#065f46', text: '✅ مقبول' },
       rejected: { bg: '#fee2e2', color: '#991b1b', text: '❌ مرفوض' },
+      deleted: { bg: '#f1f5f9', color: '#64748b', text: '🗑️ محذوف' },
     };
     const style = styles[status] || styles.pending;
     return (
@@ -136,26 +137,40 @@ export default function CommercialAdsPage() {
                   <td style={{ padding: '12px' }}>{getStatusBadge(ad.status)}</td>
                   <td style={{ padding: '12px' }}>{ad.duration_days} يوم</td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
-                    {ad.status === 'pending' ? (
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {ad.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleAction(ad.id, 'approve')}
+                            style={{ padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                          >
+                            ✅ موافقة
+                          </button>
+                          <button
+                            onClick={() => handleAction(ad.id, 'reject')}
+                            style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                          >
+                            ❌ رفض
+                          </button>
+                        </>
+                      )}
+                      {ad.status === 'approved' && (
                         <button
-                          onClick={() => handleAction(ad.id, 'approve')}
-                          style={{ padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          ✅ موافقة
-                        </button>
-                        <button
-                          onClick={() => handleAction(ad.id, 'reject')}
+                          onClick={() => handleAction(ad.id, 'delete')}
                           style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                         >
-                          ❌ رفض
+                          🗑️ حذف
                         </button>
-                      </div>
-                    ) : (
-                      <span style={{ color: '#64748b', fontSize: '12px' }}>
-                        {ad.status === 'approved' ? '✅ تمت الموافقة' : '❌ تم الرفض'}
-                      </span>
-                    )}
+                      )}
+                      {ad.status === 'rejected' && (
+                        <button
+                          onClick={() => handleAction(ad.id, 'delete')}
+                          style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          🗑️ حذف
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
