@@ -96,7 +96,28 @@ export default function CommercialAdsPage() {
     <td style={{ padding: '12px' }}>{getStatusBadge(ad.status)}</td>
     <td style={{ padding: '12px' }}>{ad.duration_days} يوم</td>
     <td style={{ padding: '12px', textAlign: 'center' }}>
-      {ad.status === 'pending' && (
+      <td style={{ padding: '12px', textAlign: 'center' }}>
+  {ad.status === 'pending' ? (
+    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+      <button
+        onClick={() => handleAction(ad.id, 'approve')}
+        style={{ padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+      >
+        ✅ موافقة
+      </button>
+      <button
+        onClick={() => handleAction(ad.id, 'reject')}
+        style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+      >
+        ❌ رفض
+      </button>
+    </div>
+  ) : (
+    <span style={{ color: '#64748b', fontSize: '12px' }}>
+      {ad.status === 'approved' ? '✅ تمت الموافقة' : '❌ تم الرفض'}
+    </span>
+  )}
+</td>
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
           <button
             onClick={() => handleAction(ad.id, 'approve')}
