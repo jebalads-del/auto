@@ -193,25 +193,6 @@ export default function HomePage() {
         </div>
       ))}
 
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          background: '#dc2626',
-          color: 'white',
-          padding: '14px',
-          fontSize: '22px',
-          zIndex: 9999,
-          textAlign: 'center',
-          fontWeight: 'bold',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
-        }}
-      >
-        ✅ النسخة الجديدة 2.0 - تم التحديث بنجاح! 🚀
-      </div>
-
       <div style={{ paddingTop: '70px' }}>
         <header
           style={{
