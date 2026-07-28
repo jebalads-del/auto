@@ -18,25 +18,21 @@ interface Car {
   currency: string;
 }
 
+interface CommercialAd {
+  id: number;
+  user_id: number;
+  position: string;
+  status: string;
+  price: number;
+  duration_days: number;
+  start_date: string;
+  end_date: string;
+  image_url: string;
+  link_url: string;
+  created_at: string;
+}
+
 export default function HomePage() {
-// ✅ جلب الإعلانات التجارية
-const [commercialAds, setCommercialAds] = useState([]);
-
-useEffect(() => {
-  fetchCommercialAds();
-}, []);
-
-const fetchCommercialAds = async () => {
-  try {
-    const res = await fetch('/api/commercial-ads/active');
-    const data = await res.json();
-    if (data.success) {
-      setCommercialAds(data.ads);
-    }
-  } catch (error) {
-    console.error('خطأ في جلب الإعلانات التجارية:', error);
-  }
-};
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('home');
   const [name, setName] = useState('');
@@ -48,9 +44,11 @@ const fetchCommercialAds = async () => {
   const [cars, setCars] = useState<Car[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [commercialAds, setCommercialAds] = useState<CommercialAd[]>([]);
 
   useEffect(() => {
     fetchCars(1);
+    fetchCommercialAds();
   }, []);
 
   const fetchCars = async (page: number) => {
@@ -67,6 +65,18 @@ const fetchCommercialAds = async () => {
       console.error('خطأ في جلب الإعلانات:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCommercialAds = async () => {
+    try {
+      const res = await fetch('/api/admin/commercial-ads');
+      const data = await res.json();
+      if (data.success) {
+        setCommercialAds(data.ads || []);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الإعلانات التجارية:', error);
     }
   };
 
@@ -151,18 +161,7 @@ const fetchCommercialAds = async () => {
     marginBottom: '12px',
     boxSizing: 'border-box' as const,
   };
-{commercialAds.filter(ad => ad.position === 'header').map((ad, idx) => (
-  <div key={idx} style={{ 
-    backgroundColor: '#fef3c7', 
-    padding: '10px', 
-    textAlign: 'center',
-    borderBottom: '2px solid #d97706'
-  }}>
-    <a href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer">
-      <img src={ad.image_url} alt="إعلان تجاري" style={{ maxWidth: '100%', height: 'auto', maxHeight: '100px' }} />
-    </a>
-  </div>
-))}
+
   return (
     <div
       style={{
@@ -174,6 +173,26 @@ const fetchCommercialAds = async () => {
         textAlign: 'right',
       }}
     >
+      {/* ✅ الإعلانات التجارية في الهيدر */}
+      {commercialAds.filter(ad => ad.position === 'header').map((ad, idx) => (
+        <div key={idx} style={{ 
+          backgroundColor: '#fef3c7', 
+          padding: '10px', 
+          textAlign: 'center',
+          borderBottom: '2px solid #d97706',
+          marginBottom: '10px',
+          borderRadius: '8px',
+        }}>
+          <a href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer">
+            {ad.image_url ? (
+              <img src={ad.image_url} alt="إعلان تجاري" style={{ maxWidth: '100%', height: 'auto', maxHeight: '80px' }} />
+            ) : (
+              <span style={{ fontWeight: 'bold', color: '#92400e' }}>📢 إعلان تجاري</span>
+            )}
+          </a>
+        </div>
+      ))}
+
       <div
         style={{
           position: 'fixed',
@@ -592,6 +611,26 @@ const fetchCommercialAds = async () => {
             </form>
           </div>
         )}
+
+        {/* ✅ الإعلانات التجارية في الفوتر */}
+        {commercialAds.filter(ad => ad.position === 'footer').map((ad, idx) => (
+          <div key={idx} style={{ 
+            backgroundColor: '#f1f5f9', 
+            padding: '10px', 
+            textAlign: 'center',
+            borderTop: '2px solid #d1d5db',
+            marginTop: '20px',
+            borderRadius: '8px',
+          }}>
+            <a href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer">
+              {ad.image_url ? (
+                <img src={ad.image_url} alt="إعلان تجاري" style={{ maxWidth: '100%', height: 'auto', maxHeight: '80px' }} />
+              ) : (
+                <span style={{ fontWeight: 'bold', color: '#475569' }}>📢 إعلان تجاري</span>
+              )}
+            </a>
+          </div>
+        ))}
       </div>
     </div>
   );
