@@ -19,6 +19,24 @@ interface Car {
 }
 
 export default function HomePage() {
+// ✅ جلب الإعلانات التجارية
+const [commercialAds, setCommercialAds] = useState([]);
+
+useEffect(() => {
+  fetchCommercialAds();
+}, []);
+
+const fetchCommercialAds = async () => {
+  try {
+    const res = await fetch('/api/commercial-ads/active');
+    const data = await res.json();
+    if (data.success) {
+      setCommercialAds(data.ads);
+    }
+  } catch (error) {
+    console.error('خطأ في جلب الإعلانات التجارية:', error);
+  }
+};
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('home');
   const [name, setName] = useState('');
