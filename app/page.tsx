@@ -173,8 +173,8 @@ export default function HomePage() {
         textAlign: 'right',
       }}
     >
-      {/* ✅ الإعلانات التجارية في الهيدر */}
-      {commercialAds.filter(ad => ad.position === 'header').map((ad, idx) => (
+      {/* ✅ إعلان تجاري واحد في الهيدر */}
+      {commercialAds.filter(ad => ad.position === 'header' && ad.status === 'approved').slice(0, 1).map((ad, idx) => (
         <div key={idx} style={{ 
           backgroundColor: '#fef3c7', 
           padding: '10px', 
@@ -193,7 +193,7 @@ export default function HomePage() {
         </div>
       ))}
 
-      <div style={{ paddingTop: '70px' }}>
+      <div style={{ paddingTop: '10px' }}>
         <header
           style={{
             backgroundColor: '#1e293b',
@@ -593,8 +593,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* ✅ الإعلانات التجارية في الفوتر */}
-        {commercialAds.filter(ad => ad.position === 'footer').map((ad, idx) => (
+        {/* ✅ إعلان تجاري واحد في الفوتر */}
+        {commercialAds.filter(ad => ad.position === 'footer' && ad.status === 'approved').slice(0, 1).map((ad, idx) => (
           <div key={idx} style={{ 
             backgroundColor: '#f1f5f9', 
             padding: '10px', 
