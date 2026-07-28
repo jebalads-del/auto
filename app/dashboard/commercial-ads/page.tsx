@@ -154,7 +154,8 @@ export default function CommercialAdsPage() {
                           </button>
                         </>
                       )}
-                      {ad.status === 'approved' && (
+                      {/* ✅ زر الحذف يظهر لكل الإعلانات ما عدا المحذوفة */}
+                      {ad.status !== 'deleted' && (
                         <button
                           onClick={() => handleAction(ad.id, 'delete')}
                           style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
@@ -162,13 +163,8 @@ export default function CommercialAdsPage() {
                           🗑️ حذف
                         </button>
                       )}
-                      {ad.status === 'rejected' && (
-                        <button
-                          onClick={() => handleAction(ad.id, 'delete')}
-                          style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          🗑️ حذف
-                        </button>
+                      {ad.status === 'deleted' && (
+                        <span style={{ color: '#64748b', fontSize: '12px' }}>✅ تم الحذف</span>
                       )}
                     </div>
                   </td>
