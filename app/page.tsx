@@ -151,7 +151,18 @@ const fetchCommercialAds = async () => {
     marginBottom: '12px',
     boxSizing: 'border-box' as const,
   };
-
+{commercialAds.filter(ad => ad.position === 'header').map((ad, idx) => (
+  <div key={idx} style={{ 
+    backgroundColor: '#fef3c7', 
+    padding: '10px', 
+    textAlign: 'center',
+    borderBottom: '2px solid #d97706'
+  }}>
+    <a href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer">
+      <img src={ad.image_url} alt="إعلان تجاري" style={{ maxWidth: '100%', height: 'auto', maxHeight: '100px' }} />
+    </a>
+  </div>
+))}
   return (
     <div
       style={{
