@@ -53,6 +53,9 @@ export default function CommercialAdsPage() {
         setMessage(`✅ ${data.message}`);
         fetchAds();
         setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(`❌ ${data.message}`);
+        setTimeout(() => setMessage(''), 3000);
       }
     } catch (error) {
       console.error('خطأ:', error);
@@ -81,61 +84,7 @@ export default function CommercialAdsPage() {
       </span>
     );
   };
-  
-{ads.map((ad, index) => (
-  <tr key={ad.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-    <td style={{ padding: '12px' }}>{index + 1}</td>
-    <td style={{ padding: '12px' }}>
-      <div>{ad.user_name}</div>
-      <div style={{ fontSize: '12px', color: '#64748b' }}>{ad.user_email}</div>
-    </td>
-    <td style={{ padding: '12px' }}>
-      {ad.position === 'header' ? '📌 الهيدر' : '📌 الفوتر'}
-    </td>
-    <td style={{ padding: '12px' }}>${ad.price}</td>
-    <td style={{ padding: '12px' }}>{getStatusBadge(ad.status)}</td>
-    <td style={{ padding: '12px' }}>{ad.duration_days} يوم</td>
-    <td style={{ padding: '12px', textAlign: 'center' }}>
-      <td style={{ padding: '12px', textAlign: 'center' }}>
-  {ad.status === 'pending' ? (
-    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-      <button
-        onClick={() => handleAction(ad.id, 'approve')}
-        style={{ padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-      >
-        ✅ موافقة
-      </button>
-      <button
-        onClick={() => handleAction(ad.id, 'reject')}
-        style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-      >
-        ❌ رفض
-      </button>
-    </div>
-  ) : (
-    <span style={{ color: '#64748b', fontSize: '12px' }}>
-      {ad.status === 'approved' ? '✅ تمت الموافقة' : '❌ تم الرفض'}
-    </span>
-  )}
-</td>
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-          <button
-            onClick={() => handleAction(ad.id, 'approve')}
-            style={{ padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            ✅ موافقة
-          </button>
-          <button
-            onClick={() => handleAction(ad.id, 'reject')}
-            style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            ❌ رفض
-          </button>
-        </div>
-      )}
-    </td>
-  </tr>
-))}
+
   return (
     <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif' }}>
       <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>📢 طلبات الإعلانات التجارية</h1>
@@ -177,7 +126,7 @@ export default function CommercialAdsPage() {
                 <tr key={ad.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '12px' }}>{index + 1}</td>
                   <td style={{ padding: '12px' }}>
-                    <div>{ad.user_name}</div>
+                    <div>{ad.user_name || 'مستخدم'}</div>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>{ad.user_email}</div>
                   </td>
                   <td style={{ padding: '12px' }}>
@@ -187,7 +136,7 @@ export default function CommercialAdsPage() {
                   <td style={{ padding: '12px' }}>{getStatusBadge(ad.status)}</td>
                   <td style={{ padding: '12px' }}>{ad.duration_days} يوم</td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
-                    {ad.status === 'pending' && (
+                    {ad.status === 'pending' ? (
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                         <button
                           onClick={() => handleAction(ad.id, 'approve')}
@@ -202,6 +151,10 @@ export default function CommercialAdsPage() {
                           ❌ رفض
                         </button>
                       </div>
+                    ) : (
+                      <span style={{ color: '#64748b', fontSize: '12px' }}>
+                        {ad.status === 'approved' ? '✅ تمت الموافقة' : '❌ تم الرفض'}
+                      </span>
                     )}
                   </td>
                 </tr>
