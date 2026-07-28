@@ -81,7 +81,13 @@ export default function CommercialAdsPage() {
       </span>
     );
   };
-
+  
+{ad.status === 'pending' && (
+  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+    <button onClick={() => handleAction(ad.id, 'approve')}>✅ موافقة</button>
+    <button onClick={() => handleAction(ad.id, 'reject')}>❌ رفض</button>
+  </div>
+)}
   return (
     <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif' }}>
       <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>📢 طلبات الإعلانات التجارية</h1>
