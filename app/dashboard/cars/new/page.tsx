@@ -1,5 +1,47 @@
 'use client';
+const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(e.target.files || []);
+  const maxImages = isPaid ? 6 : 2;
+  
+  if (files.length + images.length > maxImages) {
+    setError(`يمكنك رفع ${maxImages} صور فقط`);
+    return;
+  }
 
+  // ✅ ضغط الصور
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > MAX_WIDTH) {
+          height = (height * MAX_WIDTH) / width;
+          width = MAX_WIDTH;
+        }
+        if (height > MAX_HEIGHT) {
+          width = (width * MAX_HEIGHT) / height;
+          height = MAX_HEIGHT;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        const compressedImage = canvas.toDataURL('image/jpeg', 0.7); // ✅ جودة 70%
+        setImages(prev => [...prev, compressedImage]);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
