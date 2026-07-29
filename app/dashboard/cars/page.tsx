@@ -143,7 +143,14 @@ export default function CarsManagement() {
                     <div><strong>{car.brand}</strong> {car.model}</div>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>{car.year} | {car.color}</div>
                   </td>
-                  <td style={{ padding: '10px' }}>${car.price.toLocaleString()}</td>
+                  <td style={{ padding: '10px' }}>
+  {car.currency === 'KWD' ? 'د.ك' : 
+   car.currency === 'SAR' ? 'ر.س' : 
+   car.currency === 'AED' ? 'د.إ' : 
+   car.currency === 'QAR' ? 'ر.ق' : 
+   car.currency === 'BHD' ? 'د.ب' : 
+   car.currency === 'OMR' ? 'ر.ع' : ''} {car.price.toLocaleString()}
+</td>
                   <td style={{ padding: '10px', fontSize: '12px' }}>
                     <div>{car.user_name || 'مستخدم'}</div>
                     <div style={{ color: '#64748b' }}>{car.user_email}</div>
