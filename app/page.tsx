@@ -408,7 +408,6 @@ export default function HomePage() {
                           </p>
                         )}
 
-                        {/* ✅ زر المزيد */}
                         <div style={{ marginTop: '12px', textAlign: 'left' }}>
                           <Link
                             href={`/car/${car.id}`}
