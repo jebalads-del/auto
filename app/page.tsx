@@ -1,28 +1,5 @@
 'use client';
-<img
-  key={idx}
-  src={img}
-  alt={`${car.brand} ${car.model}`}
-  loading="lazy"  // ✅ تحميل كسول
-  style={{
-    width: '100px',
-    height: '70px',
-    objectFit: 'cover',
-    borderRadius: '6px',
-    border: '1px solid #e2e8f0',
-  }}
-/>
-import { useMemo, useCallback } from 'react';
 
-// ✅ تحسين الدوال
-const fetchCars = useCallback(async (page: number) => {
-  // ...
-}, []);
-
-// ✅ تحسين التصفية
-const headerAds = useMemo(() => {
-  return commercialAds.filter(ad => ad.position === 'header' && ad.status === 'approved').slice(0, 1);
-}, [commercialAds]);
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -326,7 +303,7 @@ export default function HomePage() {
                     gap: '20px',
                   }}
                 >
-                  {cars.map((car) => (
+                  {cars.map((car, carIndex) => (
                     <div
                       key={car.id}
                       style={{
@@ -355,9 +332,9 @@ export default function HomePage() {
                             margin: '10px',
                           }}
                         >
-                          {car.images.slice(0, 3).map((img, idx) => (
+                          {car.images.slice(0, 3).map((img, imgIndex) => (
                             <img
-                              key={idx}
+                              key={imgIndex}
                               src={img}
                               alt={`${car.brand} ${car.model}`}
                               loading="lazy"
