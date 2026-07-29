@@ -154,7 +154,6 @@ export default function CommercialAdsPage() {
                           </button>
                         </>
                       )}
-                      {/* ✅ زر الحذف يظهر لكل الإعلانات ما عدا المحذوفة */}
                       {ad.status !== 'deleted' && (
                         <button
                           onClick={() => handleAction(ad.id, 'delete')}
