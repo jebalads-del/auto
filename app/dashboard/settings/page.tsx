@@ -205,7 +205,7 @@ export default function SettingsPage() {
           <h3 style={{ marginBottom: '15px' }}>⭐ خطة الحساب المميز</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>السعر </label>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>السعر($) </label>
               <input
                 type="number"
                 value={settings.premium_plan.price}
