@@ -48,7 +48,24 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchCars(1);
-    fetchCommercialAds();
+const fetchCars = async (page: number) => {
+  setLoading(true);
+  try {
+    const response = await fetch(`/api/cars?page=${page}&limit=9`);
+    const data = await response.json();
+    console.log('🚗 البيانات المستلمة:', data); // ✅ أضف هذا
+    if (data.success) {
+      setCars(data.cars);
+      setCurrentPage(page);
+      setTotalPages(data.pagination?.totalPages || 1);
+    }
+  } catch (error) {
+    console.error('خطأ في جلب الإعلانات:', error);
+  } finally {
+    setLoading(false);
+  }
+};    
+fetchCommercialAds();
   }, []);
 
   const fetchCars = async (page: number) => {
