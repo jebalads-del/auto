@@ -142,16 +142,16 @@ export default function HomePage() {
   };
 
   const getCurrencySymbol = (currency: string) => {
-  switch (currency) {
-    case 'KWD': return 'د.ك';
-    case 'SAR': return 'ر.س';
-    case 'AED': return 'د.إ';
-    case 'QAR': return 'ر.ق';
-    case 'BHD': return 'د.ب';
-    case 'OMR': return 'ر.ع';
-    default: return '$';
-  }
-};
+    switch (currency) {
+      case 'KWD': return 'د.ك';
+      case 'SAR': return 'ر.س';
+      case 'AED': return 'د.إ';
+      case 'QAR': return 'ر.ق';
+      case 'BHD': return 'د.ب';
+      case 'OMR': return 'ر.ع';
+      default: return '';
+    }
+  };
 
   const styIn = {
     width: '100%',
