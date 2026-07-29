@@ -17,6 +17,7 @@ interface Car {
   status: string;
   payment_method: string;
   created_at: string;
+  currency: string; // ✅ أضف هذا
 }
 
 export default function CarsManagement() {
