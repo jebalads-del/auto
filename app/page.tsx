@@ -1,4 +1,17 @@
 'use client';
+<img
+  key={idx}
+  src={img}
+  alt={`${car.brand} ${car.model}`}
+  loading="lazy"  // ✅ تحميل كسول
+  style={{
+    width: '100px',
+    height: '70px',
+    objectFit: 'cover',
+    borderRadius: '6px',
+    border: '1px solid #e2e8f0',
+  }}
+/>
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
