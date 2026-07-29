@@ -1,127 +1,179 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+interface CommercialAd {
+  id: number;
+  user_id: number;
+  position: string;
+  status: string;
+  price: number;
+  duration_days: number;
+  start_date: string;
+  end_date: string;
+  image_url: string;
+  link_url: string;
+  user_name: string;
+  user_email: string;
+  created_at: string;
+}
 
 export default function CommercialAdsPage() {
-  // --- ⚠️ ضع هنا متغير جلب البيانات الخاص بك ---
-  // مثال: const { data: ads } = useQuery(...);
-  // أو: const [ads, setAds] = useState([]); useEffect(... fetch ...)
-  
-  // لكي يشتغل الكود فوراً عند النسخ، وضعت لك بيانات وهمية هنا.
-  // يمكنك لاحقاً حذف الـ useState واستخدام بياناتك الحقيقية.
-  const [ads, setAds] = useState([
-    { id: '1', user_name: 'محمد', user_email: 'mohamed@test.com', position: 'header', price: '50 د.ك', status: 'pending', duration_days: 30 },
-    { id: '2', user_name: 'أحمد', user_email: 'ahmed@test.com', position: 'footer', price: '20 د.ك', status: 'approved', duration_days: 15 },
-    { id: '3', user_name: 'خالد', user_email: 'khaled@test.com', position: 'sidebar', price: '40 د.ك', status: 'deleted', duration_days: 10 },
-  ]);
+  const [ads, setAds] = useState<CommercialAd[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
 
-  // --- هذه هي دالة الإجراءات (يجب أن تعدلها لتتصل بالسيرفر الخاص بك) ---
-  const handleAction = async (id: string, action: 'approve' | 'reject' | 'delete') => {
-    console.log(`العملية: ${action} للإعلان: ${id}`);
+  useEffect(() => {
+    fetchAds();
+  }, []);
 
-    // هذه الخطوة تقوم بتحديث الواجهة فوراً بدون ريفريش (للتجربة)
-    setAds((prevAds) => 
-      prevAds.map((ad) => {
-        if (ad.id === id) {
-          // إذا كان إجراء حذف، غير الحالة إلى deleted
-          if (action === 'delete') return { ...ad, status: 'deleted' };
-          // إذا كان موافقة أو رفض
-          return { ...ad, status: action === 'approve' ? 'approved' : 'rejected' };
-        }
-        return ad;
-      })
-    );
-
-    // !!! هنــــا يجب أن تضع كود الـ API الحقيقي الخاص بك !!!
-    // مثال:
-    // await fetch('/api/ads/update-status', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ id, action })
-    // });
+  const fetchAds = async () => {
+    try {
+      const res = await fetch('/api/admin/commercial-ads');
+      const data = await res.json();
+      if (data.success) {
+        setAds(data.ads);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب الطلبات:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // --- دالة الشارة ---
+  const handleAction = async (adId: number, action: string) => {
+    try {
+      const res = await fetch('/api/admin/commercial-ads/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adId, action }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage(`✅ ${data.message}`);
+        fetchAds();
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(`❌ ${data.message}`);
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('خطأ:', error);
+      setMessage('❌ حدث خطأ');
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
-    if (status === 'pending') return <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>⏳ قيد المراجعة</span>;
-    if (status === 'approved') return <span style={{ color: '#10b981', fontWeight: 'bold' }}>✅ مقبول</span>;
-    if (status === 'rejected') return <span style={{ color: '#ef4444', fontWeight: 'bold' }}>❌ مرفوض</span>;
-    if (status === 'deleted') return <span style={{ color: '#64748b', fontWeight: 'bold' }}>🗑️ محذوف</span>;
-    return <span>{status}</span>;
+    const styles: Record<string, { bg: string; color: string; text: string }> = {
+      pending: { bg: '#fef3c7', color: '#92400e', text: '⏳ قيد المراجعة' },
+      approved: { bg: '#d1fae5', color: '#065f46', text: '✅ مقبول' },
+      rejected: { bg: '#fee2e2', color: '#991b1b', text: '❌ مرفوض' },
+      deleted: { bg: '#f1f5f9', color: '#64748b', text: '🗑️ محذوف' },
+    };
+    const style = styles[status] || styles.pending;
+    return (
+      <span style={{
+        backgroundColor: style.bg,
+        color: style.color,
+        padding: '4px 10px',
+        borderRadius: '20px',
+        fontSize: '12px',
+        fontWeight: 'bold',
+      }}>
+        {style.text}
+      </span>
+    );
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-              <th style={{ padding: '12px', textAlign: 'left' }}>#</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>المستخدم</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>الموقع</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>السعر</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>الحالة</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>المدة</th>
-              <th style={{ padding: '12px', textAlign: 'center' }}>الإجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ads.map((ad: any, index: number) => (
-              <tr key={ad.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '12px' }}>{index + 1}</td>
-                <td style={{ padding: '12px' }}>
-                  <div>{ad.user_name}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>{ad.user_email}</div>
-                </td>
-                <td style={{ padding: '12px' }}>
-                  {ad.position === 'header' ? '📰 الهيدر' : (ad.position === 'footer' ? '📌 الفوتر' : '📐 جانبي')}
-                </td>
-                <td style={{ padding: '12px' }}>{ad.price}</td>
-                <td style={{ padding: '12px' }}>{getStatusBadge(ad.status)}</td>
-                <td style={{ padding: '12px' }}>{ad.duration_days} يوم</td>
+    <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif' }}>
+      <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>📢 طلبات الإعلانات التجارية</h1>
 
-                {/* --- هذا هو الجزء الذي يحل مشكلتك (المنطق الشرحي الصحيح) --- */}
-                <td style={{ padding: '12px', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                    
-                    {/* 1. إذا كانت الحالة "معلقة" فقط، يظهر زر موافقة ورفض */}
-                    {ad.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleAction(ad.id, 'approve')}
-                          style={{ padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          ✅ موافقة
-                        </button>
-                        <button
-                          onClick={() => handleAction(ad.id, 'reject')}
-                          style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          ❌ رفض
-                        </button>
-                      </>
-                    )}
+      {message && (
+        <div style={{
+          backgroundColor: message.includes('✅') ? '#d1fae5' : '#fee2e2',
+          color: message.includes('✅') ? '#065f46' : '#991b1b',
+          padding: '12px',
+          borderRadius: '8px',
+          marginBottom: '15px',
+        }}>
+          {message}
+        </div>
+      )}
 
-                    {/* 2. إذا كانت الحالة "ليست محذوفة"، يظهر زر الحذف */}
-                    {ad.status !== 'deleted' && (
-                      <button
-                        onClick={() => handleAction(ad.id, 'delete')}
-                        style={{ padding: '6px 12px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                      >
-                        🗑️ حذف
-                      </button>
-                    )}
-
-                    {/* 3. إذا كانت الحالة "محذوفة"، يظهر نص فقط */}
-                    {ad.status === 'deleted' && (
-                      <span style={{ color: '#64748b', fontSize: '12px' }}>✅ تم الحذف</span>
-                    )}
-                  </div>
-                </td>
+      {loading ? (
+        <p>جاري التحميل...</p>
+      ) : ads.length === 0 ? (
+        <p style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+          لا توجد طلبات إعلانات تجارية
+        </p>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#1e293b', color: 'white' }}>
+                <th style={{ padding: '12px', textAlign: 'right' }}>#</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>المستخدم</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>الموقع</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>السعر</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>الحالة</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>المدة</th>
+                <th style={{ padding: '12px', textAlign: 'center' }}>الإجراءات</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {ads.map((ad, index) => (
+                <tr key={ad.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '12px' }}>{index + 1}</td>
+                  <td style={{ padding: '12px' }}>
+                    <div>{ad.user_name || 'مستخدم'}</div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>{ad.user_email}</div>
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    {ad.position === 'header' ? '📌 الهيدر' : '📌 الفوتر'}
+                  </td>
+                  <td style={{ padding: '12px' }}>${ad.price}</td>
+                  <td style={{ padding: '12px' }}>{getStatusBadge(ad.status)}</td>
+                  <td style={{ padding: '12px' }}>{ad.duration_days} يوم</td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {ad.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleAction(ad.id, 'approve')}
+                            style={{ padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                          >
+                            ✅ موافقة
+                          </button>
+                          <button
+                            onClick={() => handleAction(ad.id, 'reject')}
+                            style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                          >
+                            ❌ رفض
+                          </button>
+                        </>
+                      )}
+                      {/* ✅ زر الحذف يظهر لكل الإعلانات ما عدا المحذوفة */}
+                      {ad.status !== 'deleted' && (
+                        <button
+                          onClick={() => handleAction(ad.id, 'delete')}
+                          style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          🗑️ حذف
+                        </button>
+                      )}
+                      {ad.status === 'deleted' && (
+                        <span style={{ color: '#64748b', fontSize: '12px' }}>✅ تم الحذف</span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
