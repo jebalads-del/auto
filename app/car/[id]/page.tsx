@@ -18,6 +18,7 @@ interface Car {
   user_email: string;
   user_phone: string;
   created_at: string;
+  currency: string;
 }
 
 export default function CarDetailsPage() {
@@ -50,6 +51,18 @@ export default function CarDetailsPage() {
     fetchCar();
   }, [params.id]);
 
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'KWD': return 'د.ك';
+      case 'SAR': return 'ر.س';
+      case 'AED': return 'د.إ';
+      case 'QAR': return 'ر.ق';
+      case 'BHD': return 'د.ب';
+      case 'OMR': return 'ر.ع';
+      default: return '';
+    }
+  };
+
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
@@ -70,7 +83,6 @@ export default function CarDetailsPage() {
 
   return (
     <div style={styles.container}>
-      {/* ✅ الهيدر */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
@@ -84,7 +96,6 @@ export default function CarDetailsPage() {
       <div style={styles.content}>
         <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
 
-        {/* معرض الصور */}
         <div style={styles.gallery}>
           {car.images && car.images.length > 0 ? (
             <div style={styles.imageGrid}>
@@ -103,7 +114,6 @@ export default function CarDetailsPage() {
           )}
         </div>
 
-        {/* ✅ نافذة تكبير الصورة */}
         {selectedImage && (
           <div style={styles.lightbox} onClick={() => setSelectedImage(null)}>
             <span style={styles.closeBtn}>&times;</span>
@@ -111,17 +121,11 @@ export default function CarDetailsPage() {
           </div>
         )}
 
-        {/* المعلومات */}
         <div style={styles.infoCard}>
           <h1 style={styles.title}>{car.brand} {car.model}</h1>
           <div style={styles.priceTag}>
-  💰 {car.currency === 'KWD' ? 'د.ك' : 
-       car.currency === 'SAR' ? 'ر.س' : 
-       car.currency === 'AED' ? 'د.إ' : 
-       car.currency === 'QAR' ? 'ر.ق' : 
-       car.currency === 'BHD' ? 'د.ب' : 
-       car.currency === 'OMR' ? 'ر.ع' : ''} {car.price.toLocaleString()}
-</div>
+            💰 {getCurrencySymbol(car.currency)} {car.price.toLocaleString()}
+          </div>
 
           <div style={styles.detailsGrid}>
             <div style={styles.detailItem}>
@@ -165,7 +169,6 @@ export default function CarDetailsPage() {
             </div>
           )}
 
-          {/* التواصل مع البائع */}
           <div style={styles.contactSection}>
             <h3 style={styles.sectionTitle}>📞 التواصل مع البائع</h3>
             <div style={styles.contactButtons}>
