@@ -114,7 +114,14 @@ export default function CarDetailsPage() {
         {/* المعلومات */}
         <div style={styles.infoCard}>
           <h1 style={styles.title}>{car.brand} {car.model}</h1>
-          <div style={styles.priceTag}>💰 ${car.price.toLocaleString()}</div>
+          <div style={styles.priceTag}>
+  💰 {car.currency === 'KWD' ? 'د.ك' : 
+       car.currency === 'SAR' ? 'ر.س' : 
+       car.currency === 'AED' ? 'د.إ' : 
+       car.currency === 'QAR' ? 'ر.ق' : 
+       car.currency === 'BHD' ? 'د.ب' : 
+       car.currency === 'OMR' ? 'ر.ع' : ''} {car.price.toLocaleString()}
+</div>
 
           <div style={styles.detailsGrid}>
             <div style={styles.detailItem}>
