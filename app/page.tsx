@@ -12,7 +12,17 @@
     border: '1px solid #e2e8f0',
   }}
 />
+import { useMemo, useCallback } from 'react';
 
+// ✅ تحسين الدوال
+const fetchCars = useCallback(async (page: number) => {
+  // ...
+}, []);
+
+// ✅ تحسين التصفية
+const headerAds = useMemo(() => {
+  return commercialAds.filter(ad => ad.position === 'header' && ad.status === 'approved').slice(0, 1);
+}, [commercialAds]);
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
