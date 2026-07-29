@@ -303,7 +303,7 @@ export default function HomePage() {
                     gap: '20px',
                   }}
                 >
-                  {cars.map((car, carIndex) => (
+                 {cars.map((car) => (
                     <div
                       key={car.id}
                       style={{
