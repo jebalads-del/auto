@@ -136,24 +136,37 @@ export default function CommercialAdsPage() {
                   <td style={{ padding: '12px' }}>${ad.price}</td>
                   <td style={{ padding: '12px' }}>{getStatusBadge(ad.status)}</td>
                   <td style={{ padding: '12px' }}>{ad.duration_days} يوم</td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                                    <td style={{ padding: '12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {ad.status === 'pending' && (
+                        <>
                           <button
+                            onClick={() => handleAction(ad.id, 'approve')}
+                            style={{ padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                          >
+                            ✅ موافقة
+                          </button>
+                          <button
+                            onClick={() => handleAction(ad.id, 'reject')}
+                            style={{ padding: '6px 12px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                          >
+                            ❌ رفض
+                          </button>
                         </>
                       )}
-                      {/* ✅ زر الحذف يظهر لكل الإعلانات ما عدا المحذوفة */}
-                      {ad.status !== 'deleted' && (
+                      {ad.status !== 'deleted' ? (
                         <button
                           onClick={() => handleAction(ad.id, 'delete')}
                           style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                         >
                           🗑️ حذف
                         </button>
-                      )}
-                      {ad.status === 'deleted' && (
-                        <span style={{ color: '#64748b', fontSize: '12px' }}>✅ تم الحذف</span>
+                      ) : (
+                        <span style={{ color: '#64748b', fontSize: '12px' }}>تم الحذف 🗑️</span>
                       )}
                     </div>
+                  </td>
+
                   </td>
                 </tr>
               ))}
