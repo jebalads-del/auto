@@ -138,7 +138,7 @@ export default function CommercialAdsPage() {
                   <td style={{ padding: '12px' }}>{ad.duration_days} يوم</td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      {ad.status === 'pending' && (
+                      {ad.status === 'pending' && (<><button onClick={() => handleAction(ad.id, 'approve')} style={{padding:'4px 10px',backgroundColor:'#10b981',color:'white',border:'none',borderRadius:'4px',cursor:'pointer',fontSize:'11px',marginLeft:'5px'}}>✅ موافقة</button><button onClick={() => handleAction(ad.id, 'reject')} style={{padding:'4px 10px',backgroundColor:'#f59e0b',color:'white',border:'none',borderRadius:'4px',cursor:'pointer',fontSize:'11px',marginLeft:'5px'}}>❌ رفض</button></>)
                         <>
                           <button
                             onClick={() => handleAction(ad.id, 'approve')}
