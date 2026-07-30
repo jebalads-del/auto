@@ -266,7 +266,7 @@ export default function NewCarPage() {
           </div>
 
           <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الممشى (كم)</label>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الكيلومترات (كم)</label>
             <input
               type="number"
               value={formData.kilometers}
