@@ -317,7 +317,7 @@ function ProfileContent() {
               />
             </div>
             <div style={styles.field}>
-              <label style={styles.label}>البريد الإلكتروني (غير قابل للتعديل)</label>
+              <label style={styles.label}>البريد الإلكتروني </label>
               <input
                 type="email"
                 value={user?.email || ''}
