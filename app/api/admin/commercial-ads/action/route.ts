@@ -12,14 +12,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const status = action === 'approve' ? 'approved' : 'rejected';
-    const message = action === 'approve' ? 'تمت الموافقة على الإعلان' : 'تم رفض الإعلان';
+    let query = null;
+    let message = '';
 
-    await sql`
-      UPDATE commercial_ads 
-      SET status = ${status}, updated_at = NOW()
-      WHERE id = ${adId}
-    `;
+    switch (action) {
+      case 'approve':
+        query = sql`
+          UPDATE commercial_ads 
+          SET status = 'approved', updated_at = NOW()
+          WHERE id = ${adId}
+        `;
+        message = '✅ تمت الموافقة على الإعلان بنجاح';
+        break;
+
+      case 'reject':
+        query = sql`
+          UPDATE commercial_ads 
+          SET status = 'rejected', updated_at = NOW()
+          WHERE id = ${adId}
+        `;
+        message = '❌ تم رفض الإعلان التجاري';
+        break;
+
+      case 'delete':
+        query = sql`
+          DELETE FROM commercial_ads WHERE id = ${adId}
+        `;
+        message = '🗑️ تم حذف الإعلان التجاري بنجاح من قاعدة البيانات';
+        break;
+
+      default:
+        return NextResponse.json(
+          { success: false, message: 'إجراء غير معروف' },
+          { status: 400 }
+        );
+    }
+
+    if (query) {
+      await query;
+    }
 
     return NextResponse.json({ success: true, message });
   } catch (error) {
