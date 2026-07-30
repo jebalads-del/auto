@@ -138,7 +138,8 @@ export default function CommercialAdsPage() {
                   <td style={{ padding: '12px' }}>{ad.duration_days} يوم</td>
                                     <td style={{ padding: '12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      {ad.status === 'pending' && (
+                      {ad.status === 'قيد المراجعة' && (
+
                         <>
                           <button
                             onClick={() => handleAction(ad.id, 'approve')}
