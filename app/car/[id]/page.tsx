@@ -189,7 +189,7 @@ export default function CarDetailsPage() {
               <div style={styles.contactButtons}>
                 {car.user_phone && (
                             <a
-            href={`https://wa.me{cleanPhoneForWhatsapp}`}
+            href={`https://wa.me/${cleanPhoneForWhatsapp}`}
             target="_blank"
             rel="noopener noreferrer"
             style={styles.whatsappBtn}
