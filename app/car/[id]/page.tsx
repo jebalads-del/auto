@@ -198,7 +198,7 @@ export default function CarDetailsPage() {
           </a>
 
                 )}
-                <a href={`mailto:${car.user_email}`} style={styles.contactBtn}>
+                <a href={`mailto:${car.user_email}`}>
                   📧 مراسلة البائع
                 </a>
                 <button 
