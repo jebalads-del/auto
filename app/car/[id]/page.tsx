@@ -222,10 +222,7 @@ export default function CarDetailsPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-const styles = {
+  const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   header: { backgroundColor: '#1e293b', padding: '12px 20px', color: 'white' },
   headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '10px' },
@@ -251,3 +248,12 @@ const styles = {
   contactSection: { borderTop: '1px solid #e2e8f0', paddingTop: '20px' },
   contactButtons: { display: 'flex', gap: '10px', flexWrap: 'wrap' as const },
   whatsappBtn: { backgroundColor: '#25d366', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' },
+  contactBtn: { backgroundColor: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' },
+  copyBtn: { backgroundColor: '#64748b', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' },
+  loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '50vh', gap: '10px' },
+  spinner: { width: '40px', height: '40px', border: '4px solid #cbd5e1', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' },
+  errorContainer: { textAlign: 'center' as const, padding: '40px' },
+  lightbox: { position: 'fixed' as const, top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.9)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+  lightboxImage: { maxWidth: '90%', maxHeight: '90%', borderRadius: '8px' },
+  closeBtn: { position: 'absolute' as const, top: '20px', right: '30px', color: 'white', fontSize: '40px', fontWeight: 'bold', cursor: 'pointer' }
+};
