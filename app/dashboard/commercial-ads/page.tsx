@@ -167,8 +167,6 @@ export default function CommercialAdsPage() {
                       )}
                     </div>
                   </td>
-                
-                  </td>
                 </tr>
               ))}
             </tbody>
