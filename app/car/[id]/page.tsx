@@ -188,14 +188,15 @@ export default function CarDetailsPage() {
             ) : (
               <div style={styles.contactButtons}>
                 {car.user_phone && (
-                  <a
-                    href={`https://wa.me{cleanPhoneForWhatsapp}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={styles.whatsappBtn}
-                  >
-                    💬 واتساب
-                  </a>
+                            <a
+            href={`https://wa.me{cleanPhoneForWhatsapp}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.whatsappBtn}
+          >
+            💬 واتساب
+          </a>
+
                 )}
                 <a href={`mailto:${car.user_email}`} style={styles.contactBtn}>
                   📧 مراسلة البائع
