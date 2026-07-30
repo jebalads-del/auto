@@ -19,6 +19,7 @@ interface Car {
   user_phone: string;
   created_at: string;
   currency: string;
+  status: string; // ✅ أضفنا هذا الحقل
 }
 
 export default function CarDetailsPage() {
@@ -96,6 +97,23 @@ export default function CarDetailsPage() {
       <div style={styles.content}>
         <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
 
+        {/* ✅ شارة "مباعة" عريضة تظهر أعلى الصور بشكل بارز */}
+        {car.status === 'sold' && (
+          <div style={{
+            backgroundColor: '#ef4444',
+            color: 'white',
+            textAlign: 'center',
+            padding: '12px',
+            borderRadius: '12px',
+            fontWeight: 'bold',
+            fontSize: '18px',
+            marginBottom: '15px',
+            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.2)'
+          }}>
+            🔒 تم بيع هذه السيارة رسميًا
+          </div>
+        )}
+
         <div style={styles.gallery}>
           {car.images && car.images.length > 0 ? (
             <div style={styles.imageGrid}>
@@ -169,32 +187,37 @@ export default function CarDetailsPage() {
             </div>
           )}
 
+          {/* إلغاء تفعيل أزرار التواصل إذا كانت السيارة مباعة */}
           <div style={styles.contactSection}>
             <h3 style={styles.sectionTitle}>📞 التواصل مع البائع</h3>
-            <div style={styles.contactButtons}>
-              {car.user_phone && (
-                <a
-                  href={`https://wa.me/${car.user_phone.replace(/\D/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={styles.whatsappBtn}
-                >
-                  💬 واتساب
+            {car.status === 'sold' ? (
+              <p style={{ color: '#ef4444', fontWeight: 'bold' }}>🚫 لا يمكن التواصل مع البائع لأن السيارة تم بيعها.</p>
+            ) : (
+              <div style={styles.contactButtons}>
+                {car.user_phone && (
+                  <a
+                    href={`https://wa.me/${car.user_phone.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.whatsappBtn}
+                  >
+                    💬 واتساب
+                  </a>
+                )}
+                <a href={`mailto:${car.user_email}`} style={styles.contactBtn}>
+                  📧 مراسلة البائع
                 </a>
-              )}
-              <a href={`mailto:${car.user_email}`} style={styles.contactBtn}>
-                📧 مراسلة البائع
-              </a>
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText(car.user_email || '');
-                  alert('✅ تم نسخ البريد الإلكتروني');
-                }}
-                style={styles.copyBtn}
-              >
-                📋 نسخ البريد
-              </button>
-            </div>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(car.user_email || '');
+                    alert('✅ تم نسخ البريد الإلكتروني');
+                  }}
+                  style={styles.copyBtn}
+                >
+                  📋 نسخ البريد
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -203,230 +226,28 @@ export default function CarDetailsPage() {
 }
 
 const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#f8fafc',
-    fontFamily: 'sans-serif',
-    direction: 'rtl' as const,
-  },
-  header: {
-    backgroundColor: '#1e293b',
-    padding: '12px 20px',
-    color: 'white',
-  },
-  headerContent: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap' as const,
-    gap: '10px',
-  },
-  headerTitle: {
-    color: '#38bdf8',
-    margin: 0,
-    fontSize: '18px',
-  },
-  headerLinks: {
-    display: 'flex',
-    gap: '15px',
-    alignItems: 'center',
-    flexWrap: 'wrap' as const,
-  },
-  headerLink: {
-    color: '#cbd5e1',
-    textDecoration: 'none',
-    fontSize: '14px',
-  },
-  content: {
-    maxWidth: '900px',
-    margin: '0 auto',
-    padding: '20px',
-  },
-  backLink: {
-    display: 'inline-block',
-    marginBottom: '20px',
-    color: '#2563eb',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: 'bold',
-  },
-  gallery: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    marginBottom: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-  },
-  imageGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '5px',
-    padding: '5px',
-  },
-  mainImage: {
-    width: '100%',
-    height: '300px',
-    objectFit: 'cover' as const,
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'transform 0.2s',
-  },
-  noImage: {
-    padding: '60px',
-    textAlign: 'center' as const,
-    fontSize: '48px',
-    color: '#94a3b8',
-  },
-  infoCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '25px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-  },
-  title: {
-    fontSize: '28px',
-    margin: '0 0 10px 0',
-    color: '#1e293b',
-  },
-  priceTag: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    color: '#2563eb',
-    marginBottom: '20px',
-  },
-  detailsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '15px',
-    marginBottom: '20px',
-  },
-  detailItem: {
-    backgroundColor: '#f8fafc',
-    padding: '12px',
-    borderRadius: '8px',
-  },
-  detailLabel: {
-    display: 'block',
-    fontSize: '12px',
-    color: '#64748b',
-    marginBottom: '4px',
-  },
-  detailValue: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  descriptionSection: {
-    marginTop: '20px',
-    borderTop: '1px solid #e2e8f0',
-    paddingTop: '20px',
-  },
-  sectionTitle: {
-    fontSize: '16px',
-    color: '#1e293b',
-    marginBottom: '10px',
-  },
-  description: {
-    color: '#475569',
-    lineHeight: '1.8',
-    whiteSpace: 'pre-wrap' as const,
-  },
-  contactSection: {
-    marginTop: '20px',
-    borderTop: '1px solid #e2e8f0',
-    paddingTop: '20px',
-  },
-  contactButtons: {
-    display: 'flex',
-    gap: '10px',
-    flexWrap: 'wrap' as const,
-  },
-  whatsappBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#25D366',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    border: 'none',
-    cursor: 'pointer',
-  },
-  contactBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#2563eb',
-    color: 'white',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    border: 'none',
-    cursor: 'pointer',
-  },
-  copyBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#475569',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-  },
-  lightbox: {
-    position: 'fixed' as const,
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999,
-    cursor: 'pointer',
-  },
-  lightboxImage: {
-    maxWidth: '90%',
-    maxHeight: '90%',
-    objectFit: 'contain' as const,
-    borderRadius: '8px',
-  },
-  closeBtn: {
-    position: 'absolute' as const,
-    top: '20px',
-    right: '30px',
-    color: 'white',
-    fontSize: '40px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    zIndex: 10000,
-  },
-  loadingContainer: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#64748b',
-  },
-  spinner: {
-    border: '4px solid #e2e8f0',
-    borderTop: '4px solid #2563eb',
-    borderRadius: '50%',
-    width: '40px',
-    height: '40px',
-    animation: 'spin 1s linear infinite',
-  },
-  errorContainer: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#991b1b',
-    textAlign: 'center' as const,
-  },
-};
+  container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
+  header: { backgroundColor: '#1e293b', padding: '12px 20px', color: 'white' },
+  headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '10px' },
+  headerTitle: { color: '#38bdf8', margin: 0, fontSize: '18px' },
+  headerLinks: { display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' as const },
+  headerLink: { color: '#cbd5e1', textDecoration: 'none', fontSize: '14px' },
+  content: { maxWidth: '900px', margin: '0 auto', padding: '20px' },
+  backLink: { display: 'inline-block', marginBottom: '20px', color: '#2563eb', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' },
+  gallery: { backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
+  imageGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '5px', padding: '5px' },
+  mainImage: { width: '100%', height: '300px', objectFit: 'cover' as const, borderRadius: '8px', cursor: 'pointer', transition: 'transform 0.2s' },
+  noImage: { padding: '60px', textAlign: 'center' as const, fontSize: '48px', color: '#94a3b8' },
+  infoCard: { backgroundColor: 'white', borderRadius: '12px', padding: '25px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
+  title: { fontSize: '24px', marginBottom: '10px', color: '#1e293b' },
+  priceTag: { fontSize: '20px', color: '#10b981', fontWeight: 'bold', marginBottom: '20px' },
+  detailsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '25px', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px' },
+  detailItem: { display: 'flex', flexDirection: 'column' as const, gap: '4px' },
+  detailLabel: { fontSize: '12px', color: '#64748b' },
+  detailValue: { fontSize: '14px', fontWeight: 'bold', color: '#334155' },
+  descriptionSection: { borderTop: '1px solid #e2e8f0', paddingTop: '20px', marginBottom: '25px' },
+  sectionTitle: { fontSize: '16px', color: '#1e293b', marginBottom: '10px' },
+  description: { fontSize: '14px', color: '#475569', lineHeight: '1.6', whiteSpace: 'pre-line' as const },
+  contactSection: { borderTop: '1px solid #e2e8f0', paddingTop: '20px' },
+  contactButtons: { display: 'flex', gap: '10px', flexWrap: 'wrap' as const },
+  whatsappBtn: { backgroundColor: '#25d366', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' },
