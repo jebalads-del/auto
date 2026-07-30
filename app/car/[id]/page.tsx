@@ -133,7 +133,7 @@ export default function CarDetailsPage() {
               <span style={styles.detailValue}>{car.year}</span>
             </div>
             <div style={styles.detailItem}>
-              <span style={styles.detailLabel}>📏 الممشى</span>
+              <span style={styles.detailLabel}>📏 الكيلومترات</span>
               <span style={styles.detailValue}>{car.kilometers?.toLocaleString() || 0} كم</span>
             </div>
             <div style={styles.detailItem}>
