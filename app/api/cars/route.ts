@@ -8,19 +8,19 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '9');
     const offset = (page - 1) * limit;
 
-    // ✅ جلب السيارات مع Pagination
+    // ✅ جلب السيارات المقبولة والمباعة معاً مع Pagination
     const cars = await sql`
       SELECT id, brand, model, year, price, kilometers, color, 
              description, images, status, created_at, currency 
       FROM cars 
-      WHERE status = 'approved' 
+      WHERE status IN ('approved', 'sold') 
       ORDER BY created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
 
-    // ✅ جلب العدد الإجمالي
+    // ✅ جلب العدد الإجمالي للسيارات المقبولة والمباعة
     const countResult = await sql`
-      SELECT COUNT(*) as total FROM cars WHERE status = 'approved'
+      SELECT COUNT(*) as total FROM cars WHERE status IN ('approved', 'sold')
     `;
     const total = parseInt(countResult[0].total);
 
