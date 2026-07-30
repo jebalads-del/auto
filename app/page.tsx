@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Script from 'next/script'
+
 interface Car {
   id: number;
   brand: string;
