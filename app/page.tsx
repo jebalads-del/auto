@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
 
         <Script
-          src="/dashboard/cars/route.tsx"
+          src="/dashboard/cars"
           strategy="lazyOnload"
         />
       </body>
