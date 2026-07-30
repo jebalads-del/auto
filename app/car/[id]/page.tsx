@@ -19,7 +19,7 @@ interface Car {
   user_phone: string;
   created_at: string;
   currency: string;
-  status: string; // ✅ أضفنا هذا الحقل
+  status: string;
 }
 
 export default function CarDetailsPage() {
@@ -82,6 +82,9 @@ export default function CarDetailsPage() {
     );
   }
 
+  // تنظيف رقم الهاتف للواتساب وإزالة الرموز الزائدة مثل + ليعمل الكود الدولي بشكل سليم
+  const cleanPhoneForWhatsapp = car.user_phone ? car.user_phone.replace(/\D/g, '') : '';
+
   return (
     <div style={styles.container}>
       <header style={styles.header}>
@@ -97,10 +100,10 @@ export default function CarDetailsPage() {
       <div style={styles.content}>
         <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
 
-        {/* ✅ شارة "مباعة" عريضة تظهر أعلى الصور بشكل بارز */}
+        {/* ✅ تم تعديل اللون هنا إلى الأخضر البارز بناءً على طلبك */}
         {car.status === 'sold' && (
           <div style={{
-            backgroundColor: '#ef4444',
+            backgroundColor: '#10b981',
             color: 'white',
             textAlign: 'center',
             padding: '12px',
@@ -108,9 +111,9 @@ export default function CarDetailsPage() {
             fontWeight: 'bold',
             fontSize: '18px',
             marginBottom: '15px',
-            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.2)'
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)'
           }}>
-            🔒 تم بيع هذه السيارة رسميًا
+            💰 تم بيع هذه السيارة رسميًا
           </div>
         )}
 
@@ -145,6 +148,7 @@ export default function CarDetailsPage() {
             💰 {getCurrencySymbol(car.currency)} {car.price.toLocaleString()}
           </div>
 
+          {/* ✅ تم حذف حقول البريد والهاتف من جدول التفاصيل هنا لإبقائها بالأسفل فقط */}
           <div style={styles.detailsGrid}>
             <div style={styles.detailItem}>
               <span style={styles.detailLabel}>📅 السنة</span>
@@ -168,16 +172,6 @@ export default function CarDetailsPage() {
               <span style={styles.detailLabel}>👤 الناشر</span>
               <span style={styles.detailValue}>{car.user_name || 'مستخدم'}</span>
             </div>
-            <div style={styles.detailItem}>
-              <span style={styles.detailLabel}>📧 البريد</span>
-              <span style={styles.detailValue}>{car.user_email || 'غير متوفر'}</span>
-            </div>
-            {car.user_phone && (
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>📱 الهاتف</span>
-                <span style={styles.detailValue}>{car.user_phone}</span>
-              </div>
-            )}
           </div>
 
           {car.description && (
@@ -187,7 +181,6 @@ export default function CarDetailsPage() {
             </div>
           )}
 
-          {/* إلغاء تفعيل أزرار التواصل إذا كانت السيارة مباعة */}
           <div style={styles.contactSection}>
             <h3 style={styles.sectionTitle}>📞 التواصل مع البائع</h3>
             {car.status === 'sold' ? (
@@ -196,7 +189,7 @@ export default function CarDetailsPage() {
               <div style={styles.contactButtons}>
                 {car.user_phone && (
                   <a
-                    href={`https://wa.me/${car.user_phone.replace(/\D/g, '')}`}
+                    href={`https://wa.me{cleanPhoneForWhatsapp}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={styles.whatsappBtn}
@@ -221,12 +214,10 @@ export default function CarDetailsPage() {
           </div>
         </div>
       </div>
-        </div>
+    </div>
   );
 }
-
 const styles = {
-
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   header: { backgroundColor: '#1e293b', padding: '12px 20px', color: 'white' },
   headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '10px' },
