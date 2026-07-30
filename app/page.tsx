@@ -2,7 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Script from 'next/script'
 
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="ar">
+      <body>
+        {children}
+
+        <Script
+          src="https://example.com/ad-provider.js"
+          strategy="lazyOnload"
+        />
+      </body>
+    </html>
+  )
+}
 interface Car {
   id: number;
   brand: string;
