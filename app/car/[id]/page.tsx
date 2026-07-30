@@ -221,8 +221,12 @@ export default function CarDetailsPage() {
           </div>
         </div>
       </div>
-    </div>
-  const styles = {
+        </div>
+  );
+}
+
+const styles = {
+
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   header: { backgroundColor: '#1e293b', padding: '12px 20px', color: 'white' },
   headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '10px' },
