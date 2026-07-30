@@ -3,21 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Script from 'next/script'
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="ar">
-      <body>
-        {children}
-
-        <Script
-          src="/dashboard/cars"
-          strategy="lazyOnload"
-        />
-      </body>
-    </html>
-  )
-}
 interface Car {
   id: number;
   brand: string;
