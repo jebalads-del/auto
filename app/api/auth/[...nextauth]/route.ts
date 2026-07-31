@@ -2,18 +2,14 @@ import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import sql from '../../db';
 
-// ✅ التكوين الأساسي
-const handler = NextAuth({
+// ✅ v5 style
+export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET,
-  pages: {
-    signIn: '/login',
-  },
   callbacks: {
     async signIn({ user }) {
       try {
@@ -32,7 +28,7 @@ const handler = NextAuth({
         return false;
       }
     },
-    async session({ session }) {
+    async session({ session, token }) {
       try {
         const user = await sql`
           SELECT id FROM users WHERE email = ${session.user.email}
@@ -46,7 +42,12 @@ const handler = NextAuth({
       }
     },
   },
+  pages: {
+    signIn: '/login',
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 });
 
-// ✅ الصيغة التي تعمل مع Next.js 15
-export { handler as GET, handler as POST };
+// ✅ التصدير الصحيح لـ v5
+export const GET = handlers.GET;
+export const POST = handlers.POST;
