@@ -47,6 +47,6 @@ const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// ✅ الطريقة التي تعمل مع Next.js 15
+// ✅ الحل النهائي: export default
 const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+export default handler;
