@@ -1,7 +1,7 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Cookies from 'js-cookie';
 
 const currencies = [
@@ -21,7 +21,7 @@ export default function NewCarPage() {
   const [isPaid, setIsPaid] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreview, setImagePreview] = useState<string[]>([]);
-  
+
   const [formData, setFormData] = useState({
     brand: '',
     model: '',
@@ -34,40 +34,31 @@ export default function NewCarPage() {
     currency: 'KWD',
   });
 
-  const brands = ['تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 'كيا', 'لكزس', 'جيب'];
+  const brands = ['تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو', 'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو'];
+  const colors = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي'];
+
   const modelsMap: Record<string, string[]> = {
     'تويوتا': ['كامري', 'كورولا', 'لاندكروزر', 'برادو', 'أفالون', 'راف فور', 'يارس', 'هيلوكس', 'أخرى'],
-    'هوندا': ['أكورد', 'سيفيك', 'سي آر في', 'بايلوت', 'أوديسي', 'أخرى'],
-    'مرسيدس': ['الفئة C', 'الفئة E', 'الفئة S', 'GLC', 'GLE', 'G-Class', 'أخرى'],
-    'بي إم دبليو': ['الفئة الثالثة', 'الفئة الخامسة', 'الفئة السابعة', 'X5', 'X6', 'X7', 'أخرى'],
-    'أودي': ['A4', 'A6', 'A8', 'Q5', 'Q7', 'Q8', 'أخرى'],
-    'فورد': ['تورس', 'موستانج', 'إكسبلورر', 'إكسبيدشن', 'إف 150', 'أخرى'],
-    'شيفروليه': ['تاهو', 'سيلفرادو', 'كامارو', 'ماليبو', 'كابرس', 'أخرى'],
-    'نيسان': ['باترول', 'ألتيما', 'ماكسيما', 'صني', 'باثفايندر', 'أخرى'],
-    'هيونداي': ['إلنترا', 'سوناتا', 'أكسنت', 'سانتا في', 'توسان', 'أخرى'],
-    'كيا': ['أوبتيما', 'سيراتو', 'سبورتج', 'سورينتو', 'K5', 'أخرى'],
-    'لكزس': ['LS', 'LX', 'RX', 'ES', 'IS', 'أخرى'],
-    'جيب': ['جراند شيروكي', 'روبيكون', 'شيروكي', 'كومباس', 'أخرى']
+    'هوندا': ['أكورد', 'سيفيك', 'سي آر في', 'بايلوت', 'أوديسي', 'سيتي', 'أخرى'],
+    'مرسيدس': ['الفئة C', 'الفئة E', 'الفئة S', 'GLC', 'GLE', 'G-Class', 'CLA', 'A-Class', 'أخرى'],
+    'بي إم دبليو': ['الفئة الثالثة', 'الفئة الخامسة', 'الفئة السابعة', 'X5', 'X6', 'X3', 'X7', 'أخرى'],
+    'أودي': ['A4', 'A6', 'A8', 'Q5', 'Q7', 'Q8', 'A5', 'أخرى'],
+    'فورد': ['تورس', 'موستانج', 'إكسبلورر', 'إكسبيدشن', 'إف 150', 'إيدج', 'فوكس', 'أخرى'],
+    'شيفروليه': ['تاهو', 'سيلفرادو', 'كامارو', 'ماليبو', 'كابرس', 'ترافرس', 'كورفيت', 'أخرى'],
+    'نيسان': ['باترول', 'ألتيما', 'ماكسيما', 'صني', 'إكس تريل', 'باثفايندر', 'نافارا', 'أخرى'],
+    'هيونداي': ['إلنترا', 'سوناتا', 'أكسنت', 'سانتا في', 'توسان', 'أزيرا', 'كريتا', 'أخرى'],
+    'كيا': ['أوبتيما', 'سيراتو', 'سبورتج', 'سورينتو', 'ريو', 'K5', 'كادينزا', 'ستنجر', 'أخرى'],
+    'لكزس': ['LS', 'LX', 'RX', 'ES', 'IS', 'GX', 'NX', 'أخرى'],
+    'جيب': ['جراند شيروكي', 'روبيكون', 'رولنجر', 'شيروكي', 'كومباس', 'أخرى']
   };
-  const modelsMap: Record<string, string[]> = {
-    'تويوتا': ['كامري', 'كورولا', 'لاندكروزر', 'برادو', 'أفالون', 'راف فور'],
-    'هوندا': ['أكورد', 'سيفيك', 'سي آر في'],
-    'مرسيدس': ['الفئة C', 'الفئة E', 'الفئة S', 'G-Class'],
-    'بي إم دبليو': ['الفئة الثالثة', 'الفئة الخامسة', 'الفئة السابعة', 'X5'],
-    'نيسان': ['باترول', 'ألتيما', 'ماكسيما', 'صني'],
-    'هيونداي': ['إلنترا', 'سوناتا', 'أكسنت', 'توسان']
-  };
-  const colors = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي'];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const maxImages = isPaid ? 6 : 2;
-    
     if (files.length + images.length > maxImages) {
       setError(`يمكنك رفع ${maxImages} صور فقط للإعلان ${isPaid ? 'المدفوع' : 'المجاني'}`);
       return;
     }
-
     setImages([...images, ...files]);
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreview([...imagePreview, ...previews]);
@@ -77,321 +68,6 @@ export default function NewCarPage() {
     setImages(images.filter((_, i) => i !== index));
     setImagePreview(imagePreview.filter((_, i) => i !== index));
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      if (!formData.brand || !formData.model || !formData.price) {
-        setError('الماركة، الموديل، والسعر مطلوبة');
-        setLoading(false);
-        return;
-      }
-
-      // ✅ جلب userId من Cookies أولاً
-      const userId = Cookies.get('userId') || localStorage.getItem('userId');
-      
-      console.log('🆔 userId من Cookies/localStorage:', userId);
-
-      if (!userId) {
-        setError('يجب تسجيل الدخول أولاً');
-        setLoading(false);
-        return;
-      }
-
-      const userIdNumber = parseInt(userId);
-      if (isNaN(userIdNumber) || userIdNumber === 0) {
-        setError('معرف المستخدم غير صالح، يرجى تسجيل الدخول مرة أخرى');
-        setLoading(false);
-        return;
-      }
-
-      // تحويل الصور إلى Base64
-      const imageBase64 = await Promise.all(
-        images.map(file => {
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(file);
-          });
-        })
-      );
-
-      const payload = {
-        brand: formData.brand,
-        model: formData.model,
-        year: parseInt(formData.year.toString()) || null,
-        price: parseFloat(formData.price),
-        kilometers: formData.kilometers ? parseFloat(formData.kilometers) : null,
-        color: formData.color || null,
-        description: formData.description || null,
-        images: imageBase64,
-        user_id: userIdNumber,
-        payment_method: formData.payment_method || 'western_union',
-        is_featured: isPaid,
-        featured_price: isPaid ? parseFloat(formData.price) * 0.1 : null,
-        currency: formData.currency || 'KWD',
-      };
-
-      console.log('📤 جاري إرسال payload:', payload);
-
-      const response = await fetch('/api/admin/cars', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setSuccess('✅ تم إرسال الإعلان للمراجعة بنجاح!');
-        setTimeout(() => {
-          // ✅ التوجيه حسب دور المستخدم
-          const userRole = localStorage.getItem('userRole') || 'user';
-          if (userRole === 'admin') {
-            router.push('/dashboard/cars');
-          } else {
-            router.push('/profile');
-          }
-        }, 2000);
-      } else {
-        setError(data.message || 'حدث خطأ أثناء نشر الإعلان');
-      }
-    } catch (error) {
-      console.error('❌ خطأ:', error);
-      setError('خطأ في الاتصال بالخادم');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const styIn = {
-    width: '100%',
-    padding: '10px',
-    borderRadius: '8px',
-    border: '1px solid #ccc',
-    marginBottom: '12px',
-    boxSizing: 'border-box' as const,
-  };
-
-  return (
-    <div style={{ fontFamily: 'sans-serif', direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '15px' }}>
-      <header style={{ backgroundColor: '#1e293b', padding: '12px', borderRadius: '12px', marginBottom: '20px', color: 'white' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ color: '#38bdf8', margin: 0, fontSize: '18px' }}>🚗 سيارتي</h1>
-          <Link href="/" style={{ backgroundColor: '#475569', color: 'white', padding: '6px 12px', borderRadius: '6px', textDecoration: 'none', fontSize: '12px' }}>
-            ← العودة للرئيسية
-          </Link>
-        </div>
-      </header>
-
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>🚗 نشر إعلان جديد</h1>
-
-        {error && (
-          <div style={{ backgroundColor: '#fee', color: '#c33', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>
-            ❌ {error}
-          </div>
-        )}
-
-        {success && (
-          <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>
-            ✅ {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الماركة *</label>
-            <select
-              required
-              value={formData.brand}
-              onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-              style={styIn}
-            >
-              <option value="">اختر الماركة</option>
-              {brands.map(brand => (
-                <option key={brand} value={brand}>{brand}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الموديل *</label>
-            <input
-              type="text"
-              required
-              value={formData.model}
-              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-              style={styIn}
-              placeholder="مثل: كامري، أكورد، الفئة S"
-              list="models"
-            />
-            <datalist id="models">
-              <option value="كامري" />
-              <option value="أكورد" />
-              <option value="الفئة S" />
-              <option value="X5" />
-              <option value="Q7" />
-              <option value="فوكس" />
-              <option value="موستانج" />
-            </datalist>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>السنة</label>
-            <select
-              value={formData.year}
-              onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-              style={styIn}
-            >
-              {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>السعر ($) *</label>
-            <input
-              type="number"
-              required
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              style={styIn}
-              placeholder="0"
-              min="0"
-              step="0.01"
-            />
-          </div>
-
-          {/* ✅ حقل العملة */}
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              💰 العملة
-            </label>
-            <select
-              value={formData.currency}
-              onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-              style={styIn}
-            >
-              {currencies.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.name} ({c.symbol})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الكيلومترات (كم)</label>
-            <input
-              type="number"
-              value={formData.kilometers}
-              onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })}
-              style={styIn}
-              placeholder="0"
-              min="0"
-            />
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>اللون</label>
-            <select
-              value={formData.color}
-              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              style={styIn}
-            >
-              <option value="">اختر اللون</option>
-              {colors.map(color => (
-                <option key={color} value={color}>{color}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={isPaid}
-                onChange={(e) => setIsPaid(e.target.checked)}
-                style={{ width: '20px', height: '20px' }}
-              />
-              <span style={{ fontWeight: 'bold' }}>💰 إعلان مدفوع (اختياري)</span>
-            </label>
-            <p style={{ fontSize: '13px', color: '#64748b', marginTop: '5px' }}>
-              {isPaid ? '📸 يمكنك رفع 6 صور للسيارة' : '📸 يمكنك رفع 2 صور للسيارة (مجاني)'}
-            </p>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              📸 صور السيارة ({isPaid ? '6' : '2'} صور كحد أقصى)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              style={styIn}
-              disabled={images.length >= (isPaid ? 6 : 2)}
-            />
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
-              {imagePreview.map((src, index) => (
-                <div key={index} style={{ position: 'relative', display: 'inline-block' }}>
-                  <img src={src} alt={`صورة ${index + 1}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    style={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px' }}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {isPaid && (
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>طريقة الدفع</label>
-              <select
-                value={formData.payment_method}
-                onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                style={styIn}
-              >
-                <option value="western_union">💵 ويسترن يونيون</option>
-                <option value="paypal">💳 باي بال</option>
-              </select>
-            </div>
-          )}
-
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>وصف إضافي</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              style={{ ...styIn, minHeight: '80px' }}
-              placeholder="أي تفاصيل إضافية عن السيارة..."
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
-          >
-            {loading ? 'جاري النشر...' : '📤 نشر الإعلان'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -451,15 +127,7 @@ export default function NewCarPage() {
         body: JSON.stringify(payload),
       });
 
-      const responseText = await response.text();
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        setError(`استجابة غير صالحة من السيرفر: ${responseText.substring(0, 100)}`);
-        setLoading(false);
-        return;
-      }
+      const data = await response.json();
 
       if (data.success) {
         setSuccess('تم نشر الإعلان بنجاح في انتظار مراجعة الأدمن!');
@@ -473,7 +141,7 @@ export default function NewCarPage() {
         setIsPaid(false);
         setTimeout(() => { router.push('/'); }, 2000);
       } else {
-        setError(data.message || 'fشل نشر الإعلان');
+        setError(data.message || 'فشل نشر الإعلان');
       }
     } catch (err: any) {
       setError('حدث خطأ غير متوقع يرجى المحاولة مرة أخرى');
@@ -489,7 +157,7 @@ export default function NewCarPage() {
 
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-      <button onClick={() => router.push('/')} style={{ marginBottom: '15px', padding: '8px 12px', border: 'none', backgroundColor: '#334155', color: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+      <button type="button" onClick={() => router.push('/')} style={{ marginBottom: '15px', padding: '8px 12px', border: 'none', backgroundColor: '#334155', color: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
         ← العودة للرئيسية
       </button>
 
@@ -553,7 +221,7 @@ export default function NewCarPage() {
             <label htmlFor="paid-ad" style={{ fontWeight: 'bold', cursor: 'pointer' }}>👑 إعلان مدفوع (اختياري)</label>
           </div>
           <p style={{ margin: '5px 0 0 0', fontSize: '11px', color: '#64748b' }}>
-            {isPaid ? '✨ يمنحك الإعلان المدفوع حق رفع حتى 6 صور متميزة לעرض سيارتك بشكل أفضل.' : '📸 يمكنك رفع 2 صور للسيارة كحد أقصى (مجاني).'}
+            {isPaid ? '✨ يمنحك الإعلان المدفوع حق رفع حتى 6 صور متميزة لعرض سيارتك بشكل أفضل.' : '📸 يمكنك رفع 2 صور للسيارة كحد أقصى (مجاني).'}
           </p>
         </div>
 
