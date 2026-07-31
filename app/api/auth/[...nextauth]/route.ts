@@ -49,6 +49,4 @@ const authOptions = {
 };
 
 const handler = NextAuth(authOptions);
-
-// ✅ التصدير الصحيح لـ Next.js 15
 export { handler as GET, handler as POST };
