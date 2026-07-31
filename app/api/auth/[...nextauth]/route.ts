@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import sql from '../../db';
+import sql from '../db';
 
 export const authOptions = {
   providers: [
@@ -10,7 +10,7 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user }) {
       try {
         const existingUser = await sql`
           SELECT * FROM users WHERE email = ${user.email}
@@ -27,7 +27,7 @@ export const authOptions = {
         return false;
       }
     },
-    async session({ session, token }) {
+    async session({ session }) {
       try {
         const user = await sql`
           SELECT id FROM users WHERE email = ${session.user.email}
