@@ -1,8 +1,8 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import sql from '../../../../lib/db';
+import sql from '../../../lib/db'; // ✅ المسار الصحيح
 
-const handler = NextAuth({
+const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -46,7 +46,9 @@ const handler = NextAuth({
     signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
 
-// ✅ تصدير handler مباشرة
+const handler = NextAuth(authOptions);
+
+// ✅ التصدير الصحيح لـ Next.js 15
 export { handler as GET, handler as POST };
