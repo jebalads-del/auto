@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { sql } from '@vercel/postgres';
+import sql from '../../../db';
 
 export const authOptions = {
   providers: [
@@ -15,7 +15,7 @@ export const authOptions = {
         const existingUser = await sql`
           SELECT * FROM users WHERE email = ${user.email}
         `;
-        if (existingUser.rows.length === 0) {
+        if (existingUser.length === 0) {
           await sql`
             INSERT INTO users (email, name, role, status)
             VALUES (${user.email}, ${user.name}, 'user', 'active')
@@ -32,8 +32,8 @@ export const authOptions = {
         const user = await sql`
           SELECT id FROM users WHERE email = ${session.user.email}
         `;
-        if (user.rows.length > 0) {
-          session.user.id = user.rows[0].id;
+        if (user.length > 0) {
+          session.user.id = user[0].id;
         }
         return session;
       } catch (error) {
