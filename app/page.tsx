@@ -46,16 +46,13 @@ export default function HomePage() {
   const [totalPages, setTotalPages] = useState(1);
   const [commercialAds, setCommercialAds] = useState<CommercialAd[]>([]);
 
-  useEffect(() => {
-    fetchCars(1);
-    fetchCommercialAds();
-  }, []);
-
+  // ✅ تعريف الدوال أولاً
   const fetchCars = async (page: number) => {
     setLoading(true);
     try {
       const response = await fetch(`/api/cars?page=${page}&limit=9`);
       const data = await response.json();
+      console.log('🚗 البيانات المستلمة:', data);
       if (data.success) {
         setCars(data.cars);
         setCurrentPage(page);
@@ -79,6 +76,12 @@ export default function HomePage() {
       console.error('خطأ في جلب الإعلانات التجارية:', error);
     }
   };
+
+  // ✅ ثم useEffect
+  useEffect(() => {
+    fetchCars(1);
+    fetchCommercialAds();
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -303,7 +306,7 @@ export default function HomePage() {
                     gap: '20px',
                   }}
                 >
-                  {cars.map((car, carIndex) => (
+                  {cars.map((car) => (
                     <div
                       key={car.id}
                       style={{
@@ -332,9 +335,9 @@ export default function HomePage() {
                             margin: '10px',
                           }}
                         >
-                          {car.images.slice(0, 3).map((img, imgIndex) => (
+                          {car.images.slice(0, 3).map((img, idx) => (
                             <img
-                              key={imgIndex}
+                              key={idx}
                               src={img}
                               alt={`${car.brand} ${car.model}`}
                               loading="lazy"
