@@ -370,3 +370,193 @@ export default function NewCarPage() {
     </div>
   );
 }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      if (!formData.brand || !formData.model || !formData.price) {
+        setError('الماركة، الموديل، والسعر مطلوبة');
+        setLoading(false);
+        return;
+      }
+
+      const userId = Cookies.get('userId') || localStorage.getItem('userId');
+      if (!userId) {
+        setError('يجب تسجيل الدخول أولاً');
+        setLoading(false);
+        return;
+      }
+
+      const userIdNumber = parseInt(userId);
+      if (isNaN(userIdNumber)) {
+        setError('معرف المستخدم غير صحيح يرجى إعادة تسجيل الدخول');
+        setLoading(false);
+        return;
+      }
+
+      const imageBase64 = await Promise.all(
+        images.map(file => {
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+
+      const payload = {
+        brand: formData.brand,
+        model: formData.model,
+        year: parseInt(formData.year.toString()) || null,
+        price: parseFloat(formData.price),
+        kilometers: formData.kilometers ? parseFloat(formData.kilometers) : null,
+        color: formData.color || null,
+        description: formData.description || null,
+        images: imageBase64,
+        user_id: userIdNumber,
+        payment_method: formData.payment_method || 'western_union',
+        is_featured: isPaid,
+        featured_price: isPaid ? parseFloat(formData.price) * 0.1 : null,
+        currency: formData.currency || 'KWD',
+      };
+
+      const response = await fetch('/api/cars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        setError(`استجابة غير صالحة من السيرفر: ${responseText.substring(0, 100)}`);
+        setLoading(false);
+        return;
+      }
+
+      if (data.success) {
+        setSuccess('تم نشر الإعلان بنجاح في انتظار مراجعة الأدمن!');
+        setFormData({
+          brand: '', model: '', year: new Date().getFullYear(),
+          price: '', kilometers: '', color: '', description: '',
+          payment_method: 'western_union', currency: 'KWD',
+        });
+        setImages([]);
+        setImagePreview([]);
+        setIsPaid(false);
+        setTimeout(() => { router.push('/'); }, 2000);
+      } else {
+        setError(data.message || 'fشل نشر الإعلان');
+      }
+    } catch (err: any) {
+      setError('حدث خطأ غير متوقع يرجى المحاولة مرة أخرى');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const styIn = {
+    width: '100%', padding: '10px', borderRadius: '8px',
+    border: '1px solid #ccc', marginTop: '5px', boxSizing: 'border-box' as const,
+  };
+
+  return (
+    <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+      <button onClick={() => router.push('/')} style={{ marginBottom: '15px', padding: '8px 12px', border: 'none', backgroundColor: '#334155', color: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+        ← العودة للرئيسية
+      </button>
+
+      <h1 style={{ textAlign: 'center', fontSize: '20px', marginBottom: '20px' }}>📢 نشر إعلان جديد</h1>
+
+      {error && <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>❌ {error}</div>}
+      {success && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>✅ {success}</div>}
+
+      <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الماركة *</label>
+          <select required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={styIn}>
+            <option value="">اختر الماركة</option>
+            {brands.map(brand => <option key={brand} value={brand}>{brand}</option>)}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الموديل *</label>
+          <select required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} style={styIn} disabled={!formData.brand}>
+            <option value="">{formData.brand ? 'اختر الموديل' : 'يرجى اختيار الماركة أولاً'}</option>
+            {formData.brand && (modelsMap[formData.brand] || ['أخرى']).map(model => <option key={model} value={model}>{model}</option>)}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>السنة</label>
+          <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} style={styIn}>
+            {Array.from({ length: 40 }, (_, i) => new Date().getFullYear() + 1 - i).map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>السعر *</label>
+          <input type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} placeholder="أدخل السعر الإجمالي للسيارة" />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>💰 العملة</label>
+          <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={styIn}>
+            {currencies.map(curr => <option key={curr.code} value={curr.code}>{curr.name} ({curr.symbol})</option>)}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الكيلومترات (كم)</label>
+          <input type="number" min="0" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} placeholder="أدخل المسافة المقطوعة بالكيلومترات" />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>اللون</label>
+          <select value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={styIn}>
+            <option value="">اختر اللون</option>
+            {colors.map(color => <option key={color} value={color}>{color}</option>)}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px', border: '1px dashed #f59e0b', padding: '12px', borderRadius: '8px', backgroundColor: '#fffbfe' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input type="checkbox" id="paid-ad" checked={isPaid} onChange={(e) => { setIsPaid(e.target.checked); setImages([]); setImagePreview([]); }} style={{ width: '16px', height: '16px' }} />
+            <label htmlFor="paid-ad" style={{ fontWeight: 'bold', cursor: 'pointer' }}>👑 إعلان مدفوع (اختياري)</label>
+          </div>
+          <p style={{ margin: '5px 0 0 0', fontSize: '11px', color: '#64748b' }}>
+            {isPaid ? '✨ يمنحك الإعلان المدفوع حق رفع حتى 6 صور متميزة לעرض سيارتك بشكل أفضل.' : '📸 يمكنك رفع 2 صور للسيارة كحد أقصى (مجاني).'}
+          </p>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>📸 صور السيارة ({isPaid ? '6 صور كحد أقصى' : '2 صور كحد أقصى'})</label>
+          <input type="file" multiple accept="image/*" onChange={handleImageUpload} style={styIn} />
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+            {imagePreview.map((url, index) => (
+              <div key={index} style={{ position: 'relative', width: '80px', height: '60px' }}>
+                <img src={url} alt="معاينة" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px' }} />
+                <button type="button" onClick={() => removeImage(index)} style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px', padding: 0 }}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>وصف إضافي</label>
+          <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: '80px', resize: 'none' }} placeholder="أي تفاصيل إضافية عن السيارة..." />
+        </div>
+
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer' }}>
+          {loading ? 'جاري النشر المعزز...' : '🚙 نشر الإعلان'}
+        </button>
+      </form>
+    </div>
+  );
+}
