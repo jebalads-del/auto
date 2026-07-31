@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import sql from '../db';
+import sql from './db'; // 👈 تم تعديل النقطتين إلى نقطة واحدة
 
 interface Car {
   id: number;
