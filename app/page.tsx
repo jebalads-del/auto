@@ -1,5 +1,8 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import sql from '../lib/db';
+
 interface Car {
   id: number;
   brand: string;
@@ -27,25 +30,33 @@ interface CommercialAd {
   image_url: string;
 }
 
-// ✅ تفعيل الكاش الذكي وإعادة البناء التلقائي في الخلفية كل 10 ثوانٍ لسرعة خارقة
-export const revalidate = 10;
+export default function HomePage() {
+  const [cars, setCars] = useState<Car[]>([]);
+  const [ads, setAds] = useState<CommercialAd[]>([]);
+  const [loading, setLoading] = useState(true);
 
-async function getInitialData() {
-  try {
-    // جلب البيانات مباشرة من قاعدة البيانات في الخلفية بدون وسيط API
-    const carsPromise = sql`SELECT * FROM cars WHERE status = 'approved' OR status = 'sold' ORDER BY created_at DESC`;
-    const adsPromise = sql`SELECT * FROM commercial_ads WHERE status = 'approved'`;
-    
-    const [cars, ads] = await Promise.all([carsPromise, adsPromise]);
-    return { cars: cars as Car[], ads: ads as CommercialAd[] };
-  } catch (error) {
-    console.error("خطأ في جلب بيانات الصفحة الرئيسية:", error);
-    return { cars: [], ads: [] };
-  }
-}
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [carsRes, adsRes] = await Promise.all([
+          fetch('/api/car'),
+          fetch('/api/admin/commercial-ads')
+        ]);
+        
+        const carsData = await carsRes.json();
+        const adsData = await adsRes.json();
 
-export default async function HomePage() {
-  const { cars, ads } = await getInitialData();
+        if (carsData.success) setCars(carsData.cars);
+        if (adsData.success) setAds(adsData.ads);
+      } catch (error) {
+        console.error("خطأ أثناء جلب البيانات:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const getCurrencySymbol = (currency: string) => {
     switch (currency) {
@@ -59,8 +70,17 @@ export default async function HomePage() {
     }
   };
 
-  const headerAd = ads.find(ad => ad.position === 'header');
-  const footerAd = ads.find(ad => ad.position === 'footer');
+  const headerAd = ads.find(ad => ad.position === 'header' && ad.status === 'approved');
+  const footerAd = ads.find(ad => ad.position === 'footer' && ad.status === 'approved');
+
+  if (loading) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinner}></div>
+        <p>جاري تحميل السيارات والعروض...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
@@ -80,13 +100,13 @@ export default async function HomePage() {
           </div>
         )}
 
-        <h2 style={styles.sectionTitle}>✨ السيارات المتاحة والمباعة</h2>
+        <h2 style={styles.sectionTitle}>✨ السيارات المعروضة</h2>
         
         {cars.length === 0 ? (
-          <div style={styles.noCars}>لا توجد سيارات معروضة حالياً</div>
+          <div style={styles.noCars}>لا توجد سيارات متاحة حالياً</div>
         ) : (
           <div style={styles.grid}>
-            {cars.map((car) => (
+            {cars.filter(c => c.status === 'approved' || c.status === 'sold').map((car) => (
               <div key={car.id} style={styles.card}>
                 {car.status === 'sold' && (
                   <div style={styles.soldBadge}>🔒 مباع</div>
@@ -139,6 +159,7 @@ export default async function HomePage() {
     </div>
   );
 }
+
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   header: { backgroundColor: '#1e293b', padding: '15px 20px', color: 'white' },
@@ -163,5 +184,7 @@ const styles = {
   viewLink: { display: 'block', textAlign: 'center' as const, backgroundColor: '#2563eb', color: 'white', padding: '8px', borderRadius: '6px', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold', marginTop: 'auto' },
   noCars: { textAlign: 'center' as const, padding: '40px', color: '#64748b' },
   adBanner: { margin: '20px 0', textAlign: 'center' as const },
-  adImage: { maxWidth: '100%', height: 'auto', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }
+  adImage: { maxWidth: '100%', height: 'auto', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' },
+  loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '70vh', gap: '15px' },
+  spinner: { width: '40px', height: '40px', border: '4px solid #cbd5e1', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
