@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import sql from '../db';
+import sql from '../../../lib/db'; // ✅ المسار الصحيح
 
 export const authOptions = {
   providers: [
