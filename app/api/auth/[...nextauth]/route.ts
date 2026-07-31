@@ -48,6 +48,7 @@ const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// ✅ استخدام export default بدلاً من export { handler as GET, handler as POST }
+// ✅ الصيغة الصحيحة لـ Next.js 15
 const handler = NextAuth(authOptions);
-export default handler;
+export const GET = handler;
+export const POST = handler;
