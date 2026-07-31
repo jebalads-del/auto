@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import sql from '../db';
+import sql from '../lib/db';
 interface Car {
   id: number;
   brand: string;
