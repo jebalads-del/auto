@@ -48,5 +48,6 @@ const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+// ✅ استخدام export default بدلاً من export { handler as GET, handler as POST }
 const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+export default handler;
