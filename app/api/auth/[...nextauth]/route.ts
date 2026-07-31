@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import sql from '../../../lib/db'; // ✅ المسار الصحيح
+import sql from '../../db';
 
 const authOptions = {
   providers: [
