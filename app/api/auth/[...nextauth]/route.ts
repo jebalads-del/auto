@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import sql from '../../../../lib/db'; // ✅ المسار الصحيح
+import sql from '../../../../lib/db';
 
 export const authOptions = {
   providers: [
@@ -49,4 +49,6 @@ export const authOptions = {
 };
 
 const handler = NextAuth(authOptions);
+
+// ✅ التصدير الصحيح
 export { handler as GET, handler as POST };
