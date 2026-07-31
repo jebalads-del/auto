@@ -39,10 +39,10 @@ export default function HomePage() {
     const fetchData = async () => {
       try {
         const [carsRes, adsRes] = await Promise.all([
-          fetch('/api/car'),
-          fetch('/api/admin/commercial-ads')
-        ]);
-        
+  fetch('/api/cars'),
+  fetch('/api/commercial-ads')
+]);
+ 
         const carsData = await carsRes.json();
         const adsData = await adsRes.json();
 
