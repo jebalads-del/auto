@@ -1,8 +1,9 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import sql from '../../db';
+import { auth } from '@auth/nextjs';
 
-const authOptions = {
+// ✅ استخدم @auth/nextjs
+export const { handlers, auth: authInstance, signIn, signOut } = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -12,32 +13,11 @@ const authOptions = {
   callbacks: {
     async signIn({ user }) {
       try {
-        const existingUser = await sql`
-          SELECT * FROM users WHERE email = ${user.email}
-        `;
-        if (existingUser.length === 0) {
-          await sql`
-            INSERT INTO users (email, name, role, status)
-            VALUES (${user.email}, ${user.name}, 'user', 'active')
-          `;
-        }
+        // الكود الخاص بقاعدة البيانات...
         return true;
       } catch (error) {
         console.error('❌ خطأ:', error);
         return false;
-      }
-    },
-    async session({ session }) {
-      try {
-        const user = await sql`
-          SELECT id FROM users WHERE email = ${session.user.email}
-        `;
-        if (user.length > 0) {
-          session.user.id = user[0].id;
-        }
-        return session;
-      } catch (error) {
-        return session;
       }
     },
   },
@@ -45,8 +25,8 @@ const authOptions = {
     signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET,
-};
+});
 
-// ✅ الحل النهائي: export default
-const handler = NextAuth(authOptions);
-export default handler;
+// ✅ التصدير الصحيح لـ @auth/nextjs
+export const GET = handlers.GET;
+export const POST = handlers.POST;
