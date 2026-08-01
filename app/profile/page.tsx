@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Cookies from 'js-cookie';
 
-// قائمة الدول مع رموز الاتصال
+// ============================================
+// ✅ قائمة الدول مع رموز الاتصال (كلها + في البداية)
+// ============================================
 const countries = [
   { code: '+966', name: '🇸🇦 السعودية' },
   { code: '+971', name: '🇦🇪 الإمارات' },
   { code: '+974', name: '🇶🇦 قطر' },
-  { code: '965+', name: '🇰🇼 الكويت' },
+  { code: '+965', name: '🇰🇼 الكويت' },      // ✅ تم التصحيح
   { code: '+968', name: '🇴🇲 عُمان' },
   { code: '+973', name: '🇧🇭 البحرين' },
   { code: '+962', name: '🇯🇴 الأردن' },
@@ -31,6 +33,20 @@ const countries = [
   { code: '+92', name: '🇵🇰 باكستان' },
 ];
 
+// ✅ دالة مساعدة لتنظيف رقم الهاتف (تصلح مكان +)
+const cleanPhoneNumber = (phone: string): string => {
+  let cleaned = phone.replace(/\s/g, '');
+  // إذا كانت + في النهاية، انقلها إلى البداية
+  if (cleaned.endsWith('+')) {
+    cleaned = '+' + cleaned.slice(0, -1);
+  }
+  // إذا لم تبدأ بـ +، أضفها
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  return cleaned;
+};
+
 // ✅ شروط الصورة
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 ميجابايت
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -45,7 +61,9 @@ interface User {
   created_at: string;
 }
 
-// مكون منفصل يستخدم useSearchParams
+// ============================================
+// مكون المحتوى الرئيسي
+// ============================================
 function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -79,6 +97,9 @@ function ProfileContent() {
     fetchUserCars();
   }, []);
 
+  // ============================================
+  // ✅ جلب بيانات المستخدم مع تنظيف الرقم
+  // ============================================
   const fetchUserData = async () => {
     try {
       const userId = Cookies.get('userId') || localStorage.getItem('userId');
@@ -92,7 +113,11 @@ function ProfileContent() {
       if (data.success) {
         setUser(data.user);
         setName(data.user.name || '');
-        const phoneNumber = data.user.phone || '';
+        
+        // ✅ تنظيف رقم الهاتف عند العرض
+        let phoneNumber = data.user.phone || '';
+        phoneNumber = cleanPhoneNumber(phoneNumber);
+
         let displayPhone = phoneNumber;
         let displayCode = '+966';
         for (const country of countries) {
@@ -126,11 +151,18 @@ function ProfileContent() {
     }
   };
 
+  // ============================================
+  // ✅ تحديث الملف الشخصي مع تنظيف الرقم
+  // ============================================
   const handleUpdate = async () => {
     setMessage('');
     try {
       const userId = Cookies.get('userId') || localStorage.getItem('userId');
-      const fullPhone = countryCode + phone.replace(/^0+/, '');
+      
+      // بناء الرقم بشكل صحيح
+      let fullPhone = countryCode + phone.replace(/^0+/, '');
+      fullPhone = cleanPhoneNumber(fullPhone); // تنظيف إضافي
+
       const response = await fetch('/api/user/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -534,6 +566,9 @@ function ProfileContent() {
   );
 }
 
+// ============================================
+// الأنماط (Styles)
+// ============================================
 const styles = {
   container: {
     minHeight: '100vh',
@@ -783,7 +818,9 @@ const styles = {
   },
 };
 
+// ============================================
 // المكون الرئيسي مع Suspense
+// ============================================
 export default function ProfilePage() {
   return (
     <Suspense fallback={<div style={styles.container}><div style={styles.loading}>جاري التحميل...</div></div>}>
