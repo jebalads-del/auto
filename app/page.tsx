@@ -28,121 +28,38 @@ interface CommercialAd {
   start_date: string;
   end_date: string;
   image_url: string;
-  link_url: string;
-  created_at: string;
 }
 
 export default function HomePage() {
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('home');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [cars, setCars] = useState<Car[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [commercialAds, setCommercialAds] = useState<CommercialAd[]>([]);
+  const [ads, setAds] = useState<CommercialAd[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ تعريف الدوال أولاً
-  const fetchCars = async (page: number) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/cars?page=${page}&limit=9`);
-      const data = await response.json();
-      console.log('🚗 البيانات المستلمة:', data);
-      if (data.success) {
-        setCars(data.cars);
-        setCurrentPage(page);
-        setTotalPages(data.pagination?.totalPages || 1);
-      }
-    } catch (error) {
-      console.error('خطأ في جلب الإعلانات:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [maxKilometers, setMaxKilometers] = useState('');
 
-  const fetchCommercialAds = async () => {
-    try {
-      const res = await fetch('/api/admin/commercial-ads');
-      const data = await res.json();
-      if (data.success) {
-        setCommercialAds(data.ads || []);
-      }
-    } catch (error) {
-      console.error('خطأ في جلب الإعلانات التجارية:', error);
-    }
-  };
-
-  // ✅ ثم useEffect
   useEffect(() => {
-    fetchCars(1);
-    fetchCommercialAds();
+    const fetchData = async () => {
+      try {
+        const [carsRes, adsRes] = await Promise.all([
+          fetch('/api/car'),
+          fetch('/api/admin/commercial-ads')
+        ]);
+        const carsData = await carsRes.json();
+        const adsData = await adsRes.json();
+        if (carsData.success) setCars(carsData.cars);
+        if (adsData.success) setAds(adsData.ads);
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setSuccess('✅ تم إرسال كود التحقق بنجاح!');
-        setView('otp');
-      } else {
-        setError(data.error || 'خطأ في التسجيل');
-      }
-    } catch {
-      setError('❌ خطأ في الاتصال');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
-      });
-
-      if (response.ok) {
-        alert('🎉 تم تفعيل الحساب بنجاح!');
-        window.location.href = '/login';
-      } else {
-        setError('كود التحقق خاطئ');
-      }
-    } catch {
-      setError('خطأ في التحقق');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddClick = (e: React.MouseEvent) => {
-    const isLoggedIn = localStorage.getItem('isAdmin') === 'true';
-    if (!isLoggedIn) {
-      e.preventDefault();
-      window.location.href = '/login?redirect=/dashboard/cars/new';
-    }
-  };
 
   const getCurrencySymbol = (currency: string) => {
     switch (currency) {
@@ -152,469 +69,190 @@ export default function HomePage() {
       case 'QAR': return 'ر.ق';
       case 'BHD': return 'د.ب';
       case 'OMR': return 'ر.ع';
-      default: return '';
+      default: return currency || '';
     }
   };
 
-  const styIn = {
-    width: '100%',
-    padding: '10px',
-    borderRadius: '8px',
-    border: '1px solid #ccc',
-    marginBottom: '12px',
-    boxSizing: 'border-box' as const,
-  };
+  const headerAd = ads.find(ad => ad.position === 'header' && ad.status === 'approved');
+  const footerAd = ads.find(ad => ad.position === 'footer' && ad.status === 'approved');
 
+  const filteredCars = cars.filter(car => {
+    if (car.status !== 'approved' && car.status !== 'sold') return false;
+    const matchesSearch = car.brand.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          car.model.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesYear = selectedYear ? car.year.toString() === selectedYear : true;
+    const matchesModel = selectedModel ? car.model.toLowerCase() === selectedModel.toLowerCase() : true;
+    const matchesPrice = maxPrice ? car.price <= parseFloat(maxPrice) : true;
+    const matchesKm = maxKilometers ? car.kilometers <= parseFloat(maxKilometers) : true;
+    return matchesSearch && matchesYear && matchesModel && matchesPrice && matchesKm;
+  });
+
+  const uniqueModels = Array.from(new Set(cars.map(c => c.model))).filter(Boolean);
+
+  if (loading) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinner}></div>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b' }}>جاري تحميل صالة العرض...</p>
+      </div>
+    );
+  }
   return (
-    <div
-      style={{
-        fontFamily: 'sans-serif',
-        direction: 'rtl',
-        minHeight: '100vh',
-        backgroundColor: '#f8fafc',
-        padding: '15px',
-        textAlign: 'right',
-      }}
-    >
-      {/* ✅ إعلان تجاري واحد في الهيدر */}
-      {commercialAds.filter(ad => ad.position === 'header' && ad.status === 'approved').slice(0, 1).map((ad, idx) => (
-        <div key={idx} style={{ 
-          backgroundColor: '#fef3c7', 
-          padding: '10px', 
-          textAlign: 'center',
-          borderBottom: '2px solid #d97706',
-          marginBottom: '10px',
-          borderRadius: '8px',
-        }}>
-          <a href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer">
-            {ad.image_url ? (
-              <img src={ad.image_url} alt="إعلان تجاري" style={{ maxWidth: '100%', height: 'auto', maxHeight: '80px' }} />
-            ) : (
-              <span style={{ fontWeight: 'bold', color: '#92400e' }}>📢 إعلان تجاري</span>
-            )}
-          </a>
+    <div style={styles.container}>
+      <header style={styles.header}>
+        <div style={styles.headerContent}>
+          <h1 style={styles.headerTitle}>🚗 سيارتي <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'normal' }}>الفخامة والسهولة</span></h1>
+          <div style={styles.headerLinks}>
+            <Link href="/dashboard/cars/new" style={styles.headerLinkActive}>➕ أضف سيارتك</Link>
+            <Link href="/login" style={styles.headerLink}>دخول الأدمن</Link>
+          </div>
         </div>
-      ))}
+      </header>
 
-      <div style={{ paddingTop: '10px' }}>
-        <header
-          style={{
-            backgroundColor: '#1e293b',
-            padding: '12px',
-            borderRadius: '12px',
-            marginBottom: '20px',
-            color: 'white',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <h1
-              onClick={() => setView('home')}
-              style={{
-                color: '#38bdf8',
-                margin: 0,
-                fontSize: '18px',
-                cursor: 'pointer',
-              }}
-            >
-              🚗 سيارتي
-            </h1>
-            <Link
-              href="/dashboard/cars/new"
-              onClick={handleAddClick}
-              style={{
-                backgroundColor: '#059669',
-                color: 'white',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                textDecoration: 'none',
-                fontSize: '12px',
-                fontWeight: 'bold',
-              }}
-            >
-              ➕ إعلان مجاني
-            </Link>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              gap: '10px',
-              marginTop: '10px',
-              fontSize: '12px',
-              color: '#cbd5e1',
-            }}
-          >
-            <Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none' }}>
-              دخول
-            </Link>
-            <span>|</span>
-            <span
-              onClick={() => setView('reg')}
-              style={{
-                cursor: 'pointer',
-                color: view === 'reg' ? '#38bdf8' : '#fff',
-              }}
-            >
-              تسجيل
-            </span>
-          </div>
-        </header>
-
-        {error && (
-          <div
-            style={{
-              color: 'red',
-              textAlign: 'center',
-              marginBottom: '15px',
-            }}
-          >
-            ❌ {error}
-          </div>
-        )}
-        {success && (
-          <div
-            style={{
-              color: 'green',
-              textAlign: 'center',
-              marginBottom: '15px',
-            }}
-          >
-            ✅ {success}
+      <div style={styles.content}>
+        {headerAd && (
+          <div style={styles.adBanner}>
+            <img src={headerAd.image_url} alt="إعلان تجاري" style={styles.adImage} />
           </div>
         )}
 
-        {view === 'home' && (
-          <main>
-            <h2 style={{ fontSize: '20px', marginBottom: '15px' }}>🚗 السيارات المتاحة</h2>
-            {loading ? (
-              <p>جاري التحميل...</p>
-            ) : cars.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>
-                لا توجد سيارات متاحة حالياً
-              </p>
-            ) : (
-              <>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: '20px',
-                  }}
-                >
-                  {cars.map((car) => (
-                    <div
-                      key={car.id}
-                      style={{
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        transition: 'transform 0.2s',
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.transform = 'scale(1.02)')
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.transform = 'scale(1)')
-                      }
-                    >
-                      {car.images && car.images.length > 0 && (
-                        <div
-                          style={{
-                            display: 'flex',
-                            gap: '5px',
-                            overflowX: 'auto',
-                            padding: '10px',
-                            backgroundColor: '#f1f5f9',
-                            borderRadius: '8px',
-                            margin: '10px',
-                          }}
-                        >
-                          {car.images.slice(0, 3).map((img, idx) => (
-                            <img
-                              key={idx}
-                              src={img}
-                              alt={`${car.brand} ${car.model}`}
-                              loading="lazy"
-                              style={{
-                                width: '100px',
-                                height: '70px',
-                                objectFit: 'cover',
-                                borderRadius: '6px',
-                                border: '1px solid #e2e8f0',
-                              }}
-                              onError={(e) => {
-                                console.error('خطأ في تحميل الصورة');
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          ))}
-                          {car.images.length > 3 && (
-                            <span
-                              style={{
-                                fontSize: '12px',
-                                color: '#64748b',
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '0 10px',
-                              }}
-                            >
-                              +{car.images.length - 3}
-                            </span>
-                          )}
-                        </div>
+        <div style={styles.searchSection}>
+          <h2 style={{ fontSize: '18px', color: '#1e293b', marginBottom: '15px', fontWeight: 'bold' }}>🔎 ابحث عن سيارة أحلامك</h2>
+          <div style={styles.searchGrid}>
+            <input
+              type="text"
+              placeholder="ابحث بالماركة أو الموديل (مثال: تويوتا)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={styles.searchInput}
+            />
+            <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput}>
+              <option value="">كل الموديلات</option>
+              {uniqueModels.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} style={styles.filterInput}>
+              <option value="">كل السنوات</option>
+              {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            <input
+              type="number"
+              placeholder="الحد الأقصى للسعر"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              style={styles.filterInput}
+            />
+            <input
+              type="number"
+              placeholder="الحد الأقصى للممشى (كم)"
+              value={maxKilometers}
+              onChange={(e) => setMaxKilometers(e.target.value)}
+              style={styles.filterInput}
+            />
+          </div>
+          {(searchQuery || selectedYear || selectedModel || maxPrice || maxKilometers) && (
+            <button 
+              onClick={() => { setSearchQuery(''); setSelectedYear(''); setSelectedModel(''); setMaxPrice(''); setMaxKilometers(''); }}
+              style={styles.clearButton}
+            >
+              🔄 إعادة تعيين الفلاتر
+            </button>
+          )}
+        </div>
+
+        <h2 style={styles.sectionTitle}>✨ السيارات المتاحة والمباعة ({filteredCars.length})</h2>
+        
+        {filteredCars.length === 0 ? (
+          <div style={styles.noCars}>لا توجد سيارات تطابق معايير البحث الحالية 🔍</div>
+        ) : (
+          <div style={styles.grid}>
+            {filteredCars.map((car) => (
+              <div key={car.id} style={styles.card}>
+                {car.status === 'sold' ? (
+                  <div style={styles.soldBadge}>🔒 مباع</div>
+                ) : (
+                  <div style={styles.availableBadge}>✨ متاح</div>
+                )}
+                
+                <div style={styles.gallery}>
+                  {car.images && car.images.length > 0 ? (
+                    <div style={styles.imageGrid}>
+                      {car.images.slice(0, 3).map((img, idx) => (
+                        <img key={idx} src={img} alt={car.brand} style={styles.thumbnail} loading="lazy" />
+                      ))}
+                      {car.images.length > 3 && (
+                        <span style={styles.moreImages}>+{car.images.length - 3}</span>
                       )}
-
-                      <div style={{ padding: '15px' }}>
-                        <h3 style={{ fontSize: '18px', margin: '0 0 5px 0' }}>
-                          {car.brand} {car.model}
-                        </h3>
-                        <p
-                          style={{
-                            color: '#2563eb',
-                            fontSize: '20px',
-                            fontWeight: 'bold',
-                            margin: '5px 0',
-                          }}
-                        >
-                          {getCurrencySymbol(car.currency)} {car.price.toLocaleString()}
-                        </p>
-                        <div
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 1fr',
-                            gap: '5px',
-                            fontSize: '14px',
-                            color: '#64748b',
-                            marginTop: '10px',
-                          }}
-                        >
-                          <span>{car.year}</span>
-                          <span>{car.kilometers?.toLocaleString() || 0} كم</span>
-                          <span>{car.color || 'غير محدد'}</span>
-                          <span>{new Date(car.created_at).toLocaleDateString('ar-SA')}</span>
-                        </div>
-                        {car.description && (
-                          <p
-                            style={{
-                              fontSize: '14px',
-                              color: '#64748b',
-                              marginTop: '10px',
-                            }}
-                          >
-                            {car.description}
-                          </p>
-                        )}
-
-                        <div style={{ marginTop: '12px', textAlign: 'left' }}>
-                          <Link
-                            href={`/car/${car.id}`}
-                            style={{
-                              display: 'inline-block',
-                              backgroundColor: '#2563eb',
-                              color: 'white',
-                              padding: '6px 16px',
-                              borderRadius: '6px',
-                              textDecoration: 'none',
-                              fontSize: '13px',
-                              fontWeight: 'bold',
-                              transition: 'background-color 0.2s',
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.backgroundColor = '#1d4ed8')
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.backgroundColor = '#2563eb')
-                            }
-                          >
-                            📖 المزيد
-                          </Link>
-                        </div>
-                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    <div style={styles.noImage}>🚗 لا توجد صور متوفرة</div>
+                  )}
                 </div>
 
-                {totalPages > 1 && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: '10px',
-                      justifyContent: 'center',
-                      marginTop: '30px',
-                    }}
-                  >
-                    <button
-                      onClick={() => fetchCars(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: currentPage === 1 ? '#ccc' : '#2563eb',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      السابق
-                    </button>
-                    <span
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: 'white',
-                        borderRadius: '6px',
-                        border: '1px solid #ddd',
-                      }}
-                    >
-                      صفحة {currentPage} من {totalPages}
-                    </span>
-                    <button
-                      onClick={() => fetchCars(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: currentPage === totalPages ? '#ccc' : '#2563eb',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      التالي
-                    </button>
+                <div style={styles.cardBody}>
+                  <h3 style={styles.carTitle}>{car.brand} {car.model}</h3>
+                  <div style={styles.carPrice}>
+                    <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#64748b' }}>السعر: </span>
+                    {car.price.toLocaleString()} {getCurrencySymbol(car.currency)}
                   </div>
-                )}
-              </>
-            )}
-          </main>
-        )}
-
-        {view === 'reg' && (
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <form
-              onSubmit={handleRegister}
-              style={{
-                backgroundColor: '#fff',
-                padding: '20px',
-                borderRadius: '12px',
-                width: '100%',
-                maxWidth: '350px',
-              }}
-            >
-              <h3>إنشاء حساب جديد</h3>
-              <input
-                placeholder="الاسم"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                style={styIn}
-                required
-              />
-              <input
-                type="email"
-                placeholder="البريد"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={styIn}
-                required
-              />
-              <input
-                type="password"
-                placeholder="كلمة المرور"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={styIn}
-                required
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  backgroundColor: loading ? '#93c5fd' : '#2563eb',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {loading ? 'جاري الإرسال...' : 'إرسال الكود 2 ✅'}
-              </button>
-            </form>
+                  <div style={styles.carMeta}>
+                    <span style={styles.metaBadge}>📅 {car.year}</span>
+                    <span style={styles.metaBadge}>📏 {car.kilometers?.toLocaleString() || 0} كم</span>
+                    <span style={{ ...styles.metaBadge, backgroundColor: '#f1f5f9', color: '#475569' }}>🎨 {car.color || 'غير محدد'}</span>
+                  </div>
+                  <Link href={`/car/${car.id}`} style={styles.viewLink}>
+                    عرض التفاصيل والتواصل ←
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {view === 'otp' && (
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <form
-              onSubmit={handleVerifyOtp}
-              style={{
-                backgroundColor: '#fff',
-                padding: '20px',
-                borderRadius: '12px',
-                width: '100%',
-                maxWidth: '350px',
-              }}
-            >
-              <h3>التحقق من البريد</h3>
-              <p style={{ textAlign: 'center', color: '#666' }}>
-                الكود أُرسل إلى: <strong>{email}</strong>
-              </p>
-              <input
-                type="text"
-                placeholder="أدخل الكود (6 أرقام)"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                maxLength={6}
-                style={styIn}
-                required
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  backgroundColor: loading ? '#93c5fd' : '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {loading ? 'جاري التحقق...' : 'تحقق'}
-              </button>
-            </form>
+        {footerAd && (
+          <div style={styles.adBanner}>
+            <img src={footerAd.image_url} alt="إعلان تجاري" style={styles.adImage} />
           </div>
         )}
-
-        {/* ✅ إعلان تجاري واحد في الفوتر */}
-        {commercialAds.filter(ad => ad.position === 'footer' && ad.status === 'approved').slice(0, 1).map((ad, idx) => (
-          <div key={idx} style={{ 
-            backgroundColor: '#f1f5f9', 
-            padding: '10px', 
-            textAlign: 'center',
-            borderTop: '2px solid #d1d5db',
-            marginTop: '20px',
-            borderRadius: '8px',
-          }}>
-            <a href={ad.link_url || '#'} target="_blank" rel="noopener noreferrer">
-              {ad.image_url ? (
-                <img src={ad.image_url} alt="إعلان تجاري" style={{ maxWidth: '100%', height: 'auto', maxHeight: '80px' }} />
-              ) : (
-                <span style={{ fontWeight: 'bold', color: '#475569' }}>📢 إعلان تجاري</span>
-              )}
-            </a>
-          </div>
-        ))}
       </div>
     </div>
   );
 }
+
+const styles = {
+  container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
+  header: { backgroundColor: '#0f172a', padding: '18px 20px', color: 'white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' },
+  headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  headerTitle: { color: '#38bdf8', margin: 0, fontSize: '22px', fontWeight: 'bold' },
+  headerLinks: { display: 'flex', gap: '12px', alignItems: 'center' },
+  headerLink: { color: '#94a3b8', textDecoration: 'none', fontSize: '13px' },
+  headerLinkActive: { backgroundColor: '#38bdf8', color: '#0f172a', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', padding: '6px 14px', borderRadius: '20px' },
+  content: { maxWidth: '1200px', margin: '0 auto', padding: '25px 20px' },
+  searchSection: { backgroundColor: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', marginBottom: '30px', border: '1px solid #e2e8f0' },
+  searchGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' },
+  searchInput: { padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' },
+  filterInput: { padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', backgroundColor: '#f8fafc', outline: 'none' },
+  clearButton: { marginTop: '12px', padding: '8px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' },
+  sectionTitle: { fontSize: '20px', color: '#1e293b', marginBottom: '20px', fontWeight: 'bold' },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '25px' },
+  card: { backgroundColor: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', position: 'relative' as const, display: 'flex', flexDirection: 'column' as const, border: '1px solid #f1f5f9' },
+  soldBadge: { position: 'absolute' as const, top: '12px', left: '12px', backgroundColor: '#ef4444', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold', zIndex: 10 },
+  availableBadge: { position: 'absolute' as const, top: '12px', left: '12px', backgroundColor: '#10b981', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold', zIndex: 10 },
+  gallery: { padding: '12px', backgroundColor: '#f8fafc' },
+  imageGrid: { display: 'flex', gap: '6px', overflowX: 'auto' as const, padding: '4px', position: 'relative' as const },
+  thumbnail: { width: '110px', height: '80px', objectFit: 'cover' as const, borderRadius: '8px', border: '1px solid #e2e8f0' },
+  moreImages: { display: 'flex', alignItems: 'center', fontSize: '12px', color: '#64748b', padding: '0 8px', fontWeight: 'bold' },
+  noImage: { height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '13px' },
+  cardBody: { padding: '20px', display: 'flex', flexDirection: 'column' as const, flexGrow: 1 },
+  carTitle: { fontSize: '18px', margin: '0 0 10px 0', color: '#0f172a', fontWeight: 'bold' },
+  carPrice: { fontSize: '18px', color: '#10b981', fontWeight: 'bold', marginBottom: '12px' },
+  carMeta: { display: 'flex', flexWrap: 'wrap' as const, gap: '6px', marginBottom: '20px' },
+  metaBadge: { fontSize: '12px', color: '#475569', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: '6px' },
+  viewLink: { display: 'block', textAlign: 'center' as const, backgroundColor: '#2563eb', color: 'white', padding: '10px', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold', marginTop: 'auto' },
+  noCars: { textAlign: 'center' as const, padding: '50px 20px', color: '#64748b', backgroundColor: 'white', borderRadius: '12px', border: '1px dashed #cbd5e1' },
+  adBanner: { margin: '15px 0 25px 0', textAlign: 'center' as const },
+  adImage: { maxWidth: '100%', height: 'auto', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
+  loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '15px', backgroundColor: '#f8fafc' },
+  spinner: { width: '45px', height: '45px', border: '4px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
+};
