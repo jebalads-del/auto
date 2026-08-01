@@ -96,8 +96,8 @@ export default function HomePage() {
 
   const filteredCars = cars.filter(car => {
     if (car.status !== 'approved' && car.status !== 'sold') return false;
-    const matchesBrand = selectedBrand ? car.brand === selectedBrand : true;
-    const matchesModel = selectedModel ? car.model === selectedModel : true;
+    const matchesBrand = selectedBrand ? car.brand.toLowerCase() === selectedBrand.toLowerCase() : true;
+    const matchesModel = selectedModel ? car.model.toLowerCase() === selectedModel.toLowerCase() : true;
     const matchesYear = selectedYear ? car.year.toString() === selectedYear : true;
     const matchesPrice = maxPrice ? car.price <= parseFloat(maxPrice) : true;
     const matchesKm = maxKilometers ? car.kilometers <= parseFloat(maxKilometers) : true;
