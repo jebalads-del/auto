@@ -35,6 +35,7 @@ export default function HomePage() {
   const [ads, setAds] = useState<CommercialAd[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
@@ -53,7 +54,7 @@ export default function HomePage() {
         if (carsData.success) setCars(carsData.cars);
         if (adsData.success) setAds(adsData.ads);
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
@@ -116,52 +117,63 @@ export default function HomePage() {
           </div>
         )}
 
-        <div style={styles.searchSection}>
-          <h2 style={{ fontSize: '18px', color: '#1e293b', marginBottom: '15px', fontWeight: 'bold' }}>🔎 ابحث عن سيارة أحلامك</h2>
-          <div style={styles.searchGrid}>
-            <input
-              type="text"
-              placeholder="ابحث بالماركة أو الموديل (مثال: تويوتا)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={styles.searchInput}
-            />
-            <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput}>
-              <option value="">كل الموديلات</option>
-              {uniqueModels.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} style={styles.filterInput}>
-              <option value="">كل السنوات</option>
-              {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-            <input
-              type="number"
-              placeholder="الحد الأقصى للسعر"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              style={styles.filterInput}
-            />
-            <input
-              type="number"
-              placeholder="الحد الأقصى للممشى (كم)"
-              value={maxKilometers}
-              onChange={(e) => setMaxKilometers(e.target.value)}
-              style={styles.filterInput}
-            />
-          </div>
-          {(searchQuery || selectedYear || selectedModel || maxPrice || maxKilometers) && (
-            <button 
-              onClick={() => { setSearchQuery(''); setSelectedYear(''); setSelectedModel(''); setMaxPrice(''); setMaxKilometers(''); }}
-              style={styles.clearButton}
-            >
-              🔄 إعادة تعيين الفلاتر
-            </button>
-          )}
+        <div style={{ marginBottom: '20px' }}>
+          <button 
+            type="button"
+            onClick={() => setIsFilterOpen(!isFilterOpen)} 
+            style={{ width: '100%', padding: '12px', backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', fontSize: '14px' }}
+          >
+            {isFilterOpen ? '🔼 إخفاء صندوق البحث المتقدم' : '🔍 اضغط هنا للبحث المتقدم وتصفية السيارات'}
+          </button>
         </div>
 
-        <h2 style={styles.sectionTitle}>✨ السيارات المتاحة والمباعة ({filteredCars.length})</h2>
+        {isFilterOpen && (
+          <div style={styles.searchSection}>
+            <div style={styles.searchGrid}>
+              <input
+                type="text"
+                placeholder="ابحث بالماركة أو الموديل..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={styles.searchInput}
+              />
+              <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput}>
+                <option value="">كل الموديلات</option>
+                {uniqueModels.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} style={styles.filterInput}>
+                <option value="">كل السنوات</option>
+                {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                placeholder="الحد الأقصى للسعر"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                style={styles.filterInput}
+              />
+              <input
+                type="number"
+                placeholder="الحد الأقصى للممشى (كم)"
+                value={maxKilometers}
+                onChange={(e) => setMaxKilometers(e.target.value)}
+                style={styles.filterInput}
+              />
+            </div>
+            {(searchQuery || selectedYear || selectedModel || maxPrice || maxKilometers) && (
+              <button 
+                type="button"
+                onClick={() => { setSearchQuery(''); setSelectedYear(''); setSelectedModel(''); setMaxPrice(''); setMaxKilometers(''); }}
+                style={styles.clearButton}
+              >
+                🔄 إعادة تعيين الفلاتر
+              </button>
+            )}
+          </div>
+        )}
+        <h2 style={styles.sectionTitle}>✨ السيارات المعروضة ({filteredCars.length})</h2>
         
         {filteredCars.length === 0 ? (
           <div style={styles.noCars}>لا توجد سيارات تطابق معايير البحث الحالية 🔍</div>
@@ -199,7 +211,6 @@ export default function HomePage() {
                   <div style={styles.carMeta}>
                     <span style={styles.metaBadge}>📅 {car.year}</span>
                     <span style={styles.metaBadge}>📏 {car.kilometers?.toLocaleString() || 0} كم</span>
-                    <span style={{ ...styles.metaBadge, backgroundColor: '#f1f5f9', color: '#475569' }}>🎨 {car.color || 'غير محدد'}</span>
                   </div>
                   <Link href={`/car/${car.id}`} style={styles.viewLink}>
                     عرض التفاصيل والتواصل ←
