@@ -35,12 +35,30 @@ export default function HomePage() {
   const [ads, setAds] = useState<CommercialAd[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 🔍 فلاتر البحث الذكية والمتتابعة
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [maxKilometers, setMaxKilometers] = useState('');
+
+  const brands = ['تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو', 'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو'];
+
+  const modelsMap: Record<string, string[]> = {
+    'تويوتا': ['كامري', 'كورولا', 'لاندكروزر', 'برادو', 'أفالون', 'راف فور', 'يارس', 'هيلوكس'],
+    'هوندا': ['أكورد', 'سيفيك', 'سي آر في', 'بايلوت', 'أوديسي', 'سيتي'],
+    'مرسيدس': ['الفئة C', 'الفئة E', 'الفئة S', 'GLC', 'GLE', 'G-Class', 'CLA', 'A-Class'],
+    'بي إم دبليو': ['الفئة الثالثة', 'الفئة الخامسة', 'الفئة السابعة', 'X5', 'X6', 'X3', 'X7'],
+    'أودي': ['A4', 'A6', 'A8', 'Q5', 'Q7', 'Q8', 'A5'],
+    'فورد': ['تورس', 'موستانج', 'إكسبلورر', 'إكسبيدشن', 'إف 150', 'إيدج', 'فوكس'],
+    'شيفروليه': ['تاهو', 'سيلفرادو', 'كامارو', 'ماليبو', 'كابرس', 'ترافرس', 'كورفيت'],
+    'نيسان': ['باترول', 'ألتيما', 'ماكسيما', 'صني', 'إكس تريل', 'باثفايندر', 'نافارا'],
+    'هيونداي': ['إلنترا', 'سوناتا', 'أكسنت', 'سانتا في', 'توسان', 'أزيرا', 'كريتا'],
+    'كيا': ['أوبتيما', 'سيراتو', 'سبورتج', 'سورينتو', 'ريو', 'K5', 'كادينزا', 'ستنجر'],
+    'لكزس': ['LS', 'LX', 'RX', 'ES', 'IS', 'GX', 'NX'],
+    'جيب': ['جراند شيروكي', 'روبيكون', 'رولنجر', 'شيروكي', 'كومباس']
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,7 +79,6 @@ export default function HomePage() {
     };
     fetchData();
   }, []);
-
   const getCurrencySymbol = (currency: string) => {
     switch (currency) {
       case 'KWD': return 'د.ك';
@@ -79,16 +96,13 @@ export default function HomePage() {
 
   const filteredCars = cars.filter(car => {
     if (car.status !== 'approved' && car.status !== 'sold') return false;
-    const matchesSearch = car.brand.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          car.model.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesBrand = selectedBrand ? car.brand === selectedBrand : true;
+    const matchesModel = selectedModel ? car.model === selectedModel : true;
     const matchesYear = selectedYear ? car.year.toString() === selectedYear : true;
-    const matchesModel = selectedModel ? car.model.toLowerCase() === selectedModel.toLowerCase() : true;
     const matchesPrice = maxPrice ? car.price <= parseFloat(maxPrice) : true;
     const matchesKm = maxKilometers ? car.kilometers <= parseFloat(maxKilometers) : true;
-    return matchesSearch && matchesYear && matchesModel && matchesPrice && matchesKm;
+    return matchesBrand && matchesModel && matchesYear && matchesPrice && matchesKm;
   });
-
-  const uniqueModels = Array.from(new Set(cars.map(c => c.model))).filter(Boolean);
 
   if (loading) {
     return (
@@ -98,6 +112,7 @@ export default function HomePage() {
       </div>
     );
   }
+
   return (
     <div style={styles.container}>
       <header style={styles.header}>
@@ -130,42 +145,30 @@ export default function HomePage() {
         {isFilterOpen && (
           <div style={styles.searchSection}>
             <div style={styles.searchGrid}>
-              <input
-                type="text"
-                placeholder="ابحث بالماركة أو الموديل..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={styles.searchInput}
-              />
-              <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput}>
-                <option value="">كل الموديلات</option>
-                {uniqueModels.map(m => <option key={m} value={m}>{m}</option>)}
+              <select value={selectedBrand} onChange={(e) => { setSelectedBrand(e.target.value); setSelectedModel(''); }} style={styles.filterInput}>
+                <option value="">اختر الماركة</option>
+                {brands.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
+
+              <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput} disabled={!selectedBrand}>
+                <option value="">{selectedBrand ? 'اختر الموديل' : 'اختر الماركة أولاً'}</option>
+                {selectedBrand && (modelsMap[selectedBrand] || []).map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+
               <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} style={styles.filterInput}>
                 <option value="">كل السنوات</option>
                 {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map(y => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
-              <input
-                type="number"
-                placeholder="الحد الأقصى للسعر"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                style={styles.filterInput}
-              />
-              <input
-                type="number"
-                placeholder="الحد الأقصى للممشى (كم)"
-                value={maxKilometers}
-                onChange={(e) => setMaxKilometers(e.target.value)}
-                style={styles.filterInput}
-              />
+
+              <input type="number" placeholder="الحد الأقصى للسعر" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={styles.filterInput} />
+              <input type="number" placeholder="الحد الأقصى للممشى (كم)" value={maxKilometers} onChange={(e) => setMaxKilometers(e.target.value)} style={styles.filterInput} />
             </div>
-            {(searchQuery || selectedYear || selectedModel || maxPrice || maxKilometers) && (
+            {(selectedBrand || selectedModel || selectedYear || maxPrice || maxKilometers) && (
               <button 
                 type="button"
-                onClick={() => { setSearchQuery(''); setSelectedYear(''); setSelectedModel(''); setMaxPrice(''); setMaxKilometers(''); }}
+                onClick={() => { setSelectedBrand(''); setSelectedModel(''); setSelectedYear(''); setMaxPrice(''); setMaxKilometers(''); }}
                 style={styles.clearButton}
               >
                 🔄 إعادة تعيين الفلاتر
@@ -242,8 +245,7 @@ const styles = {
   content: { maxWidth: '1200px', margin: '0 auto', padding: '25px 20px' },
   searchSection: { backgroundColor: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', marginBottom: '30px', border: '1px solid #e2e8f0' },
   searchGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' },
-  searchInput: { padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' },
-  filterInput: { padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', backgroundColor: '#f8fafc', outline: 'none' },
+  filterInput: { padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', backgroundColor: '#f8fafc', outline: 'none', color: '#1e293b' },
   clearButton: { marginTop: '12px', padding: '8px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' },
   sectionTitle: { fontSize: '20px', color: '#1e293b', marginBottom: '20px', fontWeight: 'bold' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '25px' },
