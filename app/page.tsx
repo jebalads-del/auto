@@ -100,8 +100,8 @@ export default function HomePage() {
     const matchesBrand = selectedBrand ? car.brand.toLowerCase() === selectedBrand.toLowerCase() : true;
     const matchesModel = selectedModel ? car.model.toLowerCase() === selectedModel.toLowerCase() : true;
     const matchesYear = selectedYear ? car.year.toString() === selectedYear : true;
-    const matchesPrice = maxPrice ? car.price <= parseFloat(maxPrice) : true;
-    const matchesKm = maxKilometers ? car.kilometers <= parseFloat(maxKilometers) : true;
+    const matchesPrice = maxPrice && car.price ? parseFloat(car.price.toString()) <= parseFloat(maxPrice) : true;
+    const matchesKm = maxKilometers && car.kilometers ? parseFloat(car.kilometers.toString()) <= parseFloat(maxKilometers) : true;
     return matchesBrand && matchesModel && matchesYear && matchesPrice && matchesKm;
   });
 
