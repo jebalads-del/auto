@@ -121,7 +121,7 @@ export default function HomePage() {
             {filteredCars.map((car) => (
               <div key={car.id} style={styles.card}>
                 <div style={styles.gallery}>
-                  {car.images && car.images.length > 0 ? (
+                  {car.images ? (
                     <img src={car.images[0]} alt={car.brand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
                   ) : (
                     <div style={styles.noImage}>🚗 لا توجد صورة</div>
