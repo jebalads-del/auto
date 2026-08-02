@@ -120,6 +120,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {headerAd && <div style={styles.adBanner}><img src={headerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
         <h2 style={styles.sectionTitle}>✨ السيارات المعروضة ({filteredCars.length})</h2>
         {filteredCars.length === 0 ? (
           <div style={styles.noCars}>لا توجد سيارات متوفرة حالياً 🔍</div>
@@ -144,7 +145,6 @@ export default function HomePage() {
             ))}
           </div>
         )}
-        {headerAd && <div style={styles.adBanner}><img src={headerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
         {footerAd && <div style={styles.adBanner}><img src={footerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
       </div>
     </div>
