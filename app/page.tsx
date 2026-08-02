@@ -140,17 +140,17 @@ export default function HomePage() {
           <div style={styles.statsContainer}>
             <div style={styles.statBox}>
               <span style={styles.statNumber}>{activeAdsCount}</span>
-              <span style={styles.statLabel}>إعلان نشط</span>
+              <span style={styles.statBoxLabel}>إعلان نشط</span>
             </div>
             <div style={styles.statDivider}></div>
             <div style={styles.statBox}>
               <span style={styles.statNumber}>4</span>
-              <span style={styles.statLabel}>مدينة</span>
+              <span style={styles.statBoxLabel}>مدينة</span>
             </div>
             <div style={styles.statDivider}></div>
             <div style={styles.statBox}>
               <span style={styles.statNumber}>3,200</span>
-              <span style={styles.statLabel}>من د.ك</span>
+              <span style={styles.statBoxLabel}>من د.ك</span>
             </div>
           </div>
         </div>
