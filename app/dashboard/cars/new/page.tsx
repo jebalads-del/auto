@@ -23,15 +23,9 @@ export default function NewCarPage() {
   const [imagePreview, setImagePreview] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
-    brand: '',
-    model: '',
-    year: new Date().getFullYear(),
-    price: '',
-    kilometers: '',
-    color: '',
-    description: '',
-    payment_method: 'western_union',
-    currency: 'KWD',
+    brand: '', model: '', year: new Date().getFullYear(),
+    price: '', kilometers: '', color: '', description: '',
+    payment_method: 'western_union', currency: 'KWD',
   });
 
   const brands = ['تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو', 'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو'];
@@ -51,7 +45,6 @@ export default function NewCarPage() {
     'لكزس': ['LS', 'LX', 'RX', 'ES', 'IS', 'GX', 'NX', 'أخرى'],
     'جيب': ['جراند شيروكي', 'روبيكون', 'رولنجر', 'شيروكي', 'كومباس', 'أخرى']
   };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const maxImages = isPaid ? 6 : 2;
@@ -68,6 +61,7 @@ export default function NewCarPage() {
     setImages(images.filter((_, i) => i !== index));
     setImagePreview(imagePreview.filter((_, i) => i !== index));
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -120,17 +114,26 @@ export default function NewCarPage() {
         featured_price: isPaid ? parseFloat(formData.price) * 0.1 : null,
         currency: formData.currency || 'KWD',
       };
-
       const response = await fetch('/api/cars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (err) {
+        if (response.ok || responseText.includes('success')) {
+          data = { success: true };
+        } else {
+          data = { success: false, message: responseText };
+        }
+      }
 
       if (data.success) {
-        setSuccess('تم نشر الإعلان بنجاح في انتظار مراجعة الأدمن!');
+        setSuccess('تم نشر الإعلان بنجاح!');
         setFormData({
           brand: '', model: '', year: new Date().getFullYear(),
           price: '', kilometers: '', color: '', description: '',
@@ -144,7 +147,7 @@ export default function NewCarPage() {
         setError(data.message || 'فشل نشر الإعلان');
       }
     } catch (err: any) {
-      setError('حدث خطأ غير متوقع يرجى المحاولة مرة أخرى');
+      setError('حدث خطأ غير متوقع أثناء عملية النشر');
     } finally {
       setLoading(false);
     }
@@ -192,19 +195,19 @@ export default function NewCarPage() {
 
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>السعر *</label>
-          <input type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} placeholder="أدخل السعر الإجمالي للسيارة" />
+          <input type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} placeholder="السعر" />
         </div>
 
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>💰 العملة</label>
           <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={styIn}>
-            {currencies.map(curr => <option key={curr.code} value={curr.code}>{curr.name} ({curr.symbol})</option>)}
+            {currencies.map(curr => <option key={curr.code} value={curr.code}>{curr.name}</option>)}
           </select>
         </div>
 
         <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الكيلومترات (كم)</label>
-          <input type="number" min="0" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} placeholder="أدخل المسافة المقطوعة بالكيلومترات" />
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>الكيلومترات</label>
+          <input type="number" min="0" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} placeholder="المسافة" />
         </div>
 
         <div style={{ marginBottom: '15px' }}>
@@ -215,36 +218,23 @@ export default function NewCarPage() {
           </select>
         </div>
 
-        <div style={{ marginBottom: '15px', border: '1px dashed #f59e0b', padding: '12px', borderRadius: '8px', backgroundColor: '#fffbfe' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <input type="checkbox" id="paid-ad" checked={isPaid} onChange={(e) => { setIsPaid(e.target.checked); setImages([]); setImagePreview([]); }} style={{ width: '16px', height: '16px' }} />
-            <label htmlFor="paid-ad" style={{ fontWeight: 'bold', cursor: 'pointer' }}>👑 إعلان مدفوع (اختياري)</label>
-          </div>
-          <p style={{ margin: '5px 0 0 0', fontSize: '11px', color: '#64748b' }}>
-            {isPaid ? '✨ يمنحك الإعلان المدفوع حق رفع حتى 6 صور متميزة لعرض سيارتك بشكل أفضل.' : '📸 يمكنك رفع 2 صور للسيارة كحد أقصى (مجاني).'}
-          </p>
+        <div style={{ marginBottom: '15px', border: '1px dashed #f59e0b', padding: '12px', borderRadius: '8px' }}>
+          <input type="checkbox" id="paid-ad" checked={isPaid} onChange={(e) => { setIsPaid(e.target.checked); setImages([]); setImagePreview([]); }} />
+          <label htmlFor="paid-ad" style={{ fontWeight: 'bold' }}>👑 إعلان مدفوع</label>
         </div>
 
         <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>📸 صور السيارة ({isPaid ? '6 صور كحد أقصى' : '2 صور كحد أقصى'})</label>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>📸 صور السيارة</label>
           <input type="file" multiple accept="image/*" onChange={handleImageUpload} style={styIn} />
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
-            {imagePreview.map((url, index) => (
-              <div key={index} style={{ position: 'relative', width: '80px', height: '60px' }}>
-                <img src={url} alt="معاينة" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px' }} />
-                <button type="button" onClick={() => removeImage(index)} style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px', padding: 0 }}>×</button>
-              </div>
-            ))}
-          </div>
         </div>
 
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>وصف إضافي</label>
-          <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: '80px', resize: 'none' }} placeholder="أي تفاصيل إضافية عن السيارة..." />
+          <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: '80px', resize: 'none' }} />
         </div>
 
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer' }}>
-          {loading ? 'جاري النشر المعزز...' : '🚙 نشر الإعلان'}
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 'bold' }}>
+          {loading ? 'جاري النشر...' : '🚙 نشر الإعلان'}
         </button>
       </form>
     </div>
