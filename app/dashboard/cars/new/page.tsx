@@ -57,10 +57,6 @@ export default function NewCarPage() {
     setImagePreview([...imagePreview, ...previews]);
   };
 
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-    setImagePreview(imagePreview.filter((_, i) => i !== index));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
