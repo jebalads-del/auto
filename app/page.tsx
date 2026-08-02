@@ -316,7 +316,7 @@ const styles = {
   carPrice: { fontSize: '16px', color: '#10b981', fontWeight: 'bold', marginBottom: '10px' },
   carMeta: { display: 'flex', gap: '8px' },
   metaBadge: { fontSize: '11px', color: '#475569', backgroundColor: '#f1f5f9', padding: '3px 8px', borderRadius: '6px' },
-  viewLink: { display: 'block', textAlign: 'center' , textAlign: 'center' as const, backgroundColor: '#2563eb', color: 'white', padding: '10px', borderRadius: '8px', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', marginTop: 'auto' },
+  viewLink: { display: 'block', textAlign: 'center' as const, backgroundColor: '#2563eb', color: 'white', padding: '10px', borderRadius: '8px', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', marginTop: 'auto' },
   noCars: { textAlign: 'center' as const, padding: '40px 20px', color: '#64748b', backgroundColor: 'white', borderRadius: '12px', border: '1px dashed #cbd5e1', width: '100%' },
   adBanner: { margin: '15px 0', textAlign: 'center' as const },
   adImage: { maxWidth: '100%', height: 'auto', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
