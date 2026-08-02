@@ -96,7 +96,7 @@ export default function HomePage() {
 
   // ⚡ تصفية ذكية ومرنة تتجاهل حالة الأحرف الكبيرة والصغيرة لضمان قراءة الموديلات بالشكل الصحيح
   const filteredCars = cars.filter(car => {
-    if (car.status !== 'approved' && car.status !== 'sold') return false;
+    
     const matchesBrand = selectedBrand ? car.brand.toLowerCase() === selectedBrand.toLowerCase() : true;
     const matchesModel = selectedModel ? car.model.toLowerCase() === selectedModel.toLowerCase() : true;
     const matchesYear = selectedYear ? car.year.toString() === selectedYear : true;
