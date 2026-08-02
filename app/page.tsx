@@ -129,7 +129,7 @@ export default function HomePage() {
               <div key={car.id} style={styles.card}>
                 <div style={styles.gallery}>
                   {car.images && car.images.length > 0 ? (
-                    <img src={Array.isArray(car.images) ? car.images : car.images} alt={car.brand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <img src={Array.isArray(car.images) ? car.images[0] : car.images} alt={car.brand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
                   ) : (
                     <div style={styles.noImage}>🚗 لا توجد صورة</div>
                   )}
