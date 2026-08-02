@@ -108,7 +108,7 @@ export default function HomePage() {
           <div style={styles.searchSection}>
             <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput}>
               <option value="">عرض كل الموديلات المتوفرة</option>
-              {uniqueModels.map(m => <option key={m} value={m}>{m}</option>)}
+              {cars.filter((c, idx, self) => self.findIndex(t => t.model === c.model) === idx).map(car => <option key={car.model} value={car.model}>{car.brand} - {car.model}</option>)}
             </select>
           </div>
         )}
