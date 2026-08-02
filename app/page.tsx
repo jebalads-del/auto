@@ -66,7 +66,7 @@ export default function HomePage() {
     return car.model.toLowerCase() === selectedModel.toLowerCase();
   });
 
-  const uniqueModels = Array.from(new Set(cars.map(c => c.model))).filter(Boolean);
+  const uniqueModels = cars.reduce((acc, current) => { const x = acc.find(item => item.model.toLowerCase() === current.model.toLowerCase()); if (!x && current.model) { acc.push({ brand: current.brand, model: current.model }); } return acc; }, []);
 
   if (loading) {
     return (
