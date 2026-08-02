@@ -1,184 +1,199 @@
-'use client';
+<!DOCTYPE html>
+<html lang="en">
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+<head>
 
-interface Car {
-  id: number;
-  brand: string;
-  model: string;
-  year: number;
-  price: number;
-  kilometers: number;
-  color: string;
-  description: string;
-  images: string[];
-  status: string;
-  currency: string;
-}
+    
+    
+    <meta charset="UTF-8">
+    <!--[if IE]><meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'><![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0">
+    <title>URL Shortener, Branded Short Links & Analytics | TinyURL</title>
+    <meta data-vmid="description" content="TinyURL is the original URL shortener that shortens your unwieldly links into more manageable and useable URLs.">
+    <meta data-vmid="keywords" content="tinyurl url save share shorten analyze">
 
-interface CommercialAd {
-  id: number;
-  position: string;
-  status: string;
-  image_url: string;
-}
+    
+    <link rel="preconnect" nonce="Nom+8S05nCiS1ZyZU/z1OQ==" href="https://fonts.googleapis.com">
+    <link rel="preconnect" nonce="Nom+8S05nCiS1ZyZU/z1OQ==" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" nonce="Nom+8S05nCiS1ZyZU/z1OQ==" href="https://fonts.googleapis.com/css2?family=Bungee&family=Montserrat:wght@100;300;400;500;600;700&display=swap">
 
-export default function HomePage() {
-  const [cars, setCars] = useState<Car[]>([]);
-  const [ads, setAds] = useState<CommercialAd[]>([]);
-  const [loading, setLoading] = useState(true);
+            <link rel="stylesheet" nonce="Nom+8S05nCiS1ZyZU/z1OQ==" href="/css/front.css?id=ae663a28cb793b02f7b42ded21c1d52f">
+        <link rel="preload" nonce="Nom+8S05nCiS1ZyZU/z1OQ==" href="/js/app.js?id=032ab4a1236b1b24578492f9fec7ae0f" as="script">
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="https://tinyurl.com/images/icons/favicon-16.png" sizes="16x16">
+    <link rel="icon" type="image/png" href="https://tinyurl.com/images/icons/favicon-32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="https://tinyurl.com/images/icons/favicon-48.png" sizes="48x48">
+    <link rel="icon" type="image/png" href="https://tinyurl.com/images/icons/favicon-64.png" sizes="64x64">
+    <link rel="icon" type="image/png" href="https://tinyurl.com/images/icons/favicon-128.png" sizes="128x128">
+    <link rel="icon" type="image/png" href="https://tinyurl.com/images/icons/favicon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="152x152" href="https://tinyurl.com/images/icons/favicon-152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="https://tinyurl.com/images/icons/favicon-167.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://tinyurl.com/images/icons/favicon-180.png">
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('');
+    <script nonce="Nom+8S05nCiS1ZyZU/z1OQ==" type="text/javascript">
+        window.Spark = {"collectsBillingAddress":false,"collectsEuropeanVat":false,"env":"production","roles":["admin","member","viewer"],"state":null,"stripeKey":"pk_live_51H4yVKFoQollccOglSdqQ9hK0Ux7GcxtldtbJleZP9qMPYdJ3p76bqxEf7rWwXwxgTi1qiYgBOYCNhiNgZvIljCo00pCY5HoQC","cashierPath":"stripe","teamsPrefix":"team","teamsIdentifiedByPath":true,"trialDays":0,"teamTrialDays":0,"defaultRole":"viewer","operationsCosts":null};
+            </script>
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [carsRes, adsRes] = await Promise.all([
-          fetch('/api/cars'),
-          fetch('/api/admin/commercial-ads')
-        ]);
-        const carsData = await carsRes.json();
-        const adsData = await adsRes.json();
-        if (carsData.success) setCars(carsData.cars);
-        if (adsData.success) setAds(adsData.ads);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+            <template id="freestar-assets">
+            <link data-owner="freestar" rel="preconnect" href="https://a.pub.network/" crossorigin />
+            <link data-owner="freestar" rel="preconnect" href="https://b.pub.network/" crossorigin />
+            <link data-owner="freestar" rel="preconnect" href="https://c.pub.network/" crossorigin />
+            <link data-owner="freestar" rel="preconnect" href="https://d.pub.network/" crossorigin />
+            <link data-owner="freestar" rel="preconnect" href="https://c.amazon-adsystem.com" crossorigin />
+            <link data-owner="freestar" rel="preconnect" href="https://s.amazon-adsystem.com" crossorigin />
+            <link data-owner="freestar" rel="preconnect" href="https://btloader.com/" crossorigin />
+            <link data-owner="freestar" rel="preconnect" href="https://api.btloader.com/" crossorigin />
+            <link data-owner="freestar" rel="preconnect" href="https://cdn.confiant-integrations.net" crossorigin />
+            <link data-owner="freestar" rel="stylesheet" href="https://a.pub.network/tinyurl-com/cls.css" />
 
-  const getCurrencySymbol = (currency: string) => {
-    if (currency === 'SAR') return 'ر.س';
-    return 'د.ك';
-  };
+            <script nonce="Nom+8S05nCiS1ZyZU/z1OQ==" data-cfasync="false" data-owner="freestar" type="text/javascript">
+                var freestar = freestar || {};
+                freestar.queue = freestar.queue || [];
+                freestar.config = freestar.config || {};
+                freestar.config.enabled_slots = [];
+                freestar.initCallback = function () {
+                    freestar.config.enabled_slots.length === 0 ? (freestar.initCallbackCalled = false) : freestar.newAdSlots(freestar.config.enabled_slots);
+                };
+                freestar.queue.push(function () {
+                    googletag.pubads().set('page_url', 'https://tinyurl.com/');
+                });
+            </script>
+            <script nonce="Nom+8S05nCiS1ZyZU/z1OQ==" async data-cfasync="false" data-owner="freestar" src="https://a.pub.network/tinyurl-com/pubfig.min.js"></script>
+        </template>
+    </head>
 
-  const headerAd = ads.find(ad => ad.position === 'header' && ad.status === 'approved');
-  const footerAd = ads.find(ad => ad.position === 'footer' && ad.status === 'approved');
+<body>
 
-  // تصفية ذكية ومرنة للغاية: تظهر كل السيارات فوراً عند فتح الصفحة وتتغير بفلتر الموديل
-  const filteredCars = cars.filter(car => {
-    if (!selectedModel) return true;
-    return car.model.toLowerCase() === selectedModel.toLowerCase();
-  });
-
-  const uniqueModels = cars.reduce((acc, current) => { const x = acc.find(item => item.model.toLowerCase() === current.model.toLowerCase()); if (!x && current.model) { acc.push({ brand: current.brand, model: current.model }); } return acc; }, []);
-
-  if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b' }}>جاري تحميل صالة العرض...</p>
-      </div>
-    );
-  }
-  return (
-    <div style={styles.container}>
-      <div style={styles.heroSection}>
-        <header style={styles.header}>
-          <div style={styles.headerContent}>
-            <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
-            <Link href="/login" style={styles.headerLink}>👤 تسجيل الدخول</Link>
-          </div>
-        </header>
-        <div style={styles.heroBody}>
-          <h2 style={styles.heroMainTitle}>ابحث عن سيارتك المثالية</h2>
-          <p style={styles.heroSubTitle}>تصفح الإعلانات وأرسل إعلانك مجاناً</p>
-          <div style={styles.statsContainer}>
-            <div style={styles.statBox}><span style={styles.statNumber}>{cars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
-            <div style={styles.statDivider}></div>
-            <div style={styles.statBox}><span style={styles.statNumber}>4</span><span style={styles.statBoxLabel}>مدينة</span></div>
-          </div>
+    
+    <div id="mainLoader" class="flex-center-center flex-column w-100" style="position: fixed; top: 0; left: 0; height: 100dvh; width: 100vw; z-index: 1000">
+        <img src="/images/header/logo.svg" width="250px" class="mb-4" alt="TinyURL Logo" />
+        <div class="spinner" style="height: 100px; width: 100px;">
+            <div class="spinner-wheel" style="border-width: 5px; border-top-color: white; border-bottom-color: white; height: 100px; width: 100px;"></div>
         </div>
-      </div>
-
-      <div style={styles.content}>
-        {headerAd && <div style={styles.adBanner}><img src={headerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
-
-        <div style={styles.actionButtonsGrid}>
-          <Link href="/dashboard/cars/new" style={styles.actionButtonPost}>➕ أرسل إعلانك مجاناً</Link>
-          <button type="button" onClick={() => setIsFilterOpen(!isFilterOpen)} style={styles.actionButtonSearch}>🔍 اختر موديل السيارة</button>
+        <div class="background-img">
+            <svg
+                class="background-img-top"
+                width="510"
+                height="227"
+                viewBox="0 0 510 227"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M-87.152 -39.8215C-88.9236 -97.5924 -78.1971 -154.94 -48.4234 -204.479C-20.7542 -250.517 24.1466 -281.369 72.3104 -305.144C118.507 -327.949 168.356 -332.792 219.715 -336.844C285.535 -342.038 369.083 -381.424 412.88 -332.018C457.935 -281.194 406.048 -201.31 399.82 -133.678C395.679 -88.7194 394.135 -46.317 382.55 -2.68C368.135 51.6174 373.1 123.327 324.232 151.04C275.433 178.714 218.732 122.276 162.632 122.037C93.5849 121.742 20.3777 187.044 -37.5683 149.496C-93.687 113.131 -85.1022 27.0177 -87.152 -39.8215Z"
+                    fill="url(#paint0_linear)"
+                    fill-opacity="0.4"
+                />
+                <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M-188.911 -99.6179C-180.859 -164.877 -158.829 -227.486 -116.742 -278.006C-77.6303 -324.955 -21.7855 -351.835 36.4978 -370.192C92.4006 -387.799 149.286 -384.577 207.733 -380.204C282.636 -374.6 383.414 -404.355 424.066 -341.195C465.884 -276.222 393.661 -195.431 374.9 -120.476C362.428 -70.6498 353.32 -23.2462 332.709 23.8C307.062 82.3393 300.177 163.824 240.418 186.486C180.743 209.115 126.807 135.805 63.777 125.782C-13.8004 113.447 -107.459 174.137 -166.079 121.848C-222.85 71.2077 -198.227 -24.1155 -188.911 -99.6179Z"
+                    fill="url(#paint1_linear)"
+                    fill-opacity="0.3"
+                />
+                <defs>
+                    <linearGradient
+                        id="paint0_linear"
+                        x1="403.713"
+                        y1="80.0373"
+                        x2="-60.6291"
+                        y2="-29.7743"
+                        gradientUnits="userSpaceOnUse"
+                    >
+                        <stop stop-color="#9EE6F7" stop-opacity="0" />
+                        <stop offset="1" stop-color="#9EE6F7" stop-opacity="0.46" />
+                    </linearGradient>
+                    <linearGradient
+                        id="paint1_linear"
+                        x1="342.121"
+                        y1="120.477"
+                        x2="269"
+                        y2="-1.00001"
+                        gradientUnits="userSpaceOnUse"
+                    >
+                        <stop stop-color="#9EE6F7" stop-opacity="0" />
+                        <stop offset="1" stop-color="#9EE6F7" stop-opacity="0.46" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <svg
+                class="background-img-bottom"
+                width="576"
+                height="657"
+                viewBox="0 0 576 657"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M119.005 490.408C104.348 426.309 103.735 359.939 126.098 298.105C146.88 240.642 190.23 196.348 238.776 159.237C285.339 123.642 339.92 107.296 396.362 91.4996C468.695 71.2562 553.312 8.95396 613.046 54.4918C674.494 101.336 634.107 201.896 641.998 278.759C647.244 329.854 654.826 377.525 651.472 428.779C647.298 492.553 668.578 571.511 620.111 613.172C571.712 654.774 496.031 604.218 433.356 616.263C356.216 631.089 288.829 720.051 215.905 690.855C145.28 662.579 135.963 564.569 119.005 490.408Z"
+                    fill="url(#paint0_linear)"
+                    fill-opacity="0.3"
+                />
+                <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M207.243 573.011C186.674 518.997 178.054 461.296 189.988 404.743C201.078 352.187 233.418 308.347 271.157 270.126C307.354 233.466 352.877 212.586 400.086 191.958C460.587 165.523 526.658 100.977 584.206 133.341C643.406 166.634 620.5 259.094 636.735 325.044C647.526 368.884 659.935 409.46 663.26 454.486C667.397 510.511 695.542 576.654 658.427 618.825C621.363 660.938 549.321 626.149 496.228 644.271C430.882 666.576 383.059 752.23 316.019 735.699C251.094 719.689 231.041 635.504 207.243 573.011Z"
+                    fill="url(#paint1_linear)"
+                    fill-opacity="0.4"
+                />
+                <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M403.49 282.211C453.064 252.494 508.362 233.896 566.131 235.735C619.816 237.444 668.646 261.602 712.889 292.059C755.324 321.272 783.858 362.431 812.44 405.295C849.068 460.228 924.193 513.966 902.414 576.295C880.011 640.412 784.967 634.064 722.882 661.603C681.612 679.91 643.839 699.238 600.092 710.401C545.658 724.291 485.472 763.592 437.449 734.441C389.492 705.33 411.119 628.307 383.973 579.211C350.563 518.785 257.854 486.712 262.381 417.812C266.766 351.086 346.134 316.591 403.49 282.211Z"
+                    fill="url(#paint2_linear)"
+                    fill-opacity="0.6"
+                />
+                <defs>
+                    <linearGradient
+                        id="paint0_linear"
+                        x1="693.25"
+                        y1="516.469"
+                        x2="150.817"
+                        y2="495.802"
+                        gradientUnits="userSpaceOnUse"
+                    >
+                        <stop stop-color="#9EE6F7" stop-opacity="0" />
+                        <stop offset="1" stop-color="#9EE6F7" stop-opacity="0.46" />
+                    </linearGradient>
+                    <linearGradient
+                        id="paint1_linear"
+                        x1="710.313"
+                        y1="525.732"
+                        x2="235.594"
+                        y2="573.831"
+                        gradientUnits="userSpaceOnUse"
+                    >
+                        <stop stop-color="#9EE6F7" stop-opacity="0" />
+                        <stop offset="1" stop-color="#9EE6F7" stop-opacity="0.46" />
+                    </linearGradient>
+                    <linearGradient
+                        id="paint2_linear"
+                        x1="538.194"
+                        y1="769.211"
+                        x2="407.651"
+                        y2="310.266"
+                        gradientUnits="userSpaceOnUse"
+                    >
+                        <stop stop-color="#9EE6F7" stop-opacity="0" />
+                        <stop offset="1" stop-color="#9EE6F7" stop-opacity="0.46" />
+                    </linearGradient>
+                </defs>
+            </svg>
         </div>
-
-        {isFilterOpen && (
-          <div style={styles.searchSection}>
-            <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput}>
-              <option value="">عرض كل الموديلات المتوفرة</option>
-              {cars.filter((c, idx, self) => self.findIndex(t => t.model === c.model) === idx).map(car => <option key={car.model} value={car.model}>{car.brand} - {car.model}</option>)}
-            </select>
-          </div>
-        )}
-
-        <h2 style={styles.sectionTitle}>✨ السيارات المعروضة ({filteredCars.length})</h2>
-        {filteredCars.length === 0 ? (
-          <div style={styles.noCars}>لا توجد سيارات متوفرة حالياً 🔍</div>
-        ) : (
-          <div style={styles.grid}>
-            {filteredCars.map((car) => (
-              <div key={car.id} style={styles.card}>
-                <div style={styles.gallery}>
-                  {car.images ? (
-                    <img src={car.images[0]} alt={car.brand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
-                  ) : (
-                    <div style={styles.noImage}>🚗 لا توجد صورة</div>
-                  )}
-                </div>
-                <div style={styles.cardBody}>
-                  <h3 style={styles.carTitle}>{car.brand} {car.model}</h3>
-                  <div style={styles.carPrice}>{car.price.toLocaleString()} {getCurrencySymbol(car.currency)}</div>
-                  <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {car.year}</span></div>
-                  <Link href={`/car/${car.id}`} style={styles.viewLink}>عرض التفاصيل ←</Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {footerAd && <div style={styles.adBanner}><img src={footerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
-      </div>
     </div>
-  );
-}
 
-const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
-  heroSection: { background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)', color: 'white', paddingBottom: '25px' },
-  header: { padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' },
-  headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { color: 'white', margin: 0, fontSize: '18px', fontWeight: 'bold' },
-  headerLink: { color: '#cbd5e1', textDecoration: 'none', fontSize: '13px' },
-  heroBody: { maxWidth: '1200px', margin: '0 auto', padding: '20px', textAlign: 'center' as const },
-  heroMainTitle: { fontSize: '24px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 5px 0' },
-  heroSubTitle: { fontSize: '13px', color: '#94a3b8', margin: '0 0 15px 0' },
-  statsContainer: { display: 'flex', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '12px', padding: '10px', maxWidth: '400px', margin: '0 auto', justifyContent: 'space-around' },
-  statBox: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
-  statNumber: { fontSize: '16px', fontWeight: 'bold', color: '#f59e0b' },
-  statBoxLabel: { fontSize: '11px', color: '#cbd5e1' },
-  statDivider: { width: '1px', height: '25px', backgroundColor: 'rgba(255,255,255,0.15)' },
-  content: { maxWidth: '1200px', margin: '0 auto', padding: '15px' },
-  actionButtonsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' },
-  actionButtonPost: { display: 'block', textAlign: 'center' as const, backgroundColor: '#f59e0b', color: '#1e293b', padding: '12px', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' },
-  actionButtonSearch: { backgroundColor: '#38bdf8', color: '#1e293b', padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' },
-  searchSection: { backgroundColor: 'white', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e2e8f0' },
-  filterInput: { padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', width: '100%', color: '#1e293b', backgroundColor: '#f8fafc' },
-  sectionTitle: { fontSize: '16px', color: '#1e293b', marginBottom: '12px', fontWeight: 'bold' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' },
-  card: { backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', border: '1px solid #f1f5f9' },
-  gallery: { padding: '8px', backgroundColor: '#f8fafc' },
-  noImage: { height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '12px' },
-  cardBody: { padding: '12px' },
-  carTitle: { fontSize: '15px', margin: '0 0 5px 0', color: '#0f172a', fontWeight: 'bold' },
-  carPrice: { fontSize: '15px', color: '#10b981', fontWeight: 'bold', marginBottom: '8px' },
-  carMeta: { display: 'flex', marginBottom: '10px' },
-  metaBadge: { fontSize: '11px', color: '#475569', backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' },
-  viewLink: { display: 'block', textAlign: 'center' as const, backgroundColor: '#2563eb', color: 'white', padding: '8px', borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' },
-  noCars: { textAlign: 'center' as const, padding: '30px 10px', color: '#64748b', backgroundColor: 'white', borderRadius: '12px', border: '1px dashed #cbd5e1' },
-  adBanner: { margin: '10px 0', textAlign: 'center' as const },
-  adImage: { maxWidth: '100%', height: 'auto', borderRadius: '8px' },
-  loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '10px' },
-  spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
-};
+    <div id="tinyurl"></div>
+
+            <script nonce="Nom+8S05nCiS1ZyZU/z1OQ==" type="text/javascript" src="/js/manifest.js?id=0a468c334e8fc05bb5e91381add63eb7" defer></script>
+        <script nonce="Nom+8S05nCiS1ZyZU/z1OQ==" type="text/javascript" src="/js/vendor.js?id=d8c01286bc0b5ec7745408234dff0103" defer></script>
+        <script nonce="Nom+8S05nCiS1ZyZU/z1OQ==" type="text/javascript" src="/js/app.js?id=032ab4a1236b1b24578492f9fec7ae0f" defer></script>
+    
+    
+</body>
+
+</html>
