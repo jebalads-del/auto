@@ -184,8 +184,9 @@ const styles = {
   metaBadge: { fontSize: '11px', color: '#475569', backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' },
   viewLink: { display: 'block', textAlign: 'center' as const, backgroundColor: '#2563eb', color: 'white', padding: '8px', borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' },
   noCars: { textAlign: 'center' as const, padding: '30px 10px', color: '#64748b', backgroundColor: 'white', borderRadius: '12px', border: '1px dashed #cbd5e1' },
-  adBanner: { margin: '30px auto 10px auto', textAlign: 'center' as const, maxWidth: '100%', padding: '0 5px' },
-  adImage: { width: '100%', maxWidth: '600px', height: 'auto', maxHeight: '110px', objectFit: 'contain' as const, borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' },
+  adBanner: { width: '100%', margin: '20px 0', textAlign: 'center' as const, display: 'flex', justifyContent: 'center', overflow: 'hidden' },
+  adImage: { width: '100%', maxWidth: '100%', height: 'auto', maxHeight: '140px', objectFit: 'cover' as const, borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
+ 
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '10px' },
   spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
