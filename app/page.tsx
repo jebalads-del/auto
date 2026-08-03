@@ -173,11 +173,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {headerAd && headerAd.image_url && (
-          <div style={styles.adBanner}><img src={String(headerAd.image_url)} alt="إعلان" style={styles.adImage} /></div>
         )}
-        {footerAd && footerAd.image_url && (
-          <div style={styles.adBanner}><img src={String(footerAd.image_url)} alt="إعلان" style={styles.adImage} /></div>
         )}
       </div>
     </div>
