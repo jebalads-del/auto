@@ -17,12 +17,6 @@ interface Car {
   currency: string;
 }
 
-interface CommercialAd {
-  id: number;
-  position: string;
-  status: string;
-  image_url: string;
-}
 
 export default function HomePage() {
   const [cars, setCars] = useState<Car[]>([]);
