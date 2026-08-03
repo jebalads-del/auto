@@ -41,8 +41,8 @@ export default function HomePage() {
         ]);
         const carsData = await carsRes.json();
         const adsData = await adsRes.json();
-        if (carsData.success) setCars(carsData.cars);
-        if (adsData.success) setAds(adsData.ads);
+        if (Array.isArray(carsData)) { setCars(carsData); } else if (carsData.success) { setCars(carsData.cars || []); }
+        if (Array.isArray(adsData)) { setAds(adsData); } else if (adsData.success) { setAds(adsData.ads || []); }
       } catch (error) {
         console.error(error);
       } finally {
