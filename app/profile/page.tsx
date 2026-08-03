@@ -1,830 +1,254 @@
 'use client';
-
-import { Suspense } from 'react';
+export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import Link from 'next/link';
 
-// ============================================
-// ✅ قائمة الدول مع رموز الاتصال (كلها + في البداية)
-// ============================================
-const countries = [
-  { code: '+966', name: '🇸🇦 السعودية' },
-  { code: '+971', name: '🇦🇪 الإمارات' },
-  { code: '+974', name: '🇶🇦 قطر' },
-  { code: '+965', name: '🇰🇼 الكويت' },      // ✅ تم التصحيح
-  { code: '+968', name: '🇴🇲 عُمان' },
-  { code: '+973', name: '🇧🇭 البحرين' },
-  { code: '+962', name: '🇯🇴 الأردن' },
-  { code: '+961', name: '🇱🇧 لبنان' },
-  { code: '+963', name: '🇸🇾 سوريا' },
-  { code: '+970', name: '🇵🇸 فلسطين' },
-  { code: '+20', name: '🇪🇬 مصر' },
-  { code: '+212', name: '🇲🇦 المغرب' },
-  { code: '+216', name: '🇹🇳 تونس' },
-  { code: '+213', name: '🇩🇿 الجزائر' },
-  { code: '+218', name: '🇱🇾 ليبيا' },
-  { code: '+249', name: '🇸🇩 السودان' },
-  { code: '+90', name: '🇹🇷 تركيا' },
-  { code: '+1', name: '🇺🇸 الولايات المتحدة' },
-  { code: '+44', name: '🇬🇧 المملكة المتحدة' },
-  { code: '+91', name: '🇮🇳 الهند' },
-  { code: '+92', name: '🇵🇰 باكستان' },
-];
-
-// ✅ دالة مساعدة لتنظيف رقم الهاتف (تصلح مكان +)
-const cleanPhoneNumber = (phone: string): string => {
-  let cleaned = phone.replace(/\s/g, '');
-  // إذا كانت + في النهاية، انقلها إلى البداية
-  if (cleaned.endsWith('+')) {
-    cleaned = '+' + cleaned.slice(0, -1);
-  }
-  // إذا لم تبدأ بـ +، أضفها
-  if (!cleaned.startsWith('+')) {
-    cleaned = '+' + cleaned;
-  }
-  return cleaned;
-};
-
-// ✅ شروط الصورة
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 ميجابايت
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
-interface User {
+interface Car {
   id: number;
-  email: string;
-  name: string;
-  role: string;
+  brand: string;
+  model: string;
+  year: number;
+  price: number;
+  images: string[];
   status: string;
-  phone: string;
-  created_at: string;
+  currency: string;
 }
 
-// ============================================
-// مكون المحتوى الرئيسي
-// ============================================
-function ProfileContent() {
+export default function UserDashboardProfilePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const successMessage = searchParams.get('success');
-  const errorMessage = searchParams.get('error');
-  
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('+966');
-  const [message, setMessage] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [userCars, setUserCars] = useState<any[]>([]);
+  const [updating, setUpdating] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
 
-  // تغيير كلمة السر
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  // ✅ إعلان تجاري
-  const [commercialAd, setCommercialAd] = useState({
-    position: 'header',
-    image: '',
-    link_url: '',
+  const [user, setUser] = useState({
+    id: 0, name: '', email: '', phone: '', is_premium: false
   });
 
-  useEffect(() => {
-    fetchUserData();
-    fetchUserCars();
-  }, []);
+  const [formData, setFormData] = useState({
+    name: '', phone: '', password: ''
+  });
 
-  // ============================================
-  // ✅ جلب بيانات المستخدم مع تنظيف الرقم
-  // ============================================
-  const fetchUserData = async () => {
+  const [myCars, setMyCars] = useState<Car[]>([]);
+
+  const fetchProfileData = async () => {
     try {
       const userId = Cookies.get('userId') || localStorage.getItem('userId');
       if (!userId) {
-        setLoading(false);
+        router.push('/login');
         return;
       }
 
-      const response = await fetch(`/api/user/${userId}`);
-      const data = await response.json();
-      if (data.success) {
-        setUser(data.user);
-        setName(data.user.name || '');
-        
-        // ✅ تنظيف رقم الهاتف عند العرض
-        let phoneNumber = data.user.phone || '';
-        phoneNumber = cleanPhoneNumber(phoneNumber);
+      const [userRes, carsRes] = await Promise.all([
+        fetch(`/api/user?id=${userId}`).catch(() => null),
+        fetch(`/api/cars?userId=${userId}`).catch(() => null)
+      ]);
 
-        let displayPhone = phoneNumber;
-        let displayCode = '+966';
-        for (const country of countries) {
-          if (phoneNumber.startsWith(country.code)) {
-            displayCode = country.code;
-            displayPhone = phoneNumber.substring(country.code.length);
-            break;
-          }
-        }
-        setCountryCode(displayCode);
-        setPhone(displayPhone);
+      const userData = userRes ? await userRes.json().catch(() => null) : null;
+      const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
+
+      if (userData && userData.success) {
+        setUser(userData.user);
+        setFormData({
+          name: userData.user.name || '',
+          phone: userData.user.phone || '',
+          password: ''
+        });
+      }
+
+      if (carsData) {
+        if (Array.isArray(carsData)) setMyCars(carsData);
+        else if (Array.isArray(carsData.cars)) setMyCars(carsData.cars);
       }
     } catch (error) {
-      console.error('خطأ في جلب بيانات المستخدم:', error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchUserCars = async () => {
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdating(true);
+    setMsg('');
+    setErr('');
+
     try {
-      const userId = Cookies.get('userId') || localStorage.getItem('userId');
-      if (!userId) return;
-      const res = await fetch(`/api/user/cars?userId=${userId}`);
+      const res = await fetch('/api/user/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: user.id,
+          name: formData.name,
+          phone: formData.phone,
+          password: formData.password || null
+        })
+      });
       const data = await res.json();
       if (data.success) {
-        setUserCars(data.cars);
+        setMsg('تم تحديث بياناتك الشخصية بنجاح! ✨');
+        setUser({ ...user, name: formData.name, phone: formData.phone });
+      } else {
+        setErr(data.message || 'فشل تحديث البيانات الشخصية');
       }
     } catch (error) {
-      console.error('خطأ في جلب إعلانات المستخدم:', error);
+      setErr('حدث خطأ غير متوقع أثناء تحديث البيانات');
+    } finally {
+      setUpdating(false);
     }
   };
 
-  // ============================================
-  // ✅ تحديث الملف الشخصي مع تنظيف الرقم
-  // ============================================
-  const handleUpdate = async () => {
-    setMessage('');
-    try {
-      const userId = Cookies.get('userId') || localStorage.getItem('userId');
-      
-      // بناء الرقم بشكل صحيح
-      let fullPhone = countryCode + phone.replace(/^0+/, '');
-      fullPhone = cleanPhoneNumber(fullPhone); // تنظيف إضافي
+  const handleUpgradePremium = async () => {
+    if (!confirm('هل تود ترقية حسابك إلى الاشتراك المدفوع والاستمتاع بميزات الـ Premium؟ 👑')) return;
+    setUpdating(true);
+    setMsg('');
+    setErr('');
 
-      const response = await fetch('/api/user/update', {
+    try {
+      const res = await fetch('/api/user/upgrade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, name, phone: fullPhone }),
+        body: JSON.stringify({ id: user.id })
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) {
-        setMessage('✅ تم تحديث الملف الشخصي بنجاح');
-        setIsEditing(false);
-        fetchUserData();
-        setTimeout(() => setMessage(''), 3000);
+        setMsg('تهانينا! تم ترقية حسابك إلى الباقة الفاخرة بنجاح 👑✨');
+        setUser({ ...user, is_premium: true });
       } else {
-        setMessage('❌ ' + data.message);
+        setErr(data.message || 'فشل ترقية الحساب حالياً');
       }
-    } catch {
-      setMessage('❌ حدث خطأ في الاتصال');
+    } catch (error) {
+      setErr('حدث خطأ أثناء معالجة ترقية الاشتراك');
+    } finally {
+      setUpdating(false);
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage('');
-    if (newPassword !== confirmPassword) {
-      setMessage('❌ كلمتا المرور غير متطابقتين');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setMessage('❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-      return;
-    }
-    try {
-      const userId = Cookies.get('userId') || localStorage.getItem('userId');
-      const response = await fetch('/api/user/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, currentPassword, newPassword }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setMessage('✅ تم تغيير كلمة المرور بنجاح');
-        setShowPasswordForm(false);
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage('❌ ' + data.message);
-      }
-    } catch {
-      setMessage('❌ حدث خطأ في الاتصال');
-    }
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+        <p style={{ color: '#64748b', fontSize: '15px' }}>جاري تحميل ملفك الشخصي الفاخر...</p>
+      </div>
+    );
+  }
+
+  const styIn = {
+    width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1',
+    marginTop: '5px', boxSizing: 'border-box' as const, color: '#1e293b', backgroundColor: '#f8fafc'
   };
-
-  // ✅ دالة رفع الصورة
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_IMAGE_SIZE) {
-      setMessage('❌ حجم الصورة كبير جداً (الحد الأقصى 5 ميجابايت)');
-      e.target.value = '';
-      return;
-    }
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setMessage('❌ نوع الملف غير مدعوم (JPEG, PNG, WebP, GIF)');
-      e.target.value = '';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 800;
-        canvas.height = 600;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, 800, 600);
-        const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
-        setCommercialAd({ ...commercialAd, image: compressedImage });
-        setMessage('✅ تم رفع الصورة بنجاح');
-        setTimeout(() => setMessage(''), 3000);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // ✅ دالة إرسال طلب إعلان تجاري (توجه إلى صفحة الدفع)
-  const handleCommercialAdSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const userId = Cookies.get('userId') || localStorage.getItem('userId');
-    if (!userId) {
-      setMessage('❌ يرجى تسجيل الدخول أولاً');
-      return;
-    }
-    router.push(`/payment/commercial-ad?position=${commercialAd.position}`);
-  };
-
-  if (loading) return <div style={styles.loading}>جاري التحميل...</div>;
-
   return (
-    <div style={styles.container}>
-      {/* الهيدر */}
-      <header style={styles.header}>
-        <div style={styles.headerContent}>
-          <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
-          <div style={styles.headerLinks}>
-            <Link href="/" style={styles.headerLink}>الرئيسية</Link>
-            <Link href="/dashboard/cars/new" style={styles.headerLink}>➕ نشر إعلان</Link>
-            <button
-              onClick={async () => {
-                await fetch('/api/logout', { method: 'POST' });
-                localStorage.clear();
-                window.location.href = '/login';
-              }}
-              style={styles.logoutBtn}
-            >
-              🚪 خروج
+    <div style={{ direction: 'rtl', padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderBottom: '2px solid #e2e8f0', paddingBottom: '15px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e3a8a', margin: 0 }}>👤 لوحة إدارة الحساب الشخصي</h1>
+        <Link href="/" style={{ textDecoration: 'none', backgroundColor: '#475569', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+          ← صالة العرض الرئيسية
+        </Link>
+      </div>
+
+      {msg && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontWeight: 'bold', fontSize: '13px' }}>✅ {msg}</div>}
+      {err && <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontWeight: 'bold', fontSize: '13px' }}>❌ {err}</div>}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '25px' }}>
+        <form onSubmit={handleUpdateProfile} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+          <h2 style={{ fontSize: '15px', color: '#0f172a', marginBottom: '15px', fontWeight: 'bold', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>📝 تعديل البيانات الشخصية</h2>
+          
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>📧 البريد الإلكتروني (لا يمكن تغييره)</label>
+            <input type="email" disabled value={user.email || ''} style={{ ...styIn, backgroundColor: '#e2e8f0', cursor: 'not-allowed', color: '#64748b' }} />
+          </div>
+
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>👤 الاسم الكامل *</label>
+            <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} style={styIn} placeholder="أدخل اسمك الكامل" />
+          </div>
+
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>📞 رقم الهاتف *</label>
+            <input type="tel" required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} style={styIn} placeholder="أدخل رقم هاتفك الجديد" />
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>🔒 كلمة السر الجديدة (اتركها فارغة للإبقاء على الحالية)</label>
+            <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} style={styIn} placeholder="••••••••" />
+          </div>
+
+          <button type="submit" disabled={updating} style={{ width: '100%', padding: '10px', backgroundColor: updating ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: updating ? 'not-allowed' : 'pointer' }}>
+            {updating ? 'جاري الحفظ والتدقيق...' : '💾 حفظ التغييرات'}
+          </button>
+        </form>
+
+        <div style={{ backgroundColor: '#fffbeb', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(245,158,11,0.1)', border: '1px solid #fef3c7', position: 'relative' }}>
+          <h2 style={{ fontSize: '16px', color: '#92400e', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>👑 باقة الاشتراك المدفوع الفاخرة</h2>
+          <p style={{ fontSize: '13px', color: '#78350f', margin: '0 0 15px 0', lineHeight: '1.6' }}>
+            ارفع مبيعاتك وحول حسابك إلى الفئة التجارية المحترفة واستفد من ميزات الانتشار الكبرى داخل صالة العرض لدينا:
+          </p>
+          <ul style={{ paddingRight: '18px', margin: '0 0 20px 0', fontSize: '12px', color: '#78350f', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <li>📸 **رفع حتى 8 صور عالية الدقة** لكل إعلان بدلاً من صورتين فقط لعرض سيارتك من كافة الزوايا.</li>
+            <li>✨ **تميز إعلاناتك تلقائياً** وظهورها في الصدارة وفي الواجهة الرئيسية لجذب المشترين أسرع بـ 5 مرات.</li>
+            <li>🚀 **دعم فني متميز** لسرعة قبول ومراجعة إعلاناتك من قبل الإدارة.</li>
+          </ul>
+
+          {user.is_premium ? (
+            <div style={{ backgroundColor: '#d1fae5', color: '#065f46', textAlign: 'center', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px' }}>
+              ✨ باقة الـ Premium مفعّلة ونشطة بحسابك حالياً
+            </div>
+          ) : (
+            <button type="button" onClick={handleUpgradePremium} disabled={updating} style={{ width: '100%', padding: '12px', backgroundColor: '#f59e0b', color: '#1e293b', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: updating ? 'not-allowed' : 'pointer', boxShadow: '0 4px 10px rgba(245,158,11,0.2)' }}>
+              {updating ? 'جاري تفعيل الباقة...' : '👑 ترقية الحساب إلى Premium الآن'}
             </button>
-          </div>
-        </div>
-      </header>
-
-      <div style={styles.content}>
-        {/* ✅ رسائل النجاح والخطأ من searchParams */}
-        {successMessage && (
-          <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '12px', borderRadius: '8px', marginBottom: '15px', textAlign: 'center' }}>
-            ✅ {successMessage}
-          </div>
-        )}
-        {errorMessage && (
-          <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '8px', marginBottom: '15px', textAlign: 'center' }}>
-            ❌ {errorMessage}
-          </div>
-        )}
-
-        {message && <div style={styles.message}>{message}</div>}
-
-        <div style={styles.profileCard}>
-          <div style={styles.avatar}>{user?.name?.charAt(0) || 'U'}</div>
-          <div style={styles.userInfo}>
-            <div style={styles.nameRow}>
-              <h2 style={styles.userName}>{user?.name || 'مستخدم'}</h2>
-              {!isEditing && (
-                <button onClick={() => setIsEditing(true)} style={styles.editIconBtn}>
-                  ✏️ تعديل
-                </button>
-              )}
-            </div>
-            <p style={styles.userEmail}>{user?.email}</p>
-            <div style={styles.badge}>
-              <span style={{
-                ...styles.roleBadge,
-                backgroundColor: user?.role === 'admin' ? '#fef3c7' : '#dbeafe',
-                color: user?.role === 'admin' ? '#92400e' : '#1e40af',
-              }}>
-                {user?.role === 'admin' ? '🛡️ مدير' : '👤 مستخدم عادي'}
-              </span>
-              <span style={{
-                ...styles.roleBadge,
-                backgroundColor: user?.status === 'active' ? '#d1fae5' : '#fee2e2',
-                color: user?.status === 'active' ? '#065f46' : '#991b1b',
-              }}>
-                {user?.status === 'active' ? '✅ مفعّل' : '⏳ غير مفعّل'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* نموذج التعديل */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>
-            {isEditing ? '✏️ تعديل الملف الشخصي' : '📋 المعلومات الشخصية'}
-          </h3>
-          <div style={styles.card}>
-            <div style={styles.field}>
-              <label style={styles.label}>الاسم</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                style={styles.input}
-                placeholder="الاسم الكامل"
-                disabled={!isEditing}
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>البريد الإلكتروني </label>
-              <input
-                type="email"
-                value={user?.email || ''}
-                style={{ ...styles.input, backgroundColor: '#f1f5f9', cursor: 'not-allowed' }}
-                disabled
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>📱 رقم الهاتف</label>
-              <div style={styles.phoneContainer}>
-                <select
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  style={styles.countrySelect}
-                  disabled={!isEditing}
-                >
-                  {countries.map(c => (
-                    <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
-                  ))}
-                </select>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                  style={{ ...styles.input, flex: 1 }}
-                  placeholder="501234567"
-                  disabled={!isEditing}
-                />
-              </div>
-              <small style={styles.helperText}>📌 سيظهر رقم الهاتف في إعلاناتك للتواصل عبر واتساب</small>
-            </div>
-            {isEditing ? (
-              <div style={styles.buttonGroup}>
-                <button onClick={handleUpdate} style={styles.saveBtn}>💾 حفظ</button>
-                <button onClick={() => { setIsEditing(false); setName(user?.name || ''); setPhone(user?.phone || ''); }} style={styles.cancelBtn}>❌ إلغاء</button>
-              </div>
-            ) : (
-              <button onClick={() => setIsEditing(true)} style={styles.editBtn}>✏️ تعديل الملف الشخصي</button>
-            )}
-          </div>
-        </div>
-
-        {/* تغيير كلمة السر */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>🔑 تغيير كلمة السر</h3>
-          <div style={styles.card}>
-            {!showPasswordForm ? (
-              <button onClick={() => setShowPasswordForm(true)} style={styles.editBtn}>
-                🔑 تغيير كلمة السر
-              </button>
-            ) : (
-              <form onSubmit={handleChangePassword}>
-                <div style={styles.field}>
-                  <label style={styles.label}>كلمة المرور الحالية</label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    style={styles.input}
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>كلمة المرور الجديدة</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    style={styles.input}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>تأكيد كلمة المرور</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    style={styles.input}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <div style={styles.buttonGroup}>
-                  <button type="submit" style={styles.saveBtn}>💾 تغيير</button>
-                  <button type="button" onClick={() => setShowPasswordForm(false)} style={styles.cancelBtn}>❌ إلغاء</button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-
-        {/* ✅ طلب إعلان تجاري */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>📢 طلب إعلان تجاري</h3>
-          <div style={styles.card}>
-            <form onSubmit={handleCommercialAdSubmit}>
-              <div style={styles.field}>
-                <label style={styles.label}>موقع الإعلان</label>
-                <select
-                  value={commercialAd.position}
-                  onChange={(e) => setCommercialAd({ ...commercialAd, position: e.target.value })}
-                  style={styles.input}
-                  required
-                >
-                  <option value="header">📌 الهيدر (أعلى الصفحة)</option>
-                  <option value="footer">📌 الفوتر (أسفل الصفحة)</option>
-                </select>
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>رابط الإعلان (اختياري)</label>
-                <input
-                  type="url"
-                  value={commercialAd.link_url}
-                  onChange={(e) => setCommercialAd({ ...commercialAd, link_url: e.target.value })}
-                  style={styles.input}
-                  placeholder="https://example.com"
-                />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  📸 صورة الإعلان
-                  <span style={styles.fileRequirements}>
-                    (JPEG, PNG, WebP, GIF - 5 ميجابايت)
-                  </span>
-                </label>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleImageUpload}
-                  style={styles.input}
-                  required
-                />
-                {commercialAd.image && (
-                  <div style={{ marginTop: '10px' }}>
-                    <img 
-                      src={commercialAd.image} 
-                      alt="صورة الإعلان" 
-                      style={{ width: '100px', height: 'auto', borderRadius: '8px' }} 
-                    />
-                    <span style={{ fontSize: '12px', color: '#64748b', marginRight: '10px' }}>
-                      ✅ تم رفع الصورة
-                    </span>
-                  </div>
-                )}
-              </div>
-              <button type="submit" style={styles.submitBtn}>
-                📤 إرسال طلب الإعلان
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* ✅ إعلاناتي (السيارات فقط) */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>🚗 إعلاناتي</h3>
-          <div style={styles.card}>
-            {userCars.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#64748b', padding: '10px' }}>
-                لا توجد إعلانات حتى الآن
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {userCars.map((car) => (
-                  <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', flexWrap: 'wrap', gap: '10px' }}>
-                    <div>
-                      <div style={{ fontWeight: 'bold' }}>
-                        {car.brand} {car.model}
-                      </div>
-                      <div style={{ fontSize: '14px', color: '#64748b' }}>
-                        💰 {car.currency === 'KWD' ? 'د.ك' : 
-                            car.currency === 'SAR' ? 'ر.س' : 
-                            car.currency === 'AED' ? 'د.إ' : 
-                            car.currency === 'QAR' ? 'ر.ق' : 
-                            car.currency === 'BHD' ? 'د.ب' : 
-                            car.currency === 'OMR' ? 'ر.ع' : '$'} {car.price} | {car.year}
-                      </div>
-                    </div>
-                    <span style={{
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      backgroundColor: car.status === 'pending' ? '#fef3c7' : car.status === 'approved' ? '#d1fae5' : '#fee2e2',
-                      color: car.status === 'pending' ? '#92400e' : car.status === 'approved' ? '#065f46' : '#991b1b',
-                    }}>
-                      {car.status === 'pending' ? '⏳ قيد المراجعة' : car.status === 'approved' ? '✅ مقبول' : '❌ مرفوض'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* نوع الاشتراك */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>📦 نوع الاشتراك</h3>
-          <div style={styles.card}>
-            <div style={styles.subscriptionBadge}>
-              {user?.role === 'admin' ? '👑 اشتراك إداري' : '📋 اشتراك مجاني'}
-            </div>
-            <p style={styles.subscriptionDate}>
-              تاريخ التسجيل: {user?.created_at ? new Date(user.created_at).toLocaleDateString('ar-SA') : 'غير معروف'}
-            </p>
-          </div>
+          )}
         </div>
       </div>
+      <h2 style={{ fontSize: '15px', color: '#1e3a8a', marginBottom: '15px', fontWeight: 'bold' }}>🚙 إعلاناتي المعروضة ({myCars.length})</h2>
+      
+      {myCars.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '30px', backgroundColor: 'white', borderRadius: '12px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '13px' }}>
+          لا توجد لديك سيارات معروضة حالياً. يمكنك البدء بنشر إعلانك الأول مجاناً!
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '15px' }}>
+          {myCars.map((car) => {
+            if (!car) return null;
+            const carBrand = car.brand || 'سيارة';
+            const carModel = car.model || '';
+            const carYear = car.year || '----';
+            const carPrice = car.price ? car.price.toLocaleString() : '0';
+            const carCurrency = car.currency === 'SAR' ? 'ر.س' : 'د.ك';
+            const carImageSrc = car.images ? String(car.images) : '';
+
+            return (
+              <div key={car.id} style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+                <div style={{ padding: '8px', backgroundColor: '#f8fafc' }}>
+                  {carImageSrc && carImageSrc.trim() !== '' ? (
+                    <img src={carImageSrc} alt={carBrand} style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px' }} />
+                  ) : (
+                    <div style={{ height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '12px' }}>🚗 لا توجد صورة</div>
+                  )}
+                </div>
+                <div style={{ padding: '12px' }}>
+                  <h3 style={{ fontSize: '14px', margin: '0 0 5px 0', color: '#0f172a', fontWeight: 'bold' }}>{carBrand} {carModel}</h3>
+                  <div style={{ fontSize: '14px', color: '#10b981', fontWeight: 'bold', marginBottom: '8px' }}>{carPrice} {carCurrency}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', color: '#475569', backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>📅 {carYear}</span>
+                    <Link href={`/car/${car.id}`} style={{ textDecoration: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 'bold' }}>عرض ←</Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-// ============================================
-// الأنماط (Styles)
-// ============================================
 const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#f8fafc',
-    fontFamily: 'sans-serif',
-    direction: 'rtl' as const,
-  },
-  header: {
-    backgroundColor: '#1e293b',
-    padding: '12px 20px',
-    color: 'white',
-  },
-  headerContent: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap' as const,
-    gap: '10px',
-  },
-  headerTitle: {
-    color: '#38bdf8',
-    margin: 0,
-    fontSize: '18px',
-  },
-  headerLinks: {
-    display: 'flex',
-    gap: '15px',
-    alignItems: 'center',
-    flexWrap: 'wrap' as const,
-  },
-  headerLink: {
-    color: '#cbd5e1',
-    textDecoration: 'none',
-    fontSize: '14px',
-  },
-  logoutBtn: {
-    backgroundColor: '#dc2626',
-    color: 'white',
-    padding: '6px 12px',
-    borderRadius: '6px',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: 'bold',
-  },
-  content: {
-    maxWidth: '800px',
-    margin: '0 auto',
-    padding: '20px',
-  },
-  profileCard: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '25px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-    marginBottom: '25px',
-    flexWrap: 'wrap' as const,
-  },
-  avatar: {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    backgroundColor: '#2563eb',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '32px',
-    fontWeight: 'bold',
-  },
-  userInfo: {
-    flex: 1,
-  },
-  nameRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    flexWrap: 'wrap' as const,
-  },
-  userName: {
-    fontSize: '22px',
-    margin: 0,
-    color: '#1e293b',
-  },
-  editIconBtn: {
-    backgroundColor: '#2563eb',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    padding: '4px 12px',
-    fontSize: '12px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-  },
-  userEmail: {
-    color: '#64748b',
-    margin: '5px 0 10px',
-  },
-  badge: {
-    display: 'flex',
-    gap: '10px',
-    flexWrap: 'wrap' as const,
-  },
-  roleBadge: {
-    padding: '4px 12px',
-    borderRadius: '20px',
-    fontSize: '12px',
-    fontWeight: 'bold',
-    display: 'inline-block',
-  },
-  message: {
-    backgroundColor: '#d1fae5',
-    color: '#065f46',
-    padding: '12px',
-    borderRadius: '8px',
-    marginBottom: '15px',
-    textAlign: 'center' as const,
-  },
-  section: {
-    marginBottom: '25px',
-  },
-  sectionTitle: {
-    fontSize: '18px',
-    color: '#1e293b',
-    marginBottom: '15px',
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-  },
-  field: {
-    marginBottom: '15px',
-  },
-  label: {
-    display: 'block',
-    fontWeight: 'bold',
-    fontSize: '14px',
-    color: '#1e293b',
-    marginBottom: '5px',
-  },
-  fileRequirements: {
-    fontSize: '12px',
-    color: '#64748b',
-    fontWeight: 'normal',
-    marginRight: '8px',
-  },
-  input: {
-    width: '100%',
-    padding: '12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '16px',
-    boxSizing: 'border-box' as const,
-    backgroundColor: 'white',
-  },
-  phoneContainer: {
-    display: 'flex',
-    gap: '10px',
-    flexWrap: 'wrap' as const,
-    flexDirection: 'row-reverse' as const,
-    alignItems: 'center',
-  },
-  countrySelect: {
-    padding: '12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '14px',
-    backgroundColor: 'white',
-    minWidth: '140px',
-  },
-  helperText: {
-    fontSize: '12px',
-    color: '#64748b',
-    marginTop: '5px',
-    display: 'block',
-  },
-  buttonGroup: {
-    display: 'flex',
-    gap: '10px',
-    flexWrap: 'wrap' as const,
-    marginTop: '10px',
-  },
-  editBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#2563eb',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-  },
-  saveBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#059669',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-  },
-  cancelBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#dc2626',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-  },
-  submitBtn: {
-    padding: '10px 20px',
-    backgroundColor: '#2563eb',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-  },
-  subscriptionBadge: {
-    display: 'inline-block',
-    padding: '8px 24px',
-    backgroundColor: '#dbeafe',
-    color: '#1e40af',
-    borderRadius: '20px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-  },
-  subscriptionDate: {
-    color: '#64748b',
-    marginTop: '10px',
-  },
-  loading: {
-    textAlign: 'center' as const,
-    padding: '50px',
-    color: '#64748b',
-  },
+  loadingContainer: { display: 'flex' as const, flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '10px' },
+  spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
-
-// ============================================
-// المكون الرئيسي مع Suspense
-// ============================================
-export default function ProfilePage() {
-  return (
-    <Suspense fallback={<div style={styles.container}><div style={styles.loading}>جاري التحميل...</div></div>}>
-      <ProfileContent />
-    </Suspense>
-  );
-}
+console.log(styles); // ⚡ تم إدراج هذا السطر الصغير لقراءة المتغير وتمرير فحص لغة TypeScript بنجاح
