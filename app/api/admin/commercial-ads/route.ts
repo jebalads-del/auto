@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import pool from '@/app/api/db';
+import pool from '../../db';
 
 // 🔍 جلب الإعلانات التجارية للأدمن والموقع
 export async function GET() {
