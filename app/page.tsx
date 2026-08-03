@@ -120,7 +120,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {headerAd && <div style={styles.adBanner}><img src={headerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
         <h2 style={styles.sectionTitle}>✨ السيارات المعروضة ({filteredCars.length})</h2>
         {filteredCars.length === 0 ? (
           <div style={styles.noCars}>لا توجد سيارات متوفرة حالياً 🔍</div>
@@ -130,7 +129,11 @@ export default function HomePage() {
               <div key={car.id} style={styles.card}>
                 <div style={styles.gallery}>
                   {car.images && car.images.length > 0 ? (
-                    <img src={Array.isArray(car.images) ? car.images[0] : car.images} alt={car.brand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <img 
+                      src={Array.isArray(car.images) ? String(car.images[0] || car.images) : String(car.images)} 
+                      alt={car.brand} 
+                      style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} 
+                    />
                   ) : (
                     <div style={styles.noImage}>🚗 لا توجد صورة</div>
                   )}
@@ -145,6 +148,8 @@ export default function HomePage() {
             ))}
           </div>
         )}
+
+        {headerAd && <div style={styles.adBanner}><img src={headerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
         {footerAd && <div style={styles.adBanner}><img src={footerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
       </div>
     </div>
@@ -186,7 +191,6 @@ const styles = {
   noCars: { textAlign: 'center' as const, padding: '30px 10px', color: '#64748b', backgroundColor: 'white', borderRadius: '12px', border: '1px dashed #cbd5e1' },
   adBanner: { width: '100%', margin: '20px 0', textAlign: 'center' as const, display: 'flex', justifyContent: 'center', overflow: 'hidden' },
   adImage: { width: '100%', maxWidth: '100%', height: 'auto', maxHeight: '140px', objectFit: 'cover' as const, borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
- 
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '10px' },
   spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
