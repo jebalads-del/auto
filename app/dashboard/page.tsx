@@ -33,13 +33,58 @@ export default function UserDashboardProfilePage() {
 
   const [myCars, setMyCars] = useState<Car[]>([]);
 
-  const fetchProfileData = async () => {
+    const fetchProfileData = async () => {
     try {
       const userId = Cookies.get('userId') || localStorage.getItem('userId');
       if (!userId) {
         router.push('/login');
         return;
       }
+
+      const [userRes, carsRes] = await Promise.all([
+        fetch(`/api/user?id=${userId}`).catch(() => null),
+        fetch(`/api/cars?userId=${userId}`).catch(() => null)
+      ]);
+
+      const userData = userRes ? await userRes.json().catch(() => null) : null;
+      const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
+
+      // ⚡ حاقن الفحص السحابي الذكي: طباعة استجابة السيرفر كاملة كرسالة حمراء لنعرف المشكلة
+      if (userData && !userData.success) {
+        setErr(`استجابة السيرفر المكسورة: ${JSON.stringify(userData)}`);
+      }
+
+      if (userData && userData.success && userData.user) {
+        // إذا رجعت البيانات كمصفوفة أو كائن
+        const rawUser = Array.isArray(userData.user) ? userData.user[0] : userData.user;
+        
+        if (rawUser) {
+          setUser({
+            id: parseInt(rawUser.id, 10) || 0,
+            name: String(rawUser.name || rawUser.username || ''),
+            email: String(rawUser.email || ''),
+            phone: String(rawUser.phone || ''),
+            is_premium: Boolean(rawUser.is_premium)
+          });
+          setFormData({
+            name: String(rawUser.name || rawUser.username || ''),
+            phone: String(rawUser.phone || ''),
+            password: ''
+          });
+        }
+      }
+
+      if (carsData) {
+        if (Array.isArray(carsData)) setMyCars(carsData);
+        else if (Array.isArray(carsData.cars)) setMyCars(carsData.cars);
+      }
+    } catch (error: any) {
+      setErr(`خطأ جلب برمي: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
       const [userRes, carsRes] = await Promise.all([
         fetch(`/api/user?id=${userId}`).catch(() => null),
