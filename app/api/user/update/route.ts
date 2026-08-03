@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import sql from '@/app/api/db';
+import sql from '../../../db';
 
 export async function PUT(request: Request) {
   try {
