@@ -28,9 +28,7 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [carsRes, adsRes] = await Promise.all([
-          fetch('/api/cars').catch(() => null),
-        ]);
+        const carsRes = await fetch('/api/cars').catch(() => null);
         
         const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
         
