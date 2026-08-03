@@ -15,20 +15,31 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, message: 'معرف المستخدم غير صحيح' }, { status: 400 });
     }
 
-    // 🚀 استعلام نظيف ومباشر من قاعدة بيانات Neon Postgres بجلب المعطيات
+    // 🚀 استعلام صريح يعتمد المسميات الحقيقية المأخوذة من شاشتك بالملي
     const users = await sql`
-      SELECT id, name, email, phone, is_premium 
+      SELECT id, name, email, phone, subscription_type 
       FROM users 
       WHERE id = ${userId} 
       LIMIT 1
     `;
 
     if (!users || users.length === 0) {
-      return NextResponse.json({ success: false, message: 'المستخدم غير موجود بالنظام' });
+      return NextResponse.json({ success: false, message: 'المستخدم غير موجود بالنظام' }, { status: 404 });
     }
 
-    // ✨ السر الهندسي: إرسال الكائن الأول الصافي ومباشرة بدلاً من المصفوفة الكاملة لملء الحقول فوراً
-    return NextResponse.json({ success: true, user: users[0] });
+    // ✨ التفكيك الهندسي السليم: إرسال الكائن الصافي الأول مباشرة (العنصر 0) لسحق الفراغ بالواجهة
+    const currentUser = users[0];
+    
+    // تحويل حالة الاشتراك لتتوافق برمجياً مع متغير الواجهة
+    const responseUser = {
+      id: currentUser.id,
+      name: currentUser.name,
+      email: currentUser.email,
+      phone: currentUser.phone,
+      is_premium: currentUser.subscription_type === 'premium'
+    };
+
+    return NextResponse.json({ success: true, user: responseUser });
   } catch (error: any) {
     console.error("Fetch user API error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import sql from '../../db';
+import sql from '../../../db';
 
 export async function POST(request: Request) {
   try {
@@ -10,10 +10,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'معرف المستخدم مطلوب' }, { status: 400 });
     }
 
-    // ترقية حالة الحساب إلى Premium داخل قاعدة البيانات
+    // 👑 تحديث حقل الترقية الفعلي المكتوب بشاشتك وتغيير قيمته النصية إلى 'premium'
     await sql`
       UPDATE users 
-      SET is_premium = true 
+      SET subscription_type = 'premium' 
       WHERE id = ${parseInt(id, 10)}
     `;
 
