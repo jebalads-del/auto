@@ -16,64 +16,62 @@ interface Car {
   currency: string;
 }
 
-export default function UserProfilePage() {
+export default function UserDashboardProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
 
-  // بيانات المستخدم الشخصية والاشتراك
   const [user, setUser] = useState({
     id: 0, name: '', email: '', phone: '', is_premium: false
   });
 
-  // حقول تعديل البيانات
   const [formData, setFormData] = useState({
     name: '', phone: '', password: ''
   });
 
   const [myCars, setMyCars] = useState<Car[]>([]);
 
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const userId = Cookies.get('userId') || localStorage.getItem('userId');
-        if (!userId) {
-          router.push('/login');
-          return;
-        }
-
-        // جلب بيانات المستخدم وإعلاناته
-        const [userRes, carsRes] = await Promise.all([
-          fetch(`/api/user?id=${userId}`).catch(() => null),
-          fetch(`/api/cars?userId=${userId}`).catch(() => null)
-        ]);
-
-        const userData = userRes ? await userRes.json().catch(() => null) : null;
-        const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
-
-        if (userData && userData.success) {
-          setUser(userData.user);
-          setFormData({
-            name: userData.user.name || '',
-            phone: userData.user.phone || '',
-            password: ''
-          });
-        }
-
-        if (carsData) {
-          if (Array.isArray(carsData)) setMyCars(carsData);
-          else if (Array.isArray(carsData.cars)) setMyCars(carsData.cars);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+  const fetchProfileData = async () => {
+    try {
+      const userId = Cookies.get('userId') || localStorage.getItem('userId');
+      if (!userId) {
+        router.push('/login');
+        return;
       }
-    };
+
+      const [userRes, carsRes] = await Promise.all([
+        fetch(`/api/user?id=${userId}`).catch(() => null),
+        fetch(`/api/cars?userId=${userId}`).catch(() => null)
+      ]);
+
+      const userData = userRes ? await userRes.json().catch(() => null) : null;
+      const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
+
+      if (userData && userData.success) {
+        setUser(userData.user);
+        setFormData({
+          name: userData.user.name || '',
+          phone: userData.user.phone || '',
+          password: ''
+        });
+      }
+
+      if (carsData) {
+        if (Array.isArray(carsData)) setMyCars(carsData);
+        else if (Array.isArray(carsData.cars)) setMyCars(carsData.cars);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfileData();
-  }, [router]);
+  }, []);
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdating(true);
@@ -133,7 +131,7 @@ export default function UserProfilePage() {
 
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>
         <p style={{ color: '#64748b', fontSize: '15px' }}>جاري تحميل ملفك الشخصي الفاخر...</p>
       </div>
     );
@@ -147,8 +145,8 @@ export default function UserProfilePage() {
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', borderBottom: '2px solid #e2e8f0', paddingBottom: '15px' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e3a8a', margin: 0 }}>👤 لوحة إدارة الحساب الشخصي</h1>
-        <Link href="/dashboard" style={{ textDecoration: 'none', backgroundColor: '#475569', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
-          ← لوحة التحكم
+        <Link href="/" style={{ textDecoration: 'none', backgroundColor: '#475569', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+          ← صالة العرض الرئيسية
         </Link>
       </div>
 
@@ -156,7 +154,6 @@ export default function UserProfilePage() {
       {err && <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontWeight: 'bold', fontSize: '13px' }}>❌ {err}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '25px' }}>
-        {/* 🛠️ نموذج تعديل البيانات الشخصية */}
         <form onSubmit={handleUpdateProfile} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
           <h2 style={{ fontSize: '15px', color: '#0f172a', marginBottom: '15px', fontWeight: 'bold', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>📝 تعديل البيانات الشخصية</h2>
           
@@ -181,11 +178,10 @@ export default function UserProfilePage() {
           </div>
 
           <button type="submit" disabled={updating} style={{ width: '100%', padding: '10px', backgroundColor: updating ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: updating ? 'not-allowed' : 'pointer' }}>
-            {updating ? 'جاري الحفظ والتدقيق...' : '💾 حفظ التغييرات والشفرة'}
+            {updating ? 'جاري الحفظ والتدقيق...' : '💾 حفظ التغييرات'}
           </button>
         </form>
 
-        {/* 👑 صندوق ترقية وتفعيل الاشتراك المدفوع الفاخر */}
         <div style={{ backgroundColor: '#fffbeb', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(245,158,11,0.1)', border: '1px solid #fef3c7', position: 'relative' }}>
           <h2 style={{ fontSize: '16px', color: '#92400e', marginBottom: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>👑 باقة الاشتراك المدفوع الفاخرة</h2>
           <p style={{ fontSize: '13px', color: '#78350f', margin: '0 0 15px 0', lineHeight: '1.6' }}>
@@ -208,7 +204,6 @@ export default function UserProfilePage() {
           )}
         </div>
       </div>
-      {/* 🚙 صالة عرض الإعلانات الشخصية الخاصة بالمستخدم */}
       <h2 style={{ fontSize: '15px', color: '#1e3a8a', marginBottom: '15px', fontWeight: 'bold' }}>🚙 إعلاناتي المعروضة ({myCars.length})</h2>
       
       {myCars.length === 0 ? (
@@ -256,4 +251,3 @@ const styles = {
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '10px' },
   spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
-
