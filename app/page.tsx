@@ -36,13 +36,24 @@ export default function HomePage() {
     const fetchData = async () => {
       try {
         const [carsRes, adsRes] = await Promise.all([
-          fetch('/api/cars'),
-          fetch('/api/admin/commercial-ads')
+          fetch('/api/cars').catch(() => null),
+          fetch('/api/admin/commercial-ads').catch(() => null)
         ]);
-        const carsData = await carsRes.json();
-        const adsData = await adsRes.json();
-        if (Array.isArray(carsData)) { setCars(carsData); } else if (carsData.success) { setCars(carsData.cars || []); }
-        if (Array.isArray(adsData)) { setAds(adsData); } else if (adsData.success) { setAds(adsData.ads || []); }
+        
+        const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
+        const adsData = adsRes ? await adsRes.json().catch(() => null) : null;
+        
+        if (carsData) {
+          if (Array.isArray(carsData)) setCars(carsData);
+          else if (Array.isArray(carsData.cars)) setCars(carsData.cars);
+          else if (carsData.success && Array.isArray(carsData.cars)) setCars(carsData.cars);
+        }
+        
+        if (adsData) {
+          if (Array.isArray(adsData)) setAds(adsData);
+          else if (Array.isArray(adsData.ads)) setAds(adsData.ads);
+          else if (adsData.success && Array.isArray(adsData.ads)) setAds(adsData.ads);
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -53,26 +64,28 @@ export default function HomePage() {
   }, []);
 
   const getCurrencySymbol = (currency: string) => {
-    if (currency === 'SAR') return 'ر.س';
+    if (!currency) return 'د.ك';
+    if (String(currency).toUpperCase() === 'SAR') return 'ر.س';
     return 'د.ك';
   };
 
-  const headerAd = ads.find(ad => ad.position === 'header' && ad.status === 'approved');
-  const footerAd = ads.find(ad => ad.position === 'footer' && ad.status === 'approved');
+  const headerAd = Array.isArray(ads) ? ads.find(ad => ad && ad.position === 'header') : null;
+  const footerAd = Array.isArray(ads) ? ads.find(ad => ad && ad.position === 'footer') : null;
 
-  const filteredCars = cars.filter(car => {
+  const filteredCars = Array.isArray(cars) ? cars.filter(car => {
+    if (!car || !car.model) return false;
     if (!selectedModel) return true;
-    return car.model.toLowerCase() === selectedModel.toLowerCase();
-  });
+    return String(car.model).toLowerCase() === selectedModel.toLowerCase();
+  }) : [];
 
-  const uniqueModels = cars.reduce((acc: { brand: string; model: string }[], current) => {
-    const x = acc.find(item => item.model.toLowerCase() === current.model.toLowerCase());
-    if (!x && current.model) {
-      acc.push({ brand: current.brand, model: current.model });
+  const uniqueModels = Array.isArray(cars) ? cars.reduce((acc: { brand: string; model: string }[], current) => {
+    if (!current || !current.model) return acc;
+    const x = acc.find(item => String(item.model).toLowerCase() === String(current.model).toLowerCase());
+    if (!x) {
+      acc.push({ brand: current.brand || '', model: current.model });
     }
     return acc;
-  }, []);
-
+  }, []) : [];
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
@@ -81,6 +94,7 @@ export default function HomePage() {
       </div>
     );
   }
+
   return (
     <div style={styles.container}>
       <div style={styles.heroSection}>
@@ -94,7 +108,7 @@ export default function HomePage() {
           <h2 style={styles.heroMainTitle}>ابحث عن سيارتك المثالية</h2>
           <p style={styles.heroSubTitle}>تصفح الإعلانات وأرسل إعلانك مجاناً</p>
           <div style={styles.statsContainer}>
-            <div style={styles.statBox}><span style={styles.statNumber}>{cars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
+            <div style={styles.statBox}><span style={styles.statNumber}>{filteredCars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
             <div style={styles.statDivider}></div>
             <div style={styles.statBox}><span style={styles.statNumber}>4</span><span style={styles.statBoxLabel}>مدينة</span></div>
           </div>
@@ -111,46 +125,60 @@ export default function HomePage() {
           <div style={styles.searchSection}>
             <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput}>
               <option value="">عرض كل الماركات والموديلات المتاحة</option>
-              {uniqueModels.map((m: any) => (
-                <option key={m.model} value={m.model}>
-                  {m.brand} - {m.model}
+              {uniqueModels.map((m: any, idx: number) => (
+                <option key={m.model ? m.model + idx : idx} value={m.model || ''}>
+                  {(m.brand || '')} {m.brand && m.model ? '-' : ''} {(m.model || '')}
                 </option>
               ))}
             </select>
           </div>
         )}
-
         <h2 style={styles.sectionTitle}>✨ السيارات المعروضة ({filteredCars.length})</h2>
         {filteredCars.length === 0 ? (
           <div style={styles.noCars}>لا توجد سيارات متوفرة حالياً 🔍</div>
         ) : (
           <div style={styles.grid}>
-            {filteredCars.map((car) => (
-              <div key={car.id} style={styles.card}>
-                <div style={styles.gallery}>
-                  {car.images && car.images.length > 0 ? (
-                    <img 
-                      src={Array.isArray(car.images) ? String(car.images[0] || car.images) : String(car.images)} 
-                      alt={car.brand} 
-                      style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} 
-                    />
-                  ) : (
-                    <div style={styles.noImage}>🚗 لا توجد صورة</div>
-                  )}
+            {filteredCars.map((car) => {
+              if (!car) return null;
+              // 🛡️ معالجة وحماية كرت السيارة بالكامل لمنع الانهيار
+              const carBrand = car.brand || 'سيارة';
+              const carModel = car.model || '';
+              const carYear = car.year || '----';
+              const carPrice = car.price ? car.price.toLocaleString() : '0';
+              const carCurrency = getCurrencySymbol(car.currency);
+              const carImageSrc = car.images ? String(car.images) : '';
+
+              return (
+                <div key={car.id || Math.random()} style={styles.card}>
+                  <div style={styles.gallery}>
+                    {carImageSrc && carImageSrc.trim() !== '' ? (
+                      <img 
+                        src={carImageSrc} 
+                        alt={carBrand} 
+                        style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} 
+                      />
+                    ) : (
+                      <div style={styles.noImage}>🚗 لا توجد صورة</div>
+                    )}
+                  </div>
+                  <div style={styles.cardBody}>
+                    <h3 style={styles.carTitle}>{carBrand} {carModel}</h3>
+                    <div style={styles.carPrice}>{carPrice} {carCurrency}</div>
+                    <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {carYear}</span></div>
+                    <Link href={`/car/${car.id || ''}`} style={styles.viewLink}>عرض التفاصيل ←</Link>
+                  </div>
                 </div>
-                <div style={styles.cardBody}>
-                  <h3 style={styles.carTitle}>{car.brand} {car.model}</h3>
-                  <div style={styles.carPrice}>{car.price.toLocaleString()} {getCurrencySymbol(car.currency)}</div>
-                  <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {car.year}</span></div>
-                  <Link href={`/car/${car.id}`} style={styles.viewLink}>عرض التفاصيل ←</Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
-        {headerAd && <div style={styles.adBanner}><img src={headerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
-        {footerAd && <div style={styles.adBanner}><img src={footerAd.image_url} alt="إعلان" style={styles.adImage} /></div>}
+        {headerAd && headerAd.image_url && (
+          <div style={styles.adBanner}><img src={String(headerAd.image_url)} alt="إعلان" style={styles.adImage} /></div>
+        )}
+        {footerAd && footerAd.image_url && (
+          <div style={styles.adBanner}><img src={String(footerAd.image_url)} alt="إعلان" style={styles.adImage} /></div>
+        )}
       </div>
     </div>
   );
