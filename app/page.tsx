@@ -26,7 +26,6 @@ interface CommercialAd {
 
 export default function HomePage() {
   const [cars, setCars] = useState<Car[]>([]);
-  const [ads, setAds] = useState<CommercialAd[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -37,11 +36,9 @@ export default function HomePage() {
       try {
         const [carsRes, adsRes] = await Promise.all([
           fetch('/api/cars').catch(() => null),
-          fetch('/api/admin/commercial-ads').catch(() => null)
         ]);
         
         const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
-        const adsData = adsRes ? await adsRes.json().catch(() => null) : null;
         
         if (carsData) {
           if (Array.isArray(carsData)) setCars(carsData);
@@ -49,11 +46,6 @@ export default function HomePage() {
           else if (carsData.success && Array.isArray(carsData.cars)) setCars(carsData.cars);
         }
         
-        if (adsData) {
-          if (Array.isArray(adsData)) setAds(adsData);
-          else if (Array.isArray(adsData.ads)) setAds(adsData.ads);
-          else if (adsData.success && Array.isArray(adsData.ads)) setAds(adsData.ads);
-        }
       } catch (error) {
         console.error(error);
       } finally {
