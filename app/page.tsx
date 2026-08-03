@@ -69,8 +69,6 @@ export default function HomePage() {
     return 'د.ك';
   };
 
-  const headerAd = Array.isArray(ads) ? ads.find(ad => ad && ad.position === 'header') : null;
-  const footerAd = Array.isArray(ads) ? ads.find(ad => ad && ad.position === 'footer') : null;
 
   const filteredCars = Array.isArray(cars) ? cars.filter(car => {
     if (!car || !car.model) return false;
