@@ -15,7 +15,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, message: 'معرف المستخدم غير صحيح' }, { status: 400 });
     }
 
-    // 🚀 استعلام نظيف ومباشر من قاعدة بيانات Neon Postgres بجلب المعطيات والاشتراك المميز
+    // 🚀 استعلام نظيف ومباشر من قاعدة بيانات Neon Postgres بجلب المعطيات
     const users = await sql`
       SELECT id, name, email, phone, is_premium 
       FROM users 
@@ -24,9 +24,10 @@ export async function GET(request: Request) {
     `;
 
     if (!users || users.length === 0) {
-      return NextResponse.json({ success: false, message: 'المستخدم غير موجود بالنظام' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'المستخدم غير موجود بالنظام' });
     }
 
+    // ✨ السر الهندسي: إرسال الكائن الأول الصافي ومباشرة بدلاً من المصفوفة الكاملة لملء الحقول فوراً
     return NextResponse.json({ success: true, user: users[0] });
   } catch (error: any) {
     console.error("Fetch user API error:", error);
