@@ -129,7 +129,7 @@ export default function CommercialAdsAdminPage() {
                 if (!ad) return null;
                 // 🛡️ صيانة وحماية الحقول الفردية لكل سطر منعاً لانهيار الصفحة
                 const adId = ad.id || Math.random();
-                const adPosition = ad.position === 'header' ? 'علوي (الهيدر)' : (ad.position === 'footer' ? 'سفلي (الفوتر)' : ad.position || 'عام');
+                const adPosition = String(ad.position).toLowerCase() === 'header' ? 'علوي (الهيدر)' : (String(ad.position).toLowerCase() === 'footer' ? 'سفلي (الفوتر)' : ad.position || 'عام');
                 const adStatus = String(ad.status).toLowerCase() === 'approved' ? 'مقبول ✨' : 'قيد الانتظار ⏳';
                 const adPrice = ad.price || 0;
                 const adDuration = ad.duration_days || 0;
