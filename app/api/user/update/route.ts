@@ -1,35 +1,33 @@
 import { NextResponse } from 'next/server';
-import sql from '../../db';
+import sql from '@/app/api/db';
 
-export async function POST(request: Request) {
+export async function PUT(request: Request) {
   try {
-    const { userId, name, phone } = await request.json();
+    const body = await request.json();
+    const { id, name, phone, password } = body;
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, message: 'معرف المستخدم مطلوب' },
-        { status: 400 }
-      );
+    if (!id || !name || !phone) {
+      return NextResponse.json({ success: false, message: 'البيانات الأساسية مطلوبة' }, { status: 400 });
     }
 
-    // ✅ تحديث الاسم ورقم الهاتف (الإيميل غير قابل للتعديل)
-    await sql`
-      UPDATE users 
-      SET 
-        name = COALESCE(${name}, name),
-        phone = COALESCE(${phone}, phone)
-      WHERE id = ${userId}
-    `;
+    if (password && password.trim() !== '') {
+      // تحديث البيانات مع كلمة السر الجديدة
+      await sql`
+        UPDATE users 
+        SET name = ${name}, phone = ${phone}, password = ${password} 
+        WHERE id = ${parseInt(id, 10)}
+      `;
+    } else {
+      // تحديث البيانات فقط والإبقاء على كلمة السر الحالية
+      await sql`
+        UPDATE users 
+        SET name = ${name}, phone = ${phone} 
+        WHERE id = ${parseInt(id, 10)}
+      `;
+    }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'تم تحديث الملف الشخصي بنجاح' 
-    });
-  } catch (error) {
-    console.error('خطأ في تحديث الملف الشخصي:', error);
-    return NextResponse.json(
-      { success: false, message: 'حدث خطأ أثناء التحديث' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true, message: 'تم تحديث البيانات الشخصية بنجاح' });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
