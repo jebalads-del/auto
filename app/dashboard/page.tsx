@@ -77,47 +77,44 @@ export default function UserDashboardProfilePage() {
       if (carsData) {
         if (Array.isArray(carsData)) setMyCars(carsData);
         else if (Array.isArray(carsData.cars)) setMyCars(carsData.cars);
-      }
-    } catch (error: any) {
-      setErr(`خطأ جلب برمي: ${error.message}`);
-    } finally {
-      setLoading(false);
+const fetchProfileData = async () => {
+  try {
+    const userId = Cookies.get('userId') || localStorage.getItem('userId');
+    if (!userId) {
+      router.push('/login');
+      return;
     }
-  };
 
+    const [userRes, carsRes] = await Promise.all([
+      fetch(`/api/user?id=${userId}`).catch(() => null),
+      fetch(`/api/cars?userId=${userId}`).catch(() => null)
+    ]);
 
-      const [userRes, carsRes] = await Promise.all([
-        fetch(`/api/user?id=${userId}`).catch(() => null),
-        fetch(`/api/cars?userId=${userId}`).catch(() => null)
-      ]);
+    const userData = userRes ? await userRes.json().catch(() => null) : null;
+    const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
 
-      const userData = userRes ? await userRes.json().catch(() => null) : null;
-      const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
-
-      if (userData && userData.success) {
-        setUser(userData.user);
-        setFormData({
-          name: userData.user.name || '',
-          phone: userData.user.phone || '',
-          password: ''
-        });
-      }
-
-      if (carsData) {
-        if (Array.isArray(carsData)) setMyCars(carsData);
-        else if (Array.isArray(carsData.cars)) setMyCars(carsData.cars);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+    if (userData && userData.success) {
+      setUser(userData.user);
+      setFormData({
+        name: userData.user.name || '',
+        phone: userData.user.phone || '',
+        password: ''
+      });
     }
-  };
 
-  useEffect(() => {
-    fetchProfileData();
-  }, []);
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+    if (Array.isArray(carsData)) {
+      setMyCars(carsData);
+    } else if (carsData && Array.isArray(carsData.cars)) {
+      setMyCars(carsData.cars);
+    }
+
+  } catch (error) {
+    console.error(error);
+    setErr('حدث خطأ أثناء جلب البيانات');
+  } finally {
+    setLoading(false);
+  }
+};
     e.preventDefault();
     setUpdating(true);
     setMsg('');
