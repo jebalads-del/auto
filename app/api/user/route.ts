@@ -4,7 +4,8 @@ import sql from '../db';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const idParam = searchParams.get('id');
+    // 🛡️ قبول المعرف بأي صيغة ترسلها الواجهة الأمامية من المتصفح لمنع الفراغ
+    const idParam = searchParams.get('id') || searchParams.get('userId');
 
     if (!idParam) {
       return NextResponse.json({ success: false, message: 'معرف المستخدم مطلوب' }, { status: 400 });
@@ -24,10 +25,9 @@ export async function GET(request: Request) {
     `;
 
     if (!users || users.length === 0) {
-      return NextResponse.json({ success: false, message: 'المستخدم غير موجود بالنظام' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'المستخدم غير موجود بالنظام' });
     }
 
-    // ✨ التفكيك الهندسي السليم: إرسال الكائن الصافي الأول مباشرة (العنصر 0) لسحق الفراغ بالواجهة
     const currentUser = users[0];
     
     // تحويل حالة الاشتراك لتتوافق برمجياً مع متغير الواجهة
