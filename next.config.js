@@ -1,15 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  compress: true,
-  images: {
-    domains: ['sayarty.store'],
+  swcMinify: false,
+  experimental: {
+    forceSwcTransforms: false,
   },
-  // ✅ منع إعادة التوجيه التلقائي
-  trailingSlash: false,
-  // ✅ إزالة أي redirects غير مرغوب فيها
-  async redirects() {
-    return [];
-  },
-};
+  // تعطيل SWC تماماً واستخدام Babel
+  webpack: (config, { isServer }) => {
+    // إضافة دعم Babel
+    return config;
+  }
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
