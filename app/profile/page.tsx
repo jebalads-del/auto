@@ -132,7 +132,7 @@ export default function UserDashboardProfilePage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-        <p style={{ color: '#64748b', fontSize: '15px' }}>جاري تحميل ملفك الشخصي الفاخر...</p>
+        <p style={{ color: '#64748b', fontSize: '15px' }}>جاري تحميل ملفك الشخصي ...</p>
       </div>
     );
   }
