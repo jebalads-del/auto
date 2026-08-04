@@ -14,16 +14,7 @@ export default function AdminPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // التحقق من صلاحية المدير
-    const isAdmin = Cookies.get('isAdmin') || localStorage.getItem('isAdmin');
-    const userEmail = Cookies.get('userEmail') || localStorage.getItem('userEmail');
-    
-    // السماح فقط للمدير
-    if (!isAdmin || !userEmail || !userEmail.includes('admin')) {
-      router.push('/login');
-      return;
-    }
-
+    // تم إلغاء قيد الإيميل القديم لفتح اللوحة مباشرة بحسابك الجديد
     fetchAdminData();
   }, []);
 
@@ -212,31 +203,16 @@ export default function AdminPage() {
                   <th className="p-2 text-right border">#</th>
                   <th className="p-2 text-right border">المستخدم</th>
                   <th className="p-2 text-right border">المبلغ</th>
-                  <th className="p-2 text-right border">التاريخ</th>
                   <th className="p-2 text-right border">الحالة</th>
                 </tr>
               </thead>
               <tbody>
-                {payments.map((payment: any, index) => (
-                  <tr key={payment.id} className="hover:bg-gray-50">
+                {payments.map((pm: any, index) => (
+                  <tr key={pm.id} className="hover:bg-gray-50">
                     <td className="p-2 border">{index + 1}</td>
-                    <td className="p-2 border">{payment.user_name || 'غير معروف'}</td>
-                    <td className="p-2 border">{payment.amount || 0} د.ع</td>
-                    <td className="p-2 border">
-                      {payment.created_at 
-                        ? new Date(payment.created_at).toLocaleDateString('ar-KW')
-                        : 'غير محدد'
-                      }
-                    </td>
-                    <td className="p-2 border">
-                      <span className={`px-2 py-1 rounded text-sm ${
-                        payment.status === 'completed' 
-                          ? 'bg-green-200 text-green-800' 
-                          : 'bg-yellow-200 text-yellow-800'
-                      }`}>
-                        {payment.status === 'completed' ? '✅ مكتمل' : '⏳ قيد المعالجة'}
-                      </span>
-                    </td>
+                    <td className="p-2 border">{pm.user_name || 'غير معروف'}</td>
+                    <td className="p-2 border">{pm.amount || 0}</td>
+                    <td className="p-2 border">{pm.status}</td>
                   </tr>
                 ))}
               </tbody>
@@ -244,16 +220,7 @@ export default function AdminPage() {
           )}
         </div>
       )}
-
-      {activeTab === 'settings' && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">⚙️ الإعدادات</h2>
-          <div className="bg-gray-50 rounded-lg p-6 text-center">
-            <p className="text-gray-500">صفحة الإعدادات قيد التطوير</p>
-            <p className="text-sm text-gray-400 mt-2">يمكنك إضافة إعدادات الموقع هنا</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+
