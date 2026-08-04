@@ -4,7 +4,6 @@ import sql from '../db';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    // 🛡️ قبول المعرف بأي صيغة ترسلها الواجهة الأمامية من المتصفح لمنع الفراغ
     const idParam = searchParams.get('id') || searchParams.get('userId');
 
     if (!idParam) {
@@ -16,7 +15,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, message: 'معرف المستخدم غير صحيح' }, { status: 400 });
     }
 
-    // 🚀 استعلام صريح يعتمد المسميات الحقيقية المأخوذة من شاشتك بالملي
+    // 🚀 استعلام نظيف يعتمد مسميات جدولك الحية بـ Neon
     const users = await sql`
       SELECT id, name, email, phone, subscription_type 
       FROM users 
@@ -25,17 +24,17 @@ export async function GET(request: Request) {
     `;
 
     if (!users || users.length === 0) {
-      return NextResponse.json({ success: false, message: 'المستخدم غير موجود بالنظام' });
+      return NextResponse.json({ success: false, message: 'المستخدم غير موجود بالنظام' }, { status: 404 });
     }
 
-    const currentUser = users[0];
+    // ✨ الحسم الهندسي: تحديد العنصر الأول صراحة [0] وتأمين نوعه لتجنب اعتراض TypeScript كلياً
+    const currentUser = users[0] as any;
     
-    // تحويل حالة الاشتراك لتتوافق برمجياً مع متغير الواجهة
     const responseUser = {
       id: currentUser.id,
-      name: currentUser.name,
-      email: currentUser.email,
-      phone: currentUser.phone,
+      name: currentUser.name || '',
+      email: currentUser.email || '',
+      phone: currentUser.phone || '',
       is_premium: currentUser.subscription_type === 'premium'
     };
 
