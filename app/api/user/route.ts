@@ -1,4 +1,3 @@
-cat > app/api/user/route.ts << 'EOF'
 import { NextResponse } from 'next/server';
 import sql from '../db';
 
@@ -16,7 +15,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, message: 'معرف المستخدم غير صحيح' }, { status: 400 });
     }
 
-    // استعلام من قاعدة بيانات Neon Postgres
     const users = await sql`
       SELECT id, name, email, phone, subscription_type
       FROM users
@@ -28,7 +26,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, message: 'المستخدم غير موجود' }, { status: 404 });
     }
 
-    // ✅ هنا التصحيح: نرجع success: true مع بيانات المستخدم
     const currentUser = users[0];
     const responseUser = {
       id: currentUser.id,
@@ -45,4 +42,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-EOF
