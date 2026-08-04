@@ -1,34 +1,43 @@
 import { NextResponse } from 'next/server';
-import pool from '@/db';
+import sql from '../db';
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
     try {
-        const body = await req.json();
+        const body = await request.json();
         const { id } = body;
 
         if (!id) {
             return NextResponse.json({
                 success: false,
-                message: 'User ID is required'
-            });
+                message: 'معرف المستخدم مطلوب'
+            }, { status: 400 });
         }
 
-        // تحديث المستخدم إلى Premium
-        await pool.query(
-            'UPDATE users SET subscription = $1, updated_at = NOW() WHERE id = $2',
-            ['premium', id]
-        );
+        const userId = parseInt(id, 10);
+        if (isNaN(userId)) {
+            return NextResponse.json({
+                success: false,
+                message: 'معرف المستخدم غير صحيح'
+            }, { status: 400 });
+        }
+
+        // تحديث المستخدم إلى Premium باستخدام sql (neon)
+        await sql`
+            UPDATE users 
+            SET subscription_type = 'premium', updated_at = NOW() 
+            WHERE id = ${userId}
+        `;
 
         return NextResponse.json({
             success: true,
-            message: 'User upgraded successfully'
+            message: 'تم ترقية الحساب بنجاح إلى Premium!'
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Upgrade error:', error);
         return NextResponse.json({
             success: false,
-            message: 'Internal server error'
+            error: error.message
         }, { status: 500 });
     }
 }
