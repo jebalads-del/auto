@@ -14,7 +14,6 @@ export default function AdminPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // تم إلغاء قيد الإيميل القديم لفتح اللوحة مباشرة بحسابك الجديد
     fetchAdminData();
   }, []);
 
@@ -23,17 +22,14 @@ export default function AdminPage() {
       setLoading(true);
       setError('');
 
-      // جلب المستخدمين
       const usersRes = await fetch('/api/admin/users').catch(() => null);
       const usersData = usersRes ? await usersRes.json() : null;
       if (usersData?.success) setUsers(usersData.users || []);
 
-      // جلب الإعلانات
       const adsRes = await fetch('/api/admin/ads').catch(() => null);
       const adsData = adsRes ? await adsRes.json() : null;
       if (adsData?.success) setAds(adsData.ads || []);
 
-      // جلب المدفوعات
       const paymentsRes = await fetch('/api/admin/payments').catch(() => null);
       const paymentsData = paymentsRes ? await paymentsRes.json() : null;
       if (paymentsData?.success) setPayments(paymentsData.payments || []);
@@ -66,14 +62,11 @@ export default function AdminPage() {
     <div className="container mx-auto p-4 max-w-6xl" dir="rtl">
       <h1 className="text-3xl font-bold mb-6 text-center">لوحة تحكم المدير</h1>
 
-      {/* علامات التبويب */}
       <div className="flex flex-wrap gap-2 mb-6 border-b pb-2">
         <button
           onClick={() => setActiveTab('users')}
           className={`px-4 py-2 rounded transition ${
-            activeTab === 'users' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 hover:bg-gray-300'
+            activeTab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
           }`}
         >
           👥 المستخدمين ({users.length})
@@ -81,9 +74,7 @@ export default function AdminPage() {
         <button
           onClick={() => setActiveTab('ads')}
           className={`px-4 py-2 rounded transition ${
-            activeTab === 'ads' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 hover:bg-gray-300'
+            activeTab === 'ads' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
           }`}
         >
           📋 الإعلانات ({ads.length})
@@ -91,26 +82,13 @@ export default function AdminPage() {
         <button
           onClick={() => setActiveTab('payments')}
           className={`px-4 py-2 rounded transition ${
-            activeTab === 'payments' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 hover:bg-gray-300'
+            activeTab === 'payments' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
           }`}
         >
           💳 المدفوعات ({payments.length})
         </button>
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`px-4 py-2 rounded transition ${
-            activeTab === 'settings' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 hover:bg-gray-300'
-          }`}
-        >
-          ⚙️ الإعدادات
-        </button>
       </div>
 
-      {/* محتوى التبويب النشط */}
       {activeTab === 'users' && (
         <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
           <h2 className="text-xl font-bold mb-4">👥 المستخدمين</h2>
@@ -136,9 +114,7 @@ export default function AdminPage() {
                     <td className="p-2 border">{user.phone || 'لا يوجد'}</td>
                     <td className="p-2 border">
                       <span className={`px-2 py-1 rounded text-sm ${
-                        user.is_premium 
-                          ? 'bg-green-200 text-green-800' 
-                          : 'bg-gray-200 text-gray-800'
+                        user.is_premium ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
                       }`}>
                         {user.is_premium ? '⭐ Premium' : 'عادي'}
                       </span>
@@ -176,9 +152,7 @@ export default function AdminPage() {
                     <td className="p-2 border">{ad.price || 0} د.ع</td>
                     <td className="p-2 border">
                       <span className={`px-2 py-1 rounded text-sm ${
-                        ad.status === 'approved' 
-                          ? 'bg-green-200 text-green-800' 
-                          : 'bg-yellow-200 text-yellow-800'
+                        ad.status === 'approved' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'
                       }`}>
                         {ad.status === 'approved' ? '✅ مقبول' : '⏳ قيد المراجعة'}
                       </span>
@@ -223,4 +197,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
