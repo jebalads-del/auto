@@ -44,6 +44,8 @@ export default function DashboardPage() {
 
       if (userData && userData.success && userData.user) {
         const rawUser = Array.isArray(userData.user) ? userData.user[0] : userData.user;
+        console.log('📧 Raw user data from API:', rawUser);
+  console.log('📧 Email field:', rawUser.email);
         
         setUser({
           id: parseInt(rawUser.id, 10) || 0,
