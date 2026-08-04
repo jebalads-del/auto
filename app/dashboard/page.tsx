@@ -28,7 +28,7 @@ export default function DashboardPage() {
 
   const fetchProfileData = async () => {
     try {
-      const userId = Cookies.get('userId') || localStorage.getItem('userId');
+const userId = localStorage.getItem('userId') || Cookies.get('userId');
       if (!userId) {
         router.push('/login');
         return;
