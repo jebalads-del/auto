@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import sql from '../db';
+import sql from '../../db';
 
 export async function POST(request: Request) {
     try {
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
             }, { status: 400 });
         }
 
-        // تحديث المستخدم إلى Premium باستخدام sql (neon)
+        // تحديث المستخدم إلى Premium
         await sql`
             UPDATE users 
             SET subscription_type = 'premium', updated_at = NOW() 
