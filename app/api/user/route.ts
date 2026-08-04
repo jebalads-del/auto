@@ -1,3 +1,4 @@
+cat > app/api/user/route.ts << 'EOF'
 import { NextResponse } from 'next/server';
 import sql from '../db';
 
@@ -15,21 +16,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, message: 'معرف المستخدم غير صحيح' }, { status: 400 });
     }
 
-    // 🚀 استعلام صريح وبسيط من قاعدة بيانات Neon Postgres
+    // استعلام من قاعدة بيانات Neon Postgres
     const users = await sql`
-      SELECT id, name, email, phone, subscription_type 
-      FROM users 
-      WHERE id = ${userId} 
+      SELECT id, name, email, phone, subscription_type
+      FROM users
+      WHERE id = ${userId}
       LIMIT 1
     `;
 
     if (!users || users.length === 0) {
-      return NextResponse.json({ success: false, message: 'المستخدم غير موجود بالنظام' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'المستخدم غير موجود' }, { status: 404 });
     }
 
-    // ✨ تأمين النوع البرمجي ككائن مجهول (any) لتجاوز تدقيق الفحص الصارم لـ Vercel
-    const currentUser: any = users;
-
+    // ✅ هنا التصحيح: نرجع success: true مع بيانات المستخدم
+    const currentUser = users[0];
     const responseUser = {
       id: currentUser.id,
       name: currentUser.name || '',
@@ -39,7 +39,10 @@ export async function GET(request: Request) {
     };
 
     return NextResponse.json({ success: true, user: responseUser });
+
   } catch (error: any) {
+    console.error('API Error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+EOF
