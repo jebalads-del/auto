@@ -3,7 +3,7 @@ import sql from '../../../db';
 
 export async function GET() {
   try {
-    console.log('🔄 جلب المستخدمين...');
+    console.log('📊 جلب المستخدمين...');
     
     const users = await sql`
       SELECT id, name, email, phone, subscription_type, created_at
@@ -13,7 +13,6 @@ export async function GET() {
 
     console.log(`✅ تم جلب ${users.length} مستخدم`);
 
-    // تنسيق البيانات لتناسب صفحة الأدمن
     const formattedUsers = users.map((user: any) => ({
       id: Number(user.id),
       name: String(user.name || 'غير معروف'),
@@ -23,7 +22,6 @@ export async function GET() {
       created_at: user.created_at || new Date().toISOString()
     }));
 
-    // إرجاع البيانات مع success: true
     return NextResponse.json({ 
       success: true, 
       users: formattedUsers 
