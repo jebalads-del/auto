@@ -8,14 +8,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users');
-  
-  // بيانات المستخدمين
   const [users, setUsers] = useState([]);
   const [ads, setAds] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [settings, setSettings] = useState({});
+  const [error, setError] = useState('');
 
-  // التحقق من صلاحية المدير
   useEffect(() => {
     const isAdmin = Cookies.get('isAdmin') || localStorage.getItem('isAdmin');
     if (!isAdmin) {
@@ -27,22 +24,32 @@ export default function DashboardPage() {
 
   const fetchAllData = async () => {
     try {
-      const [usersRes, adsRes, paymentsRes] = await Promise.all([
-        fetch('/api/admin/users').catch(() => null),
-        fetch('/api/admin/ads').catch(() => null),
-        fetch('/api/admin/payments').catch(() => null)
-      ]);
-
-      const usersData = usersRes ? await usersRes.json() : null;
-      const adsData = adsRes ? await adsRes.json() : null;
-      const paymentsData = paymentsRes ? await paymentsRes.json() : null;
-
-      if (usersData?.success) setUsers(usersData.users || []);
-      if (adsData?.success) setAds(adsData.ads || []);
-      if (paymentsData?.success) setPayments(paymentsData.payments || []);
-
-    } catch (error) {
-      console.error('Error fetching admin data:', error);
+      setLoading(true);
+      setError('');
+      
+      console.log('🔄 جلب بيانات المدير...');
+      
+      // جلب المستخدمين من API الجديد
+      const usersRes = await fetch('/api/users-list');
+      console.log('📡 استجابة المستخدمين:', usersRes.status);
+      
+      if (!usersRes.ok) {
+        throw new Error(`HTTP error! status: ${usersRes.status}`);
+      }
+      
+      const usersData = await usersRes.json();
+      console.log('📊 بيانات المستخدمين:', usersData);
+      
+      if (usersData.success) {
+        setUsers(usersData.users || []);
+        console.log(`✅ تم تحميل ${usersData.users?.length || 0} مستخدم`);
+      } else {
+        setError(usersData.message || 'فشل في جلب المستخدمين');
+      }
+      
+    } catch (err: any) {
+      console.error('❌ خطأ:', err);
+      setError(err.message || 'حدث خطأ في جلب البيانات');
     } finally {
       setLoading(false);
     }
@@ -52,6 +59,14 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-xl">جاري التحميل...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl text-red-500">خطأ: {error}</div>
       </div>
     );
   }
