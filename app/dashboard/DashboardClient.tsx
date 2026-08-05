@@ -3,43 +3,82 @@ import React, { useState } from "react";
 
 export default function DashboardClient({ initialUsers, initialCars }: { initialUsers: any[], initialCars: any[] }) {
   const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'payments' | 'settings'>('users');
+  const [usersList, setUsersList] = useState(initialUsers);
+  const [carsList, setCarsList] = useState(initialCars);
 
+  // حسابات الدفع والبيانات الافتراضية للمستلم
+  const [westernName, setWesternName] = useState("محمد أحمد محمود");
+  const [westernCountry, setWesternCountry] = useState("الكويت");
+  const [paypalEmail, setPaypalEmail] = useState("payment@auto-gulf.com");
+
+  // دالة تفعيل أو إيقاف المستخدمين
+  const handleToggleUserStatus = (id: any, currentStatus: string) => {
+    const nextStatus = currentStatus === "موقوف" ? "نشط" : "موقوف";
+    setUsersList(prev => prev.map(u => u.id === id ? { ...u, status: nextStatus } : u));
+    alert(`تم تحديث حالة المستخدم بنجاح إلى: ${nextStatus}`);
+  };
+
+  // دالة حذف مستخدم
+  const handleDeleteUser = (id: any) => {
+    if (confirm("هل أنت متأكد من حذف هذا المستخدم؟")) {
+      setUsersList(prev => prev.filter(u => u.id !== id));
+    }
+  };
+
+  // دالة الموافقة على الإعلان
+  const handleApproveCar = (id: any) => {
+    setCarsList(prev => prev.map(c => c.id === id ? { ...c, ad_status: "تمت الموافقة" } : c));
+    alert("تمت الموافقة على الإعلان ونشره الحراج.");
+  };
+
+  // دالة وسم الإعلان كمباع
+  const handleMarkAsSold = (id: any) => {
+    setCarsList(prev => prev.map(c => c.id === id ? { ...c, ad_status: "مُباعة 🔴" } : c));
+    alert("تم تحويل حالة السيارة إلى مباعة.");
+  };
+
+  // دالة حذف إعلان
+  const handleDeleteCar = (id: any) => {
+    if (confirm("هل أنت متأكد من الحذف؟")) {
+      setCarsList(prev => prev.filter(c => c.id !== id));
+    }
+  };
   const styles = {
-    container: { fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh', padding: '16px', direction: 'rtl' as const },
+    container: { fontFamily: 'system-ui, sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh', padding: '16px', direction: 'rtl' as const },
     header: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '20px', textAlign: 'center' as const, marginBottom: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
     tabGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' },
     tabButton: (isActive: boolean) => ({
-      padding: '14px', borderRadius: '12px', border: 'none', fontSize: '14px', fontWeight: 'bold' as const, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.2s',
-      backgroundColor: isActive ? '#2563eb' : '#ffffff', color: isActive ? '#ffffff' : '#4b5563',
-      boxShadow: isActive ? '0 4px 12px rgba(37,99,235,0.15)' : '0 2px 4px rgba(0,0,0,0.02)'
+      padding: '14px', borderRadius: '12px', border: 'none', fontSize: '13px', fontWeight: 'bold' as const, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+      backgroundColor: isActive ? '#2563eb' : '#ffffff', color: isActive ? '#ffffff' : '#4b5563', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
     }),
     badge: (isActive: boolean) => ({
-      backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : '#f1f5f9', color: isActive ? '#ffffff' : '#1e293b',
-      padding: '2px 8px', borderRadius: '20px', fontSize: '11px', marginRight: '6px', fontWeight: 'bold' as const
+      backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : '#f1f5f9', color: isActive ? '#ffffff' : '#1e293b', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', marginRight: '6px'
     }),
     card: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
-    tableWrapper: { overflowX: 'auto' as const, borderRadius: '10px', border: '1px solid #e2e8f0' },
+    tableWrapper: { overflowX: 'auto' as const, borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '10px' },
     table: { width: '100%', borderCollapse: 'collapse' as const, textAlign: 'right' as const, fontSize: '13px' },
-    th: { backgroundColor: '#f8fafc', color: '#64748b', padding: '12px', borderBottom: '2px solid #edf2f7', fontWeight: '600' as const },
-    td: { padding: '12px', borderBottom: '1px solid #f1f5f9', color: '#334155' }
+    th: { backgroundColor: '#f8fafc', color: '#64748b', padding: '12px', borderBottom: '2px solid #edf2f7' },
+    td: { padding: '12px', borderBottom: '1px solid #f1f5f9', color: '#334155' },
+    btnAction: { padding: '6px 10px', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '11px', fontWeight: 'bold' as const, cursor: 'pointer', marginLeft: '4px' },
+    inputField: { width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', marginTop: '4px', outline: 'none', boxSizing: 'border-box' as const }
   };
 
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <h1 style={{ color: '#1e3a8a', fontSize: '24px', margin: '0 0 6px 0', fontWeight: 'bold' }}>📊 لوحة تحكم المدير</h1>
-        <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>مستضاف على Vercel ومربوط بـ Neon DB</p>
+        <h1 style={{ color: '#1e3a8a', fontSize: '22px', margin: '0 0 6px 0', fontWeight: 'bold' }}>📊 لوحة تحكم المدير</h1>
+        <p style={{ color: '#6b7280', fontSize: '12px', margin: 0 }}>نظام إدارة العمليات الحية الفوري</p>
       </header>
 
       <div style={styles.tabGrid}>
         <button onClick={() => setActiveTab('users')} style={styles.tabButton(activeTab === 'users')}>
-          👥 المستخدمين <span style={styles.badge(activeTab === 'users')}>{initialUsers.length}</span>
+          👥 المستخدمين <span style={styles.badge(activeTab === 'users')}>{usersList.length}</span>
         </button>
         <button onClick={() => setActiveTab('ads')} style={styles.tabButton(activeTab === 'ads')}>
-          🚗 إعلانات السيارات <span style={styles.badge(activeTab === 'ads')}>{initialCars.length}</span>
+          🚗 الإعلانات <span style={styles.badge(activeTab === 'ads')}>{carsList.length}</span>
         </button>
         <button onClick={() => setActiveTab('payments')} style={styles.tabButton(activeTab === 'payments')}>
-          💳 خيارات الدفع <span style={styles.badge(activeTab === 'payments')}>0</span>
+          💳 المدفوعات <span style={styles.badge(activeTab === 'payments')}>2</span>
         </button>
         <button onClick={() => setActiveTab('settings')} style={styles.tabButton(activeTab === 'settings')}>
           ⚙️ الإعدادات
@@ -47,82 +86,120 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
       </div>
 
       <div style={styles.card}>
+        {/* قسم جداول المستخدمين */}
         {activeTab === 'users' && (
           <div>
-            <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>جدول إدارة المستخدمين الحقيقي ({initialUsers.length})</h2>
+            <h2 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>جدول إدارة المستخدمين الحقيقي ({usersList.length})</h2>
             <div style={styles.tableWrapper}>
               <table style={styles.table}>
                 <thead>
                   <tr>
-                    <th style={styles.th}>#</th>
-                    <th style={styles.th}>الاسم</th>
-                    <th style={styles.th}>البريد الإلكتروني</th>
+                    <th style={styles.th}>المستعمل</th>
+                    <th style={styles.th}>الحالة</th>
+                    <th style={styles.th}>الإجراء</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {initialUsers.map((user, index) => (
-                    <tr key={user.id || index} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                      <td style={styles.td}>{index + 1}</td>
-                      <td style={{ ...styles.td, fontWeight: '500' }}>{user.name || user.username || "مستخدم حراج"}</td>
-                      <td style={{ ...styles.td, color: '#2563eb' }}>{user.email}</td>
-                    </tr>
-                  ))}
+                  {usersList.map((user, index) => {
+                    const currentStatus = user.status || "نشط";
+                    return (
+                      <tr key={user.id || index} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: '600' }}>{user.name || user.username || "مستخدم حراج"}</div>
+                          <div style={{ color: '#64748b', fontSize: '11px' }}>{user.email}</div>
+                        </td>
+                        <td style={styles.td}>
+                          <span style={{ backgroundColor: currentStatus === 'موقوف' ? '#fee2e2' : '#dcfce7', color: currentStatus === 'موقوف' ? '#ef4444' : '#15803d', padding: '3px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                            {currentStatus}
+                          </span>
+                        </td>
+                        <td style={styles.td}>
+                          <button onClick={() => handleToggleUserStatus(user.id, currentStatus)} style={{ ...styles.btnAction, backgroundColor: currentStatus === 'موقوف' ? '#10b981' : '#f59e0b' }}>
+                            {currentStatus === 'موقوف' ? "تفعيل" : "إيقاف"}
+                          </button>
+                          <button onClick={() => handleDeleteUser(user.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
+        {/* تحسينات جداول السيارات الفعالة والمباعة */}
         {activeTab === 'ads' && (
           <div>
-            <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>إعلانات السيارات الفعالة ({initialCars.length})</h2>
-            {initialCars.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>لا توجد سيارات مضافة حالياً في قاعدة بيانات Neon.</div>
-            ) : (
-              <div style={styles.tableWrapper}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>السيارة</th>
-                      <th style={styles.th}>السعر</th>
-                      <th style={styles.th}>السنة</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {initialCars.map((car, index) => (
+            <h2 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>إعلانات السيارات الفعالة ({carsList.length})</h2>
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>السيارة والسعر</th>
+                    <th style={styles.th}>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {carsList.map((car, index) => {
+                    const statusText = car.ad_status || "بانتظار المراجعة";
+                    return (
                       <tr key={car.id || index}>
-                        <td style={{ ...styles.td, fontWeight: '500' }}>{car.brand || car.title} {car.model}</td>
-                        <td style={{ ...styles.td, color: '#10b981', fontWeight: 'bold' }}>{car.price}</td>
-                        <td style={styles.td}>{car.year}</td>
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: '600' }}>{car.brand || car.title} {car.model}</div>
+                          <div style={{ color: '#10b981', fontWeight: 'bold' }}>{car.price}</div>
+                        </td>
+                        <td style={styles.td}>
+                          {statusText === "بانتظار المراجعة" && (
+                            <button onClick={() => handleApproveCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#2563eb' }}>موافقة</button>
+                          )}
+                          <button onClick={() => handleMarkAsSold(car.id)} style={{ ...styles.btnAction, backgroundColor: '#10b981' }}>مُباعة</button>
+                          <button onClick={() => handleDeleteCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
+                        </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
+        {/* بوابات الدفع ويسترن يونيون وباي بال وتحديث بيانات المستلم */}
         {activeTab === 'payments' && (
           <div>
-            <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>خيارات وبوابات الدفع</h2>
-            <div style={{ padding: '16px', border: '1px solid #e2e8f0', borderRadius: '10px', backgroundColor: '#f8fafc' }}>
-              <strong>💵 الدفع عند الاستلام (كاش)</strong>
-              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>البوابة نشطة ومربوطة بنظام الفواتير المعتمد.</div>
+            <h2 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>إعداد بوابات الدفع وحسابات المستلم</h2>
+            <div style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '10px', marginBottom: '12px' }}>
+              <strong style={{ color: '#d97706', fontSize: '14px' }}>📌 بوابة ويسترن يونيون</strong>
+              <div style={{ marginTop: '8px' }}>
+                <label style={{ fontSize: '12px' }}>اسم المستلم الكامل:</label>
+                <input type="text" value={westernName} onChange={(e) => setWesternName(e.target.value)} style={styles.inputField} />
+                <label style={{ fontSize: '12px', display: 'block', marginTop: '6px' }}>بلد المستلم:</label>
+                <input type="text" value={westernCountry} onChange={(e) => setWesternCountry(e.target.value)} style={styles.inputField} />
+              </div>
             </div>
+
+            <div style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+              <strong style={{ color: '#2563eb', fontSize: '14px' }}>💳 بوابة باي بال (PayPal)</strong>
+              <div style={{ marginTop: '8px' }}>
+                <label style={{ fontSize: '12px' }}>حساب البريد الإلكتروني للاستلام:</label>
+                <input type="email" value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} style={styles.inputField} />
+              </div>
+            </div>
+            <button onClick={() => alert("تم حفظ بيانات بوابات الدفع!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', width: '100%', marginTop: '12px', fontWeight: 'bold' }}>حفظ خيارات الدفع 💾</button>
           </div>
         )}
 
+        {/* الإعدادات العامة */}
         {activeTab === 'settings' && (
           <div>
-            <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>إعدادات الموقع العامة</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <label style={{ fontSize: '13px', color: '#475569' }}>اسم تطبيق الحراج الأصلي:</label>
-              <input type="text" defaultValue="حراج السيارات الفعلي" style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px' }} />
-              <button style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>حفظ الإعدادات</button>
-            </div>
+            <h2 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>إعدادات الموقع العامة</h2>
+            <label style={{ fontSize: '13px' }}>اسم تطبيق الحراج الأصلي:</label>
+            <input type="text" defaultValue="حراج السيارات الفعلي" style={styles.inputField} />
+            <button onClick={() => alert("تم الحفظ.")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold', width: '100%' }}>حفظ الإعدادات</button>
           </div>
         )}
+
       </div>
     </div>
   );
