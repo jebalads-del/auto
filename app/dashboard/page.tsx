@@ -1,12 +1,9 @@
-"use client";
+l"use client";
 import React, { useState, useEffect } from "react";
-import { createClient } from '@supabase/supabase-js';
-import { Search, Filter, Car, Star, X, Phone, MessageCircle } from "lucide-react";
+import { neon } from '@neondatabase/serverless';
 
-// إعداد كليانت Supabase لقراءة البيانات الحقيقية من موقعك
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// تجهيز دالة الاتصال بـ Neon DB باستخدام متغير البيئة السري المخزن في Vercel
+const databaseUrl = process.env.NEXT_PUBLIC_DATABASE_URL || process.env.DATABASE_URL || "";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'payments' | 'settings'>('users');
@@ -14,28 +11,35 @@ export default function Dashboard() {
   const [cars, setCars] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // جلب البيانات الحقيقية بالكامل من جداول Supabase عند فتح الصفحة
+  // جلب البيانات الحقيقية من جداول Neon DB عند فتح الصفحة
   useEffect(() => {
-    async function fetchDatabaseData() {
+    async function fetchNeonData() {
+      if (!databaseUrl) {
+        console.error("DATABASE_URL is missing!");
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
-        // 1. جلب كافة المستخدمين (سيظهر الـ 43 مستخدم بالكامل)
-        const { data: usersData } = await supabase.from('users').select('*').order('id', { ascending: false });
+        const sql = neon(databaseUrl);
+
+        // 1. جلب كافة المستخدمين من جدول الـ users الحقيقي
+        const usersData = await sql`SELECT * FROM users ORDER BY id DESC`;
         if (usersData) setUsers(usersData);
 
-        // 2. جلب إعلانات السيارات الحقيقية
-        const { data: carsData } = await supabase.from('cars').select('*').order('created_at', { ascending: false });
+        // 2. جلب إعلانات السيارات من جدول الـ cars الحقيقي
+        const carsData = await sql`SELECT * FROM cars ORDER BY id DESC`;
         if (carsData) setCars(carsData);
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error("Error fetching Neon DB data:", error);
       } finally {
         setLoading(false);
       }
     }
-    fetchDatabaseData();
+    fetchNeonData();
   }, []);
 
-  // التنسيقات الانسيابية المضمونة 100% للظهور بشكل جذاب على الهاتف
+  // التنسيقات الانسيابية المضمونة للظهور بشكل جذاب على شاشة الهاتف
   const styles = {
     container: { fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh', padding: '16px', direction: 'rtl' as const },
     header: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '20px', textAlign: 'center' as const, marginBottom: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
@@ -59,38 +63,36 @@ export default function Dashboard() {
 
   return (
     <div style={styles.container}>
-      {/* الهيدر العلوي */}
       <header style={styles.header}>
         <h1 style={{ color: '#1e3a8a', fontSize: '24px', margin: '0 0 6px 0', fontWeight: 'bold' }}>📊 لوحة تحكم المدير</h1>
-        <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>متصل بقاعدة البيانات السحابية الحقيقية</p>
+        <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>مستضاف على Vercel ومتصل بـ Neon DB</p>
       </header>
 
-      {/* تبويبات الأقسام الأربعة المحدثة */}
+      {/* تبويبات الأقسام الأربعة */}
       <div style={styles.tabGrid}>
         <button onClick={() => setActiveTab('users')} style={styles.tabButton(activeTab === 'users')}>
           👥 المستخدمين <span style={styles.badge(activeTab === 'users')}>{loading ? '...' : users.length}</span>
         </button>
         <button onClick={() => setActiveTab('ads')} style={styles.tabButton(activeTab === 'ads')}>
-          🚗 السيارات <span style={styles.badge(activeTab === 'ads')}>{loading ? '...' : cars.length}</span>
+          🚗 إعلانات السيارات <span style={styles.badge(activeTab === 'ads')}>{loading ? '...' : cars.length}</span>
         </button>
         <button onClick={() => setActiveTab('payments')} style={styles.tabButton(activeTab === 'payments')}>
-          💳 المدفوعات <span style={styles.badge(activeTab === 'payments')}>0</span>
+          💳 خيارات الدفع <span style={styles.badge(activeTab === 'payments')}>0</span>
         </button>
         <button onClick={() => setActiveTab('settings')} style={styles.tabButton(activeTab === 'settings')}>
           ⚙️ الإعدادات
         </button>
       </div>
 
-      {/* عرض المحتوى الحقيقي بناءً على القسم المحدد */}
       <div style={styles.card}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>جاري تحميل البيانات الحقيقية من السيرفر...</div>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>جاري جلب البيانات الحقيقية من Neon DB...</div>
         ) : (
           <>
-            {/* 1. عرض جدول المستخدمين الحقيقي بالكامل */}
+            {/* 1. قسم المستخدمين الحقيقيين */}
             {activeTab === 'users' && (
               <div>
-                <h2 style={{ fontSize: '18px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>جدول إدارة المستخدمين ({users.length})</h2>
+                <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>جدول إدارة المستخدمين الحقيقي ({users.length})</h2>
                 <div style={styles.tableWrapper}>
                   <table style={styles.table}>
                     <thead>
@@ -98,16 +100,14 @@ export default function Dashboard() {
                         <th style={styles.th}>#</th>
                         <th style={styles.th}>الاسم</th>
                         <th style={styles.th}>البريد الإلكتروني</th>
-                        <th style={styles.th}>الهاتف</th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.map((user, index) => (
                         <tr key={user.id || index} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc' }}>
                           <td style={styles.td}>{index + 1}</td>
-                          <td style={{ ...styles.td, fontWeight: '500' }}>{user.name || user.username || "مستعمل"}</td>
-                          <td style={{ ...styles.td, color: '#2563eb', fontFamily: 'monospace' }}>{user.email}</td>
-                          <td style={styles.td}>{user.phone || "لا يوجد"}</td>
+                          <td style={{ ...styles.td, fontWeight: '500' }}>{user.name || user.username || "مستخدم حراج"}</td>
+                          <td style={{ ...styles.td, color: '#2563eb' }}>{user.email}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -116,12 +116,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* 2. عرض إعلانات السيارات الحقيقية من الداتابيز */}
+            {/* 2. قسم إعلانات السيارات الحقيقية */}
             {activeTab === 'ads' && (
               <div>
-                <h2 style={{ fontSize: '18px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>إعلانات السيارات المضافة ({cars.length})</h2>
+                <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>إعلانات السيارات الفعالة ({cars.length})</h2>
                 {cars.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>لا توجد سيارات مضافة حالياً في قاعدة البيانات.</div>
+                  <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>لا توجد سيارات مضافة حالياً في قاعدة بيانات Neon.</div>
                 ) : (
                   <div style={styles.tableWrapper}>
                     <table style={styles.table}>
@@ -135,7 +135,7 @@ export default function Dashboard() {
                       <tbody>
                         {cars.map((car, index) => (
                           <tr key={car.id || index}>
-                            <td style={{ ...styles.td, fontWeight: '500' }}>{car.brand} {car.model}</td>
+                            <td style={{ ...styles.td, fontWeight: '500' }}>{car.brand || car.title} {car.model}</td>
                             <td style={{ ...styles.td, color: '#10b981', fontWeight: 'bold' }}>{car.price}</td>
                             <td style={styles.td}>{car.year}</td>
                           </tr>
@@ -150,24 +150,22 @@ export default function Dashboard() {
             {/* 3. قسم خيارات الدفع */}
             {activeTab === 'payments' && (
               <div>
-                <h2 style={{ fontSize: '18px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>خيارات وبوابات الدفع</h2>
+                <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>خيارات وبوابات الدفع</h2>
                 <div style={{ padding: '16px', border: '1px solid #e2e8f0', borderRadius: '10px', backgroundColor: '#f8fafc' }}>
-                  <strong>💵 الدفع اليدوي (كاش عند الاستلام)</strong>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>هذه البوابة مفعلة ومستقرة تلقائياً داخل نظام الحراج.</div>
+                  <strong>💵 الدفع عند الاستلام (كاش)</strong>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>البوابة نشطة ومربوطة بنظام الفواتير المعتمد.</div>
                 </div>
               </div>
             )}
 
-            {/* 4. قسم الإعدادات */}
+            {/* 4. إعدادات الموقع */}
             {activeTab === 'settings' && (
               <div>
-                <h2 style={{ fontSize: '18px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>إعدادات الموقع العامة</h2>
+                <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>إعدادات الموقع العامة</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div>
-                    <label style={{ fontSize: '13px', color: '#475569', display: 'block', marginBottom: '4px' }}>اسم تطبيق الحراج:</label>
-                    <input type="text" defaultValue="حراج السيارات الخليجي" style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', outline: 'none' }} />
-                  </div>
-                  <button style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', marginTop: '6px' }}>حفظ كافة التغييرات</button>
+                  <label style={{ fontSize: '13px', color: '#475569' }}>اسم تطبيق الحراج الأصلي:</label>
+                  <input type="text" defaultValue="حراج السيارات الفعلي" style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px' }} />
+                  <button style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>حفظ الإعدادات</button>
                 </div>
               </div>
             )}
@@ -177,3 +175,4 @@ export default function Dashboard() {
     </div>
   );
 }
+
