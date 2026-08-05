@@ -8,192 +8,78 @@ export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
-  const [ads, setAds] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [activeTab, setActiveTab] = useState('users');
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchAdminData();
+    const isAdmin = Cookies.get('isAdmin') || localStorage.getItem('isAdmin');
+    if (!isAdmin) {
+      router.push('/login');
+      return;
+    }
+    fetchUsers();
   }, []);
 
-  const fetchAdminData = async () => {
+  const fetchUsers = async () => {
     try {
-      setLoading(true);
-      setError('');
-
-      const usersRes = await fetch('/api/admin/users').catch(() => null);
-      const usersData = usersRes ? await usersRes.json() : null;
-      if (usersData?.success) setUsers(usersData.users || []);
-
-      const adsRes = await fetch('/api/admin/ads').catch(() => null);
-      const adsData = adsRes ? await adsRes.json() : null;
-      if (adsData?.success) setAds(adsData.ads || []);
-
-      const paymentsRes = await fetch('/api/admin/payments').catch(() => null);
-      const paymentsData = paymentsRes ? await paymentsRes.json() : null;
-      if (paymentsData?.success) setPayments(paymentsData.payments || []);
-
-    } catch (err: any) {
-      console.error('Error fetching admin data:', err);
-      setError('حدث خطأ في جلب البيانات');
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+      if (data.success) {
+        setUsers(data.users || []);
+      } else {
+        setError('فشل في جلب البيانات');
+      }
+    } catch (err) {
+      setError('خطأ في الاتصال');
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl">جاري التحميل...</div>
-      </div>
-    );
+    return <div className="p-8 text-center">جاري التحميل...</div>;
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-red-500">{error}</div>
-      </div>
-    );
+    return <div className="p-8 text-center text-red-500">{error}</div>;
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl" dir="rtl">
-      <h1 className="text-3xl font-bold mb-6 text-center">لوحة تحكم المدير</h1>
-
-      <div className="flex flex-wrap gap-2 mb-6 border-b pb-2">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 rounded transition ${
-            activeTab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
-          }`}
-        >
-          👥 المستخدمين ({users.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('ads')}
-          className={`px-4 py-2 rounded transition ${
-            activeTab === 'ads' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
-          }`}
-        >
-          📋 الإعلانات ({ads.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('payments')}
-          className={`px-4 py-2 rounded transition ${
-            activeTab === 'payments' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'
-          }`}
-        >
-          💳 المدفوعات ({payments.length})
-        </button>
-      </div>
-
-      {activeTab === 'users' && (
-        <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
-          <h2 className="text-xl font-bold mb-4">👥 المستخدمين</h2>
-          {users.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">لا يوجد مستخدمين</p>
-          ) : (
+    <div className="container mx-auto p-4" dir="rtl">
+      <h1 className="text-2xl font-bold mb-6">لوحة تحكم المدير</h1>
+      
+      <div className="bg-white shadow rounded-lg p-4">
+        <h2 className="text-xl font-bold mb-4">👥 المستخدمين ({users.length})</h2>
+        {users.length === 0 ? (
+          <p className="text-gray-500">لا يوجد مستخدمين</p>
+        ) : (
+          <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="p-2 text-right border">#</th>
-                  <th className="p-2 text-right border">الاسم</th>
-                  <th className="p-2 text-right border">البريد الإلكتروني</th>
-                  <th className="p-2 text-right border">الهاتف</th>
-                  <th className="p-2 text-right border">الحالة</th>
+                  <th className="p-2 border text-right">#</th>
+                  <th className="p-2 border text-right">الاسم</th>
+                  <th className="p-2 border text-right">البريد الإلكتروني</th>
+                  <th className="p-2 border text-right">الهاتف</th>
+                  <th className="p-2 border text-right">الحالة</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((user: any, index) => (
+                {users.map((user: any, i) => (
                   <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="p-2 border">{index + 1}</td>
-                    <td className="p-2 border">{user.name || 'غير معروف'}</td>
-                    <td className="p-2 border">{user.email || 'لا يوجد'}</td>
-                    <td className="p-2 border">{user.phone || 'لا يوجد'}</td>
+                    <td className="p-2 border">{i + 1}</td>
+                    <td className="p-2 border">{user.name || '—'}</td>
+                    <td className="p-2 border">{user.email || '—'}</td>
+                    <td className="p-2 border">{user.phone || '—'}</td>
                     <td className="p-2 border">
-                      <span className={`px-2 py-1 rounded text-sm ${
-                        user.is_premium ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
-                      }`}>
-                        {user.is_premium ? '⭐ Premium' : 'عادي'}
-                      </span>
+                      {user.is_premium ? '⭐ Premium' : 'عادي'}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'ads' && (
-        <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
-          <h2 className="text-xl font-bold mb-4">📋 الإعلانات</h2>
-          {ads.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">لا توجد إعلانات</p>
-          ) : (
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 text-right border">#</th>
-                  <th className="p-2 text-right border">العنوان</th>
-                  <th className="p-2 text-right border">المالك</th>
-                  <th className="p-2 text-right border">السعر</th>
-                  <th className="p-2 text-right border">الحالة</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ads.map((ad: any, index) => (
-                  <tr key={ad.id} className="hover:bg-gray-50">
-                    <td className="p-2 border">{index + 1}</td>
-                    <td className="p-2 border">{ad.title || 'بدون عنوان'}</td>
-                    <td className="p-2 border">{ad.user_name || 'غير معروف'}</td>
-                    <td className="p-2 border">{ad.price || 0} د.ع</td>
-                    <td className="p-2 border">
-                      <span className={`px-2 py-1 rounded text-sm ${
-                        ad.status === 'approved' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'
-                      }`}>
-                        {ad.status === 'approved' ? '✅ مقبول' : '⏳ قيد المراجعة'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'payments' && (
-        <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
-          <h2 className="text-xl font-bold mb-4">💳 المدفوعات</h2>
-          {payments.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">لا توجد مدفوعات</p>
-          ) : (
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 text-right border">#</th>
-                  <th className="p-2 text-right border">المستخدم</th>
-                  <th className="p-2 text-right border">المبلغ</th>
-                  <th className="p-2 text-right border">الحالة</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((pm: any, index) => (
-                  <tr key={pm.id} className="hover:bg-gray-50">
-                    <td className="p-2 border">{index + 1}</td>
-                    <td className="p-2 border">{pm.user_name || 'غير معروف'}</td>
-                    <td className="p-2 border">{pm.amount || 0}</td>
-                    <td className="p-2 border">{pm.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
