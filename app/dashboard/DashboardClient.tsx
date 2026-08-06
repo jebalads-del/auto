@@ -36,7 +36,7 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
   };
 
   // دالة الموافقة الحية والمربوطة بـ Neon DB الفعلي عبر السيرفر
-    const handleApproveCar = async (id: any) => {
+  const handleApproveCar = async (id: any) => {
     try {
       const response = await fetch('/api/admin/cars', {
         method: 'PUT',
@@ -92,6 +92,7 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
     btnAction: { padding: '6px 10px', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '11px', fontWeight: 'bold' as const, marginLeft: '4px' },
     inputField: { width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', marginTop: '4px', outline: 'none', boxSizing: 'border-box' as const }
   };
+
   return (
     <div style={styles.container}>
       <header style={styles.header}>
@@ -137,7 +138,11 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
                         <button onClick={() => handleToggleUserStatus(user.id, user.status)} style={{ ...styles.btnAction, backgroundColor: user.status === 'موقوف' ? '#10b981' : '#f59e0b' }}>
                           {user.status === 'موقوف' ? "تفعيل" : "إيقاف"}
                         </button>
-                        <button onClick={() => handleDeleteUser(user.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
+                        
+                        {/* إخفاء زر الحذف عن المدير */}
+                        {user.email !== "admin@sayarty.store" && (
+                          <button onClick={() => handleDeleteUser(user.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -183,6 +188,7 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
             </div>
           </div>
         )}
+
         {activeTab === 'payments' && (
           <div>
             <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#1e3a8a' }}>💱 تخصيص العملات الخليجية للموقع</h2>
