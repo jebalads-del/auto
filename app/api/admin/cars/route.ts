@@ -94,3 +94,24 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, status } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "Missing ID" }, { status: 400 });
+    }
+
+    const targetStatus = status || 'Approved';
+    const carId = Number(id);
+
+    // تحديث قاعدة بيانات Neon حياً وبأمان كامل
+    await sql`UPDATE cars SET status = ${targetStatus} WHERE id = ${carId}`;
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error inside admin cars PUT route:", error);
+    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+  }
+}
