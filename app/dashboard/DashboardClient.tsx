@@ -65,7 +65,9 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
       backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : '#f1f5f9', color: isActive ? '#ffffff' : '#1e293b', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', marginRight: '6px'
     }),
     card: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
-    tableWrapper: { overflowX: 'auto' as const, borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '10px' },
+    sectionTitle: { fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold' as const, borderRight: '4px solid #2563eb', paddingRight: '8px' },
+    
+tableWrapper: { overflowX: 'auto' as const, borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '10px' },
     table: { width: '100%', borderCollapse: 'collapse' as const, textAlign: 'right' as const, fontSize: '13px' },
     th: { backgroundColor: '#f8fafc', color: '#64748b', padding: '12px', borderBottom: '2px solid #edf2f7' },
     td: { padding: '12px', borderBottom: '1px solid #f1f5f9', color: '#334155' },
@@ -91,7 +93,7 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
                 {/* بوابات الدفع ويسترن يونيون وباي بال المحدثة بالكامل مع أزرار التفعيل التفاعلية */}
         {activeTab === 'payments' && (
           <div>
-            <h2 style={styles.sectionTitle}>إعداد بوابات الدفع وحسابات المستلم</h2>
+         <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>إعداد بوابات الدفع وحسابات المستلم</h2>
             
             {/* 1. بوابة ويسترن يونيون */}
             <div style={{ padding: '16px', border: isWesternActive ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '12px', marginBottom: '16px', backgroundColor: '#fff', transition: 'all 0.2s', relative: 'relative' }}>
