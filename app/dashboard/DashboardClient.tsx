@@ -6,19 +6,21 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
   const [usersList, setUsersList] = useState(initialUsers);
   const [carsList, setCarsList] = useState(initialCars);
 
+  // إعدادات بوابات الدفع
   const [westernName, setWesternName] = useState("محمد أحمد محمود");
   const [westernCountry, setWesternCountry] = useState("الكويت");
   const [paypalEmail, setPaypalEmail] = useState("payment@auto-gulf.com");
   const [isWesternActive, setIsWesternActive] = useState(true);
   const [isPaypalActive, setIsPaypalActive] = useState(true);
 
+  // إعدادات العملات وتغيير اسم الموقع والصيانة
+  const [siteName, setSiteName] = useState("حراج السيارات الخليجي الفعلي");
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [defaultCurrency, setDefaultCurrency] = useState("KWD");
   const [allowedCurrencies, setAllowedCurrencies] = useState({
     KWD: true, SAR: true, AED: true, QAR: true, BHD: true, OMR: true
   });
-    // حالات خاصة بإعدادات الموقع العامة ووضع الصيانة
-  const [siteName, setSiteName] = useState("حراج السيارات الخليجي الفعلي");
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false); // وضع الصيانة معطل افتراضياً
+
   const handleToggleCurrency = (code: string) => {
     if (code === defaultCurrency) return;
     setAllowedCurrencies(prev => ({ ...prev, [code]: !prev[code as keyof typeof prev] }));
@@ -31,6 +33,23 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
 
   const handleDeleteUser = (id: any) => {
     setUsersList(prev => prev.filter(u => u.id !== id));
+  };
+
+  // دالة الموافقة الحية والمربوطة بـ Neon DB الفعلي عبر السيرفر
+  const handleApproveCar = async (id: any) => {
+    try {
+      const response = await fetch('/api/cars', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'approved' })
+      });
+      if (response.ok) {
+        setCarsList(prev => prev.map(c => c.id === id ? { ...c, status: "approved" } : c));
+        alert("تمت الموافقة ونشر السيارة حياً في الحراج الفعلي! ✅");
+      }
+    } catch (error) {
+      alert("فشل الاتصال بالسيرفر");
+    }
   };
 
   const handleMarkAsSold = (id: any) => {
@@ -126,24 +145,30 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
                   </tr>
                 </thead>
                 <tbody>
-                  {carsList.map((car, index) => (
-                    <tr key={car.id || index}>
-                      <td style={styles.td}>
-                        <div style={{ fontWeight: '600' }}>{car.brand || car.title} {car.model}</div>
-                        <div style={{ color: '#10b981', fontWeight: 'bold' }}>{car.price} {car.currency || "KWD"}</div>
-                      </td>
-                      <td style={styles.td}>
-                        <button onClick={() => handleMarkAsSold(car.id)} style={{ ...styles.btnAction, backgroundColor: '#10b981' }}>مُباعة</button>
-                        <button onClick={() => handleDeleteCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
-                      </td>
-                    </tr>
-                  ))}
+                  {carsList.map((car, index) => {
+                    const currentStatus = car.status || "pending";
+                    return (
+                      <tr key={car.id || index}>
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: '600' }}>{car.brand || car.title} {car.model}</div>
+                          <div style={{ color: '#10b981', fontWeight: 'bold' }}>{car.price} {car.currency || "KWD"}</div>
+                          <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>الحالة: {currentStatus === 'approved' ? 'معروض ✅' : 'بانتظار المراجعة ⏳'}</div>
+                        </td>
+                        <td style={styles.td}>
+                          {currentStatus !== "approved" && (
+                            <button onClick={() => handleApproveCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#2563eb' }}>موافقة 👍</button>
+                          )}
+                          <button onClick={() => handleMarkAsSold(car.id)} style={{ ...styles.btnAction, backgroundColor: '#10b981' }}>مُباعة</button>
+                          <button onClick={() => handleDeleteCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         )}
-
         {activeTab === 'payments' && (
           <div>
             <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#1e3a8a' }}>💱 تخصيص العملات الخليجية للموقع</h2>
@@ -155,7 +180,7 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
                 <option value="AED">🇦🇪 درهم إماراتي</option>
               </select>
               <div style={{ marginTop: '12px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>العملات المتاحة للمعلنين الخليجيين:</label>
+                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>العملات المتاحة للمعليين الخليجيين:</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '4px' }}>
                   {Object.keys(allowedCurrencies).map((code) => (
                     <label key={code} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', background: '#fff', padding: '6px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
@@ -191,49 +216,25 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
             <button onClick={() => alert("تم الحفظ!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', width: '100%', marginTop: '12px', fontWeight: 'bold' }}>حفظ التعديلات الحية 💾</button>
           </div>
         )}
-               {/* 4. إعدادات الموقع العامة المحدثة مع وضع الصيانة التفاعلي */}
+
         {activeTab === 'settings' && (
           <div>
-            <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '12px', color: '#1e3a8a' }}>⚙️ إعدادات الموقع العامة</h2>
-            
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>إعدادات الموقع العامة</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <label style={{ fontSize: '12px', fontWeight: 'bold' }}>اسم تطبيق الحراج الأصلي:</label>
-                <input 
-                  type="text" 
-                  value={siteName} 
-                  onChange={(e) => setSiteName(e.target.value)} 
-                  style={styles.inputField} 
-                />
+                <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} style={styles.inputField} />
               </div>
-
-              {/* إضافة خيار وضع الصيانة الجديد بالكامل */}
-              <div style={{ padding: '14px', border: isMaintenanceMode ? '2px solid #ef4444' : '1px solid #cbd5e1', borderRadius: '10px', marginTop: '8px', backgroundColor: isMaintenanceMode ? '#fef2f2' : '#f8fafc', transition: 'all 0.2s' }}>
+              <div style={{ padding: '14px', border: isMaintenanceMode ? '2px solid #ef4444' : '1px solid #cbd5e1', borderRadius: '10px', backgroundColor: isMaintenanceMode ? '#fef2f2' : '#f8fafc' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <strong style={{ fontSize: '13px', color: isMaintenanceMode ? '#b91c1c' : '#374151' }}>🛠️ وضع الصيانة العام (Maintenance Mode)</strong>
-                    <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>عند تفعيله، سيتم إغلاق الواجهة أمام الزوار وعرض صفحة صيانة.</div>
-                  </div>
-                  <input 
-                    type="checkbox" 
-                    checked={isMaintenanceMode} 
-                    onChange={() => setIsMaintenanceMode(!isMaintenanceMode)} 
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
+                  <strong>🛠️ وضع الصيانة العام</strong>
+                  <input type="checkbox" checked={isMaintenanceMode} onChange={() => setIsMaintenanceMode(!isMaintenanceMode)} />
                 </div>
               </div>
-
-              <button 
-                onClick={() => alert(`تم حفظ الإعدادات العامة بنجاح!\nاسم الموقع: ${siteName}\nوضع الصيانة: ${isMaintenanceMode ? "مفعّل 🔴" : "معطّل ✅"}`)} 
-                style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold', width: '100%', cursor: 'pointer' }}
-              >
-                حفظ الإعدادات والتعديلات 💾
-              </button>
+              <button onClick={() => alert("تم الحفظ!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold', width: '100%' }}>حفظ الإعدادات 💾</button>
             </div>
           </div>
         )}
-
-        
       </div>
     </div>
   );
