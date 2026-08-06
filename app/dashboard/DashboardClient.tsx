@@ -44,7 +44,7 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
         body: JSON.stringify({ id, status: 'Approved' })
       });
       if (response.ok) {
-        setCarsList(prev => prev.map(c => c.id === id ? { ...c, status: "approved" } : c));
+        setCarsList(prev => prev.map(c => c.id === id ? { ...c, status: "Approved" } : c));
         alert("تمت الموافقة ونشر السيارة حياً في الحراج الفعلي! ✅");
       } else {
         alert("رفض السيرفر تحديث الحالة، تأكد من المعايير");
