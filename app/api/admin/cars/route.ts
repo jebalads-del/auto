@@ -1,6 +1,6 @@
-export const runtime = 'edge'; // ✅ هذا يتجاوز الميدلوير
+export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '../../db';
+import sql from '../../../db';
 
 export async function GET() {
   try {
@@ -10,12 +10,11 @@ export async function GET() {
       LEFT JOIN users u ON c.user_id = u.id
       ORDER BY c.created_at DESC
     `;
-
-    return NextResponse.json({ success: true, cars });
+    return NextResponse.json({ success: true, data: cars });
   } catch (error) {
-    console.error('خطأ في جلب الإعلانات:', error);
+    console.error('خطأ في جلب السيارات:', error);
     return NextResponse.json(
-      { success: false, message: 'حدث خطأ أثناء جلب الإعلانات' },
+      { success: false, message: 'خطأ في جلب البيانات' },
       { status: 500 }
     );
   }
@@ -24,97 +23,62 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('📦 البيانات المستلمة:', body);
-    
+    console.log('📦 البيانات القادمة:', body);
+
     const { 
-      brand, 
-      model, 
-      year, 
-      price, 
-      kilometers, 
-      color, 
-      description, 
-      images, 
-      user_id, 
-      payment_method,
-      is_featured,
-      featured_price,
-      currency
+      brand, model, year, price, kilometers, color,
+      fuel_type, transmission, description, images,
+      user_id, phone, city, category
     } = body;
 
-    // ✅ التحقق من user_id
-    if (!user_id || isNaN(user_id)) {
-      console.log('❌ user_id غير صالح:', user_id);
-      return NextResponse.json(
-        { success: false, message: 'معرف المستخدم مطلوب أو غير صالح' },
-        { status: 400 }
-      );
-    }
-
-    // ✅ التحقق من وجود المستخدم
-    const userCheck = await sql`
-      SELECT id FROM users WHERE id = ${user_id}
-    `;
-
-    if (userCheck.length === 0) {
-      console.log('❌ المستخدم غير موجود:', user_id);
-      return NextResponse.json(
-        { success: false, message: 'المستخدم غير موجود' },
-        { status: 400 }
-      );
-    }
-
-    // ✅ إدراج الإعلان
     const result = await sql`
       INSERT INTO cars (
-        brand, model, year, price, kilometers, color, 
-        description, images, user_id, payment_method, 
-        is_featured, featured_price, currency, status
+        brand, model, year, price, kilometers, color,
+        fuel_type, transmission, description, images,
+        user_id, phone, city, category, status
       ) VALUES (
-        ${brand}, ${model}, ${year || null}, ${price}, ${kilometers || null}, ${color || null},
-        ${description || null}, ${images || null}, ${user_id}, ${payment_method || 'western_union'},
-        ${is_featured || false}, ${featured_price || null}, ${currency || 'USD'}, 'pending'
-      )
-      RETURNING *
+        ${brand}, ${model}, ${year}, ${price}, ${kilometers}, ${color},
+        ${fuel_type}, ${transmission}, ${description}, ${images},
+        ${user_id}, ${phone}, ${city}, ${category}, 'pending'
+      ) RETURNING id
     `;
 
-    console.log('✅ تم إنشاء الإعلان:', result[0]);
-
-    return NextResponse.json({ 
-      success: true, 
-      car: result[0],
-      message: 'تم إرسال الإعلان للمراجعة' 
-    });
-
+    return NextResponse.json({ success: true, id: result[0].id });
   } catch (error) {
-    console.error('❌ خطأ في إنشاء الإعلان:', error);
+    console.error('خطأ في إضافة السيارة:', error);
     return NextResponse.json(
-      { success: false, message: 'حدث خطأ أثناء إنشاء الإعلان: ' + (error as Error).message },
+      { success: false, message: 'فشل إضافة السيارة' },
       { status: 500 }
     );
   }
 }
-export async function PUT(request: Request) {
-  try {
-    const body = await request.json();
-    const { id, status } = body;
 
+export async function PUT(request: NextRequest) {
+  try {
+    const { id, status } = await request.json();
+    
     if (!id) {
-      return NextResponse.json({ success: false, error: "Missing ID" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: 'معرف السيارة مطلوب' },
+        { status: 400 }
+      );
     }
 
     const targetStatus = status || 'Approved';
     const carId = Number(id);
 
-    // تحديث قاعدة بيانات Neon حياً وبأمان كامل
-    await sql`UPDATE cars SET status = ${targetStatus} WHERE id = ${carId}`;
-    
+    await sql`
+      UPDATE cars 
+      SET status = ${targetStatus}
+      WHERE id = ${carId}
+    `;
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error inside admin cars PUT route:", error);
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+    console.error("Error inside admin cars PUT:", error);
+    return NextResponse.json(
+      { success: false, message: 'فشل تحديث الحالة' },
+      { status: 500 }
+    );
   }
-}
-      }, { status: 500 });
-    }
 }
