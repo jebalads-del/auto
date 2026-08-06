@@ -38,7 +38,7 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
   // دالة الموافقة الحية والمربوطة بـ Neon DB الفعلي عبر السيرفر
   const handleApproveCar = async (id: any) => {
     try {
-      const response = await fetch('/api/cars', {
+   const response = await fetch('/api/admin/cars', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: 'approved' })
