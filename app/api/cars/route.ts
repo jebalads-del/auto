@@ -10,7 +10,6 @@ export async function POST(request: Request) {
 
     const contentType = request.headers.get('content-type') || '';
 
-    // 1. دعم استقبال البيانات في حال كانت قادمة كـ FormData مع ملفات حية
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
       brand = formData.get('brand') as string || '';
@@ -24,9 +23,7 @@ export async function POST(request: Request) {
       payment_method = formData.get('payment_method') as string || 'western';
       is_featured = formData.get('is_featured') === 'true';
       rawImages = formData.get('image') || formData.get('images');
-    } 
-    // 2. دعم استقبال البيانات في حال كانت قادمة كـ JSON عادي مع نصوص Base64
-    else {
+    } else {
       const body = await request.json();
       brand = body.brand || '';
       model = body.model || '';
@@ -43,17 +40,16 @@ export async function POST(request: Request) {
 
     let finalImageUrl = "";
 
-    // معالجة ورفع الصورة ذكياً إلى سيرفر Vercel Blob حسب نوعها (ملف حقيقي أو نص Base64)
     if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
-      const base64Data = rawImages.split(',')[1];
-      const mimeType = rawImages.split(';')[0].split(':')[1];
-      const buffer = Buffer.from(base64Data, 'base64');
-      const extension = mimeType.split('/')[1] || 'jpg';
+      const base64Data = rawImages.split(',');
+      const mimeType = rawImages.split(';').split(':');
+      const buffer = Buffer.from(base64Data[1], 'base64');
+      const extension = mimeType[0].split('/')[1] || 'jpg';
       
       const blobFilename = `car-${Date.now()}.${extension}`;
       const blobResult = await put(blobFilename, buffer, {
         access: 'public',
-        contentType: mimeType
+        contentType: mimeType[0]
       });
       finalImageUrl = blobResult.url;
     } else if (rawImages && typeof rawImages !== 'string' && rawImages.size > 0) {
@@ -68,7 +64,7 @@ export async function POST(request: Request) {
     }
 
     const imageArray = finalImageUrl ? [finalImageUrl] : [];
-    // استعلام الحفظ المرتب بدقة متناهية مع أعمدة جدول cars الحقيقي في قاعدة بيانات Neon
+
     const result = await sql`
       INSERT INTO cars (
         user_id, brand, model, year, color, 
@@ -89,18 +85,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
-
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { id, status } = body;
+
+    if (!id || !status) {
+      return NextResponse.json({ success: false, error: "Missing parameters" }, { status: 400 });
+    }
     
-    // تحديث حالة تفعيل السيارة داخل الجدول الصحيح cars
-    await sql`UPDATE cars SET status = ${status} WHERE id = ${id}`;
+    // إجبار قاعدة البيانات على تحويل وتحديث الحقل برقم المعرّف الرقمي الفعلي
+    const carId = Number(id);
+    await sql`UPDATE cars SET status = ${status} WHERE id = ${carId}`;
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating car status:", error);
+    console.error("Error updating car status inside PUT route:", error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
