@@ -41,15 +41,20 @@ export async function POST(request: Request) {
     let finalImageUrl = "";
 
     if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
-      const base64Data = rawImages.split(',');
-      const mimeType = rawImages.split(';').split(':');
-      const buffer = Buffer.from(base64Data[1], 'base64');
-      const extension = mimeType[0].split('/')[1] || 'jpg';
+      const base64Parts = rawImages.split(',');
+      const base64Header = base64Parts[0] || '';
+      const base64Content = base64Parts[1] || '';
       
+      const mimeMatch = base64Header.match(/data:(.*?);/);
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+      const extension = mimeType.split('/')[1] || 'jpg';
+      
+      const buffer = Buffer.from(base64Content, 'base64');
       const blobFilename = `car-${Date.now()}.${extension}`;
+      
       const blobResult = await put(blobFilename, buffer, {
         access: 'public',
-        contentType: mimeType[0]
+        contentType: mimeType
       });
       finalImageUrl = blobResult.url;
     } else if (rawImages && typeof rawImages !== 'string' && rawImages.size > 0) {
@@ -64,7 +69,6 @@ export async function POST(request: Request) {
     }
 
     const imageArray = finalImageUrl ? [finalImageUrl] : [];
-
     const result = await sql`
       INSERT INTO cars (
         user_id, brand, model, year, color, 
@@ -85,6 +89,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
+
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
@@ -94,7 +99,6 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: "Missing parameters" }, { status: 400 });
     }
     
-    // إجبار قاعدة البيانات على تحويل وتحديث الحقل برقم المعرّف الرقمي الفعلي
     const carId = Number(id);
     await sql`UPDATE cars SET status = ${status} WHERE id = ${carId}`;
     
