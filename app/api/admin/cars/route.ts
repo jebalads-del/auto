@@ -115,3 +115,6 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
+      }, { status: 500 });
+    }
+}
