@@ -1,31 +1,69 @@
+"use client";
+import React, { useState } from "react";
+
+export default function DashboardClient({ initialUsers, initialCars }: { initialUsers: any[], initialCars: any[] }) {
+  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'payments' | 'settings'>('users');
+  const [usersList, setUsersList] = useState(initialUsers);
+  const [carsList, setCarsList] = useState(initialCars);
+
+  const [westernName, setWesternName] = useState("محمد أحمد محمود");
+  const [westernCountry, setWesternCountry] = useState("الكويت");
+  const [paypalEmail, setPaypalEmail] = useState("payment@auto-gulf.com");
+  const [isWesternActive, setIsWesternActive] = useState(true);
+  const [isPaypalActive, setIsPaypalActive] = useState(true);
+
+  const [defaultCurrency, setDefaultCurrency] = useState("KWD");
+  const [allowedCurrencies, setAllowedCurrencies] = useState({
+    KWD: true, SAR: true, AED: true, QAR: true, BHD: true, OMR: true
+  });
+
+  const handleToggleCurrency = (code: string) => {
+    if (code === defaultCurrency) return;
+    setAllowedCurrencies(prev => ({ ...prev, [code]: !prev[code as keyof typeof prev] }));
+  };
+
+  const handleToggleUserStatus = (id: any, currentStatus: string) => {
+    const nextStatus = currentStatus === "موقوف" ? "نشط" : "موقوف";
+    setUsersList(prev => prev.map(u => u.id === id ? { ...u, status: nextStatus } : u));
+  };
+
+  const handleDeleteUser = (id: any) => {
+    setUsersList(prev => prev.filter(u => u.id !== id));
+  };
+
+  const handleMarkAsSold = (id: any) => {
+    setCarsList(prev => prev.map(c => c.id === id ? { ...c, ad_status: "مُباعة 🔴" } : c));
+  };
+
+  const handleDeleteCar = (id: any) => {
+    setCarsList(prev => prev.filter(c => c.id !== id));
+  };
+
   const styles = {
-    container: { fontFamily: 'system-ui, sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh', padding: '12px', direction: 'rtl' as const },
-    header: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '16px', textAlign: 'center' as const, marginBottom: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
+    container: { fontFamily: 'sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh', padding: '12px', direction: 'rtl' as const },
+    header: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '16px', textAlign: 'center' as const, marginBottom: '16px' },
     tabGrid: { display: 'flex', flexDirection: 'column' as const, gap: '8px', marginBottom: '20px' },
     tabButton: (isActive: boolean) => ({
-      width: '100%', padding: '12px 16px', borderRadius: '10px', border: 'none', fontSize: '14px', fontWeight: 'bold' as const, cursor: 'pointer',
+      width: '100%', padding: '12px', borderRadius: '10px', border: 'none', fontSize: '14px', fontWeight: 'bold' as const,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      backgroundColor: isActive ? '#2563eb' : '#ffffff', color: isActive ? '#ffffff' : '#4b5563', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'all 0.2s'
+      backgroundColor: isActive ? '#2563eb' : '#ffffff', color: isActive ? '#ffffff' : '#4b5563'
     }),
-    badge: (isActive: boolean) => ({
-      backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : '#f1f5f9', color: isActive ? '#ffffff' : '#1e293b', padding: '2px 8px', borderRadius: '20px', fontSize: '11px'
-    }),
-    card: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
-    tableWrapper: { overflowX: 'auto' as const, borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '10px' },
+    badge: (isActive: boolean) => ({ backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : '#f1f5f9', padding: '2px 8px', borderRadius: '20px' }),
+    card: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '16px' },
+    tableWrapper: { overflowX: 'auto' as const, borderRadius: '10px', border: '1px solid #e2e8f0' },
     table: { width: '100%', borderCollapse: 'collapse' as const, textAlign: 'right' as const, fontSize: '13px' },
-    th: { backgroundColor: '#f8fafc', color: '#64748b', padding: '10px', borderBottom: '2px solid #edf2f7' },
+    th: { backgroundColor: '#f8fafc', padding: '10px', borderBottom: '2px solid #edf2f7' },
     td: { padding: '10px', borderBottom: '1px solid #f1f5f9' },
-    btnAction: { padding: '6px 10px', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '11px', fontWeight: 'bold' as const, cursor: 'pointer', marginLeft: '4px' },
-    inputField: { width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', marginTop: '4px', outline: 'none', boxSizing: 'border-box' as const }
+    btnAction: { padding: '6px 10px', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '11px', fontWeight: 'bold' as const, marginLeft: '4px' },
+    inputField: { width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', marginTop: '4px', outline: 'none', boxSizing: 'border-box' as const }
   };
   return (
     <div style={styles.container}>
       <header style={styles.header}>
         <h1 style={{ color: '#1e3a8a', fontSize: '20px', margin: '0 0 4px 0', fontWeight: 'bold' }}>📊 لوحة تحكم المدير</h1>
-        <p style={{ color: '#6b7280', fontSize: '12px', margin: 0 }}>نظام إدارة العمليات الحية الفوري</p>
+        <p style={{ color: '#6b7280', fontSize: '11px', margin: 0 }}>نظام إدارة العمليات الحية الفوري</p>
       </header>
 
-      {/* قائمة أزرار عمودية آمنة تمنع التداخل نهائياً على شاشة الهاتف */}
       <div style={styles.tabGrid}>
         <button onClick={() => setActiveTab('users')} style={styles.tabButton(activeTab === 'users')}>
           <span>👥 إدارة المستخدمين</span> <span style={styles.badge(activeTab === 'users')}>{usersList.length}</span>
@@ -34,7 +72,7 @@
           <span>🚗 إعلانات السيارات</span> <span style={styles.badge(activeTab === 'ads')}>{carsList.length}</span>
         </button>
         <button onClick={() => setActiveTab('payments')} style={styles.tabButton(activeTab === 'payments')}>
-          <span>💳 خيارات الدفع والعملات</span> <span style={styles.badge(activeTab === 'payments')}>★</span>
+          <span>💳 خيارات الدفع والعملات</span> <span>★</span>
         </button>
         <button onClick={() => setActiveTab('settings')} style={styles.tabButton(activeTab === 'settings')}>
           <span>⚙️ إعدادات الموقع العامة</span> <span>⚙️</span>
@@ -42,10 +80,9 @@
       </div>
 
       <div style={styles.card}>
-        {/* شاشة إدارة المستخدمين حياً */}
         {activeTab === 'users' && (
           <div>
-            <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px' }}>جدول المستخدمين ({usersList.length})</h2>
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>جدول المستخدمين ({usersList.length})</h2>
             <div style={styles.tableWrapper}>
               <table style={styles.table}>
                 <thead>
@@ -75,10 +112,9 @@
           </div>
         )}
 
-        {/* شاشة تحسينات إعلانات السيارات الحية */}
         {activeTab === 'ads' && (
           <div>
-            <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px' }}>إعلانات السيارات الفعالة ({carsList.length})</h2>
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>إعلانات السيارات الفعالة ({carsList.length})</h2>
             <div style={styles.tableWrapper}>
               <table style={styles.table}>
                 <thead>
@@ -105,36 +141,33 @@
             </div>
           </div>
         )}
-        {/* 3. خيارات الدفع والعملات الخليجية المدمجة والمصححة */}
+
         {activeTab === 'payments' && (
           <div>
-            <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '12px', color: '#1e3a8a' }}>💱 تخصيص العملات الخليجية للموقع</h2>
-            
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#1e3a8a' }}>💱 تخصيص العملات الخليجية للموقع</h2>
             <div style={{ padding: '12px', border: '1px solid #cbd5e1', borderRadius: '10px', marginBottom: '16px', backgroundColor: '#f8fafc' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>العملة الافتراضية للموقع الأساسي:</label>
-              <select value={defaultCurrency} onChange={(e) => setDefaultCurrency(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>العملة الافتراضية للموقع الأساسي:</label>
+              <select value={defaultCurrency} onChange={(e) => setDefaultCurrency(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', marginTop: '4px' }}>
                 <option value="KWD">🇰🇼 دينار كويتي (الافتراضية)</option>
                 <option value="SAR">🇸🇦 ريال سعودي</option>
                 <option value="AED">🇦🇪 درهم إماراتي</option>
               </select>
-              
               <div style={{ marginTop: '12px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>العملات المتاحة للمعلنين الخليجيين:</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>العملات المتاحة للمعلنين الخليجيين:</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '4px' }}>
                   {Object.keys(allowedCurrencies).map((code) => (
                     <label key={code} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', background: '#fff', padding: '6px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                       <input type="checkbox" checked={allowedCurrencies[code as keyof typeof allowedCurrencies]} onChange={() => handleToggleCurrency(code)} />
-                      {code} {code === defaultCurrency && "(الرئيسية)"}
+                      {code}
                     </label>
                   ))}
                 </div>
               </div>
             </div>
 
-            <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px' }}>💳 بوابات الدفع وحساب المستلم</h2>
-            {/* بوابة ويسترن يونيون */}
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>💳 بوابات الدفع وحساب المستلم</h2>
             <div style={{ padding: '12px', border: isWesternActive ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '10px', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <strong style={{ fontSize: '13px' }}>📌 بوابة ويسترن يونيون</strong>
                 <input type="checkbox" checked={isWesternActive} onChange={() => setIsWesternActive(!isWesternActive)} />
               </div>
@@ -144,9 +177,8 @@
               </div>
             </div>
 
-            {/* بوابة باي بال */}
             <div style={{ padding: '12px', border: isPaypalActive ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <strong style={{ fontSize: '13px' }}>💳 بوابة باي بال (PayPal)</strong>
                 <input type="checkbox" checked={isPaypalActive} onChange={() => setIsPaypalActive(!isPaypalActive)} />
               </div>
@@ -154,15 +186,13 @@
                 <input type="email" placeholder="البريد الإلكتروني لباي بال" disabled={!isPaypalActive} value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} style={styles.inputField} />
               </div>
             </div>
-
-            <button onClick={() => alert("تم حفظ العملات وإعدادات الدفع بنجاح!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', width: '100%', marginTop: '12px', fontWeight: 'bold' }}>حفظ التعديلات الحية 💾</button>
+            <button onClick={() => alert("تم الحفظ!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', width: '100%', marginTop: '12px', fontWeight: 'bold' }}>حفظ التعديلات الحية 💾</button>
           </div>
         )}
 
-        {/* 4. الإعدادات العامة */}
         {activeTab === 'settings' && (
           <div>
-            <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px' }}>إعدادات الموقع العامة</h2>
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>إعدادات الموقع العامة</h2>
             <label style={{ fontSize: '12px' }}>اسم تطبيق الحراج الأصلي:</label>
             <input type="text" defaultValue="حراج السيارات الخليجي الفعلي" style={styles.inputField} />
             <button onClick={() => alert("تم حفظ الإعدادات.")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold', width: '100%' }}>حفظ</button>
@@ -172,4 +202,3 @@
     </div>
   );
 }
-
