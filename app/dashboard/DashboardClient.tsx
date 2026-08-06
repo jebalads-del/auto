@@ -7,8 +7,6 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
   const [carsList, setCarsList] = useState(initialCars);
 
   // حسابات الدفع والبيانات الافتراضية للمستلم
-  const [westernName, setWesternName] = useState("محمد أحمد محمود");
-  const [westernCountry, setWesternCountry] = useState("الكويت");
   // حالات خاصة بإعدادات الدفع الحية وتفعيل البوابات
   const [westernName, setWesternName] = useState("محمد أحمد محمود");
   const [westernCountry, setWesternCountry] = useState("الكويت");
