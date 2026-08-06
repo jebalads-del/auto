@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import sql from '../../db'; // تأكد من مسار ملف db حسب مجلدك (أو استبدله بـ import sql from '../db')
+import sql from '../db'; // تأكد من مسار ملف db حسب مجلدك (أو استبدله بـ import sql from '../db')
 
 export async function POST(request: Request) {
   try {
