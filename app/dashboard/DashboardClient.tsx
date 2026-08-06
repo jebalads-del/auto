@@ -16,7 +16,9 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
   const [allowedCurrencies, setAllowedCurrencies] = useState({
     KWD: true, SAR: true, AED: true, QAR: true, BHD: true, OMR: true
   });
-
+    // حالات خاصة بإعدادات الموقع العامة ووضع الصيانة
+  const [siteName, setSiteName] = useState("حراج السيارات الخليجي الفعلي");
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false); // وضع الصيانة معطل افتراضياً
   const handleToggleCurrency = (code: string) => {
     if (code === defaultCurrency) return;
     setAllowedCurrencies(prev => ({ ...prev, [code]: !prev[code as keyof typeof prev] }));
@@ -189,15 +191,49 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
             <button onClick={() => alert("تم الحفظ!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', width: '100%', marginTop: '12px', fontWeight: 'bold' }}>حفظ التعديلات الحية 💾</button>
           </div>
         )}
-
+               {/* 4. إعدادات الموقع العامة المحدثة مع وضع الصيانة التفاعلي */}
         {activeTab === 'settings' && (
           <div>
-            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>إعدادات الموقع العامة</h2>
-            <label style={{ fontSize: '12px' }}>اسم تطبيق الحراج الأصلي:</label>
-            <input type="text" defaultValue="حراج السيارات الخليجي الفعلي" style={styles.inputField} />
-            <button onClick={() => alert("تم حفظ الإعدادات.")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold', width: '100%' }}>حفظ</button>
+            <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '12px', color: '#1e3a8a' }}>⚙️ إعدادات الموقع العامة</h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>اسم تطبيق الحراج الأصلي:</label>
+                <input 
+                  type="text" 
+                  value={siteName} 
+                  onChange={(e) => setSiteName(e.target.value)} 
+                  style={styles.inputField} 
+                />
+              </div>
+
+              {/* إضافة خيار وضع الصيانة الجديد بالكامل */}
+              <div style={{ padding: '14px', border: isMaintenanceMode ? '2px solid #ef4444' : '1px solid #cbd5e1', borderRadius: '10px', marginTop: '8px', backgroundColor: isMaintenanceMode ? '#fef2f2' : '#f8fafc', transition: 'all 0.2s' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <strong style={{ fontSize: '13px', color: isMaintenanceMode ? '#b91c1c' : '#374151' }}>🛠️ وضع الصيانة العام (Maintenance Mode)</strong>
+                    <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>عند تفعيله، سيتم إغلاق الواجهة أمام الزوار وعرض صفحة صيانة.</div>
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    checked={isMaintenanceMode} 
+                    onChange={() => setIsMaintenanceMode(!isMaintenanceMode)} 
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={() => alert(`تم حفظ الإعدادات العامة بنجاح!\nاسم الموقع: ${siteName}\nوضع الصيانة: ${isMaintenanceMode ? "مفعّل 🔴" : "معطّل ✅"}`)} 
+                style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold', width: '100%', cursor: 'pointer' }}
+              >
+                حفظ الإعدادات والتعديلات 💾
+              </button>
+            </div>
           </div>
         )}
+
+        
       </div>
     </div>
   );
