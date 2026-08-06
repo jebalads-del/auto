@@ -96,7 +96,8 @@ tableWrapper: { overflowX: 'auto' as const, borderRadius: '10px', border: '1px s
          <h2 style={{ fontSize: '16px', color: '#1e293b', marginBottom: '16px', fontWeight: 'bold', borderRight: '4px solid #2563eb', paddingRight: '8px' }}>إعداد بوابات الدفع وحسابات المستلم</h2>
             
             {/* 1. بوابة ويسترن يونيون */}
-            <div style={{ padding: '16px', border: isWesternActive ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '12px', marginBottom: '16px', backgroundColor: '#fff', transition: 'all 0.2s', relative: 'relative' }}>
+            <div style={{ padding: '16px', border: isWesternActive ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '12px', marginBottom: '16px', backgroundColor: '#fff', transition: 'all 0.2s', position: 'relative'
+ }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <strong style={{ color: '#d97706', fontSize: '15px' }}>📌 بوابة ويسترن يونيون (Western Union)</strong>
                 <button 
