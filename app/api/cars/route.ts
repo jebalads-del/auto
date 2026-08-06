@@ -4,21 +4,49 @@ import sql from '../db';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    
-    // استقبال الحقول الحقيقية المتطابقة مع استمارة موقعك وعمود قاعدة البيانات
-    const { 
-      brand, model, year, price, kilometers, color, 
-      description, images, user_id, payment_method, 
-      is_featured
-    } = body;
+    let brand = "", model = "", year = "", price = "";
+    let kilometers = "", color = "", description = "", user_id = "";
+    let payment_method = "", is_featured = false, rawImages: any = null;
+
+    const contentType = request.headers.get('content-type') || '';
+
+    // 1. دعم استقبال البيانات في حال كانت قادمة كـ FormData مع ملفات حية
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      brand = formData.get('brand') as string || '';
+      model = formData.get('model') as string || '';
+      year = formData.get('year') as string || '';
+      price = formData.get('price') as string || '0';
+      kilometers = formData.get('kilometers') as string || '';
+      color = formData.get('color') as string || '';
+      description = formData.get('description') as string || '';
+      user_id = formData.get('user_id') as string || '';
+      payment_method = formData.get('payment_method') as string || 'western';
+      is_featured = formData.get('is_featured') === 'true';
+      rawImages = formData.get('image') || formData.get('images');
+    } 
+    // 2. دعم استقبال البيانات في حال كانت قادمة كـ JSON عادي مع نصوص Base64
+    else {
+      const body = await request.json();
+      brand = body.brand || '';
+      model = body.model || '';
+      year = body.year || '';
+      price = body.price || '0';
+      kilometers = body.kilometers || '';
+      color = body.color || '';
+      description = body.description || '';
+      user_id = body.user_id || '';
+      payment_method = body.payment_method || 'western';
+      is_featured = !!body.is_featured;
+      rawImages = body.images || body.image_url;
+    }
 
     let finalImageUrl = "";
 
-    // معالجة صور الـ Base64 ورفعها لـ Vercel Blob الحية
-    if (images && typeof images === 'string' && images.startsWith('data:image')) {
-      const base64Data = images.split(',')[1];
-      const mimeType = images.split(';')[0].split(':')[1];
+    // معالجة ورفع الصورة ذكياً إلى سيرفر Vercel Blob حسب نوعها (ملف حقيقي أو نص Base64)
+    if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
+      const base64Data = rawImages.split(',')[1];
+      const mimeType = rawImages.split(';')[0].split(':')[1];
       const buffer = Buffer.from(base64Data, 'base64');
       const extension = mimeType.split('/')[1] || 'jpg';
       
@@ -28,14 +56,19 @@ export async function POST(request: Request) {
         contentType: mimeType
       });
       finalImageUrl = blobResult.url;
-    } else if (images && typeof images === 'string') {
-      finalImageUrl = images;
+    } else if (rawImages && typeof rawImages !== 'string' && rawImages.size > 0) {
+      const blobFilename = `car-${Date.now()}-${rawImages.name}`;
+      const blobResult = await put(blobFilename, rawImages, {
+        access: 'public',
+        contentType: rawImages.type
+      });
+      finalImageUrl = blobResult.url;
+    } else if (typeof rawImages === 'string') {
+      finalImageUrl = rawImages;
     }
 
-    // صياغة رابط الصورة كمصفوفة نصوص ARRAY ليتوافق مع العمود رقم 10 في الداتابيز
     const imageArray = finalImageUrl ? [finalImageUrl] : [];
-
-    // استعلام الحفظ المحدث والمطابق 100% لأعمدة Neon DB التي ظهرت في الصورة
+    // استعلام الحفظ المرتب بدقة متناهية مع أعمدة جدول cars الحقيقي في قاعدة بيانات Neon
     const result = await sql`
       INSERT INTO cars (
         user_id, brand, model, year, color, 
@@ -43,9 +76,9 @@ export async function POST(request: Request) {
         is_featured, payment_method
       )
       VALUES (
-        ${user_id ? Number(user_id) : null}, ${brand || ''}, ${model || ''}, ${year ? Number(year) : null}, ${color || ''},
-        ${kilometers ? Number(kilometers) : null}, ${description || ''}, ${price ? Number(price) : 0}, ${imageArray}, 'pending',
-        ${is_featured ? true : false}, ${payment_method || 'western'}
+        ${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color},
+        ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${imageArray}, 'pending',
+        ${is_featured}, ${payment_method}
       )
       RETURNING *
     `;
@@ -56,12 +89,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
+
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { id, status } = body;
     
-    // تحديث العمود رقم 11 (status) في جدول cars الفعلي
+    // تحديث حالة تفعيل السيارة داخل الجدول الصحيح cars
     await sql`UPDATE cars SET status = ${status} WHERE id = ${id}`;
     
     return NextResponse.json({ success: true });
