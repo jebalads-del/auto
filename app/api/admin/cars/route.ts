@@ -1,6 +1,9 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '../../../db';
+import { neon } from '@neondatabase/serverless';
+
+// إعداد الاتصال المباشر بـ Neon
+const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET() {
   try {
@@ -23,7 +26,6 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('📦 البيانات القادمة:', body);
 
     const { 
       brand, model, year, price, kilometers, color,
