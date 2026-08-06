@@ -1,14 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  swcMinify: false,
-  experimental: {
-    forceSwcTransforms: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.blob.vercel-storage.com',
+      },
+    ],
   },
-  // تعطيل SWC تماماً واستخدام Babel
-  webpack: (config, { isServer }) => {
-    // إضافة دعم Babel
-    return config;
-  }
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
