@@ -36,24 +36,38 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
   };
 
   // دالة الموافقة الحية والمربوطة بـ Neon DB الفعلي عبر السيرفر
-  const handleApproveCar = async (id: any) => {
+    const handleApproveCar = async (id: any) => {
     try {
-   const response = await fetch('/api/admin/cars', {
+      const response = await fetch('/api/admin/cars', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: 'approved' })
+        body: JSON.stringify({ id, status: 'Approved' })
       });
       if (response.ok) {
         setCarsList(prev => prev.map(c => c.id === id ? { ...c, status: "approved" } : c));
         alert("تمت الموافقة ونشر السيارة حياً في الحراج الفعلي! ✅");
+      } else {
+        alert("رفض السيرفر تحديث الحالة، تأكد من المعايير");
       }
     } catch (error) {
       alert("فشل الاتصال بالسيرفر");
     }
   };
 
-  const handleMarkAsSold = (id: any) => {
-    setCarsList(prev => prev.map(c => c.id === id ? { ...c, ad_status: "مُباعة 🔴" } : c));
+  const handleMarkAsSold = async (id: any) => {
+    try {
+      const response = await fetch('/api/admin/cars', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'sold' })
+      });
+      if (response.ok) {
+        setCarsList(prev => prev.map(c => c.id === id ? { ...c, status: "sold" } : c));
+        alert("تم تحديث حالة السيارة إلى مُباعة بنجاح في قاعدة البيانات! 🔴");
+      }
+    } catch (error) {
+      alert("فشل تحديث حالة البيع في السيرفر");
+    }
   };
 
   const handleDeleteCar = (id: any) => {
