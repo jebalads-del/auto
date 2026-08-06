@@ -5,15 +5,18 @@ import sql from '../db';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    
+    // استقبال الحقول الحقيقية المتطابقة مع استمارة موقعك وعمود قاعدة البيانات
     const { 
       brand, model, year, price, kilometers, color, 
       description, images, user_id, payment_method, 
-      is_featured, featured_price, currency 
+      is_featured
     } = body;
 
     let finalImageUrl = "";
 
-    if (images && images.length > 0 && images.startsWith('data:image')) {
+    // معالجة صور الـ Base64 ورفعها لـ Vercel Blob الحية
+    if (images && typeof images === 'string' && images.startsWith('data:image')) {
       const base64Data = images.split(',')[1];
       const mimeType = images.split(';')[0].split(':')[1];
       const buffer = Buffer.from(base64Data, 'base64');
@@ -25,18 +28,24 @@ export async function POST(request: Request) {
         contentType: mimeType
       });
       finalImageUrl = blobResult.url;
-    } else if (images && images.length > 0) {
+    } else if (images && typeof images === 'string') {
       finalImageUrl = images;
     }
 
+    // صياغة رابط الصورة كمصفوفة نصوص ARRAY ليتوافق مع العمود رقم 10 في الداتابيز
+    const imageArray = finalImageUrl ? [finalImageUrl] : [];
+
+    // استعلام الحفظ المحدث والمطابق 100% لأعمدة Neon DB التي ظهرت في الصورة
     const result = await sql`
-      INSERT INTO ads (
-        title, price, description, image_url, status, 
-        brand, model, year, color, mileage, extra_info
+      INSERT INTO cars (
+        user_id, brand, model, year, color, 
+        kilometers, description, price, images, status, 
+        is_featured, payment_method
       )
       VALUES (
-        ${brand + ' ' + model}, ${price || '0'}, ${description || ''}, ${finalImageUrl}, 'pending',
-        ${brand || ''}, ${model || ''}, ${year ? Number(year) : null}, ${color || ''}, ${kilometers ? Number(kilometers) : null}, ${payment_method || ''}
+        ${user_id ? Number(user_id) : null}, ${brand || ''}, ${model || ''}, ${year ? Number(year) : null}, ${color || ''},
+        ${kilometers ? Number(kilometers) : null}, ${description || ''}, ${price ? Number(price) : 0}, ${imageArray}, 'pending',
+        ${is_featured ? true : false}, ${payment_method || 'western'}
       )
       RETURNING *
     `;
@@ -52,8 +61,8 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { id, status } = body;
     
-    // تحديث حالة السيارة حقيقياً داخل قاعدة بيانات Neon المعتمدة بموقعك
-    await sql`UPDATE ads SET status = ${status} WHERE id = ${id}`;
+    // تحديث العمود رقم 11 (status) في جدول cars الفعلي
+    await sql`UPDATE cars SET status = ${status} WHERE id = ${id}`;
     
     return NextResponse.json({ success: true });
   } catch (error) {
