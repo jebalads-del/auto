@@ -4,9 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 interface Car {
   id: number;
   brand: string;
@@ -41,7 +38,12 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const carsRes = await fetch(`/api/cars?t=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
+        // تم إلغاء الكاش من داخل دالة fetch مباشرة لمنع التعارض مع المترجم
+        const carsRes = await fetch(`/api/cars?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        }).catch(() => null);
+        
         const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
         if (carsData && carsData.success) {
           setCars(carsData.cars || []);
@@ -93,7 +95,7 @@ export default function HomePage() {
     }
     const cleanStr = String(imagesInput).replace(/[\{\}\"\'\s]/g, '');
     const parts = cleanStr.split(',');
-    return parts[0] && parts[0].startsWith('http') ? parts[0] : '';
+    return parts && parts[0].startsWith('http') ? parts[0] : '';
   };
 
   if (loading) {
