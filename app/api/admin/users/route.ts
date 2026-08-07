@@ -1,8 +1,6 @@
-export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import sql from '../../db';
 
-// هذا السطر السحري يخبر معالج بناء Vercel رسمياً بأن هذه الصفحة ديناميكية ولا يجب فحصها كصفحة ثابتة أثناء البناء
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
