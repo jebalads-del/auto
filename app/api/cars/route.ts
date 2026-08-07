@@ -2,6 +2,42 @@ import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import sql from '../db';
 
+export const dynamic = 'force-dynamic';
+
+// 1. دالة الجلب المضافة لإصلاح العرض بالصفحة الرئيسية للزوار
+export async function GET() {
+  try {
+    // جلب السيارات المقبولة والموافَق عليها حصرياً من الأدمن لعرضها للزوار
+    const rawCars = await sql`
+      SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, created_at
+      FROM cars
+      WHERE status = 'approved'
+      ORDER BY id DESC
+    `;
+
+    const formattedCars = rawCars.map((car: any) => ({
+      id: car.id,
+      brand: String(car.brand || 'سيارة غير معروفة'),
+      model: String(car.model || ''),
+      year: Number(car.year || 0),
+      price: Number(car.price || 0),
+      kilometers: Number(car.kilometers || 0),
+      color: String(car.color || ''),
+      description: String(car.description || ''),
+      images: Array.isArray(car.images) ? car.images : (car.images ? [car.images] : []),
+      status: String(car.status || 'pending'),
+      created_at: car.created_at || new Date().toISOString(),
+      currency: String(car.currency || 'SAR')
+    }));
+
+    return NextResponse.json({ success: true, cars: formattedCars });
+  } catch (error: any) {
+    console.error("Error fetching cars for home viewport:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// 2. دالة إضافة إعلانك النظيف كما هي دون أي كسر
 export async function POST(request: Request) {
   try {
     let brand = "", model = "", year = "", price = "";
@@ -44,25 +80,16 @@ export async function POST(request: Request) {
       const base64Parts = rawImages.split(',');
       const base64Header = base64Parts[0] || '';
       const base64Content = base64Parts[1] || '';
-      
       const mimeMatch = base64Header.match(/data:(.*?);/);
       const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
       const extension = mimeType.split('/')[1] || 'jpg';
-      
       const buffer = Buffer.from(base64Content, 'base64');
       const blobFilename = `car-${Date.now()}.${extension}`;
-      
-      const blobResult = await put(blobFilename, buffer, {
-        access: 'public',
-        contentType: mimeType
-      });
+      const blobResult = await put(blobFilename, buffer, { access: 'public', contentType: mimeType });
       finalImageUrl = blobResult.url;
     } else if (rawImages && typeof rawImages !== 'string' && rawImages.size > 0) {
       const blobFilename = `car-${Date.now()}-${rawImages.name}`;
-      const blobResult = await put(blobFilename, rawImages, {
-        access: 'public',
-        contentType: rawImages.type
-      });
+      const blobResult = await put(blobFilename, rawImages, { access: 'public', contentType: rawImages.type });
       finalImageUrl = blobResult.url;
     } else if (typeof rawImages === 'string') {
       finalImageUrl = rawImages;
@@ -70,16 +97,8 @@ export async function POST(request: Request) {
 
     const imageArray = finalImageUrl ? [finalImageUrl] : [];
     const result = await sql`
-      INSERT INTO cars (
-        user_id, brand, model, year, color, 
-        kilometers, description, price, images, status, 
-        is_featured, payment_method
-      )
-      VALUES (
-        ${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color},
-        ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${imageArray}, 'pending',
-        ${is_featured}, ${payment_method}
-      )
+      INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
+      VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${imageArray}, 'pending', ${is_featured}, ${payment_method})
       RETURNING *
     `;
 
@@ -89,7 +108,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
-
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
