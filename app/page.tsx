@@ -18,7 +18,6 @@ interface Car {
   currency: string;
 }
 
-// قائمة الماركات الجاهزة المضافة مسبقاً بناءً على طلبك لتوسيع محرك البحث
 const POPULAR_BRANDS = [
   'تويوتا', 'نيسان', 'هيونداي', 'كيا', 'هوندا', 
   'بي إم دبليو', 'مرسيدس', 'أودي', 'فورد', 'شيفورليه', 
@@ -41,10 +40,8 @@ export default function HomePage() {
       try {
         const carsRes = await fetch(`/api/cars?t=${Date.now()}`).catch(() => null);
         const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
-        if (carsData) {
-          if (Array.isArray(carsData)) setCars(carsData);
-          else if (Array.isArray(carsData.cars)) setCars(carsData.cars);
-          else if (carsData.success && Array.isArray(carsData.cars)) setCars(carsData.cars);
+        if (carsData && carsData.success) {
+          setCars(carsData.cars || []);
         }
       } catch (error) {
         console.error(error);
@@ -79,32 +76,12 @@ export default function HomePage() {
     return true;
   }) : [];
 
-  // دمج الماركات المضافة مسبقاً مع الماركات التي يرفعها المستخدمون ديناميكياً لمنع التكرار
   const dynamicBrands = Array.isArray(cars) ? cars.map(car => car?.brand).filter(Boolean) : [];
   const allBrands = Array.from(new Set([...POPULAR_BRANDS, ...dynamicBrands])).sort();
 
   const availableModels = Array.isArray(cars) && searchBrand 
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
-
-  // دالة برمجية احترافية لتفكيك وفصل روابط الصور القادمة من مصفوفات PostgreSQL
-  const parsePostgresImage = (imagesData: any): string => {
-    if (!imagesData) return '';
-    try {
-      const jsonStr = String(imagesData)
-        .replace(/^\{/, '[')
-        .replace(/\}$/, ']')
-        .replace(/"/g, '"');
-      
-      if (jsonStr.startsWith('[') && jsonStr.endsWith(']')) {
-        const cleaned = jsonStr.replace(/[\[\]\'\"]/g, '').split(',');
-        return cleaned[0] ? cleaned[0].trim() : '';
-      }
-    } catch {
-      // تفريغ في حال الفشل والاعتماد على التنظيف النصي المباشر
-    }
-    return String(imagesData).replace(/[\{\}\"\'\s]/g, '').split(',')[0] || '';
-  };
 
   if (loading) {
     return (
@@ -145,15 +122,13 @@ export default function HomePage() {
           <div style={styles.searchSection}>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#1e293b', fontWeight: 'bold' }}>⚙️ خيارات البحث المتقدم المحدثة:</h3>
             <div style={styles.filterGrid}>
-              
               <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>الماركة (الشركة المصنعة):</label>
+                <label style={styles.filterLabel}>الماركة:</label>
                 <select value={searchBrand} onChange={(e) => { setSearchBrand(e.target.value); setSearchModel(''); }} style={styles.filterInput}>
                   <option value="">كل الماركات المتاحة</option>
                   {allBrands.map((brand, idx) => <option key={idx} value={brand}>{brand}</option>)}
                 </select>
               </div>
-
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>الموديل:</label>
                 <select value={searchModel} onChange={(e) => setSearchModel(e.target.value)} disabled={!searchBrand} style={{...styles.filterInput, opacity: searchBrand ? 1 : 0.6}}>
@@ -161,19 +136,15 @@ export default function HomePage() {
                   {availableModels.map((model, idx) => <option key={idx} value={model}>{model}</option>)}
                 </select>
               </div>
-
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>السعر الأقصى (د.ك):</label>
                 <input type="number" placeholder="مثال: 5000" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={styles.filterInput} />
               </div>
-
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>سنة الصنع (من سنة):</label>
                 <input type="number" placeholder="مثال: 2018" value={minYear} onChange={(e) => setMinYear(e.target.value)} style={styles.filterInput} />
               </div>
-
             </div>
-            
             {(searchBrand || searchModel || maxPrice || minYear) && (
               <button type="button" onClick={() => { setSearchBrand(''); setSearchModel(''); setMaxPrice(''); setMinYear(''); }} style={styles.resetButton}>🧹 مسح الفلاتر</button>
             )}
@@ -193,8 +164,8 @@ export default function HomePage() {
               const carPrice = car.price ? car.price.toLocaleString() : '0';
               const carCurrency = getCurrencySymbol(car.currency);
               
-              // استخراج رابط الصورة الفعلي بنجاح وتجاوز مصفوفات الـ SQL
-              const validImageSrc = parsePostgresImage(car.images);
+              // بما أن الـ API الخلفي صار يرسل مصفوفة روابط نظيفة، نأخذ الرابط الأول مباشرة
+              const validImageSrc = Array.isArray(car.images) && car.images.length > 0 ? car.images[0] : '';
 
               return (
                 <div key={car.id || Math.random()} style={styles.card}>

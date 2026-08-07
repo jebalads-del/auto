@@ -1,13 +1,28 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import sql from '../db';
 
 export const dynamic = 'force-dynamic';
 
-// 1. دالة الجلب المضافة لإصلاح العرض بالصفحة الرئيسية للزوار
+// دالة سيرفر ذكية لتفكيك وفصل روابط الصور وتنظيفها تماماً قبل إرسالها للعميل
+function cleanPostgresImages(imagesData: any): string[] {
+  if (!imagesData) return [];
+  
+  // تحويل البيانات لنص
+  let str = String(imagesData).trim();
+  
+  // إزالة الحواصر وعلامات التنصيص والمحارف الزائدة
+  str = str.replace(/^\{/, '').replace(/\}$/, '');
+  str = str.replace(/["']/g, '');
+  
+  // تقسيم النص بناءً على الفاصلة للحصول على الروابط النقية
+  const urls = str.split(',').map(url => url.trim()).filter(url => url.startsWith('http'));
+  
+  return urls;
+}
+
 export async function GET() {
   try {
-    // جلب السيارات المقبولة والموافَق عليها حصرياً من الأدمن لعرضها للزوار
     const rawCars = await sql`
       SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, created_at
       FROM cars
@@ -15,29 +30,34 @@ export async function GET() {
       ORDER BY id DESC
     `;
 
-    const formattedCars = rawCars.map((car: any) => ({
-      id: car.id,
-      brand: String(car.brand || 'سيارة غير معروفة'),
-      model: String(car.model || ''),
-      year: Number(car.year || 0),
-      price: Number(car.price || 0),
-      kilometers: Number(car.kilometers || 0),
-      color: String(car.color || ''),
-      description: String(car.description || ''),
-      images: Array.isArray(car.images) ? car.images : (car.images ? [car.images] : []),
-      status: String(car.status || 'pending'),
-      created_at: car.created_at || new Date().toISOString(),
-      currency: String(car.currency || 'SAR')
-    }));
+    const formattedCars = rawCars.map((car: any) => {
+      // تفكيك الروابط وتنظيفها في السيرفر
+      const cleanUrls = cleanPostgresImages(car.images);
+      
+      return {
+        id: car.id,
+        brand: String(car.brand || 'سيارة غير معروفة'),
+        model: String(car.model || ''),
+        year: Number(car.year || 0),
+        price: Number(car.price || 0),
+        kilometers: Number(car.kilometers || 0),
+        color: String(car.color || ''),
+        description: String(car.description || ''),
+        // نرسل أول رابط صورة نقي مباشرة، أو مصفوفة فارغة
+        images: cleanUrls,
+        status: String(car.status || 'pending'),
+        created_at: car.created_at || new Date().toISOString(),
+        currency: String(car.currency || 'SAR')
+      };
+    });
 
     return NextResponse.json({ success: true, cars: formattedCars });
   } catch (error: any) {
-    console.error("Error fetching cars for home viewport:", error);
+    console.error("Error fetching cars:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
-// 2. دالة إضافة إعلانك النظيف كما هي دون أي كسر
 export async function POST(request: Request) {
   try {
     let brand = "", model = "", year = "", price = "";
@@ -108,21 +128,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
+
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { id, status } = body;
-
-    if (!id || !status) {
-      return NextResponse.json({ success: false, error: "Missing parameters" }, { status: 400 });
-    }
-    
+    if (!id || !status) return NextResponse.json({ success: false, error: "Missing parameters" }, { status: 400 });
     const carId = Number(id);
     await sql`UPDATE cars SET status = ${status} WHERE id = ${carId}`;
-    
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating car status inside PUT route:", error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
