@@ -3,15 +3,17 @@ import sql from '../../db';
 
 export async function GET() {
   try {
-    console.log('📊 جلب المستخدمين...');
-    
+    console.log('📊 جلب المستخدمين النشطين...');
+
+    // تصفية الاستعلام لجلب المستخدمين الذين لم يتم حذفهم أو حظرهم
     const users = await sql`
       SELECT id, name, email, phone, subscription_type, created_at
       FROM users
+      WHERE status IS NULL OR (status != 'deleted' AND status != 'banned')
       ORDER BY id DESC
     `;
 
-    console.log(`✅ تم جلب ${users.length} مستخدم`);
+    console.log(`✅ تم جلب ${users.length} مستخدم نشط`);
 
     const formattedUsers = users.map((user: any) => ({
       id: Number(user.id),
@@ -22,17 +24,17 @@ export async function GET() {
       created_at: user.created_at || new Date().toISOString()
     }));
 
-    return NextResponse.json({ 
-      success: true, 
-      users: formattedUsers 
+    return NextResponse.json({
+      success: true,
+      users: formattedUsers
     });
   } catch (error: any) {
     console.error('❌ خطأ في جلب المستخدمين:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'حدث خطأ أثناء جلب المستخدمين',
-        error: error.message 
+        error: error.message
       },
       { status: 500 }
     );

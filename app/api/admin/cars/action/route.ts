@@ -3,13 +3,23 @@ import sql from '../../../db';
 
 export async function POST(request: NextRequest) {
   try {
-    const { carId, action } = await request.json();
+    const body = await request.json();
+    
+    // دعم الصيغتين القديمة والجديدة لحل مشكلة تعارض المعايير
+    const carId = body.carId || body.id;
+    let action = body.action;
+    
+    if (!action && body.status) {
+      if (body.status === 'approved') action = 'approve';
+      else if (body.status === 'rejected') action = 'reject';
+      else if (body.status === 'sold') action = 'sold';
+    }
 
-    console.log('📩 طلب:', { carId, action });
+    console.log('📩 طلب معالج:', { carId, action });
 
     if (!carId || !action) {
       return NextResponse.json(
-        { success: false, message: 'معرف الإعلان والإجراء مطلوبان' },
+        { success: false, message: 'معرف الإعلان والإجراء مطلوبان وتأكد من المعايير المرسلة' },
         { status: 400 }
       );
     }
@@ -20,7 +30,7 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'approve':
         query = sql`
-          UPDATE cars 
+          UPDATE cars
           SET status = 'approved', updated_at = NOW()
           WHERE id = ${carId}
         `;
@@ -29,7 +39,7 @@ export async function POST(request: NextRequest) {
 
       case 'reject':
         query = sql`
-          UPDATE cars 
+          UPDATE cars
           SET status = 'rejected', updated_at = NOW()
           WHERE id = ${carId}
         `;
@@ -38,7 +48,7 @@ export async function POST(request: NextRequest) {
 
       case 'sold':
         query = sql`
-          UPDATE cars 
+          UPDATE cars
           SET status = 'sold', updated_at = NOW()
           WHERE id = ${carId}
         `;
@@ -63,7 +73,7 @@ export async function POST(request: NextRequest) {
       await query;
       console.log(`✅ ${action} تم تنفيذها على السيارة ${carId}`);
     }
-    
+
     return NextResponse.json({ success: true, message });
 
   } catch (error) {
