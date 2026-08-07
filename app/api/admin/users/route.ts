@@ -1,22 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import sql from '../../db';
 
-export async function GET(request: NextRequest) {
+// هذا السطر السحري يخبر معالج بناء Vercel رسمياً بأن هذه الصفحة ديناميكية ولا يجب فحصها كصفحة ثابتة أثناء البناء
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   try {
-    console.log('📊 جلب المستخدمين النشطين حياً...');
-
-    // التصفية السليمة وتجنب الكاش باستخدام متغير البحث
-    const { searchParams } = new URL(request.url);
-    const _revalidate = searchParams.get('_'); 
-
     const users = await sql`
       SELECT id, name, email, phone, subscription_type, created_at
       FROM users
       WHERE status IS NULL OR (status != 'deleted' AND status != 'banned')
       ORDER BY id DESC
     `;
-
-    console.log(`✅ تم جلب ${users.length} مستخدم نشط`);
 
     const formattedUsers = users.map((user: any) => ({
       id: Number(user.id),
@@ -27,14 +22,13 @@ export async function GET(request: NextRequest) {
       created_at: user.created_at || new Date().toISOString()
     }));
 
-    return NextResponse.json(
-      { success: true, users: formattedUsers },
-      { headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' } }
-    );
+    return NextResponse.json({
+      success: true,
+      users: formattedUsers
+    });
   } catch (error: any) {
-    console.error('❌ خطأ في جلب المستخدمين:', error);
     return NextResponse.json(
-      { success: false, message: 'حدث خطأ أثناء جلب المستخدمين', error: error.message },
+      { success: false, message: 'حدث خطأ', error: error.message },
       { status: 500 }
     );
   }
