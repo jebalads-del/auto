@@ -4,44 +4,30 @@ import sql from '../db';
 
 export const dynamic = 'force-dynamic';
 
-// دالة ذكية لتنظيف وتأمين مصفوفة الروابط وتجاوز حساسية أحرف PostgreSQL
-function cleanPostgresImages(imagesData: any): string[] {
-  if (!imagesData) return [];
-  let str = String(imagesData).trim();
-  str = str.replace(/^\{/, '').replace(/\}$/, '');
-  str = str.replace(/["']/g, '');
-  const urls = str.split(',').map(url => url.trim()).filter(url => url.startsWith('http'));
-  return urls;
-}
-
 export async function GET() {
   try {
-    // جلب كافة الأعمدة لضمان قراءة حقل الصور الفعلي
     const rawCars = await sql`
-      SELECT * FROM cars WHERE status = 'approved' ORDER BY id DESC
+      SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, created_at 
+      FROM cars 
+      WHERE status = 'approved' 
+      ORDER BY id DESC
     `;
 
-    const formattedCars = rawCars.map((car: any) => {
-      // 🛡️ فحص ذكي: قراءة الصور سواء كانت مخزنة في الحقل الحساس Images أو images
-      const rawImagesField = car.Images !== undefined ? car.Images : car.images;
-      const cleanUrls = cleanPostgresImages(rawImagesField);
-      
-      return {
-        id: car.id,
-        brand: String(car.brand || 'سيارة غير معروفة'),
-        model: String(car.model || ''),
-        year: Number(car.year || 0),
-        price: Number(car.price || 0),
-        kilometers: Number(car.kilometers || 0),
-        color: String(car.color || ''),
-        description: String(car.description || ''),
-        // نرسل مصفوفة الروابط النظيفة المفكوكة تماماً للواجهة
-        images: cleanUrls,
-        status: String(car.status || 'pending'),
-        created_at: car.created_at || new Date().toISOString(),
-        currency: String(car.currency || 'SAR')
-      };
-    });
+    const formattedCars = rawCars.map((car: any) => ({
+      id: car.id,
+      brand: String(car.brand || 'سيارة غير معروفة'),
+      model: String(car.model || ''),
+      year: Number(car.year || 0),
+      price: Number(car.price || 0),
+      kilometers: Number(car.kilometers || 0),
+      color: String(car.color || ''),
+      description: String(car.description || ''),
+      // قراءة الرابط النصي النظيف مباشرة من قاعدة البيانات دون فك أو مصفوفات
+      images: car.images ? String(car.images).trim() : '', 
+      status: String(car.status || 'pending'),
+      created_at: car.created_at || new Date().toISOString(),
+      currency: String(car.currency || 'SAR')
+    }));
 
     return NextResponse.json({ success: true, cars: formattedCars });
   } catch (error: any) {
@@ -107,12 +93,10 @@ export async function POST(request: Request) {
       finalImageUrl = rawImages;
     }
 
-    const imageArray = finalImageUrl ? [finalImageUrl] : [];
-    
-    // حفظ الصور في العمود الحقيقي لقاعدة البيانات
+    // حفظ الرابط كنص عادي مباشر متوافق مع تعديل جدول Neon الجديد
     const result = await sql`
       INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
-      VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${imageArray}, 'pending', ${is_featured}, ${payment_method})
+      VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${finalImageUrl}, 'pending', ${is_featured}, ${payment_method})
       RETURNING *
     `;
 
@@ -122,6 +106,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
+
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
