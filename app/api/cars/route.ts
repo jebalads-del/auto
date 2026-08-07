@@ -4,35 +4,27 @@ import sql from '../db';
 
 export const dynamic = 'force-dynamic';
 
-// دالة سيرفر ذكية لتفكيك وفصل روابط الصور وتنظيفها تماماً قبل إرسالها للعميل
+// دالة ذكية لتنظيف وتأمين مصفوفة الروابط وتجاوز حساسية أحرف PostgreSQL
 function cleanPostgresImages(imagesData: any): string[] {
   if (!imagesData) return [];
-  
-  // تحويل البيانات لنص
   let str = String(imagesData).trim();
-  
-  // إزالة الحواصر وعلامات التنصيص والمحارف الزائدة
   str = str.replace(/^\{/, '').replace(/\}$/, '');
   str = str.replace(/["']/g, '');
-  
-  // تقسيم النص بناءً على الفاصلة للحصول على الروابط النقية
   const urls = str.split(',').map(url => url.trim()).filter(url => url.startsWith('http'));
-  
   return urls;
 }
 
 export async function GET() {
   try {
+    // جلب كافة الأعمدة لضمان قراءة حقل الصور الفعلي
     const rawCars = await sql`
-      SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, created_at
-      FROM cars
-      WHERE status = 'approved'
-      ORDER BY id DESC
+      SELECT * FROM cars WHERE status = 'approved' ORDER BY id DESC
     `;
 
     const formattedCars = rawCars.map((car: any) => {
-      // تفكيك الروابط وتنظيفها في السيرفر
-      const cleanUrls = cleanPostgresImages(car.images);
+      // 🛡️ فحص ذكي: قراءة الصور سواء كانت مخزنة في الحقل الحساس Images أو images
+      const rawImagesField = car.Images !== undefined ? car.Images : car.images;
+      const cleanUrls = cleanPostgresImages(rawImagesField);
       
       return {
         id: car.id,
@@ -43,7 +35,7 @@ export async function GET() {
         kilometers: Number(car.kilometers || 0),
         color: String(car.color || ''),
         description: String(car.description || ''),
-        // نرسل أول رابط صورة نقي مباشرة، أو مصفوفة فارغة
+        // نرسل مصفوفة الروابط النظيفة المفكوكة تماماً للواجهة
         images: cleanUrls,
         status: String(car.status || 'pending'),
         created_at: car.created_at || new Date().toISOString(),
@@ -116,6 +108,8 @@ export async function POST(request: Request) {
     }
 
     const imageArray = finalImageUrl ? [finalImageUrl] : [];
+    
+    // حفظ الصور في العمود الحقيقي لقاعدة البيانات
     const result = await sql`
       INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
       VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${imageArray}, 'pending', ${is_featured}, ${payment_method})
@@ -128,7 +122,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
-
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
