@@ -1,45 +1,234 @@
-import React from 'react';
-import { neon } from '@neondatabase/serverless';
-import DashboardClient from './DashboardClient';
+'use client';
 
-// إجبار الصفحة على العمل بشكل ديناميكي حي لقراءة الداتابيز دائماً
-export const dynamic = 'force-dynamic';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-async function getNeonData() {
-  const databaseUrl = process.env.DATABASE_URL || "";
-  if (!databaseUrl) return { realUsers: [], realCars: [] };
+export default function DashboardPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    cars: 0,
+    users: 0,
+    ads: 0,
+  });
 
-  try {
-    const sql = neon(databaseUrl);
-    
-    // جلب المستخدمين بشكل مؤكد
-    const usersData = await sql`SELECT * FROM users ORDER BY id DESC LIMIT 100`;
-    
-    // جلب السيارات مع حماية برمجية في حال كان اسم الجدول مختلفاً
-    let carsData: any[] = [];
-    try {
-      carsData = await sql`SELECT * FROM cars ORDER BY id DESC LIMIT 50`;
-    } catch (e) {
-      console.log("جدول cars غير موجود أو يحمل اسماً آخر، تم تصفيره لحماية البناء");
-    }
-
-    return { 
-      realUsers: JSON.parse(JSON.stringify(usersData || [])), 
-      realCars: JSON.parse(JSON.stringify(carsData || [])) 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+        if (data.success) {
+          setStats(data.stats);
+        }
+      } catch (error) {
+        console.error('خطأ في جلب الإحصائيات:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-  } catch (error) {
-    console.error("Neon DB Fetch Error:", error);
-    return { realUsers: [], realCars: [] };
-  }
-}
 
-export default async function DashboardPage() {
-  const { realUsers, realCars } = await getNeonData();
+    fetchStats();
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    localStorage.clear();
+    router.push('/login');
+  };
 
   return (
-    <DashboardClient 
-      initialUsers={realUsers} 
-      initialCars={realCars} 
-    />
+    <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+      
+      {/* الهيدر مع زر الخروج */}
+      <div style={{ 
+        backgroundColor: '#1e293b', 
+        padding: '20px', 
+        borderRadius: '12px', 
+        marginBottom: '20px',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '10px',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '24px', marginBottom: '5px' }}>📊 لوحة التحكم</h1>
+          <p style={{ color: '#94a3b8' }}>مرحباً بك في لوحة تحكم سيارتي</p>
+        </div>
+        <button 
+          onClick={handleLogout} 
+          style={{
+            backgroundColor: '#dc2626',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '14px',
+          }}
+        >
+          🚪 تسجيل خروج
+        </button>
+      </div>
+
+      {/* أزرار التنقل */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '10px', 
+        marginBottom: '20px', 
+        flexWrap: 'wrap' 
+      }}>
+        <Link href="/dashboard" style={{ 
+          backgroundColor: '#2563eb', 
+          color: 'white', 
+          padding: '10px 20px', 
+          borderRadius: '8px', 
+          textDecoration: 'none',
+          fontWeight: 'bold',
+          fontSize: '14px'
+        }}>
+          📊 الرئيسية
+        </Link>
+        
+        <Link href="/dashboard/users" style={{ 
+          backgroundColor: '#8b5cf6', 
+          color: 'white', 
+          padding: '10px 20px', 
+          borderRadius: '8px', 
+          textDecoration: 'none',
+          fontWeight: 'bold',
+          fontSize: '14px'
+        }}>
+          👥 المستخدمين
+        </Link>
+        
+        <Link href="/dashboard/cars" style={{ 
+          backgroundColor: '#059669', 
+          color: 'white', 
+          padding: '10px 20px', 
+          borderRadius: '8px', 
+          textDecoration: 'none',
+          fontWeight: 'bold',
+          fontSize: '14px'
+        }}>
+          🚗 الإعلانات
+        </Link>
+        <Link href="/dashboard/commercial-ads" style={{ 
+  backgroundColor: '#d97706', 
+  color: 'white', 
+  padding: '10px 20px', 
+  borderRadius: '8px', 
+  textDecoration: 'none',
+  fontWeight: 'bold',
+  fontSize: '14px'
+}}>
+  📢 الإعلانات التجارية
+</Link>
+        <Link href="/dashboard/settings" style={{ 
+          backgroundColor: '#6b7280', 
+          color: 'white', 
+          padding: '10px 20px', 
+          borderRadius: '8px', 
+          textDecoration: 'none',
+          fontWeight: 'bold',
+          fontSize: '14px'
+        }}>
+          ⚙️ الإعدادات
+        </Link>
+      </div>
+
+      {/* الإحصائيات */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        gap: '20px',
+        marginBottom: '30px'
+      }}>
+        <div style={{ 
+          backgroundColor: 'white', 
+          padding: '20px', 
+          borderRadius: '12px', 
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2563eb' }}>
+            {loading ? '...' : stats.cars}
+          </div>
+          <div style={{ color: '#64748b' }}>🚗 السيارات</div>
+        </div>
+
+        <div style={{ 
+          backgroundColor: 'white', 
+          padding: '20px', 
+          borderRadius: '12px', 
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#8b5cf6' }}>
+            {loading ? '...' : stats.users}
+          </div>
+          <div style={{ color: '#64748b' }}>👥 المستخدمين</div>
+        </div>
+
+        <div style={{ 
+          backgroundColor: 'white', 
+          padding: '20px', 
+          borderRadius: '12px', 
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#d97706' }}>
+            {loading ? '...' : stats.ads}
+          </div>
+          <div style={{ color: '#64748b' }}>📢 الإعلانات</div>
+        </div>
+      </div>
+
+      {/* إجراءات سريعة */}
+      <div style={{ 
+        backgroundColor: 'white', 
+        padding: '20px', 
+        borderRadius: '12px', 
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>⚡ إجراءات سريعة</h2>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <Link href="/dashboard/cars/new" style={{ 
+            backgroundColor: '#2563eb', 
+            color: 'white', 
+            padding: '8px 16px', 
+            borderRadius: '6px', 
+            textDecoration: 'none',
+            fontSize: '14px'
+          }}>
+            ➕ إضافة سيارة جديدة
+          </Link>
+          <Link href="/dashboard/users" style={{ 
+            backgroundColor: '#8b5cf6', 
+            color: 'white', 
+            padding: '8px 16px', 
+            borderRadius: '6px', 
+            textDecoration: 'none',
+            fontSize: '14px'
+          }}>
+            👥 إدارة المستخدمين
+          </Link>
+          <Link href="/dashboard/settings" style={{ 
+            backgroundColor: '#6b7280', 
+            color: 'white', 
+            padding: '8px 16px', 
+            borderRadius: '6px', 
+            textDecoration: 'none',
+            fontSize: '14px'
+          }}>
+            ⚙️ الإعدادات
+          </Link>
+        </div>
+      </div>
+
+    </div>
   );
 }
