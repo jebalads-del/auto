@@ -1,3 +1,4 @@
+// تحديث نهائي لفك تشفير الصور القاطع لـ Vercel
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import sql from '../db';

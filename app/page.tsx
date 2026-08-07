@@ -1,3 +1,4 @@
+// تحديث نهائي لكسر كاش صالة العرض
 'use client';
 
 import { useEffect, useState } from 'react';
