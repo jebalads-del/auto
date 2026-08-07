@@ -13,7 +13,7 @@ interface Car {
   kilometers: number;
   color: string;
   description: string;
-  images: string[];
+  images: any; // تحويله لـ any لمرونة المعالجة
   status: string;
   currency: string;
 }
@@ -82,6 +82,23 @@ export default function HomePage() {
   const availableModels = Array.isArray(cars) && searchBrand 
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
+
+  // دالة قاطعة وحاسمة لاستخراج أول رابط صورة نصي نقي مهما كانت الهيكلية القادمة من قاعدة البيانات
+  const getSingleImageSrc = (imagesInput: any): string => {
+    if (!imagesInput) return '';
+    
+    // إذا كانت مصفوفة جاهزة، نأخذ العنصر الأول ونحوله لنص نظيف
+    if (Array.isArray(imagesInput)) {
+      const firstItem = imagesInput[0];
+      if (Array.isArray(firstItem)) return String(firstItem[0] || '').trim();
+      return String(firstItem || '').trim();
+    }
+    
+    // إذا جاء على شكل نص أو مصفوفة PostgreSQL نصية، نقوم بقص الحواصر واستخراج أول رابط فوراً
+    const cleanStr = String(imagesInput).replace(/[\{\}\"\'\s]/g, '');
+    const parts = cleanStr.split(',');
+    return parts[0] && parts[0].startsWith('http') ? parts[0] : '';
+  };
 
   if (loading) {
     return (
@@ -164,14 +181,14 @@ export default function HomePage() {
               const carPrice = car.price ? car.price.toLocaleString() : '0';
               const carCurrency = getCurrencySymbol(car.currency);
               
-              // بما أن الـ API الخلفي صار يرسل مصفوفة روابط نظيفة، نأخذ الرابط الأول مباشرة
-              const validImageSrc = Array.isArray(car.images) && car.images.length > 0 ? car.images[0] : '';
+              // سحب الرابط كـ نص نقي ومفرد لكسر عناد الأخطاء البرمجية
+              const finalImageSrc = getSingleImageSrc(car.images);
 
               return (
                 <div key={car.id || Math.random()} style={styles.card}>
                   <div style={styles.gallery}>
-                    {validImageSrc && validImageSrc.trim() !== '' ? (
-                      <img src={validImageSrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
+                    {finalImageSrc && finalImageSrc !== '' ? (
+                      <img src={finalImageSrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
                     ) : (
                       <div style={styles.noImage}>🚗 لا توجد صورة</div>
                     )}
