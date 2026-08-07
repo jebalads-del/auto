@@ -1,12 +1,14 @@
-export const dynamic = "force-dynamic";
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import sql from '../../db';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    console.log('📊 جلب المستخدمين النشطين...');
+    console.log('📊 جلب المستخدمين النشطين حياً...');
 
-    // تصفية الاستعلام لجلب المستخدمين الذين لم يتم حذفهم أو حظرهم
+    // التصفية السليمة وتجنب الكاش باستخدام متغير البحث
+    const { searchParams } = new URL(request.url);
+    const _revalidate = searchParams.get('_'); 
+
     const users = await sql`
       SELECT id, name, email, phone, subscription_type, created_at
       FROM users
@@ -25,18 +27,14 @@ export async function GET() {
       created_at: user.created_at || new Date().toISOString()
     }));
 
-    return NextResponse.json({
-      success: true,
-      users: formattedUsers
-    });
+    return NextResponse.json(
+      { success: true, users: formattedUsers },
+      { headers: { 'Cache-Control': 'no-store, max-age=0, must-revalidate' } }
+    );
   } catch (error: any) {
     console.error('❌ خطأ في جلب المستخدمين:', error);
     return NextResponse.json(
-      {
-        success: false,
-        message: 'حدث خطأ أثناء جلب المستخدمين',
-        error: error.message
-      },
+      { success: false, message: 'حدث خطأ أثناء جلب المستخدمين', error: error.message },
       { status: 500 }
     );
   }
