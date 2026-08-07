@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface Car {
   id: number;
   brand: string;
@@ -13,7 +16,7 @@ interface Car {
   kilometers: number;
   color: string;
   description: string;
-  images: any; // تحويله لـ any لمرونة المعالجة
+  images: any;
   status: string;
   currency: string;
 }
@@ -38,7 +41,7 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const carsRes = await fetch(`/api/cars?t=${Date.now()}`).catch(() => null);
+        const carsRes = await fetch(`/api/cars?t=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
         const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
         if (carsData && carsData.success) {
           setCars(carsData.cars || []);
@@ -83,18 +86,11 @@ export default function HomePage() {
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
 
-  // دالة قاطعة وحاسمة لاستخراج أول رابط صورة نصي نقي مهما كانت الهيكلية القادمة من قاعدة البيانات
   const getSingleImageSrc = (imagesInput: any): string => {
     if (!imagesInput) return '';
-    
-    // إذا كانت مصفوفة جاهزة، نأخذ العنصر الأول ونحوله لنص نظيف
-    if (Array.isArray(imagesInput)) {
-      const firstItem = imagesInput[0];
-      if (Array.isArray(firstItem)) return String(firstItem[0] || '').trim();
-      return String(firstItem || '').trim();
+    if (Array.isArray(imagesInput) && imagesInput.length > 0) {
+      return String(imagesInput[0] || '').trim();
     }
-    
-    // إذا جاء على شكل نص أو مصفوفة PostgreSQL نصية، نقوم بقص الحواصر واستخراج أول رابط فوراً
     const cleanStr = String(imagesInput).replace(/[\{\}\"\'\s]/g, '');
     const parts = cleanStr.split(',');
     return parts[0] && parts[0].startsWith('http') ? parts[0] : '';
@@ -128,7 +124,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-
       <div style={styles.content}>
         <div style={styles.actionButtonsGrid}>
           <button type="button" onClick={handlePostAdClick} style={styles.actionButtonPost}>➕ أرسل إعلانك مجاناً</button>
@@ -181,7 +176,6 @@ export default function HomePage() {
               const carPrice = car.price ? car.price.toLocaleString() : '0';
               const carCurrency = getCurrencySymbol(car.currency);
               
-              // سحب الرابط كـ نص نقي ومفرد لكسر عناد الأخطاء البرمجية
               const finalImageSrc = getSingleImageSrc(car.images);
 
               return (
