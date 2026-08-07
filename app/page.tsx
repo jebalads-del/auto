@@ -18,12 +18,18 @@ interface Car {
   currency: string;
 }
 
+// قائمة الماركات الجاهزة المضافة مسبقاً بناءً على طلبك لتوسيع محرك البحث
+const POPULAR_BRANDS = [
+  'تويوتا', 'نيسان', 'هيونداي', 'كيا', 'هوندا', 
+  'بي إم دبليو', 'مرسيدس', 'أودي', 'فورد', 'شيفورليه', 
+  'جيب', 'لكزس', 'مازدا', 'ميتسوبيشي', 'جي إم سي'
+];
+
 export default function HomePage() {
   const router = useRouter();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // حالات محرك البحث المتطور الجديد
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchBrand, setSearchBrand] = useState('');
   const [searchModel, setSearchModel] = useState('');
@@ -64,32 +70,41 @@ export default function HomePage() {
     if (String(currency).toUpperCase() === 'SAR') return 'ر.س';
     return 'د.ك';
   };
-  // محرك الفلترة المطور: يقوم بتصفية المصفوفة بناءً على كافة المدخلات في نفس الوقت
   const filteredCars = Array.isArray(cars) ? cars.filter(car => {
     if (!car) return false;
-    
-    // 1. فلترة الماركة
     if (searchBrand && String(car.brand).toLowerCase() !== searchBrand.toLowerCase()) return false;
-    
-    // 2. فلترة الموديل
     if (searchModel && String(car.model).toLowerCase() !== searchModel.toLowerCase()) return false;
-    
-    // 3. فلترة الحد الأقصى للسعر
     if (maxPrice && Number(car.price) > Number(maxPrice)) return false;
-    
-    // 4. فلترة سنة الصنع (من سنة فما فوق)
     if (minYear && Number(car.year) < Number(minYear)) return false;
-    
     return true;
   }) : [];
 
-  // جلب الماركات الفريدة المتوفرة فعلياً في قاعدة البيانات لقائمة الخيارات
-  const uniqueBrands = Array.isArray(cars) ? Array.from(new Set(cars.map(car => car?.brand).filter(Boolean))) : [];
+  // دمج الماركات المضافة مسبقاً مع الماركات التي يرفعها المستخدمون ديناميكياً لمنع التكرار
+  const dynamicBrands = Array.isArray(cars) ? cars.map(car => car?.brand).filter(Boolean) : [];
+  const allBrands = Array.from(new Set([...POPULAR_BRANDS, ...dynamicBrands])).sort();
 
-  // جلب الموديلات الفريدة التابعة للماركة المختارة حصراً لتسهيل البحث على المستخدم
   const availableModels = Array.isArray(cars) && searchBrand 
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
+
+  // دالة برمجية احترافية لتفكيك وفصل روابط الصور القادمة من مصفوفات PostgreSQL
+  const parsePostgresImage = (imagesData: any): string => {
+    if (!imagesData) return '';
+    try {
+      const jsonStr = String(imagesData)
+        .replace(/^\{/, '[')
+        .replace(/\}$/, ']')
+        .replace(/"/g, '"');
+      
+      if (jsonStr.startsWith('[') && jsonStr.endsWith(']')) {
+        const cleaned = jsonStr.replace(/[\[\]\'\"]/g, '').split(',');
+        return cleaned[0] ? cleaned[0].trim() : '';
+      }
+    } catch {
+      // تفريغ في حال الفشل والاعتماد على التنظيف النصي المباشر
+    }
+    return String(imagesData).replace(/[\{\}\"\'\s]/g, '').split(',')[0] || '';
+  };
 
   if (loading) {
     return (
@@ -126,22 +141,19 @@ export default function HomePage() {
           <button type="button" onClick={() => setIsFilterOpen(!isFilterOpen)} style={styles.actionButtonSearch}>🔍 {isFilterOpen ? 'إغلاق محرك البحث' : 'تخصيص فلاتر البحث'}</button>
         </div>
 
-        {/* نموذج محرك البحث المطور والجديد كلياً */}
         {isFilterOpen && (
           <div style={styles.searchSection}>
-            <h3 style={{ margin: '0 0 15px 0', fontSize: '15px', color: '#1e293b', fontWeight: 'bold' }}>⚙️ خيارات البحث المتقدم:</h3>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#1e293b', fontWeight: 'bold' }}>⚙️ خيارات البحث المتقدم المحدثة:</h3>
             <div style={styles.filterGrid}>
               
-              {/* اختيار الماركة */}
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>الماركة (الشركة المصنعة):</label>
                 <select value={searchBrand} onChange={(e) => { setSearchBrand(e.target.value); setSearchModel(''); }} style={styles.filterInput}>
-                  <option value="">كل الماركات</option>
-                  {uniqueBrands.map((brand, idx) => <option key={idx} value={brand}>{brand}</option>)}
+                  <option value="">كل الماركات المتاحة</option>
+                  {allBrands.map((brand, idx) => <option key={idx} value={brand}>{brand}</option>)}
                 </select>
               </div>
 
-              {/* اختيار الموديل - يتفعل فقط بعد اختيار الماركة */}
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>الموديل:</label>
                 <select value={searchModel} onChange={(e) => setSearchModel(e.target.value)} disabled={!searchBrand} style={{...styles.filterInput, opacity: searchBrand ? 1 : 0.6}}>
@@ -150,13 +162,11 @@ export default function HomePage() {
                 </select>
               </div>
 
-              {/* تحديد الحد الأقصى للسعر */}
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>السعر الأقصى (د.ك):</label>
                 <input type="number" placeholder="مثال: 5000" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={styles.filterInput} />
               </div>
 
-              {/* تحديد سنة الصنع من سنة فما فوق */}
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>سنة الصنع (من سنة):</label>
                 <input type="number" placeholder="مثال: 2018" value={minYear} onChange={(e) => setMinYear(e.target.value)} style={styles.filterInput} />
@@ -164,9 +174,8 @@ export default function HomePage() {
 
             </div>
             
-            {/* زر لإعادة تعيين الفلاتر ومسحها */}
             {(searchBrand || searchModel || maxPrice || minYear) && (
-              <button type="button" onClick={() => { setSearchBrand(''); setSearchModel(''); setMaxPrice(''); setMinYear(''); }} style={styles.resetButton}>🧹 مسح كل الفلاتر وعرض الكل</button>
+              <button type="button" onClick={() => { setSearchBrand(''); setSearchModel(''); setMaxPrice(''); setMinYear(''); }} style={styles.resetButton}>🧹 مسح الفلاتر</button>
             )}
           </div>
         )}
@@ -184,14 +193,14 @@ export default function HomePage() {
               const carPrice = car.price ? car.price.toLocaleString() : '0';
               const carCurrency = getCurrencySymbol(car.currency);
               
-              let carImageSrc = car.images ? String(car.images) : '';
-              carImageSrc = carImageSrc.replace(/[\{\}\"\'\s]/g, '').split(',')[0] || '';
+              // استخراج رابط الصورة الفعلي بنجاح وتجاوز مصفوفات الـ SQL
+              const validImageSrc = parsePostgresImage(car.images);
 
               return (
                 <div key={car.id || Math.random()} style={styles.card}>
                   <div style={styles.gallery}>
-                    {carImageSrc && carImageSrc.trim() !== '' ? (
-                      <img src={carImageSrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
+                    {validImageSrc && validImageSrc.trim() !== '' ? (
+                      <img src={validImageSrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
                     ) : (
                       <div style={styles.noImage}>🚗 لا توجد صورة</div>
                     )}
