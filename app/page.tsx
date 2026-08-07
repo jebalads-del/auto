@@ -22,8 +22,13 @@ export default function HomePage() {
   const router = useRouter();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // حالات محرك البحث المتطور الجديد
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('');
+  const [searchBrand, setSearchBrand] = useState('');
+  const [searchModel, setSearchModel] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [minYear, setMinYear] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,30 +53,43 @@ export default function HomePage() {
     e.preventDefault();
     const token = localStorage.getItem('token') || localStorage.getItem('user') || document.cookie.includes('session');
     if (!token) {
-      alert('🔒 عذراً، يجب عليك تسجيل الدخول أولاً لتتمكن من إضافة ونشر إعلانك!');
       router.push('/login');
     } else {
       router.push('/dashboard/cars/new');
     }
   };
+
   const getCurrencySymbol = (currency: string) => {
     if (!currency) return 'د.ك';
     if (String(currency).toUpperCase() === 'SAR') return 'ر.س';
     return 'د.ك';
   };
-
+  // محرك الفلترة المطور: يقوم بتصفية المصفوفة بناءً على كافة المدخلات في نفس الوقت
   const filteredCars = Array.isArray(cars) ? cars.filter(car => {
-    if (!car || !car.model) return false;
-    if (!selectedModel) return true;
-    return String(car.model).toLowerCase() === selectedModel.toLowerCase();
+    if (!car) return false;
+    
+    // 1. فلترة الماركة
+    if (searchBrand && String(car.brand).toLowerCase() !== searchBrand.toLowerCase()) return false;
+    
+    // 2. فلترة الموديل
+    if (searchModel && String(car.model).toLowerCase() !== searchModel.toLowerCase()) return false;
+    
+    // 3. فلترة الحد الأقصى للسعر
+    if (maxPrice && Number(car.price) > Number(maxPrice)) return false;
+    
+    // 4. فلترة سنة الصنع (من سنة فما فوق)
+    if (minYear && Number(car.year) < Number(minYear)) return false;
+    
+    return true;
   }) : [];
 
-  const uniqueModels = Array.isArray(cars) ? cars.reduce((acc: { brand: string; model: string }[], current) => {
-    if (!current || !current.model) return acc;
-    const x = acc.find(item => String(item.model).toLowerCase() === String(current.model).toLowerCase());
-    if (!x) acc.push({ brand: current.brand || '', model: current.model });
-    return acc;
-  }, []) : [];
+  // جلب الماركات الفريدة المتوفرة فعلياً في قاعدة البيانات لقائمة الخيارات
+  const uniqueBrands = Array.isArray(cars) ? Array.from(new Set(cars.map(car => car?.brand).filter(Boolean))) : [];
+
+  // جلب الموديلات الفريدة التابعة للماركة المختارة حصراً لتسهيل البحث على المستخدم
+  const availableModels = Array.isArray(cars) && searchBrand 
+    ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
+    : [];
 
   if (loading) {
     return (
@@ -93,9 +111,9 @@ export default function HomePage() {
         </header>
         <div style={styles.heroBody}>
           <h2 style={styles.heroMainTitle}>ابحث عن سيارتك المثالية</h2>
-          <p style={styles.heroSubTitle}>تصفح الإعلانات وأرسل إعلانك مجاناً</p>
+          <p style={styles.heroSubTitle}>تصفح الإعلانات الموثوقة المعروضة الآن في السوق</p>
           <div style={styles.statsContainer}>
-            <div style={styles.statBox}><span style={styles.statNumber}>{filteredCars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
+            <div style={styles.statBox}><span style={styles.statNumber}>{filteredCars.length}</span><span style={styles.statBoxLabel}>إعلان مطابق</span></div>
             <div style={styles.statDivider}></div>
             <div style={styles.statBox}><span style={styles.statNumber}>4</span><span style={styles.statBoxLabel}>مدينة</span></div>
           </div>
@@ -105,25 +123,57 @@ export default function HomePage() {
       <div style={styles.content}>
         <div style={styles.actionButtonsGrid}>
           <button type="button" onClick={handlePostAdClick} style={styles.actionButtonPost}>➕ أرسل إعلانك مجاناً</button>
-          <button type="button" onClick={() => setIsFilterOpen(!isFilterOpen)} style={styles.actionButtonSearch}>🔍 اختر موديل السيارة</button>
+          <button type="button" onClick={() => setIsFilterOpen(!isFilterOpen)} style={styles.actionButtonSearch}>🔍 {isFilterOpen ? 'إغلاق محرك البحث' : 'تخصيص فلاتر البحث'}</button>
         </div>
 
+        {/* نموذج محرك البحث المطور والجديد كلياً */}
         {isFilterOpen && (
           <div style={styles.searchSection}>
-            <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput}>
-              <option value="">عرض كل الماركات والموديلات المتاحة</option>
-              {uniqueModels.map((m: any, idx: number) => (
-                <option key={m.model ? m.model + idx : idx} value={m.model || ''}>
-                  {m.brand} {m.brand && m.model ? '-' : ''} {m.model}
-                </option>
-              ))}
-            </select>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '15px', color: '#1e293b', fontWeight: 'bold' }}>⚙️ خيارات البحث المتقدم:</h3>
+            <div style={styles.filterGrid}>
+              
+              {/* اختيار الماركة */}
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>الماركة (الشركة المصنعة):</label>
+                <select value={searchBrand} onChange={(e) => { setSearchBrand(e.target.value); setSearchModel(''); }} style={styles.filterInput}>
+                  <option value="">كل الماركات</option>
+                  {uniqueBrands.map((brand, idx) => <option key={idx} value={brand}>{brand}</option>)}
+                </select>
+              </div>
+
+              {/* اختيار الموديل - يتفعل فقط بعد اختيار الماركة */}
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>الموديل:</label>
+                <select value={searchModel} onChange={(e) => setSearchModel(e.target.value)} disabled={!searchBrand} style={{...styles.filterInput, opacity: searchBrand ? 1 : 0.6}}>
+                  <option value="">كل الموديلات</option>
+                  {availableModels.map((model, idx) => <option key={idx} value={model}>{model}</option>)}
+                </select>
+              </div>
+
+              {/* تحديد الحد الأقصى للسعر */}
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>السعر الأقصى (د.ك):</label>
+                <input type="number" placeholder="مثال: 5000" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={styles.filterInput} />
+              </div>
+
+              {/* تحديد سنة الصنع من سنة فما فوق */}
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>سنة الصنع (من سنة):</label>
+                <input type="number" placeholder="مثال: 2018" value={minYear} onChange={(e) => setMinYear(e.target.value)} style={styles.filterInput} />
+              </div>
+
+            </div>
+            
+            {/* زر لإعادة تعيين الفلاتر ومسحها */}
+            {(searchBrand || searchModel || maxPrice || minYear) && (
+              <button type="button" onClick={() => { setSearchBrand(''); setSearchModel(''); setMaxPrice(''); setMinYear(''); }} style={styles.resetButton}>🧹 مسح كل الفلاتر وعرض الكل</button>
+            )}
           </div>
         )}
 
         <h2 style={styles.sectionTitle}>✨ السيارات المعروضة ({filteredCars.length})</h2>
         {filteredCars.length === 0 ? (
-          <div style={styles.noCars}>لا توجد سيارات معتمدة متوفرة حالياً بالواجهة 🔍</div>
+          <div style={styles.noCars}>لم نجد أي سيارات تطابق خيارات البحث الحالية. جرب تغيير الفلاتر 🔍</div>
         ) : (
           <div style={styles.grid}>
             {filteredCars.map((car) => {
@@ -133,7 +183,9 @@ export default function HomePage() {
               const carYear = car.year || '----';
               const carPrice = car.price ? car.price.toLocaleString() : '0';
               const carCurrency = getCurrencySymbol(car.currency);
-              const carImageSrc = car.images ? String(car.images) : '';
+              
+              let carImageSrc = car.images ? String(car.images) : '';
+              carImageSrc = carImageSrc.replace(/[\{\}\"\'\s]/g, '').split(',')[0] || '';
 
               return (
                 <div key={car.id || Math.random()} style={styles.card}>
@@ -178,8 +230,12 @@ const styles = {
   actionButtonsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' },
   actionButtonPost: { display: 'block', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'center' as const, backgroundColor: '#f59e0b', color: '#1e293b', padding: '12px', borderRadius: '10px', fontWeight: 'bold' as const, fontSize: '13px' },
   actionButtonSearch: { backgroundColor: '#38bdf8', color: '#1e293b', padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 'bold' as const, fontSize: '13px' },
-  searchSection: { backgroundColor: 'white', padding: '15px', borderRadius: '10px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' },
-  filterInput: { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '13px', outline: 'none' },
+  searchSection: { backgroundColor: 'white', padding: '15px', borderRadius: '12px', marginBottom: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' },
+  filterGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '15px' },
+  filterGroup: { display: 'flex', flexDirection: 'column' as const, gap: '5px' },
+  filterLabel: { fontSize: '12px', fontWeight: 'bold', color: '#475569' },
+  filterInput: { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '13px', outline: 'none', boxSizing: 'border-box' as const },
+  resetButton: { backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' as const, display: 'block', marginRight: 'auto' },
   sectionTitle: { fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px' },
   noCars: { textAlign: 'center' as const, padding: '40px', backgroundColor: 'white', borderRadius: '12px', color: '#64748b', border: '1px dashed #cbd5e1' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '15px' },
@@ -195,4 +251,3 @@ const styles = {
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '12px' },
   spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
-
