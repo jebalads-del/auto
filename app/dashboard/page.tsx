@@ -10,7 +10,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({
     cars: 0,
     users: 0,
-    ads: 0,
   });
 
   useEffect(() => {
@@ -19,7 +18,10 @@ export default function DashboardPage() {
         const res = await fetch('/api/admin/stats');
         const data = await res.json();
         if (data.success) {
-          setStats(data.stats);
+          setStats({
+            cars: data.stats.cars || 0,
+            users: data.stats.users || 0,
+          });
         }
       } catch (error) {
         console.error('خطأ في جلب الإحصائيات:', error);
@@ -40,7 +42,7 @@ export default function DashboardPage() {
   return (
     <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       
-      {/* الهيدر مع زر الخروج */}
+      {/* الهيدر */}
       <div style={{ 
         backgroundColor: '#1e293b', 
         padding: '20px', 
@@ -114,19 +116,9 @@ export default function DashboardPage() {
           fontWeight: 'bold',
           fontSize: '14px'
         }}>
-          🚗 الإعلانات
+          🚗 إعلانات السيارات
         </Link>
-        <Link href="/dashboard/commercial-ads" style={{ 
-  backgroundColor: '#d97706', 
-  color: 'white', 
-  padding: '10px 20px', 
-  borderRadius: '8px', 
-  textDecoration: 'none',
-  fontWeight: 'bold',
-  fontSize: '14px'
-}}>
-  📢 الإعلانات التجارية
-</Link>
+
         <Link href="/dashboard/settings" style={{ 
           backgroundColor: '#6b7280', 
           color: 'white', 
@@ -154,10 +146,10 @@ export default function DashboardPage() {
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#2563eb' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#059669' }}>
             {loading ? '...' : stats.cars}
           </div>
-          <div style={{ color: '#64748b' }}>🚗 السيارات</div>
+          <div style={{ color: '#64748b' }}>🚗 إعلانات السيارات</div>
         </div>
 
         <div style={{ 
@@ -171,19 +163,6 @@ export default function DashboardPage() {
             {loading ? '...' : stats.users}
           </div>
           <div style={{ color: '#64748b' }}>👥 المستخدمين</div>
-        </div>
-
-        <div style={{ 
-          backgroundColor: 'white', 
-          padding: '20px', 
-          borderRadius: '12px', 
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#d97706' }}>
-            {loading ? '...' : stats.ads}
-          </div>
-          <div style={{ color: '#64748b' }}>📢 الإعلانات</div>
         </div>
       </div>
 
