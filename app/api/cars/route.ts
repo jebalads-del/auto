@@ -84,12 +84,30 @@ export async function POST(request: Request) {
       const extension = mimeType.split('/')[1] || 'jpg';
       const buffer = Buffer.from(base64Content, 'base64');
       const blobFilename = `car-${Date.now()}.${extension}`;
-      const blobResult = await put(blobFilename, buffer, { access: 'public', contentType: mimeType });
+      
+      // ✅ التعديل: استخدام المتغيرات الجديدة
+      const blobResult = await put(blobFilename, buffer, {
+        access: 'public',
+        contentType: mimeType,
+        token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
+        storeId: process.env.CARS_BLOB_STORE_ID,
+      });
+      
       finalImageUrl = blobResult.url;
+      
     } else if (rawImages && typeof rawImages !== 'string' && rawImages.size > 0) {
       const blobFilename = `car-${Date.now()}-${rawImages.name}`;
-      const blobResult = await put(blobFilename, rawImages, { access: 'public', contentType: rawImages.type });
+      
+      // ✅ التعديل: استخدام المتغيرات الجديدة
+      const blobResult = await put(blobFilename, rawImages, {
+        access: 'public',
+        contentType: rawImages.type,
+        token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
+        storeId: process.env.CARS_BLOB_STORE_ID,
+      });
+      
       finalImageUrl = blobResult.url;
+      
     } else if (typeof rawImages === 'string') {
       finalImageUrl = rawImages;
     }
