@@ -70,7 +70,7 @@ export default function NewCarPage() {
       formData.append('image', file);
       formData.append('carId', carId.toString());
 
-      const response = await fetch('/api/cars/upload', {
+      const response = await fetch('/api/cars', {
         method: 'POST',
         body: formData,
       });
