@@ -1,4 +1,3 @@
-// تحديث نهائي لفك تشفير الصور القاطع لـ Vercel
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import sql from '../db';
@@ -7,15 +6,14 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    // جلب كافة البيانات الحية المعتمدة من الأدمن
     const rawCars = await sql`
-      SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, created_at 
-      FROM cars 
-      WHERE status = 'approved' 
-      ORDER BY id DESC
+      SELECT * FROM cars WHERE status = 'approved' ORDER BY id DESC
     `;
 
     const formattedCars = rawCars.map((car: any) => ({
-      id: car.id,
+      // تأكيد إرسال الـ id بشكل رقمي صريح لإصلاح صفحة التفاصيل
+      id: Number(car.id), 
       brand: String(car.brand || 'سيارة غير معروفة'),
       model: String(car.model || ''),
       year: Number(car.year || 0),
@@ -23,7 +21,6 @@ export async function GET() {
       kilometers: Number(car.kilometers || 0),
       color: String(car.color || ''),
       description: String(car.description || ''),
-      // قراءة الرابط النصي النظيف مباشرة من قاعدة البيانات دون فك أو مصفوفات
       images: car.images ? String(car.images).trim() : '', 
       status: String(car.status || 'pending'),
       created_at: car.created_at || new Date().toISOString(),
@@ -77,42 +74,23 @@ export async function POST(request: Request) {
 
     if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
       const base64Parts = rawImages.split(',');
-      const base64Header = base64Parts[0] || '';
-      const base64Content = base64Parts[1] || '';
+      const base64Header = base64Parts || '';
+      const base64Content = base64Parts || '';
       const mimeMatch = base64Header.match(/data:(.*?);/);
-      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-      const extension = mimeType.split('/')[1] || 'jpg';
+      const mimeType = mimeMatch ? mimeMatch : 'image/jpeg';
+      const extension = mimeType.split('/') || 'jpg';
       const buffer = Buffer.from(base64Content, 'base64');
       const blobFilename = `car-${Date.now()}.${extension}`;
-      
-      // ✅ التعديل: استخدام المتغيرات الجديدة
-      const blobResult = await put(blobFilename, buffer, {
-        access: 'public',
-        contentType: mimeType,
-        token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
-        storeId: process.env.CARS_BLOB_STORE_ID,
-      });
-      
+      const blobResult = await put(blobFilename, buffer, { access: 'public', contentType: mimeType });
       finalImageUrl = blobResult.url;
-      
     } else if (rawImages && typeof rawImages !== 'string' && rawImages.size > 0) {
       const blobFilename = `car-${Date.now()}-${rawImages.name}`;
-      
-      // ✅ التعديل: استخدام المتغيرات الجديدة
-      const blobResult = await put(blobFilename, rawImages, {
-        access: 'public',
-        contentType: rawImages.type,
-        token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
-        storeId: process.env.CARS_BLOB_STORE_ID,
-      });
-      
+      const blobResult = await put(blobFilename, rawImages, { access: 'public', contentType: rawImages.type });
       finalImageUrl = blobResult.url;
-      
     } else if (typeof rawImages === 'string') {
       finalImageUrl = rawImages;
     }
 
-    // حفظ الرابط كنص عادي مباشر متوافق مع تعديل جدول Neon الجديد
     const result = await sql`
       INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
       VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${finalImageUrl}, 'pending', ${is_featured}, ${payment_method})
