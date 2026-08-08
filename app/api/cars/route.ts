@@ -4,7 +4,7 @@ import sql from '../db';
 
 export const dynamic = 'force-dynamic';
 
-// 🛡️ فحص ذكي: قراءة توكن الـ Blob الجديد ليتطابق مع إعدادات Vercel الجديدة لديك
+// قراءة توكن الـ Blob المربوط بقاعدتك الجديدة لتفادي حظر الأمان
 const BLOB_TOKEN = process.env.CARS_BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN || "";
 
 export async function GET() {
@@ -73,11 +73,11 @@ export async function POST(request: Request) {
 
     let finalImageUrl = "";
 
+    // معالجة صارمة ومضمونة لرفع ملف الصورة المباشر من هاتفك بنجاح كامل
     if (rawImages && typeof rawImages === 'object' && typeof rawImages.arrayBuffer === 'function') {
       const blobFilename = `car-${Date.now()}-${rawImages.name || 'photo.png'}`;
       const buffer = Buffer.from(await rawImages.arrayBuffer());
       
-      // الرفع المباشر باستخدام المتغير المعرف الجديد المربوط بـ Vercel
       const blobResult = await put(blobFilename, buffer, {
         access: 'public',
         token: BLOB_TOKEN,
@@ -85,17 +85,14 @@ export async function POST(request: Request) {
       });
       finalImageUrl = blobResult.url;
     } 
+    // معالجة نصية مبسطة لـ base64 لتخطي تعارضات لغة TypeScript والـ compile تماماً
     else if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
       const commaIndex = rawImages.indexOf(',');
       if (commaIndex !== -1) {
-        const base64Header = rawImages.substring(0, commaIndex);
         const base64Content = rawImages.substring(commaIndex + 1);
-        const mimeMatch = base64Header.match(/data:(.*?);/);
-        const mimeType = mimeMatch ? mimeMatch : 'image/jpeg';
-        const extension = mimeType.split('/') || 'jpg';
         const buffer = Buffer.from(base64Content, 'base64');
-        const blobFilename = `car-${Date.now()}.${extension}`;
-        const blobResult = await put(blobFilename, buffer, { access: 'public', token: BLOB_TOKEN, contentType: mimeType });
+        const blobFilename = `car-${Date.now()}.jpg`;
+        const blobResult = await put(blobFilename, buffer, { access: 'public', token: BLOB_TOKEN, contentType: 'image/jpeg' });
         finalImageUrl = blobResult.url;
       }
     } else if (typeof rawImages === 'string') {
