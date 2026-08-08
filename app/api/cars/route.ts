@@ -6,13 +6,14 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // جلب كافة البيانات الحية المعتمدة من الأدمن
     const rawCars = await sql`
-      SELECT * FROM cars WHERE status = 'approved' ORDER BY id DESC
+      SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, created_at 
+      FROM cars 
+      WHERE status = 'approved' 
+      ORDER BY id DESC
     `;
 
     const formattedCars = rawCars.map((car: any) => ({
-      // تأكيد إرسال الـ id بشكل رقمي صريح لإصلاح صفحة التفاصيل
       id: Number(car.id), 
       brand: String(car.brand || 'سيارة غير معروفة'),
       model: String(car.model || ''),
@@ -74,11 +75,14 @@ export async function POST(request: Request) {
 
     if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
       const base64Parts = rawImages.split(',');
-      const base64Header = base64Parts || '';
-      const base64Content = base64Parts || '';
+      // حماية الكود عبر إجبار القراءة النصية وتجاوز المصفوفة لمنع خطأ البناء
+      const base64Header = String(base64Parts[0] || '');
+      const base64Content = String(base64Parts[1] || '');
+      
       const mimeMatch = base64Header.match(/data:(.*?);/);
-      const mimeType = mimeMatch ? mimeMatch : 'image/jpeg';
-      const extension = mimeType.split('/') || 'jpg';
+      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+      const extension = mimeType.split('/')[1] || 'jpg';
+      
       const buffer = Buffer.from(base64Content, 'base64');
       const blobFilename = `car-${Date.now()}.${extension}`;
       const blobResult = await put(blobFilename, buffer, { access: 'public', contentType: mimeType });
