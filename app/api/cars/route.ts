@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       user_id = formData.get('user_id') as string || '';
       payment_method = formData.get('payment_method') as string || 'western';
       is_featured = formData.get('is_featured') === 'true';
+      // التقاط كائن ملف الصورة الحقيقي بشكل دقيق
       rawImages = formData.get('image') || formData.get('images');
     } else {
       const body = await request.json();
@@ -70,26 +71,31 @@ export async function POST(request: Request) {
 
     let finalImageUrl = "";
 
-    // إصلاح الخلل الجوهري: معالجة نصوص وصور الـ base64 بشكل نصي نقي لتفادي خطأ البناء
-    if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
+    // معالجة قاطعة لملفات الصور الحقيقية المرفوعة من الهاتف (مثل خطأ الملف المذكور)
+    if (rawImages && typeof rawImages === 'object' && typeof rawImages.arrayBuffer === 'function') {
+      const blobFilename = `car-${Date.now()}-${rawImages.name || 'photo.png'}`;
+      const buffer = Buffer.from(await rawImages.arrayBuffer());
+      
+      const blobResult = await put(blobFilename, buffer, {
+        access: 'public',
+        contentType: rawImages.type || 'image/png'
+      });
+      finalImageUrl = blobResult.url;
+    } 
+    // فحص إضافي محمي في حال تم إرسالها كـ base64 نصي
+    else if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
       const commaIndex = rawImages.indexOf(',');
       if (commaIndex !== -1) {
         const base64Header = rawImages.substring(0, commaIndex);
         const base64Content = rawImages.substring(commaIndex + 1);
-        
         const mimeMatch = base64Header.match(/data:(.*?);/);
         const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
         const extension = mimeType.split('/')[1] || 'jpg';
-        
         const buffer = Buffer.from(base64Content, 'base64');
         const blobFilename = `car-${Date.now()}.${extension}`;
         const blobResult = await put(blobFilename, buffer, { access: 'public', contentType: mimeType });
         finalImageUrl = blobResult.url;
       }
-    } else if (rawImages && typeof rawImages !== 'string' && rawImages.size > 0) {
-      const blobFilename = `car-${Date.now()}-${rawImages.name || 'image.jpg'}`;
-      const blobResult = await put(blobFilename, rawImages, { access: 'public', contentType: rawImages.type || 'image/jpeg' });
-      finalImageUrl = blobResult.url;
     } else if (typeof rawImages === 'string') {
       finalImageUrl = rawImages;
     }
@@ -100,7 +106,7 @@ export async function POST(request: Request) {
       RETURNING *
     `;
 
-    const insertedCar = result[0];
+    const insertedCar = result[0] || result;
     const carId = insertedCar ? Number(insertedCar.id) : null;
 
     return NextResponse.json({ 
@@ -128,3 +134,4 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
+
