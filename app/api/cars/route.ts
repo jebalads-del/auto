@@ -12,7 +12,6 @@ export async function GET() {
       WHERE status = 'approved' 
       ORDER BY id DESC
     `;
-
     const formattedCars = rawCars.map((car: any) => ({
       id: Number(car.id), 
       brand: String(car.brand || 'سيارة غير معروفة'),
@@ -27,10 +26,8 @@ export async function GET() {
       created_at: car.created_at || new Date().toISOString(),
       currency: String(car.currency || 'SAR')
     }));
-
     return NextResponse.json({ success: true, cars: formattedCars });
   } catch (error: any) {
-    console.error("Error fetching cars:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
@@ -74,40 +71,49 @@ export async function POST(request: Request) {
     let finalImageUrl = "";
 
     if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
-      const base64Parts = rawImages.split(',');
-      // حماية الكود عبر إجبار القراءة النصية وتجاوز المصفوفة لمنع خطأ البناء
-      const base64Header = String(base64Parts[0] || '');
-      const base64Content = String(base64Parts[1] || '');
-      
-      const mimeMatch = base64Header.match(/data:(.*?);/);
-      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-      const extension = mimeType.split('/')[1] || 'jpg';
+      const parts = rawImages.split(',');
+      const base64Content = parts || '';
+      const header = parts || '';
+      const mimeMatch = header.match(/data:(.*?);/);
+      const mimeType = mimeMatch ? mimeMatch : 'image/jpeg';
+      const extension = mimeType.split('/') || 'jpg';
       
       const buffer = Buffer.from(base64Content, 'base64');
       const blobFilename = `car-${Date.now()}.${extension}`;
       const blobResult = await put(blobFilename, buffer, { access: 'public', contentType: mimeType });
       finalImageUrl = blobResult.url;
     } else if (rawImages && typeof rawImages !== 'string' && rawImages.size > 0) {
-      const blobFilename = `car-${Date.now()}-${rawImages.name}`;
-      const blobResult = await put(blobFilename, rawImages, { access: 'public', contentType: rawImages.type });
+      const blobFilename = `car-${Date.now()}-${rawImages.name || 'image.jpg'}`;
+      const blobResult = await put(blobFilename, rawImages, { access: 'public', contentType: rawImages.type || 'image/jpeg' });
       finalImageUrl = blobResult.url;
     } else if (typeof rawImages === 'string') {
       finalImageUrl = rawImages;
     }
 
+    // إدخال البيانات وجلب السجل الجديد كاملاً
     const result = await sql`
       INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
       VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${finalImageUrl}, 'pending', ${is_featured}, ${payment_method})
       RETURNING *
     `;
 
-    return NextResponse.json({ success: true, data: result });
-  } catch (error) {
+    const insertedCar = result;
+    const carId = insertedCar ? Number(insertedCar.id) : null;
+
+    // 🛡️ التعديل الجوهري السحري: إرجاع الـ ID بجميع الصيغ المحتملة لتطابق كود واجهتك تماماً وتجاوز الخطأ
+    return NextResponse.json({ 
+      success: true, 
+      id: carId,
+      carId: carId,
+      data: { id: carId, ...insertedCar },
+      car: insertedCar
+    });
+
+  } catch (error: any) {
     console.error("Error creating car ad:", error);
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || String(error) }, { status: 500 });
   }
 }
-
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
