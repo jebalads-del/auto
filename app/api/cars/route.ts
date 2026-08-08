@@ -4,7 +4,6 @@ import sql from '../db';
 
 export const dynamic = 'force-dynamic';
 
-// قراءة توكن الـ Blob المربوط بقاعدتك الجديدة لتفادي حظر الأمان
 const BLOB_TOKEN = process.env.CARS_BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN || "";
 
 export async function GET() {
@@ -73,11 +72,9 @@ export async function POST(request: Request) {
 
     let finalImageUrl = "";
 
-    // معالجة صارمة ومضمونة لرفع ملف الصورة المباشر من هاتفك بنجاح كامل
     if (rawImages && typeof rawImages === 'object' && typeof rawImages.arrayBuffer === 'function') {
       const blobFilename = `car-${Date.now()}-${rawImages.name || 'photo.png'}`;
       const buffer = Buffer.from(await rawImages.arrayBuffer());
-      
       const blobResult = await put(blobFilename, buffer, {
         access: 'public',
         token: BLOB_TOKEN,
@@ -85,7 +82,6 @@ export async function POST(request: Request) {
       });
       finalImageUrl = blobResult.url;
     } 
-    // معالجة نصية مبسطة لـ base64 لتخطي تعارضات لغة TypeScript والـ compile تماماً
     else if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
       const commaIndex = rawImages.indexOf(',');
       if (commaIndex !== -1) {
@@ -102,18 +98,19 @@ export async function POST(request: Request) {
     const result = await sql`
       INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
       VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${finalImageUrl}, 'pending', ${is_featured}, ${payment_method})
-      RETURNING *
+      RETURNING id, brand, model, price
     `;
 
-    const insertedCar = result;
-    const carId = insertedCar ? Number(insertedCar.id) : null;
+    // 🛡️ التعديل الجوهري الساحري: سحب المعرّف من العنصر الأول في مصفوفة مخرجات الـ SQL بدقة وثبات
+    const firstRow: any = Array.isArray(result) && result.length > 0 ? result[0] : null;
+    const carId = firstRow ? Number(firstRow.id) : null;
 
     return NextResponse.json({ 
       success: true, 
       id: carId,
       carId: carId,
-      data: { id: carId, ...insertedCar },
-      car: insertedCar
+      data: { id: carId, ...firstRow },
+      car: firstRow
     });
 
   } catch (error: any) {
