@@ -70,18 +70,22 @@ export async function POST(request: Request) {
 
     let finalImageUrl = "";
 
+    // إصلاح الخلل الجوهري: معالجة نصوص وصور الـ base64 بشكل نصي نقي لتفادي خطأ البناء
     if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
-      const parts = rawImages.split(',');
-      const base64Content = parts || '';
-      const header = parts || '';
-      const mimeMatch = header.match(/data:(.*?);/);
-      const mimeType = mimeMatch ? mimeMatch : 'image/jpeg';
-      const extension = mimeType.split('/') || 'jpg';
-      
-      const buffer = Buffer.from(base64Content, 'base64');
-      const blobFilename = `car-${Date.now()}.${extension}`;
-      const blobResult = await put(blobFilename, buffer, { access: 'public', contentType: mimeType });
-      finalImageUrl = blobResult.url;
+      const commaIndex = rawImages.indexOf(',');
+      if (commaIndex !== -1) {
+        const base64Header = rawImages.substring(0, commaIndex);
+        const base64Content = rawImages.substring(commaIndex + 1);
+        
+        const mimeMatch = base64Header.match(/data:(.*?);/);
+        const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+        const extension = mimeType.split('/')[1] || 'jpg';
+        
+        const buffer = Buffer.from(base64Content, 'base64');
+        const blobFilename = `car-${Date.now()}.${extension}`;
+        const blobResult = await put(blobFilename, buffer, { access: 'public', contentType: mimeType });
+        finalImageUrl = blobResult.url;
+      }
     } else if (rawImages && typeof rawImages !== 'string' && rawImages.size > 0) {
       const blobFilename = `car-${Date.now()}-${rawImages.name || 'image.jpg'}`;
       const blobResult = await put(blobFilename, rawImages, { access: 'public', contentType: rawImages.type || 'image/jpeg' });
@@ -90,17 +94,15 @@ export async function POST(request: Request) {
       finalImageUrl = rawImages;
     }
 
-    // إدخال البيانات وجلب السجل الجديد كاملاً
     const result = await sql`
       INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
       VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${finalImageUrl}, 'pending', ${is_featured}, ${payment_method})
       RETURNING *
     `;
 
-    const insertedCar = result;
+    const insertedCar = result[0];
     const carId = insertedCar ? Number(insertedCar.id) : null;
 
-    // 🛡️ التعديل الجوهري السحري: إرجاع الـ ID بجميع الصيغ المحتملة لتطابق كود واجهتك تماماً وتجاوز الخطأ
     return NextResponse.json({ 
       success: true, 
       id: carId,
