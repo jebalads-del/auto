@@ -6,14 +6,24 @@ export const dynamic = 'force-dynamic';
 
 const BLOB_TOKEN = process.env.CARS_BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN || "";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const rawCars = await sql`
-      SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, is_featured, created_at 
-      FROM cars 
-      WHERE status = 'approved' OR status = 'sold'
-      ORDER BY is_featured DESC, id DESC
-    `;
+    const { searchParams } = new URL(request.url);
+    const statusParam = searchParams.get('status');
+
+    let rawCars;
+    // 🛡️ فحص ذكي: لو الأدمن يطلب البيانات، يرى المعلقpending والمقبول والمباع
+    if (statusParam === 'all') {
+      rawCars = await sql`
+        SELECT * FROM cars WHERE status != 'deleted' ORDER BY id DESC
+      `;
+    } else {
+      // الزوار يرون فقط المقبول والمباع مفرزاً بالمميز أولاً
+      rawCars = await sql`
+        SELECT * FROM cars WHERE status = 'approved' OR status = 'sold' ORDER BY is_featured DESC, id DESC
+      `;
+    }
+
     const formattedCars = rawCars.map((car: any) => ({
       id: Number(car.id), 
       brand: String(car.brand || 'سيارة غير معروفة'),
@@ -29,6 +39,7 @@ export async function GET() {
       created_at: car.created_at || new Date().toISOString(),
       currency: String(car.currency || 'SAR')
     }));
+
     return NextResponse.json({ success: true, cars: formattedCars });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -120,7 +131,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
@@ -129,17 +139,20 @@ export async function PUT(request: Request) {
     if (!id) return NextResponse.json({ success: false, error: "Missing car id" }, { status: 400 });
     const carId = Number(id);
 
+    // تحديث التميز 10 د.ك للأدمن
     if (is_featured !== undefined) {
       const targetFeatured = is_featured === true || is_featured === 'true';
       await sql`UPDATE cars SET is_featured = ${targetFeatured} WHERE id = ${carId}`;
       return NextResponse.json({ success: true });
     }
 
+    // تحديث روابط الصور
     if (images) {
       await sql`UPDATE cars SET images = ${images} WHERE id = ${carId}`;
       return NextResponse.json({ success: true });
     }
 
+    // موافقة ونشر الإعلانات الجديدة المعلقة
     if (status) {
       await sql`UPDATE cars SET status = ${status} WHERE id = ${carId}`;
       return NextResponse.json({ success: true });
