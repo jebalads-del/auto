@@ -29,23 +29,29 @@ export default function ProfilePage() {
   const getSingleImageUrl = (imagesData: any): string => {
     if (!imagesData) return '';
     if (Array.isArray(imagesData)) {
-      return imagesData.length > 0 ? String(imagesData[0]).trim() : '';
+      return imagesData.length > 0 ? String(imagesData).trim() : '';
     }
     let str = String(imagesData).trim();
     if (str.startsWith('[') && str.endsWith(']')) {
       try {
         const parsed = JSON.parse(str);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return String(parsed[0]).trim();
+          return String(parsed).trim();
         }
       } catch (e) {
         str = str.replace(/[\[\]"']/g, '');
       }
     }
     if (str.includes(',')) {
-      return str.split(',')[0].trim();
+      return str.split(',').trim();
     }
     return str;
+  };
+
+  // دالة التوجيه الذكية لصفحة الدفع مع تمرير رقم السيارة
+  const handleGoToPayment = (carId: number) => {
+    // التوجيه إلى صفحة الدفع (تأكد من إنشاء مجلد checkout/page.tsx لاحقاً)
+    router.push(`/checkout?carId=${carId}`);
   };
 
   useEffect(() => {
@@ -66,7 +72,7 @@ export default function ProfilePage() {
             (c: any) => String(c.userEmail) === String(targetEmail) || String(c.userId) === String(user?.id)
           );
           if (filteredCars.length === 0) {
-            setCars(carsData.cars.slice(0, 4)); 
+            setCars(carsData.cars.slice(0, 18)); 
           } else {
             setCars(filteredCars);
           }
@@ -147,7 +153,24 @@ export default function ProfilePage() {
                         <span style={{ backgroundColor: '#dcfce7', color: '#15803d', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}>🟢 معتمد ومنشور</span>
                       </div>
                       <Link href={`/car/${car.id}`} style={{ display: 'block', textAlign: 'center', backgroundColor: '#e2e8f0', color: '#334155', padding: '8px', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', marginBottom: '5px' }}>عرض الإعلان ←</Link>
-                      <button style={{ width: '100%', backgroundColor: '#2563eb', color: 'white', padding: '8px', borderRadius: '6px', border: 'none', fontSize: '13px' }}>⭐ طلب جعل الإعلان مميز</button>
+                      
+                      {/* الزر الموجه لصفحة الخيارات والتشيك أوت للدفع */}
+                      <button 
+                        onClick={() => handleGoToPayment(car.id)}
+                        style={{ 
+                          width: '100%', 
+                          backgroundColor: '#2563eb', 
+                          color: 'white', 
+                          padding: '8px', 
+                          borderRadius: '6px', 
+                          border: 'none', 
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ⭐ طلب جعل الإعلان مميز
+                      </button>
                     </div>
                   </div>
                 </div>
