@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-export const dynamic = 'force-dynamic';
+import Link from 'next/link';
 
 interface Car {
   id: number;
@@ -12,154 +10,174 @@ interface Car {
   model: string;
   year: number;
   price: number;
-  status: string;
+  currency?: string;
   images: any;
-  is_featured: boolean;
-  user_email?: string;
+  status?: string;
+  userId: string;
 }
 
-export default function UserProfilePage() {
+export default function ProfilePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [name, setName] = useState('مراحب');
-  const [phone, setPhone] = useState('85274158');
-  const [email, setEmail] = useState('mara7b@gmail.com');
-  const [password, setPassword] = useState('');
   const [cars, setCars] = useState<Car[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  // دالة ذكية لتنظيف واستخراج أول رابط صورة صحيح وتفادي مشاكل الأقواس والمصفوفات النصية
+  const getSingleImageUrl = (imagesData: any): string => {
+    if (!imagesData) return '';
+    
+    // 1. إذا كانت مصفوفة حقيقية (Array)
+    if (Array.isArray(imagesData)) {
+      return imagesData[0] ? String(imagesData[0]).trim() : '';
+    }
+    
+    let str = String(imagesData).trim();
+    
+    // 2. إذا كانت مصفوفة مخزنة كنص JSON مثل ["url"]
+    if (str.startsWith('[') && str.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return String(parsed[0]).trim();
+        }
+      } catch (e) {
+        // إذا فشل الـ parse يدوياً نقوم بتنظيف الأقواس والرموز
+        str = str.replace(/[\[\]"']/g, '');
+      }
+    }
+    
+    // 3. إذا كانت روابط نصية مفصولة بفواصل
+    if (str.includes(',')) {
+      return str.split(',')[0].trim();
+    }
+    
+    return str;
+  };
 
   useEffect(() => {
-    const fetchUserDataAndCars = async () => {
+    const fetchProfileData = async () => {
       try {
-        const res = await fetch(`/api/admin/cars?t=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
-        const data = res ? await res.json().catch(() => null) : null;
+        // جلب بيانات الجلسة والمستخدم الحالي
+        const userRes = await fetch('/api/auth/session');
+        const userData = await userRes.json();
         
-        if (data && data.success && Array.isArray(data.cars)) {
-          const currentUserEmail = 'mara7b@gmail.com'; 
-          
-          // تحويل البريد الإلكتروني إلى حروف صغيرة وتجريده من المسافات لضمان جلب كافة الإعلانات الأخرى
-          const userLeasedCars = data.cars.filter((car: any) => {
-            if (!car.user_email) return false;
-            return String(car.user_email).toLowerCase().trim() === currentUserEmail.toLowerCase().trim();
-          });
-          setCars(userLeasedCars);
+        if (!userData || !userData.user) {
+          router.push('/login');
+          return;
+        }
+        setUser(userData.user);
+
+        // جلب الإعلانات وتصفيتها بناءً على بريد أو معرف المستخدم الحالي
+        const carsRes = await fetch(`/api/cars?t=${Date.now()}`);
+        const carsData = await carsRes.json();
+        
+        if (carsData.success && carsData.cars) {
+          // تصفية الإعلانات لتطابق المستخدم الحالي بدقة
+          const userEmail = userData.user.email;
+          const filteredCars = carsData.cars.filter(
+            (c: any) => String(c.userEmail) === String(userEmail) || String(c.userId) === String(userData.user.id)
+          );
+          setCars(filteredCars);
         }
       } catch (error) {
-        console.error("Error fetching user profile cars:", error);
+        console.error('Error fetching profile data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchUserDataAndCars();
-  }, []);
 
-  const handleFeatureRequest = async (carId: number) => {
-    if (!confirm('هل تود إرسال طلب للإدارة لتثبيت هذا الإعلان كإعلان مميز في الصدارة؟')) return;
-    try {
-      const res = await fetch('/api/user/cars/feature', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ carId }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('✅ تم إرسال طلب تمييز الإعلان بنجاح، جاري مراجعته من الإدارة.');
-      } else {
-        alert('❌ فشل إرسال الطلب، حاول مجدداً.');
-      }
-    } catch {
-      alert('⚠️ خطأ في الاتصال بالسيرفر أثناء طلب التمييز');
-    }
-  };
+    fetchProfileData();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+        <p style={{ color: '#64748b' }}>⏳ جاري تحميل لوحة التحكم وبياناتك الشخصية...</p>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-        <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#1e293b' }}>👤 لوحة إدارة الحساب الشخصي</h1>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Link href="/dashboard/cars/new" style={{ backgroundColor: '#f59e0b', color: '#1e293b', padding: '8px 16px', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '12px' }}>
-            ➕ نشر إعلان جديد
-          </Link>
-          <Link href="/" style={{ backgroundColor: '#1e3a8a', color: 'white', padding: '8px 16px', borderRadius: '8px', textDecoration: 'none', fontSize: '12px' }}>
-            🏠 صالة العرض الرئيسية
-          </Link>
-        </div>
-      </div>
-
-      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.04)', marginBottom: '20px' }}>
-        <h3 style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#475569' }}>📝 تعديل البيانات الشخصية</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div>
-            <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '5px' }}>📧 البريد الإلكتروني (لا يمكن تغييره)</label>
-            <input type="text" value={email} disabled style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#f1f5f9', boxSizing: 'border-box', outline: 'none' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '5px' }}>👤 الاسم الكامل *</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '5px' }}>📞 رقم الهاتف *</label>
-            <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '5px' }}>🔒 كلمة السر الجديدة (اتركها فارغة للإبقاء على الحالية)</label>
-            <input type="password" placeholder="........" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }} />
-          </div>
-          <button style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', marginTop: '5px' }}>💾 حفظ التغييرات</button>
-        </div>
-      </div>
-      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
-        <h3 style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#475569' }}>🚘 إعلاناتي المعروضة ({cars.length})</h3>
+    <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         
-        {loading ? (
-          <p style={{ textAlign: 'center', color: '#64748b', fontSize: '13px' }}>جاري تحديث قائمة إعلاناتك الشخصية...</p>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '15px' }}>
-            {cars.map((car) => {
-              // معالجة قاطعة لرابط الصورة: قراءة النص المباشر القادم من الـ API وتنظيفه من أي حواصر متبقية
-              const carImageSrc = car.images ? String(car.images).replace(/[\{\}\"\'\s]/g, '') : '';
+        {/* شريط الملاحة العلوي */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <h1 style={{ fontSize: '18px', margin: 0, color: '#1e293b' }}>👤 لوحة إدارة الحساب الشخصي</h1>
+          <div>
+            <Link href="/add-car" style={{ backgroundColor: '#f59e0b', color: 'white', padding: '8px 16px', borderRadius: '6px', textDecoration: 'none', marginLeft: '10px', fontSize: '14px', fontWeight: 'bold' }}>➕ نشر إعلان جديد</Link>
+            <Link href="/" style={{ backgroundColor: '#1e3a8a', color: 'white', padding: '8px 16px', borderRadius: '6px', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' }}>🏠 صالة العرض الرئيسية</Link>
+          </div>
+        </div>
 
-              return (
-                <div key={car.id} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#fff' }}>
-                  <div style={{ height: '140px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {carImageSrc && carImageSrc !== '' && carImageSrc.startsWith('http') ? (
-                      <img src={carImageSrc} alt={car.brand} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>🚗 لا توجد صورة</span>
-                    )}
-                  </div>
-                  <div style={{ padding: '12px' }}>
-                    <h4 style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#0f172a' }}>{car.brand} {car.model} ({car.year})</h4>
-                    <div style={{ color: '#059669', fontWeight: 'bold', fontSize: '14px', marginBottom: '8px' }}>{car.price.toLocaleString()} د.ك</div>
+        {/* نموذج تعديل البيانات الشخصية */}
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', marginBottom: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ fontSize: '16px', margin: '0 0 15px 0', color: '#334155' }}>📝 تعديل البيانات الشخصية</h2>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '5px' }}>📧 البريد الإلكتروني (لا يمكن تغييره)</label>
+            <input type="text" disabled value={user?.email || ''} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: '#f1f5f9', color: '#64748b' }} />
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '5px' }}>👤 الاسم الكامل *</label>
+            <input type="text" defaultValue={user?.name || 'مرحب'} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '5px' }}>📞 رقم الهاتف *</label>
+            <input type="text" defaultValue={user?.phone || '85274158'} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'left', direction: 'ltr' }} />
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#64748b', marginBottom: '5px' }}>🔒 كلمة السر الجديدة (اتركها فارغة للإبقاء على الحالية)</label>
+            <input type="password" placeholder="......." style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
+          </div>
+          <button style={{ width: '100%', backgroundColor: '#2563eb', color: 'white', padding: '12px', borderRadius: '6px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>💾 حفظ التغييرات</button>
+        </div>
+
+        {/* قسم الإعلانات المعروضة */}
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ fontSize: '16px', margin: '0 0 20px 0', color: '#334155' }}>🚗 إعلاناتي المعروضة ({cars.length})</h2>
+          
+          {cars.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#64748b', padding: '40px 0' }}>لا توجد إعلانات منشورة باسمك حالياً لقراءة البيانات.</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+              {cars.map((car) => {
+                const validImageSrc = getSingleImageUrl(car.images);
+                return (
+                  <div key={car.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column', backgroundColor: '#f8fafc' }}>
                     
-                    <div style={{ marginBottom: '12px' }}>
-                      <span style={{ 
-                        backgroundColor: car.status === 'approved' ? '#d1fae5' : car.status === 'pending' ? '#fef3c7' : '#fee2e2', 
-                        color: car.status === 'approved' ? '#065f46' : car.status === 'pending' ? '#92400e' : '#991b1b', 
-                        padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' 
-                      }}>
-                        {car.status === 'approved' ? '🟢 معتمد ومنشور' : car.status === 'pending' ? '🟡 قيد المراجعة' : '🔴 مرفوض'}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <Link href={`/car/${car.id}`} style={{ display: 'block', textAlign: 'center', backgroundColor: '#f1f5f9', color: '#475569', padding: '6px', borderRadius: '6px', textDecoration: 'none', fontSize: '12px' }}>عرض الإعلان ←</Link>
-                      {!car.is_featured ? (
-                        <button onClick={() => handleFeatureRequest(car.id)} style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '7px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>⭐ طلب عمل إعلان مميز</button>
+                    {/* مكان عرض الصورة */}
+                    <div style={{ height: '18px', backgroundColor: '#f1f5f9', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', minHeight: '160px' }}>
+                      {validImageSrc && (validImageSrc.startsWith('http://') || validImageSrc.startsWith('https://')) ? (
+                        <img src={validImageSrc} alt={car.brand} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <span style={{ display: 'block', textAlign: 'center', backgroundColor: '#d1fae5', color: '#065f46', padding: '5px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>🌟 إعلان مميز نشط</span>
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>🚗 لا توجد صورة</span>
                       )}
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {!loading && cars.length === 0 && (
-          <p style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '20px' }}>لا توجد إعلانات منشورة باسمك حالياً لقراءة البيانات.</p>
-        )}
-      </div>
 
+                    {/* تفاصيل الكرت */}
+                    <div style={{ padding: '12px', flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <h3 style={{ fontSize: '14px', margin: '0 0 5px 0', color: '#0f172a' }}>{car.brand} {car.model} ({car.year})</h3>
+                        <p style={{ fontSize: '15px', fontWeight: 'bold', color: '#059669', margin: '0 0 10px 0' }}>{Number(car.price).toLocaleString()} {car.currency || 'د.ك'}</p>
+                      </div>
+                      
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                          <span style={{ backgroundColor: '#dcfce7', color: '#15803d', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}>🟢 معتمد ومنشور</span>
+                        </div>
+                        <Link href={`/car/${car.id}`} style={{ display: 'block', textAlign: 'center', backgroundColor: '#e2e8f0', color: '#334155', padding: '8px', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', marginBottom: '5px', fontWeight: '500' }}>عرض الإعلان ←</Link>
+                        <button style={{ width: '100%', backgroundColor: '#2563eb', color: 'white', padding: '8px', borderRadius: '6px', border: 'none', fontSize: '13px', cursor: 'pointer' }}>⭐ طلب جعل الإعلان مميز</button>
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }
