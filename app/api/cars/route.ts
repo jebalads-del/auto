@@ -8,10 +8,11 @@ const BLOB_TOKEN = process.env.CARS_BLOB_READ_WRITE_TOKEN || process.env.BLOB_RE
 
 export async function GET() {
   try {
+    // 🛡️ التعديل الجوهري: جلب السيارات المقبولة (approved) والمباعة (sold) معاً لمنع اختفائها
     const rawCars = await sql`
       SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, created_at 
       FROM cars 
-      WHERE status = 'approved' 
+      WHERE status = 'approved' OR status = 'sold'
       ORDER BY id DESC
     `;
     const formattedCars = rawCars.map((car: any) => ({
@@ -24,7 +25,7 @@ export async function GET() {
       color: String(car.color || ''),
       description: String(car.description || ''),
       images: car.images ? String(car.images).trim() : '', 
-      status: String(car.status || 'pending'),
+      status: String(car.status || 'pending'), 
       created_at: car.created_at || new Date().toISOString(),
       currency: String(car.currency || 'SAR')
     }));
@@ -110,7 +111,6 @@ export async function POST(request: Request) {
       RETURNING id
     `;
 
-    // 🛡️ التعديل الجوهري القاطع: استخراج الـ ID المباشر والآمن تمامًا من مصفوفة الـ SQL لتخطي خطأ البناء
     let explicitId: number | null = null;
     if (Array.isArray(result) && result.length > 0) {
       explicitId = Number(result[0].id || null);
