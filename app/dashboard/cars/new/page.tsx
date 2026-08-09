@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 export default function NewCarAd() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [uploadingImages, setUploadingImages] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [images, setImages] = useState<File[]>([]);
@@ -22,31 +21,6 @@ export default function NewCarAd() {
     description: ''
   });
 
-  const uploadImagesToBlob = async (files: File[], carId: number): Promise<string[]> => {
-    const uploadedUrls: string[] = [];
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append('image', file);
-      formData.append('carId', carId.toString());
-
-      const response = await fetch('/api/cars', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`فشل رفع الصورة: ${file.name}`);
-      }
-
-      const data = await response.json();
-      if (data.success && data.url) {
-        uploadedUrls.push(data.url);
-      } else {
-        throw new Error(`فشل رفع الصورة: ${file.name}`);
-      }
-    }
-    return uploadedUrls;
-  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -60,71 +34,43 @@ export default function NewCarAd() {
         return;
       }
 
-      const payload = {
-        brand: formData.brand,
-        model: formData.model,
-        year: formData.year,
-        price: formData.price,
-        kilometers: formData.kilometers,
-        color: formData.color,
-        description: formData.description,
-        user_id: localStorage.getItem('userId') || localStorage.getItem('user_id') || '1',
-        payment_method: 'cash',
-        is_featured: false
-      };
+      // 🛡️ التطوير العبقري: جمع كافة النصوص والملفات في كائن FormData واحد موحد
+      const dataToSend = new FormData();
+      dataToSend.append('brand', formData.brand);
+      dataToSend.append('model', formData.model);
+      dataToSend.append('year', formData.year);
+      dataToSend.append('price', formData.price);
+      dataToSend.append('kilometers', formData.kilometers);
+      dataToSend.append('color', formData.color);
+      dataToSend.append('description', formData.description);
+      dataToSend.append('user_id', localStorage.getItem('userId') || localStorage.getItem('user_id') || '1');
+      dataToSend.append('payment_method', 'cash');
 
+      // إرفاق ملف الصورة الحقيقي مباشرة في نفس الطلب
+      if (images.length > 0) {
+        dataToSend.append('image', images[0]);
+      }
+
+      // إرسال طلب واحد شامل يحتوي على كل شيء دفعة واحدة
       const response = await fetch('/api/cars', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: dataToSend, // إرسال كملفات ونصوص معاً
       });
 
       const data = await response.json().catch(() => null);
 
       if (!data || !data.success) {
-        setError(data?.message || 'فشل سيرفر قاعدة البيانات في نشر تفاصيل الإعلان النصية');
+        setError(data?.error || data?.message || 'فشل السيرفر في معالجة ورفع الإعلان');
         setLoading(false);
         return;
       }
 
-      const carId = data.id || data.carId || (data.data && data.data.id);
-      
-      if (!carId) {
-        setError('تم نشر الإعلان لكن فشل العثور على معرف السيارة الداخلي بالسيرفر');
-        setLoading(false);
-        return;
-      }
-
-      let imageUrls: string[] = [];
-      if (images.length > 0) {
-        setUploadingImages(true);
-        try {
-          imageUrls = await uploadImagesToBlob(images, Number(carId));
-        } catch (uploadError: any) {
-          setError(`تم نشر الإعلان النصي بنجاح، لكن فشل رفع الملفات لـ Blob: ${uploadError.message}`);
-          setUploadingImages(false);
-          setLoading(false);
-          return;
-        }
-        setUploadingImages(false);
-      }
-
-      if (imageUrls.length > 0) {
-        const finalImgUrl = imageUrls[0];
-        const updateResponse = await fetch('/api/cars', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: Number(carId), status: 'pending', images: finalImgUrl })
-        });
-        await updateResponse.json().catch(() => null);
-      }
-
-      setSuccess('🎉 مبروك! تم نشر إعلان سيارتك بنجاح، وهو الآن بانتظار موافقة الأدمن لتفعيله علناً للزوار!');
+      setSuccess('🎉 مبروك! تم رفع مواصفات السيارة وصورتها الحية بنجاح إلى قاعدة البيانات، بانتظار تفعيل الأدمن ميكانيكياً!');
       setFormData({ brand: '', model: '', year: '', price: '', kilometers: '', color: '', description: '' });
       setImages([]);
 
     } catch (globalError: any) {
-      setError(`حدث خطأ غير متوقع أثناء معالجة الإعلان: ${globalError.message}`);
+      setError(`حدث خطأ أثناء معالجة الإعلان: ${globalError.message}`);
     } finally {
       setLoading(false);
     }
@@ -159,7 +105,7 @@ export default function NewCarAd() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الممشي (كم)</label>
+              <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الممشى (كم)</label>
               <input type="number" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }} placeholder="مثال: 50000" />
             </div>
             <div>
@@ -176,7 +122,7 @@ export default function NewCarAd() {
             <input type="file" accept="image/*" onChange={(e) => { if (e.target.files && e.target.files[0]) setImages([e.target.files[0]]); }} style={{ fontSize: '12px' }} />
           </div>
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: loading ? '#94a3b8' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', marginTop: '10px' }}>
-            {loading ? (uploadingImages ? '⏳ جاري رفع الصورة الحية لـ Blob...' : '⏳ جاري نشر تفاصيل الإعلان النصية...') : '🚀 انشر الإعلان الآن'}
+            {loading ? '⏳ جاري معالجة الإعلان ورفع الصور لـ Vercel Blob...' : '🚀 انشر الإعلان الآن'}
           </button>
         </form>
       </div>
