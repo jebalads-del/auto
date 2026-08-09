@@ -1,3 +1,52 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+export default function NewCarAd() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [images, setImages] = useState<File[]>([]);
+  
+  const [formData, setFormData] = useState({
+    brand: '',
+    model: '',
+    year: '',
+    price: '',
+    kilometers: '',
+    color: '',
+    description: ''
+  });
+
+  const uploadImagesToBlob = async (files: File[], carId: number): Promise<string[]> => {
+    const uploadedUrls: string[] = [];
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('carId', carId.toString());
+
+      const response = await fetch('/api/cars', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`فشل رفع الصورة: ${file.name}`);
+      }
+
+      const data = await response.json();
+      if (data.success && data.url) {
+        uploadedUrls.push(data.url);
+      } else {
+        throw new Error(`فشل رفع الصورة: ${file.name}`);
+      }
+    }
+    return uploadedUrls;
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -11,7 +60,6 @@
         return;
       }
 
-      // تجهيز البيانات النصية للإعلان لرفعها للمرحلة الأولى
       const payload = {
         brand: formData.brand,
         model: formData.model,
@@ -25,14 +73,12 @@
         is_featured: false
       };
 
-      // 1. نشر الإعلان النصي أولاً
       const response = await fetch('/api/cars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      // تأمين قراءة وفك تشفير الـ JSON بشكل مباشر وصارم لمنع تعليق المعرّف
       const data = await response.json().catch(() => null);
 
       if (!data || !data.success) {
@@ -41,7 +87,6 @@
         return;
       }
 
-      // استخراج معرّف السيارة النقي الذي يعيده السيرفر حالياً
       const carId = data.id || data.carId || (data.data && data.data.id);
       
       if (!carId) {
@@ -50,9 +95,6 @@
         return;
       }
 
-      // ============================================================
-      // 2. رفع الصور الحقيقية إلى Vercel Blob
-      // ============================================================
       let imageUrls: string[] = [];
       if (images.length > 0) {
         setUploadingImages(true);
@@ -67,27 +109,17 @@
         setUploadingImages(false);
       }
 
-      // ============================================================
-      // 3. تحديث الإعلان بروابط الصور النقية فوراً (المرحلة الثالثة والأخيرة)
-      // ============================================================
       if (imageUrls.length > 0) {
-        // نأخذ رابط الصورة الأول النظيف ونرسله للسيرفر الخلفي
         const finalImgUrl = imageUrls[0];
-        
         const updateResponse = await fetch('/api/cars', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: Number(carId), status: 'pending', images: finalImgUrl })
         });
-        
-        const updateData = await updateResponse.json().catch(() => null);
-        if (!updateData || !updateData.success) {
-          console.warn("Warning: Temporary failure mapping links on PUT runtime");
-        }
+        await updateResponse.json().catch(() => null);
       }
 
       setSuccess('🎉 مبروك! تم نشر إعلان سيارتك بنجاح، وهو الآن بانتظار موافقة الأدمن لتفعيله علناً للزوار!');
-      // إعادة تعيين النموذج بعد النجاح الكامل
       setFormData({ brand: '', model: '', year: '', price: '', kilometers: '', color: '', description: '' });
       setImages([]);
 
@@ -127,7 +159,7 @@
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الممشى (كم)</label>
+              <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الممشي (كم)</label>
               <input type="number" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none' }} placeholder="مثال: 50000" />
             </div>
             <div>
