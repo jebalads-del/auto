@@ -7,12 +7,30 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const rawCars = await sql`
-      SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, created_at
-      FROM cars
-      WHERE status IS NULL OR status != 'deleted'
-      ORDER BY id DESC
+    // استعلام ذكي يدمج جدول السيارات (cars) مع جدول المستخدمين (users) بناءً على user_id
+    // للحصول على إيميل المعلن الفعلي لمطابقته في لوحة الحساب الشخصية
+    const query = `
+      SELECT 
+        c.id, 
+        c.brand, 
+        c.model, 
+        c.year, 
+        c.price, 
+        c.kilometers, 
+        c.color, 
+        c.description, 
+        c.images, 
+        c.status, 
+        c.currency, 
+        c.created_at,
+        u.email as user_email
+      FROM cars c
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE c.status IS NULL OR c.status != 'deleted'
+      ORDER BY c.id DESC
     `;
+    
+    const rawCars = await sql(query);
 
     const formattedCars = rawCars.map((car: any) => ({
       id: car.id,
@@ -23,11 +41,11 @@ export async function GET() {
       kilometers: Number(car.kilometers || 0),
       color: String(car.color || ''),
       description: String(car.description || ''),
-      // قراءة الحقل النصي مباشرة لضمان ظهور الصور للأدمن والزوار بالتوازي
       images: car.images ? String(car.images).trim() : '',
       status: String(car.status || 'pending'),
       created_at: car.created_at || new Date().toISOString(),
-      currency: String(car.currency || 'د.أ')
+      currency: String(car.currency || 'د.أ'),
+      user_email: String(car.user_email || 'لا يوجد بريد') // إرسال الإيميل للواجهة
     }));
 
     return NextResponse.json({ success: true, cars: formattedCars });
@@ -40,7 +58,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { carId, action } = body; 
-
     if (!carId) return NextResponse.json({ success: false, error: 'معرف السيارة مفقود' }, { status: 400 });
 
     let targetStatus = 'pending';
@@ -49,10 +66,8 @@ export async function POST(request: NextRequest) {
     else if (action === 'delete') targetStatus = 'deleted';
 
     await sql`UPDATE cars SET status = ${targetStatus} WHERE id = ${carId}`;
-
-    return NextResponse.json({ success: true, message: 'تم تحديث حالة الإعلان بنجاح بنظام Neon' });
+    return NextResponse.json({ success: true, message: 'تم تحديث حالة الإعلان بنجاح' });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-// force rebuild API update
