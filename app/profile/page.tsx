@@ -29,28 +29,27 @@ export default function ProfilePage() {
   const getSingleImageUrl = (imagesData: any): string => {
     if (!imagesData) return '';
     if (Array.isArray(imagesData)) {
-      return imagesData.length > 0 ? String(imagesData).trim() : '';
+      return imagesData.length > 0 ? String(imagesData[0]).trim() : '';
     }
     let str = String(imagesData).trim();
     if (str.startsWith('[') && str.endsWith(']')) {
       try {
         const parsed = JSON.parse(str);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return String(parsed).trim();
+          return String(parsed[0]).trim();
         }
       } catch (e) {
         str = str.replace(/[\[\]"']/g, '');
       }
     }
     if (str.includes(',')) {
-      return str.split(',').trim();
+      const parts = str.split(',');
+      return parts.length > 0 ? parts[0].trim() : '';
     }
     return str;
   };
 
-  // دالة التوجيه الذكية لصفحة الدفع مع تمرير رقم السيارة
   const handleGoToPayment = (carId: number) => {
-    // التوجيه إلى صفحة الدفع (تأكد من إنشاء مجلد checkout/page.tsx لاحقاً)
     router.push(`/checkout?carId=${carId}`);
   };
 
@@ -97,7 +96,6 @@ export default function ProfilePage() {
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         
-        {/* شريط الملاحة العلوي المعدل لمنع التداخل */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px', backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
           <h1 style={{ fontSize: '20px', margin: 0, color: '#1e293b', fontWeight: 'bold' }}>👤 لوحة إدارة الحساب الشخصي</h1>
           <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
@@ -106,7 +104,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* نموذج تعديل البيانات الشخصية */}
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', marginBottom: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', margin: '0 0 15px 0', color: '#334155' }}>📝 تعديل البيانات الشخصية</h2>
           <div style={{ marginBottom: '12px' }}>
@@ -128,7 +125,6 @@ export default function ProfilePage() {
           <button style={{ width: '100%', backgroundColor: '#2563eb', color: 'white', padding: '12px', borderRadius: '6px', border: 'none', fontWeight: 'bold' }}>💾 حفظ التغييرات</button>
         </div>
 
-        {/* قسم الإعلانات والمعاينة بالصور */}
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', margin: '0 0 20px 0', color: '#334155' }}>🚗 إعلاناتي المعروضة ({cars.length})</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
@@ -154,7 +150,6 @@ export default function ProfilePage() {
                       </div>
                       <Link href={`/car/${car.id}`} style={{ display: 'block', textAlign: 'center', backgroundColor: '#e2e8f0', color: '#334155', padding: '8px', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', marginBottom: '5px' }}>عرض الإعلان ←</Link>
                       
-                      {/* الزر الموجه لصفحة الخيارات والتشيك أوت للدفع */}
                       <button 
                         onClick={() => handleGoToPayment(car.id)}
                         style={{ 
