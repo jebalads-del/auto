@@ -98,26 +98,25 @@ export async function POST(request: Request) {
       finalImageUrl = rawImages;
     }
 
-    // إذا كانت الخطوة الثانية (تحديث الصورة بناءً على carId مبعوث صراحة)
     if (carIdFromForm && Number(carIdFromForm) > 0) {
       const targetId = Number(carIdFromForm);
       await sql`UPDATE cars SET images = ${finalImageUrl} WHERE id = ${targetId}`;
       return NextResponse.json({ success: true, id: targetId, carId: targetId });
     }
 
-    // المرحلة الأولى: استعلام مستقل ومحدد لإرجاع معرّف رقمي نقي صريح ومحمي
     const result = await sql`
       INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
       VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${finalImageUrl}, 'pending', ${is_featured}, ${payment_method})
       RETURNING id
     `;
 
-    // 🛡️ فحص قاطع: استخراج الـ ID المباشر مهما كانت هيكلية مخرجات مكتبة Neon
-    let explicitId = null;
-    if (result && result.length > 0) {
-      explicitId = Number(result[0].id);
-    } else if (result && result.id) {
-      explicitId = Number(result.id);
+    // 🛡️ التعديل الجوهري القاطع: استخراج الـ ID المباشر والآمن تمامًا من مصفوفة الـ SQL لتخطي خطأ البناء
+    let explicitId: number | null = null;
+    if (Array.isArray(result) && result.length > 0) {
+      explicitId = Number(result[0].id || null);
+    } else {
+      const fallbackRow: any = result;
+      explicitId = fallbackRow && fallbackRow.id ? Number(fallbackRow.id) : null;
     }
 
     return NextResponse.json({ 
