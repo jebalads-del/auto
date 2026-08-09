@@ -46,7 +46,39 @@ export default function CarDetailPage() {
     );
   }
 
-  const validImageSrc = car.images ? String(car.images).trim() : '';
+  // دالة ذكية لتنظيف واستخراج أول رابط صورة صحيح وتفادي مشاكل الأقواس والمصفوفات النصية
+  const getSingleImageUrl = (imagesData: any): string => {
+    if (!imagesData) return '';
+    
+    // 1. إذا كانت مصفوفة حقيقية (Array)
+    if (Array.isArray(imagesData)) {
+      return imagesData[0] ? String(imagesData[0]).trim() : '';
+    }
+    
+    let str = String(imagesData).trim();
+    
+    // 2. إذا كانت مصفوفة مخزنة كنص JSON مثل ["url"]
+    if (str.startsWith('[') && str.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return String(parsed[0]).trim();
+        }
+      } catch (e) {
+        // إذا فشل الـ parse يدوياً نقوم بتنظيف الأقواس والرموز
+        str = str.replace(/[\[\]"']/g, '').split(',')[0];
+      }
+    }
+    
+    // 3. إذا كانت روابط نصية مفصولة بفواصل
+    if (str.includes(',')) {
+      return str.split(',')[0].trim();
+    }
+    
+    return str;
+  };
+
+  const validImageSrc = getSingleImageUrl(car.images);
 
   return (
     <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
@@ -55,7 +87,7 @@ export default function CarDetailPage() {
         <h1 style={{ fontSize: '22px', margin: '0 0 15px 0', color: '#0f172a' }}>{car.brand} {car.model}</h1>
         
         <div style={{ backgroundColor: '#f1f5f9', borderRadius: '8px', overflow: 'hidden', marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
-          {validImageSrc && validImageSrc.startsWith('http') ? (
+          {validImageSrc && (validImageSrc.startsWith('http://') || validImageSrc.startsWith('https://')) ? (
             <img src={validImageSrc} alt={car.brand} style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }} />
           ) : (
             <div style={{ padding: '60px', color: '#94a3b8', fontSize: '14px' }}>🚗 لا توجد صورة متوفرة لهذا الإعلان</div>
