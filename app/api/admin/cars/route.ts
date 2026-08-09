@@ -7,9 +7,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // استعلام ذكي يدمج جدول السيارات (cars) مع جدول المستخدمين (users) بناءً على user_id
-    // للحصول على إيميل المعلن الفعلي لمطابقته في لوحة الحساب الشخصية
-    const query = `
+    // تم إصلاح الاستعلام البرمجي ليكون مباشراً ومتوافقاً مع مكتبة Neon والـ TypeScript
+    const rawCars = await sql`
       SELECT 
         c.id, 
         c.brand, 
@@ -29,8 +28,6 @@ export async function GET() {
       WHERE c.status IS NULL OR c.status != 'deleted'
       ORDER BY c.id DESC
     `;
-    
-    const rawCars = await sql(query);
 
     const formattedCars = rawCars.map((car: any) => ({
       id: car.id,
@@ -45,11 +42,12 @@ export async function GET() {
       status: String(car.status || 'pending'),
       created_at: car.created_at || new Date().toISOString(),
       currency: String(car.currency || 'د.أ'),
-      user_email: String(car.user_email || 'لا يوجد بريد') // إرسال الإيميل للواجهة
+      user_email: String(car.user_email || 'لا يوجد بريد')
     }));
 
     return NextResponse.json({ success: true, cars: formattedCars });
   } catch (error: any) {
+    console.error("Error inside admin cars API view:", error);
     return NextResponse.json({ success: false, message: 'خطأ في جلب السيارات للأدمن', error: error.message });
   }
 }
