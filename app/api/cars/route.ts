@@ -12,13 +12,12 @@ export async function GET(request: NextRequest) {
     const statusParam = searchParams.get('status');
 
     let rawCars;
-    // 🛡️ فحص ذكي: لو الأدمن يطلب البيانات، يرى المعلقpending والمقبول والمباع
+    // 🛡️ فحص ذكي: لو الأدمن يطلب البيانات بـ status=all يرى المعلق pending والمقبول والمباع
     if (statusParam === 'all') {
       rawCars = await sql`
         SELECT * FROM cars WHERE status != 'deleted' ORDER BY id DESC
       `;
     } else {
-      // الزوار يرون فقط المقبول والمباع مفرزاً بالمميز أولاً
       rawCars = await sql`
         SELECT * FROM cars WHERE status = 'approved' OR status = 'sold' ORDER BY is_featured DESC, id DESC
       `;
@@ -50,8 +49,8 @@ export async function POST(request: Request) {
   try {
     let brand = "", model = "", year = "", price = "";
     let kilometers = "", color = "", description = "", user_id = "";
-    let payment_method = "", is_featured = false, rawImages: any = null;
-    let carIdFromForm: string | null = null;
+    let payment_method = "", is_featured = false;
+    let uploadedUrls: string[] = [];
 
     const contentType = request.headers.get('content-type') || '';
 
@@ -67,66 +66,38 @@ export async function POST(request: Request) {
       user_id = formData.get('user_id') as string || '';
       payment_method = formData.get('payment_method') as string || 'western';
       is_featured = formData.get('is_featured') === 'true';
-      rawImages = formData.get('image') || formData.get('images');
-      carIdFromForm = formData.get('carId') as string || null;
-    } else {
-      const body = await request.json();
-      brand = body.brand || '';
-      model = body.model || '';
-      year = body.year || '';
-      price = body.price || '0';
-      kilometers = body.kilometers || '';
-      color = body.color || '';
-      description = body.description || '';
-      user_id = body.user_id || '';
-      payment_method = body.payment_method || 'western';
-      is_featured = !!body.is_featured;
-      rawImages = body.images || body.image_url;
-      carIdFromForm = body.carId || null;
-    }
 
-    let finalImageUrl = "";
-
-    if (rawImages && typeof rawImages === 'object' && typeof rawImages.arrayBuffer === 'function') {
-      const blobFilename = `car-${Date.now()}-${rawImages.name || 'photo.png'}`;
-      const buffer = Buffer.from(await rawImages.arrayBuffer());
-      const blobResult = await put(blobFilename, buffer, { access: 'public', token: BLOB_TOKEN, contentType: rawImages.type || 'image/png' });
-      finalImageUrl = blobResult.url;
-    } 
-    else if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
-      const commaIndex = rawImages.indexOf(',');
-      if (commaIndex !== -1) {
-        const base64Content = rawImages.substring(commaIndex + 1);
-        const buffer = Buffer.from(base64Content, 'base64');
-        const blobFilename = `car-${Date.now()}.jpg`;
-        const blobResult = await put(blobFilename, buffer, { access: 'public', token: BLOB_TOKEN, contentType: 'image/jpeg' });
-        finalImageUrl = blobResult.url;
+      // 🛡️ التقاط كافة الصور الـ 3 المرفوعة ميكانيكياً من مصفوفة الحقول
+      const allFiles = formData.getAll('images');
+      
+      for (const rawImages of allFiles) {
+        if (rawImages && typeof rawImages === 'object' && typeof rawImages.arrayBuffer === 'function') {
+          const blobFilename = `car-${Date.now()}-${rawImages.name || 'photo.png'}`;
+          const buffer = Buffer.from(await rawImages.arrayBuffer());
+          const blobResult = await put(blobFilename, buffer, {
+            access: 'public',
+            token: BLOB_TOKEN,
+            contentType: rawImages.type || 'image/png'
+          });
+          if (blobResult.url) uploadedUrls.push(blobResult.url);
+        }
       }
-    } else if (typeof rawImages === 'string') {
-      finalImageUrl = rawImages;
     }
 
-    if (carIdFromForm && Number(carIdFromForm) > 0) {
-      const targetId = Number(carIdFromForm);
-      await sql`UPDATE cars SET images = ${finalImageUrl} WHERE id = ${targetId}`;
-      return NextResponse.json({ success: true, id: targetId, carId: targetId });
-    }
+    // دمج الروابط الـ 3 المستخرجة بنص واحد مفصول بفاصلة ليتوافق مع حقل قاعدة بيانات Neon النظيف
+    const finalImageUrlString = uploadedUrls.join(',');
 
     const result = await sql`
       INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
-      VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${finalImageUrl}, 'pending', ${is_featured}, ${payment_method})
+      VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${finalImageUrlString}, 'pending', ${is_featured}, ${payment_method})
       RETURNING id
     `;
 
-    let explicitId: number | null = null;
-    if (Array.isArray(result) && result.length > 0) {
-      explicitId = Number(result[0].id || null);
-    } else {
-      const fallbackRow: any = result;
-      explicitId = fallbackRow && fallbackRow.id ? Number(fallbackRow.id) : null;
-    }
+    let explicitId = null;
+    if (Array.isArray(result) && result.length > 0) explicitId = Number(result[0].id);
+    else { const fallback: any = result; explicitId = fallback && fallback.id ? Number(fallback.id) : null; }
 
-    return NextResponse.json({ success: true, id: explicitId, carId: explicitId, data: { id: explicitId } });
+    return NextResponse.json({ success: true, id: explicitId, carId: explicitId });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
@@ -135,29 +106,22 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { id, status, is_featured, images } = body;
-
     if (!id) return NextResponse.json({ success: false, error: "Missing car id" }, { status: 400 });
     const carId = Number(id);
 
-    // تحديث التميز 10 د.ك للأدمن
     if (is_featured !== undefined) {
       const targetFeatured = is_featured === true || is_featured === 'true';
       await sql`UPDATE cars SET is_featured = ${targetFeatured} WHERE id = ${carId}`;
       return NextResponse.json({ success: true });
     }
-
-    // تحديث روابط الصور
     if (images) {
       await sql`UPDATE cars SET images = ${images} WHERE id = ${carId}`;
       return NextResponse.json({ success: true });
     }
-
-    // موافقة ونشر الإعلانات الجديدة المعلقة
     if (status) {
       await sql`UPDATE cars SET status = ${status} WHERE id = ${carId}`;
       return NextResponse.json({ success: true });
     }
-
     return NextResponse.json({ success: false, error: "No action" }, { status: 400 });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

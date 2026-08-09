@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-// قاعدة بيانات الماركات والموديلات المدمجة ذكياً لتسهيل النشر على الجوال
 const CAR_DATABASE: { [key: string]: string[] } = {
   'تويوتا': ['كامري', 'كورولا', 'لاندكروزر', 'يارس', 'راف فور', 'هيلوكس'],
   'نيسان': ['ألتيما', 'صني', 'باترول', 'باثفايندر', 'نافارا', 'إكس تريل'],
@@ -29,17 +28,12 @@ export default function NewCarAd() {
   const [images, setImages] = useState<File[]>([]);
   
   const [formData, setFormData] = useState({
-    brand: '',
-    model: '',
-    year: '',
-    price: '',
-    kilometers: '',
-    color: '',
-    description: ''
+    brand: '', model: '', year: '', price: '', kilometers: '', color: '', description: ''
   });
 
   const uniqueBrands = Object.keys(CAR_DATABASE);
   const availableModels = formData.brand ? CAR_DATABASE[formData.brand] : [];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -53,7 +47,6 @@ export default function NewCarAd() {
         return;
       }
 
-      // تجهيز كائن البيانات الموحد الشامل لكافة الملفات والنصوص معاً
       const dataToSend = new FormData();
       dataToSend.append('brand', formData.brand);
       dataToSend.append('model', formData.model);
@@ -65,11 +58,11 @@ export default function NewCarAd() {
       dataToSend.append('user_id', localStorage.getItem('userId') || localStorage.getItem('user_id') || '1');
       dataToSend.append('payment_method', 'cash');
 
-      if (images.length > 0) {
-        dataToSend.append('image', images[0]);
-      }
+      // 🛡️ التحديث العبقري: إرسال الـ 3 صور معاً في الحقل الممتد للـ API
+      images.forEach((file) => {
+        dataToSend.append('images', file);
+      });
 
-      // إرسال الضربة الواحدة الموحدة التي حطمت أخطاء المعرفات والكاش
       const response = await fetch('/api/cars', {
         method: 'POST',
         body: dataToSend,
@@ -83,7 +76,7 @@ export default function NewCarAd() {
         return;
       }
 
-      setSuccess('🎉 مبروك! تم رفع مواصفات السيارة المجهزة بالقوائم وصورتها الحية بنجاح إلى قاعدة البيانات، بانتظار تفعيل الأدمن ميكانيكياً!');
+      setSuccess('🎉 مبروك! تم رفع مواصفات السيارة بالقوائم و الصور الـ 3 بنجاح، بانتظار تفعيل الأدمن ميكانيكياً!');
       setFormData({ brand: '', model: '', year: '', price: '', kilometers: '', color: '', description: '' });
       setImages([]);
 
@@ -103,8 +96,6 @@ export default function NewCarAd() {
         {success && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px', fontWeight: 'bold' }}>✅ {success}</div>}
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          
-          {/* قائمة اختيار الماركة */}
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الماركة *</label>
             <select value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={{ width: '100%', padding: '11px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', outline: 'none', fontSize: '13px' }} required>
@@ -112,8 +103,6 @@ export default function NewCarAd() {
               {uniqueBrands.map((brand, idx) => <option key={idx} value={brand}>{brand}</option>)}
             </select>
           </div>
-
-          {/* قائمة اختيار الموديل - تفتح ديناميكياً وتتغير حسب الماركة */}
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الموديل *</label>
             <select value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} disabled={!formData.brand} style={{ width: '100%', padding: '11px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', outline: 'none', fontSize: '13px', opacity: formData.brand ? 1 : 0.6 }} required>
@@ -121,7 +110,6 @@ export default function NewCarAd() {
               {availableModels.map((model, idx) => <option key={idx} value={model}>{model}</option>)}
             </select>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>السعر * (د.ك)</label>
@@ -132,7 +120,6 @@ export default function NewCarAd() {
               <input type="number" value={formData.year} onChange={(e) => setFormData({ ...formData, year: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px' }} placeholder="مثال: 2022" />
             </div>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الممشى (كم)</label>
@@ -143,19 +130,25 @@ export default function NewCarAd() {
               <input type="text" value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px' }} placeholder="مثال: أبيض" />
             </div>
           </div>
-
           <div>
             <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>وصف الإعلان</label>
             <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', height: '80px', resize: 'none', fontSize: '13px' }} placeholder="اكتب تفاصيل إضافية وطريقة التواصل..."></textarea>
           </div>
-
+          
+          {/* تفعيل خاصية الاختيار المتعدد لـ 3 صور بلمسة واحدة لراحة العملاء */}
           <div>
-            <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>تحميل صورة السيارة</label>
-            <input type="file" accept="image/*" onChange={(e) => { if (e.target.files && e.target.files[0]) setImages([e.target.files[0]]); }} style={{ fontSize: '12px' }} />
+            <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>تحميل صور السيارة (يمكنك تحديد حتى 3 صور مخصصة) *</label>
+            <input type="file" accept="image/*" multiple onChange={(e) => { 
+              if (e.target.files) {
+                const filesArray = Array.from(e.target.files).slice(0, 3);
+                setImages(filesArray);
+              }
+            }} style={{ fontSize: '12px' }} />
+            <p style={{ margin: '5px 0 0 0', fontSize: '11px', color: '#64748b' }}>📸 تم تحديد: {images.length} صور حالياً</p>
           </div>
 
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: loading ? '#94a3b8' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', marginTop: '10px' }}>
-            {loading ? '⏳ جاري معالجة الإعلان المطور ورفع الصور لـ Vercel Blob...' : '🚀 انشر الإعلان بالقوائم الآن'}
+            {loading ? '⏳ جاري معالجة ورفع المواصفات الفنية والـ 3 صور لـ Blob...' : '🚀 انشر الإعلان بالقوائم والصور الآن'}
           </button>
         </form>
       </div>
