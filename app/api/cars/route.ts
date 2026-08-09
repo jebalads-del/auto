@@ -4,6 +4,7 @@ import sql from '../db';
 
 export const dynamic = 'force-dynamic';
 
+// قراءة توكن الـ Blob المربوط بقاعدتك الجديدة لتفادي حظر الأمان
 const BLOB_TOKEN = process.env.CARS_BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN || "";
 
 export async function GET() {
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
     let brand = "", model = "", year = "", price = "";
     let kilometers = "", color = "", description = "", user_id = "";
     let payment_method = "", is_featured = false, rawImages: any = null;
+    let carIdFromForm: string | null = null;
 
     const contentType = request.headers.get('content-type') || '';
 
@@ -55,6 +57,8 @@ export async function POST(request: Request) {
       payment_method = formData.get('payment_method') as string || 'western';
       is_featured = formData.get('is_featured') === 'true';
       rawImages = formData.get('image') || formData.get('images');
+      // التقاط معرف السيارة لو أرسلته الواجهة في الخطوة الثانية
+      carIdFromForm = formData.get('carId') as string || null;
     } else {
       const body = await request.json();
       brand = body.brand || '';
@@ -68,6 +72,7 @@ export async function POST(request: Request) {
       payment_method = body.payment_method || 'western';
       is_featured = !!body.is_featured;
       rawImages = body.images || body.image_url;
+      carIdFromForm = body.carId || null;
     }
 
     let finalImageUrl = "";
@@ -95,14 +100,26 @@ export async function POST(request: Request) {
       finalImageUrl = rawImages;
     }
 
+    // 🛡️ التعديل السحري: إذا كانت الواجهة ترفع الصور لإعلان موجود مسبقاً (الخطوة الثانية)
+    if (carIdFromForm && Number(carIdFromForm) > 0) {
+      const targetId = Number(carIdFromForm);
+      await sql`UPDATE cars SET images = ${finalImageUrl} WHERE id = ${targetId}`;
+      return NextResponse.json({ 
+        success: true, 
+        id: targetId, 
+        carId: targetId,
+        message: "تم تحديث ورفع صورة الإعلان بنجاح" 
+      });
+    }
+
+    // إذا كانت الخطوة الأولى (إنشاء سجل الإعلان لأول مرة)
     const result = await sql`
       INSERT INTO cars (user_id, brand, model, year, color, kilometers, description, price, images, status, is_featured, payment_method)
       VALUES (${user_id ? Number(user_id) : null}, ${brand}, ${model}, ${year ? Number(year) : null}, ${color}, ${kilometers ? Number(kilometers) : null}, ${description}, ${price ? Number(price) : 0}, ${finalImageUrl}, 'pending', ${is_featured}, ${payment_method})
       RETURNING id, brand, model, price
     `;
 
-    // 🛡️ التعديل الجوهري الساحري: سحب المعرّف من العنصر الأول في مصفوفة مخرجات الـ SQL بدقة وثبات
-    const firstRow: any = Array.isArray(result) && result.length > 0 ? result[0] : null;
+    const firstRow: any = Array.isArray(result) && result.length > 0 ? result : null;
     const carId = firstRow ? Number(firstRow.id) : null;
 
     return NextResponse.json({ 
