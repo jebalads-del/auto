@@ -8,12 +8,12 @@ const BLOB_TOKEN = process.env.CARS_BLOB_READ_WRITE_TOKEN || process.env.BLOB_RE
 
 export async function GET() {
   try {
-    // 🛡️ التعديل الجوهري: جلب السيارات المقبولة (approved) والمباعة (sold) معاً لمنع اختفائها
+    // 🛡️ الترتيب الذكي على ذوقي: جلب المميز أولاً (is_featured = true) ثم العادي تنازلياً حسب المعرف
     const rawCars = await sql`
-      SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, created_at 
+      SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency, is_featured, created_at 
       FROM cars 
       WHERE status = 'approved' OR status = 'sold'
-      ORDER BY id DESC
+      ORDER BY is_featured DESC, id DESC
     `;
     const formattedCars = rawCars.map((car: any) => ({
       id: Number(car.id), 
@@ -25,7 +25,8 @@ export async function GET() {
       color: String(car.color || ''),
       description: String(car.description || ''),
       images: car.images ? String(car.images).trim() : '', 
-      status: String(car.status || 'pending'), 
+      status: String(car.status || 'pending'),
+      is_featured: Boolean(car.is_featured === true || car.is_featured === 'true'), // قراءة حقل التميز بدقة
       created_at: car.created_at || new Date().toISOString(),
       currency: String(car.currency || 'SAR')
     }));
@@ -79,11 +80,7 @@ export async function POST(request: Request) {
     if (rawImages && typeof rawImages === 'object' && typeof rawImages.arrayBuffer === 'function') {
       const blobFilename = `car-${Date.now()}-${rawImages.name || 'photo.png'}`;
       const buffer = Buffer.from(await rawImages.arrayBuffer());
-      const blobResult = await put(blobFilename, buffer, {
-        access: 'public',
-        token: BLOB_TOKEN,
-        contentType: rawImages.type || 'image/png'
-      });
+      const blobResult = await put(blobFilename, buffer, { access: 'public', token: BLOB_TOKEN, contentType: rawImages.type || 'image/png' });
       finalImageUrl = blobResult.url;
     } 
     else if (rawImages && typeof rawImages === 'string' && rawImages.startsWith('data:image')) {
@@ -119,27 +116,40 @@ export async function POST(request: Request) {
       explicitId = fallbackRow && fallbackRow.id ? Number(fallbackRow.id) : null;
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      id: explicitId,
-      carId: explicitId,
-      data: { id: explicitId }
-    });
-
+    return NextResponse.json({ success: true, id: explicitId, carId: explicitId, data: { id: explicitId } });
   } catch (error: any) {
-    console.error("Error creating car ad:", error);
-    return NextResponse.json({ success: false, error: error.message || String(error) }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, status } = body;
-    if (!id || !status) return NextResponse.json({ success: false, error: "Missing parameters" }, { status: 400 });
+    const { id, status, is_featured, images } = body;
+
+    if (!id) return NextResponse.json({ success: false, error: "Missing car id" }, { status: 400 });
     const carId = Number(id);
-    await sql`UPDATE cars SET status = ${status} WHERE id = ${carId}`;
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+
+    // 🛡️ إذا كان الأدمن يضغط على زر تمييز الإعلان أو إلغاء تمييزه
+    if (is_featured !== undefined) {
+      const targetFeatured = is_featured === true || is_featured === 'true';
+      await sql`UPDATE cars SET is_featured = ${targetFeatured} WHERE id = ${carId}`;
+      return NextResponse.json({ success: true, message: "تم تحديث تمييز الإعلان بنجاح" });
+    }
+
+    // لتحديث الصور المكملة
+    if (images) {
+      await sql`UPDATE cars SET images = ${images} WHERE id = ${carId}`;
+      return NextResponse.json({ success: true });
+    }
+
+    // لتحديث الحالة العادية (موافقة، رفض، مباع)
+    if (status) {
+      await sql`UPDATE cars SET status = ${status} WHERE id = ${carId}`;
+      return NextResponse.json({ success: true, message: "تم تحديث حالة السيارة بنجاح" });
+    }
+
+    return NextResponse.json({ success: false, error: "No action provided" }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

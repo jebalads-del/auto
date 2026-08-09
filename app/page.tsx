@@ -1,4 +1,3 @@
-// تحديث نهائي لكسر كاش صالة العرض
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -16,6 +15,7 @@ interface Car {
   description: string;
   images: any;
   status: string;
+  is_featured: boolean; // إضافة حقل التميز بالواجهة
   currency: string;
 }
 
@@ -39,12 +39,10 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // تم إلغاء الكاش من داخل دالة fetch مباشرة لمنع التعارض مع المترجم
         const carsRes = await fetch(`/api/cars?t=${Date.now()}`, {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache' }
         }).catch(() => null);
-        
         const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
         if (carsData && carsData.success) {
           setCars(carsData.cars || []);
@@ -82,6 +80,10 @@ export default function HomePage() {
     return true;
   }) : [];
 
+  // تقسيم السيارات على ذوقي: مصفوفة للمميز ومصفوفة للإعلانات العادية
+  const featuredCars = filteredCars.filter(car => car.is_featured);
+  const regularCars = filteredCars.filter(car => !car.is_featured);
+
   const dynamicBrands = Array.isArray(cars) ? cars.map(car => car?.brand).filter(Boolean) : [];
   const allBrands = Array.from(new Set([...POPULAR_BRANDS, ...dynamicBrands])).sort();
 
@@ -91,22 +93,59 @@ export default function HomePage() {
 
   const getSingleImageSrc = (imagesInput: any): string => {
     if (!imagesInput) return '';
-    if (Array.isArray(imagesInput) && imagesInput.length > 0) {
-      return String(imagesInput[0] || '').trim();
-    }
+    if (Array.isArray(imagesInput) && imagesInput.length > 0) return String(imagesInput[0] || '').trim();
     const cleanStr = String(imagesInput).replace(/[\{\}\"\'\s]/g, '');
     const parts = cleanStr.split(',');
-    return parts && parts[0].startsWith('http') ? parts[0] : '';
+    return parts[0] && parts[0].startsWith('http') ? parts[0] : '';
   };
 
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b' }}>جاري تحميل صالة العرض...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b' }}>جاري تحميل صالة العرض المميزة...</p>
       </div>
     );
   }
+
+  const renderCarCard = (car: Car) => {
+    const carBrand = car.brand || 'سيارة';
+    const carModel = car.model || '';
+    const carYear = car.year || '----';
+    const carPrice = car.price ? car.price.toLocaleString() : '0';
+    const carCurrency = getCurrencySymbol(car.currency);
+    const finalImageSrc = getSingleImageSrc(car.images);
+    const isSold = car.status === 'sold';
+
+    return (
+      <div key={car.id} style={{...styles.card, border: car.is_featured ? '2px solid #f59e0b' : '1px solid #e2e8f0', position: 'relative'}}>
+        
+        {/* 🟢 شريط مباعة */}
+        {isSold && (
+          <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#10b981', color: 'white', padding: '4px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', zIndex: 5 }}>✓ مباعة</div>
+        )}
+
+        {/* 👑 شارة الإعلان المميز الذهبية الفخمة */}
+        {car.is_featured && !isSold && (
+          <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#f59e0b', color: '#1e293b', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', zIndex: 5, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>👑 مميز</div>
+        )}
+
+        <div style={styles.gallery}>
+          {finalImageSrc && finalImageSrc !== '' ? (
+            <img src={finalImageSrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', opacity: isSold ? 0.6 : 1 }} />
+          ) : (
+            <div style={styles.noImage}>🚗 لا توجد صورة</div>
+          )}
+        </div>
+        <div style={styles.cardBody}>
+          <h3 style={styles.carTitle}>{carBrand} {carModel}</h3>
+          <div style={{...styles.carPrice, color: isSold ? '#94a3b8' : (car.is_featured ? '#b45309' : '#059669'), textDecoration: isSold ? 'line-through' : 'none'}}>{carPrice} {carCurrency}</div>
+          <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {carYear}</span></div>
+          <Link href={`/car/${car.id}`} style={{...styles.viewLink, backgroundColor: isSold ? '#64748b' : (car.is_featured ? '#d97706' : '#1e3a8a')}}>{isSold ? 'عرض الإعلان المباع ←' : 'عرض التفاصيل ←'}</Link>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div style={styles.container}>
@@ -119,14 +158,15 @@ export default function HomePage() {
         </header>
         <div style={styles.heroBody}>
           <h2 style={styles.heroMainTitle}>ابحث عن سيارتك المثالية</h2>
-          <p style={styles.heroSubTitle}>تصفح الإعلانات الموثوقة المعروضة الآن في السوق</p>
+          <p style={styles.heroSubTitle}>تصفح صالة العرض وأرسل إعلانك أو ميزه لزيادة مبيعاتك</p>
           <div style={styles.statsContainer}>
-            <div style={styles.statBox}><span style={styles.statNumber}>{filteredCars.length}</span><span style={styles.statBoxLabel}>إعلان مطابق</span></div>
+            <div style={styles.statBox}><span style={styles.statNumber}>{filteredCars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
             <div style={styles.statDivider}></div>
-            <div style={styles.statBox}><span style={styles.statNumber}>4</span><span style={styles.statBoxLabel}>مدينة</span></div>
+            <div style={styles.statBox}><span style={styles.statNumber}>10 د.ك</span><span style={styles.statBoxLabel}>تميز شهري</span></div>
           </div>
         </div>
       </div>
+
       <div style={styles.content}>
         <div style={styles.actionButtonsGrid}>
           <button type="button" onClick={handlePostAdClick} style={styles.actionButtonPost}>➕ أرسل إعلانك مجاناً</button>
@@ -135,12 +175,11 @@ export default function HomePage() {
 
         {isFilterOpen && (
           <div style={styles.searchSection}>
-            <h3 style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#1e293b', fontWeight: 'bold' }}>⚙️ خيارات البحث المتقدم المحدثة:</h3>
             <div style={styles.filterGrid}>
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>الماركة:</label>
                 <select value={searchBrand} onChange={(e) => { setSearchBrand(e.target.value); setSearchModel(''); }} style={styles.filterInput}>
-                  <option value="">كل الماركات المتاحة</option>
+                  <option value="">كل الماركات</option>
                   {allBrands.map((brand, idx) => <option key={idx} value={brand}>{brand}</option>)}
                 </select>
               </div>
@@ -152,54 +191,31 @@ export default function HomePage() {
                 </select>
               </div>
               <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>السعر الأقصى (د.ك):</label>
+                <label style={styles.filterLabel}>السعر الأقصى:</label>
                 <input type="number" placeholder="مثال: 5000" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={styles.filterInput} />
               </div>
               <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>سنة الصنع (من سنة):</label>
+                <label style={styles.filterLabel}>سنة الصنع:</label>
                 <input type="number" placeholder="مثال: 2018" value={minYear} onChange={(e) => setMinYear(e.target.value)} style={styles.filterInput} />
               </div>
             </div>
-            {(searchBrand || searchModel || maxPrice || minYear) && (
-              <button type="button" onClick={() => { setSearchBrand(''); setSearchModel(''); setMaxPrice(''); setMinYear(''); }} style={styles.resetButton}>🧹 مسح الفلاتر</button>
-            )}
           </div>
         )}
 
-        <h2 style={styles.sectionTitle}>✨ السيارات المعروضة ({filteredCars.length})</h2>
-        {filteredCars.length === 0 ? (
-          <div style={styles.noCars}>لم نجد أي سيارات تطابق خيارات البحث الحالية. جرب تغيير الفلاتر 🔍</div>
-        ) : (
-          <div style={styles.grid}>
-            {filteredCars.map((car) => {
-              if (!car) return null;
-              const carBrand = car.brand || 'سيارة';
-              const carModel = car.model || '';
-              const carYear = car.year || '----';
-              const carPrice = car.price ? car.price.toLocaleString() : '0';
-              const carCurrency = getCurrencySymbol(car.currency);
-              
-              const finalImageSrc = getSingleImageSrc(car.images);
-
-              return (
-                <div key={car.id || Math.random()} style={styles.card}>
-                  <div style={styles.gallery}>
-                    {finalImageSrc && finalImageSrc !== '' ? (
-                      <img src={finalImageSrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
-                    ) : (
-                      <div style={styles.noImage}>🚗 لا توجد صورة</div>
-                    )}
-                  </div>
-                  <div style={styles.cardBody}>
-                    <h3 style={styles.carTitle}>{carBrand} {carModel}</h3>
-                    <div style={styles.carPrice}>{carPrice} {carCurrency}</div>
-                    <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {carYear}</span></div>
-                    <Link href={`/car/${car.id || ''}`} style={styles.viewLink}>عرض التفاصيل ←</Link>
-                  </div>
-                </div>
-              );
-            })}
+        {/* 👑 قسم الإعلانات المميزة الفخم في الأعلى على ذوقي البرمجي */}
+        {featuredCars.length > 0 && (
+          <div style={{ marginBottom: '30px', backgroundColor: '#fff9db', padding: '15px', borderRadius: '16px', border: '1px solid #ffe066' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 'bold', color: '#b45309', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '5px' }}>👑 إعلانات مميزة وموصى بها (سرعة في البيع)</h2>
+            <div style={styles.grid}>{featuredCars.map(renderCarCard)}</div>
           </div>
+        )}
+
+        {/* 🚗 قسم الإعلانات العادية والحديثة تالياً */}
+        <h2 style={styles.sectionTitle}>✨ أحدث الإعلانات المضافة حالياً ({regularCars.length})</h2>
+        {regularCars.length === 0 && featuredCars.length === 0 ? (
+          <div style={styles.noCars}>لا توجد سيارات متوفرة حالياً 🔍</div>
+        ) : (
+          <div style={styles.grid}>{regularCars.map(renderCarCard)}</div>
         )}
       </div>
     </div>
