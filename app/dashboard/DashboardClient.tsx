@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 
 
-  const handleMarkAsSold = async (carId) => {
+  const handleMarkAsSold = async (carId: any) => {
     if (!confirm("هل تريد تفعيل حالة مباعة لهذه السيارة؟")) return;
     try {
       const res = await fetch("/api/admin/mark-sold", {
