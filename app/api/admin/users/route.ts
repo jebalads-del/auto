@@ -5,13 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // تصفية الاستعلام لاستثناء حسابات الآدمن وحسابات المطورين من القائمة لعدم حذفها بالخطأ
+    // جلب جميع الحسابات بما فيها الآدمن مع استبعاد الحسابات المحذوفة فقط
     const users = await sql`
       SELECT id, name, email, phone, subscription_type, status, created_at
       FROM users
-      WHERE (status IS NULL OR (LOWER(status) != 'deleted' AND LOWER(status) != 'banned' AND status != 'محذوف'))
-      AND LOWER(email) NOT LIKE '%admin%'
-      AND LOWER(name) NOT LIKE '%admin%'
+      WHERE status IS NULL OR (LOWER(status) != 'deleted' AND LOWER(status) != 'banned' AND status != 'محذوف')
       ORDER BY id DESC
     `;
 
@@ -34,10 +32,9 @@ export async function DELETE(request: NextRequest) {
   try {
     const { id } = await request.json();
     if (!id) return NextResponse.json({ success: false, message: 'معرف المستخدم مطلوب' });
-
     await sql`UPDATE users SET status = 'deleted' WHERE id = ${id}`;
-    return NextResponse.json({ success: true, message: '🗑️ تم حذف وتصفية المستخدم بنجاح ولن يظهر مجدداً' });
+    return NextResponse.json({ success: true, message: '🗑️ تم حذف وتصفية المستخدم بنجاح' });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: 'فشل الحذف: ' + error.message });
+    return NextResponse.json({ success: false, message: 'فشل الحذف' });
   }
 }
