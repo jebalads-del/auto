@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server';
 import sql from '../../db';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   try {
+    console.log('📊 جلب المستخدمين النشطين...');
+
+    // تصفية الاستعلام لجلب المستخدمين الذين لم يتم حذفهم أو حظرهم
     const users = await sql`
       SELECT id, name, email, phone, subscription_type, created_at
       FROM users
       WHERE status IS NULL OR (status != 'deleted' AND status != 'banned')
       ORDER BY id DESC
     `;
+
+    console.log(`✅ تم جلب ${users.length} مستخدم نشط`);
 
     const formattedUsers = users.map((user: any) => ({
       id: Number(user.id),
@@ -26,8 +29,13 @@ export async function GET() {
       users: formattedUsers
     });
   } catch (error: any) {
+    console.error('❌ خطأ في جلب المستخدمين:', error);
     return NextResponse.json(
-      { success: false, message: 'حدث خطأ', error: error.message },
+      {
+        success: false,
+        message: 'حدث خطأ أثناء جلب المستخدمين',
+        error: error.message
+      },
       { status: 500 }
     );
   }
