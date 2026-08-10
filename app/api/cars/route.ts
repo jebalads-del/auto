@@ -13,12 +13,10 @@ export async function GET(request: NextRequest) {
 
     let rawCars;
     if (statusParam === 'all') {
-      // الأدمن يرى كل شيء: المعلق والمقبول والمباع
       rawCars = await sql`
         SELECT * FROM cars WHERE status != 'deleted' ORDER BY id DESC
       `;
     } else {
-      // 🛡️ التعديل الجوهري: السماح بظهور السيارات سواء كانت حالتها approved أو active أو sold لكسر عناد الاختفاء
       rawCars = await sql`
         SELECT * FROM cars 
         WHERE status = 'approved' OR status = 'active' OR status = 'sold' 
@@ -93,9 +91,14 @@ export async function POST(request: Request) {
       RETURNING id
     `;
 
+    // 🛡️ التعديل الجوهري الحاسم: استخراج المعرّف باستخدام الترتيب السليم للمصفوفة لمنع أخطاء الـ Build
     let explicitId = null;
-    if (Array.isArray(result) && result.length > 0) explicitId = Number(result.id);
-    else { const fallback: any = result; explicitId = fallback && fallback.id ? Number(fallback.id) : null; }
+    if (Array.isArray(result) && result.length > 0) {
+      explicitId = Number(result[0].id);
+    } else {
+      const fallback: any = result;
+      explicitId = fallback && fallback.id ? Number(fallback.id) : null;
+    }
 
     return NextResponse.json({ success: true, id: explicitId, carId: explicitId });
   } catch (error: any) {
