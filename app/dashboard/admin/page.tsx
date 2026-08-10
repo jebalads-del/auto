@@ -1,29 +1,49 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 
-export default function AdminPage() {
+export default function AdminDashboard() {
   const [cars, setCars] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<any[]>([]);
+  const [carsLoading, setCarsLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'cars' | 'users'>('cars');
 
+  // 1. جلب السيارات حياً من السيرفر
   const fetchCars = async () => {
     try {
-      const res = await fetch('/api/cars');
+      setCarsLoading(true);
+      const res = await fetch('/api/cars?_=' + Date.now());
       const data = await res.json();
       if (data.success) setCars(data.cars || []);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setCarsLoading(false);
+    }
+  };
+
+  // 2. جلب المستخدمين حياً من السيرفر
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      const res = await fetch('/api/admin/users?_=' + Date.now());
+      const data = await res.json();
+      if (data.success) setUsers(data.users || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUsersLoading(false);
     }
   };
 
   useEffect(() => {
     fetchCars();
+    fetchUsers();
   }, []);
 
-  const handleCarAction = async (carId: number, action: 'approve' | 'reject' | 'sold' | 'delete') => {
-    if (!confirm(`هل أنت متأكد من تنفيذ إجراء الإعلان؟`)) return;
-    
+  // 3. معالجة زر الموافقة للسيارات بالاتصال المباشر بالـ API
+  const handleCarAction = async (carId: number, action: 'approve' | 'delete') => {
+    if (!confirm(`هل أنت متأكد من تنفيذ هذا الإجراء على الإعلان؟`)) return;
     try {
       const res = await fetch('/api/admin/cars/action', {
         method: 'POST',
@@ -35,31 +55,88 @@ export default function AdminPage() {
         alert(data.message || 'تم الإجراء بنجاح');
         fetchCars();
       } else {
-        alert('فشل في تنفيذ الإجراء: ' + data.message);
+        alert('حدث خطأ: ' + data.message);
       }
     } catch (err) {
-      alert('حدث خطأ في السيرفر');
+      alert('خطأ في الاتصال بالسيرفر');
     }
   };
 
-  if (loading) return <p style={{padding: '20px', textAlign: 'center'}}>جاري التحميل...</p>;
+  // 4. معالجة زر حذف المستخدم الذكي وتحديث القائمة فوراً لضمان عدم عودته
+  const handleUserDelete = async (id: number) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً من العرض؟')) return;
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || 'تم الحذف بنجاح');
+        fetchUsers();
+      } else {
+        alert('فشل الحذف: ' + data.message);
+      }
+    } catch (err) {
+      alert('خطأ أثناء معالجة الحذف');
+    }
+  };
 
   return (
-    <div style={{ padding: '20px', direction: 'rtl' }}>
-      <h2>إعلانات السيارات بانتظار المراجعة</h2>
-      <div style={{ display: 'grid', gap: '15px', marginTop: '20px' }}>
-        {cars.filter((c: any) => c.status === 'pending' || c.status === 'approved').map((car: any) => (
-          <div key={car.id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
-            <h4>{car.title || 'بدون عنوان'}</h4>
-            <p>السعر: {car.price} KWD</p>
-            <p>الحالة الحالية: <span style={{color: car.status === 'approved' ? 'green' : 'orange'}}>{car.status}</span></p>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#059669', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer' }}>🟢 موافقة</button>
-              <button onClick={() => handleCarAction(car.id, 'delete')} style={{ backgroundColor: '#dc2626', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer' }}>🗑️ حذف</button>
-            </div>
-          </div>
-        ))}
+    <div style={{ padding: '30px', direction: 'rtl', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1 style={{ textAlign: 'center', color: '#1e293b', marginBottom: '30px' }}>🛠️ لوحة تحكم الإدارة المطورة</h1>
+      
+      {/* شريط التنقل بين التبويبات */}
+      <div style={{ display: 'flex', gap: '15px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginBottom: '25px' }}>
+        <button onClick={() => setActiveTab('cars')} style={{ padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', border: 'none', borderRadius: '6px', backgroundColor: activeTab === 'cars' ? '#3b82f6' : '#edf2f7', color: activeTab === 'cars' ? 'white' : '#4a5568' }}>🚗 إدارة السيارات ({cars.filter(c => c.status === 'pending').length})</button>
+        <button onClick={() => setActiveTab('users')} style={{ padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', border: 'none', borderRadius: '6px', backgroundColor: activeTab === 'users' ? '#3b82f6' : '#edf2f7', color: activeTab === 'users' ? 'white' : '#4a5568' }}>👥 إدارة المستخدمين ({users.length})</button>
       </div>
+
+      {/* محتوى تبويب السيارات */}
+      {activeTab === 'cars' && (
+        <div>
+          <h3>📌 الإعلانات المعلقة بانتظار الموافقة</h3>
+          {carsLoading ? <p>جاري تحميل السيارات...</p> : (
+            <div style={{ display: 'grid', gap: '20px', marginTop: '15px' }}>
+              {cars.filter((c: any) => c.status === 'pending').length === 0 ? <p style={{color: '#718096'}}>لا توجد إعلانات معلقة حالياً.</p> : 
+                cars.filter((c: any) => c.status === 'pending').map((car: any) => (
+                  <div key={car.id} style={{ border: '1px solid #e2e8f0', padding: '20px', borderRadius: '10px', backgroundColor: '#f8fafc', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', color: '#1e293b' }}>{car.title || 'سيارة بدون عنوان'}</h4>
+                    <p style={{ margin: '5px 0', color: '#4a5568' }}>💰 السعر: <strong style={{color: '#2563eb'}}>{car.price} KWD</strong></p>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                      <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>🟢 موافقة ونشر</button>
+                      <button onClick={() => handleCarAction(car.id, 'delete')} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️ حذف الإعلان</button>
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* محتوى تبويب المستخدمين */}
+      {activeTab === 'users' && (
+        <div>
+          <h3>📌 الحسابات المسجلة في الموقع</h3>
+          {usersLoading ? <p>جاري تحميل المستخدمين...</p> : (
+            <div style={{ display: 'grid', gap: '15px', marginTop: '15px' }}>
+              {users.length === 0 ? <p style={{color: '#718096'}}>لا يوجد مستخدمون نشطون حالياً.</p> : 
+                users.map((user: any) => (
+                  <div key={user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0', padding: '15px', borderRadius: '8px', backgroundColor: '#fff' }}>
+                    <div>
+                      <h5 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#1e293b' }}>👤 {user.name}</h5>
+                      <p style={{ margin: '0', fontSize: '13px', color: '#718096' }}>📧 {user.email} | 📞 {user.phone}</p>
+                    </div>
+                    <button onClick={() => handleUserDelete(user.id)} style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5', padding: '6px 15px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️ حذف الحساب</button>
+                  </div>
+                ))
+              }
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
