@@ -1,7 +1,9 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardClient() {
+  const router = useRouter();
   const [cars, setCars] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [carsLoading, setCarsLoading] = useState(true);
@@ -65,6 +67,11 @@ export default function DashboardClient() {
     <div style={{ padding: '15px', direction: 'rtl', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#fafafa', minHeight: '100vh' }}>
       <h1 style={{ textAlign: 'center', color: '#1e293b', marginBottom: '20px', fontSize: '20px' }}>🛠️ لوحة تحكم الإدارة الشاملة</h1>
       
+      {/* توجيه الزر بدقة للمسار الفعلي المكتشف المضمون 100% */}
+      <div style={{ marginBottom: '20px', textAlign: 'left' }}>
+        <button onClick={() => router.push('/dashboard/cars/new')} style={{ backgroundColor: '#ff9800', color: 'white', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', boxShadow: '0 2px 4px rgba(255,152,0,0.2)' }}>➕ إضافة إعلان سيارة جديد</button>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '20px' }}>
         <button onClick={() => setActiveTab('cars')} style={{ padding: '12px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', border: 'none', borderRadius: '8px', backgroundColor: activeTab === 'cars' ? '#2563eb' : '#fff', color: activeTab === 'cars' ? 'white' : '#475569', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>🚗 السيارات ({cars.filter(c => c.status === 'pending').length})</button>
         <button onClick={() => setActiveTab('users')} style={{ padding: '12px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', border: 'none', borderRadius: '8px', backgroundColor: activeTab === 'users' ? '#2563eb' : '#fff', color: activeTab === 'users' ? 'white' : '#475569', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>👥 المستخدمين ({users.length})</button>
