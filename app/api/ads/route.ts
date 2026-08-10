@@ -10,11 +10,13 @@ export async function POST(request: NextRequest) {
 
     console.log('📩 توجيه الإعلان الجديد بكفاءة لجدول cars:', body);
 
-    // استخدام أسلوب الاستدعاء المباشر المتوافق مع ملف قاعدة البيانات لديك
-    await sql`
+    // استخدام طريقة الاستعلام القياسية المتوافقة مع نوع المتغير في مشروعك
+    const query = `
       INSERT INTO cars (title, price, description, image_url, status, created_at, updated_at)
-      VALUES (${title}, ${price}, ${description}, ${image_url}, 'pending', NOW(), NOW())
+      VALUES ($1, $2, $3, $4, 'pending', NOW(), NOW())
     `;
+    
+    await sql.query(query, [title, price, description, image_url]);
 
     return NextResponse.json({ success: true, message: '🎉 تم إرسال الإعلان بنجاح وينتظر موافقة الإدارة' });
 
@@ -26,8 +28,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const cars = await sql`SELECT * FROM cars WHERE status = 'pending' ORDER BY id DESC`;
-    return NextResponse.json({ success: true, cars });
+    const result = await sql.query("SELECT * FROM cars WHERE status = 'pending' ORDER BY id DESC");
+    return NextResponse.json({ success: true, cars: result.rows || [] });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
