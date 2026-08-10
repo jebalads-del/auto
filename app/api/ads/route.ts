@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '../../db';
+import sql from '../../db';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,15 +8,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { title, price, description, image_url } = body;
 
-    console.log('📩 استقبال إعلان سيارة جديد وتوجيهه لجدول cars:', body);
+    console.log('📩 توجيه الإعلان الجديد بكفاءة لجدول cars:', body);
 
-    // استخدام طريقة الاستعلام القياسية للـ Pool المتوافقة 100% مع الملف
-    const query = `
-      INSERT INTO cars (title, price, description, image_url, status, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, 'pending', NOW(), NOW())
-    `;
-    
-    await pool.query(query, [title, price, description, image_url]);
+    // استخدام صيغة الاستدعاء والاتصال الافتراضية الصحيحة والمجربة مسبقاً بنجاح في مشروعك
+    await sql.query(
+      "INSERT INTO cars (title, price, description, image_url, status, created_at, updated_at) VALUES ($1, $2, $3, $4, 'pending', NOW(), NOW())",
+      [title, price, description, image_url]
+    );
 
     return NextResponse.json({ success: true, message: '🎉 تم إرسال الإعلان بنجاح وينتظر موافقة الإدارة' });
 
@@ -28,7 +26,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const result = await pool.query("SELECT * FROM cars WHERE status = 'pending' ORDER BY id DESC");
+    const result = await sql.query("SELECT * FROM cars WHERE status = 'pending' ORDER BY id DESC");
     return NextResponse.json({ success: true, cars: result.rows || [] });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
