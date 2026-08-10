@@ -1,6 +1,19 @@
 "use client";
 import React, { useState } from "react";
 
+
+  const handleMarkAsSold = async (carId) => {
+    if (!confirm("هل تريد تفعيل حالة مباعة لهذه السيارة؟")) return;
+    try {
+      const res = await fetch("/api/admin/mark-sold", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ carId })
+      }).then(r => r.json());
+      if(res.success) { alert("🟢 تم تحديث الإعلان كسيارة مباعة بنجاح!"); window.location.reload(); }
+    } catch (e) { alert("❌ فشل تحديث الحالة"); }
+  };
+
 export default function DashboardClient({ initialUsers, initialCars }: { initialUsers: any[], initialCars: any[] }) {
   const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'payments' | 'settings'>('users');
   const [usersList, setUsersList] = useState(initialUsers);
