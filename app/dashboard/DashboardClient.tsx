@@ -78,7 +78,7 @@ export default function DashboardClient() {
 
       {activeTab === 'cars' && (
         <div style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '12px' }}>
-          <h4>📌 جميع إعلانات السيارات في المنصة</h4>
+          <h4>📌 جميع إعلانات السيارات المعروضة والمعلقة</h4>
           {carsLoading ? <p>جاري التحميل...</p> : (
             <div style={{ display: 'grid', gap: '12px', marginTop: '10px' }}>
               {cars.length === 0 ? <p style={{color: '#94a3b8', textAlign: 'center'}}>لا توجد إعلانات حالياً.</p> : 
@@ -86,10 +86,10 @@ export default function DashboardClient() {
                   <div key={car.id} style={{ border: '1px solid #e2e8f0', padding: '12px', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
                     <h5 style={{ margin: '0 0 5px 0' }}>{car.title || 'سيارة'}</h5>
                     <p style={{ margin: '0', fontSize: '13px' }}>💰 السعر: <strong style={{color: '#2563eb'}}>{car.price} KWD</strong></p>
-                    <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#64748b' }}>الحالة: <strong style={{color: car.status === 'approved' || car.status === 'active' ? 'green' : 'orange'}}>{car.status}</strong></p>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#64748b' }}>الحالة: <strong style={{color: car.status === 'approved' || car.status === 'active' ? 'green' : car.status === 'sold' ? 'blue' : 'orange'}}>{car.status}</strong></p>
                     <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
-                      {(car.status === 'pending' || car.status === 'rejected') && (
-                        <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>🟢 موافقة</button>
+                      {(car.status !== 'approved' && car.status !== 'active' && car.status !== 'sold') && (
+                        <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>🟢 موافقة ونشر</button>
                       )}
                       {car.status !== 'sold' && (
                         <button onClick={() => handleCarAction(car.id, 'sold')} style={{ backgroundColor: '#3b82f6', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>💰 تم البيع</button>
