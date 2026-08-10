@@ -3,17 +3,15 @@ import sql from '../../db';
 
 export const dynamic = 'force-dynamic';
 
-// 1. جلب المستخدمين النشطين فقط واستثناء المحذوفين
 export async function GET() {
   try {
+    // تصفية الاستعلام لاستثناء حسابات الآدمن وحسابات المطورين من القائمة لعدم حذفها بالخطأ
     const users = await sql`
       SELECT id, name, email, phone, subscription_type, status, created_at
       FROM users
-      WHERE status IS NULL OR (
-        LOWER(status) != 'deleted' 
-        AND LOWER(status) != 'banned' 
-        AND status != 'محذوف'
-      )
+      WHERE (status IS NULL OR (LOWER(status) != 'deleted' AND LOWER(status) != 'banned' AND status != 'محذوف'))
+      AND LOWER(email) NOT LIKE '%admin%'
+      AND LOWER(name) NOT LIKE '%admin%'
       ORDER BY id DESC
     `;
 
@@ -32,16 +30,13 @@ export async function GET() {
   }
 }
 
-// 2. معالجة زر الحذف بذكاء لتجنب قيود العلاقات وقفل الحساب فوراً
 export async function DELETE(request: NextRequest) {
   try {
     const { id } = await request.json();
     if (!id) return NextResponse.json({ success: false, message: 'معرف المستخدم مطلوب' });
 
-    // بدلاً من الحذف الفعلي المرفوض برمجياً، نغير حالته ليختفي للأبد
     await sql`UPDATE users SET status = 'deleted' WHERE id = ${id}`;
-    
-    return NextResponse.json({ success: true, message: '🗑️ تم حذف وتصفية المستخدم بنجاح' });
+    return NextResponse.json({ success: true, message: '🗑️ تم حذف وتصفية المستخدم بنجاح ولن يظهر مجدداً' });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: 'فشل الحذف: ' + error.message });
   }
