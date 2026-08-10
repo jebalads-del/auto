@@ -7,27 +7,20 @@ export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
-  const [requests, setRequests] = useState([]); // مصفوفة طلبات التمييز
-  const [cars, setCars] = useState([]); // مصفوفة السيارات للتحكم بالبيع
+  const [requests, setRequests] = useState([]);
+  const [cars, setCars] = useState([]);
 
   const fetchData = async () => {
     try {
-      // 1. جلب المستخدمين
       const resUsers = await fetch('/api/admin/users').then(r => r.json());
       if (resUsers.success) setUsers(resUsers.users || []);
       
-      // 2. جلب طلبات التمييز من مسار الـ API المصلح
-      const resReqs = await fetch('/api/admin/featured-requests').then(r => r.json()).catch(() => ({ cars: [] }));
+      const resReqs = await fetch('/api/admin/featured-requests').then(r => r.json()).catch(() => ({ requests: [] }));
       setRequests(resReqs.requests || []);
 
-      // 3. جلب السيارات الحالية للتحكم بحالة البيع
       const resCars = await fetch('/api/cars?t=' + Date.now()).then(r => r.json());
       if (resCars.success) setCars(resCars.cars || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -36,7 +29,6 @@ export default function AdminPage() {
     fetchData();
   }, []);
 
-  // دالة الموافقة على طلب تمييز الإعلان أو رفضه
   const handleFeaturedAction = async (requestId: number, carId: number, action: 'approve' | 'reject') => {
     if (!confirm(`هل أنت متأكد من إجراء الـ ${action === 'approve' ? 'موافقة' : 'رفض'}؟`)) return;
     try {
@@ -46,11 +38,10 @@ export default function AdminPage() {
         body: JSON.stringify({ requestId, carId, action })
       });
       alert('⚙️ تم تنفيذ الإجراء وتحديث الإعلان بنجاح!');
-      fetchData(); // تحديث القوائم تلقائياً
+      fetchData();
     } catch (e) { alert('❌ فشل الإرسال'); }
   };
 
-  // دالة تحويل حالة السيارة إلى مباعة (استعادة الزر المختفي)
   const handleMarkAsSold = async (carId: number) => {
     if (!confirm('هل تريد تفعيل حالة "مباعة" لهذه السيارة؟')) return;
     try {
@@ -69,7 +60,7 @@ export default function AdminPage() {
     <div style={{direction: 'rtl', padding: '15px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'sans-serif'}}>
       <h1 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center'}}>⚙️ لوحة تحكم المدير المصلحة</h1>
       
-      {/* 1. قسم طلبات تمييز الإعلانات الجديد والديناميكي */}
+      {/* 1. قسم طلبات تمييز الإعلانات */}
       <div style={{background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '15px', marginBottom: '20px'}}>
         <h2 style={{fontSize: '16px', fontWeight: 'bold', marginBottom: '12px', color: '#be185d'}}>⭐ طلبات تمييز الإعلانات قيد الانتظار ({requests.length})</h2>
         {requests.length === 0 ? <p style={{color: '#64748b', fontSize: '13px'}}>لا توجد طلبات تمييز معلقة حالياً.</p> : (
@@ -141,7 +132,9 @@ export default function AdminPage() {
                 <tr key={user.id} style={{textAlign: 'center'}}>
                   <td style={{padding: '8px', border: '1px solid #e2e8f0'}}>{user.name || '—'}</td>
                   <td style={{padding: '8px', border: '1px solid #e2e8f0'}}>{user.email || '—'}</td>
-                  <td style={{padding: '8px', border: '1px solid #e2e8f0'}}>{user.is_premium ? '⭐ Premium' : 'عادي'}</td>
+                  <td style={{padding: '8px', border: '1px solid #e2e8f0'}}>
+                    {user.is_premium ? '⭐ Premium' : 'عادي'}
+                  </td>
                 </tr>
               ))}
             </tbody>
