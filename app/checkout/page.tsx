@@ -16,7 +16,7 @@ function CheckoutContent() {
   });
 
   useEffect(() => {
-    fetch('/api/settings').then(res => res.ok && res.json()).then(data => {
+    fetch('/api/payment').then(res => res.ok && res.json()).then(data => {
       if (data && data.success) setSettings(data.settings);
     }).catch(e => console.error(e));
   }, []);
