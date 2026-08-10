@@ -12,14 +12,17 @@ export async function GET(request: NextRequest) {
     const statusParam = searchParams.get('status');
 
     let rawCars;
-    // 🛡️ فحص ذكي: لو الأدمن يطلب البيانات بـ status=all يرى المعلق pending والمقبول والمباع
     if (statusParam === 'all') {
+      // الأدمن يرى كل شيء: المعلق والمقبول والمباع
       rawCars = await sql`
         SELECT * FROM cars WHERE status != 'deleted' ORDER BY id DESC
       `;
     } else {
+      // 🛡️ التعديل الجوهري: السماح بظهور السيارات سواء كانت حالتها approved أو active أو sold لكسر عناد الاختفاء
       rawCars = await sql`
-        SELECT * FROM cars WHERE status = 'approved' OR status = 'sold' ORDER BY is_featured DESC, id DESC
+        SELECT * FROM cars 
+        WHERE status = 'approved' OR status = 'active' OR status = 'sold' 
+        ORDER BY is_featured DESC, id DESC
       `;
     }
 
@@ -67,9 +70,7 @@ export async function POST(request: Request) {
       payment_method = formData.get('payment_method') as string || 'western';
       is_featured = formData.get('is_featured') === 'true';
 
-      // 🛡️ التقاط كافة الصور الـ 3 المرفوعة ميكانيكياً من مصفوفة الحقول
       const allFiles = formData.getAll('images');
-      
       for (const rawImages of allFiles) {
         if (rawImages && typeof rawImages === 'object' && typeof rawImages.arrayBuffer === 'function') {
           const blobFilename = `car-${Date.now()}-${rawImages.name || 'photo.png'}`;
@@ -84,7 +85,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // دمج الروابط الـ 3 المستخرجة بنص واحد مفصول بفاصلة ليتوافق مع حقل قاعدة بيانات Neon النظيف
     const finalImageUrlString = uploadedUrls.join(',');
 
     const result = await sql`
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     `;
 
     let explicitId = null;
-    if (Array.isArray(result) && result.length > 0) explicitId = Number(result[0].id);
+    if (Array.isArray(result) && result.length > 0) explicitId = Number(result.id);
     else { const fallback: any = result; explicitId = fallback && fallback.id ? Number(fallback.id) : null; }
 
     return NextResponse.json({ success: true, id: explicitId, carId: explicitId });
@@ -106,6 +106,7 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { id, status, is_featured, images } = body;
+
     if (!id) return NextResponse.json({ success: false, error: "Missing car id" }, { status: 400 });
     const carId = Number(id);
 
@@ -114,14 +115,17 @@ export async function PUT(request: Request) {
       await sql`UPDATE cars SET is_featured = ${targetFeatured} WHERE id = ${carId}`;
       return NextResponse.json({ success: true });
     }
+
     if (images) {
       await sql`UPDATE cars SET images = ${images} WHERE id = ${carId}`;
       return NextResponse.json({ success: true });
     }
+
     if (status) {
       await sql`UPDATE cars SET status = ${status} WHERE id = ${carId}`;
       return NextResponse.json({ success: true });
     }
+
     return NextResponse.json({ success: false, error: "No action" }, { status: 400 });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
