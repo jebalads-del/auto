@@ -76,6 +76,7 @@ export default function HomePage() {
     if (searchBrand && String(car.brand).toLowerCase() !== searchBrand.toLowerCase()) return false;
     if (searchModel && String(car.model).toLowerCase() !== searchModel.toLowerCase()) return false;
     if (maxPrice && Number(car.price) > Number(maxPrice)) return false;
+    if (car.status === "sold") return false; // إخفاء السيارات المباعة من المعرض العام
     if (minYear && Number(car.year) < Number(minYear)) return false;
     return true;
   }) : [];
@@ -113,6 +114,7 @@ export default function HomePage() {
     const carModel = car.model || '';
     const carYear = car.year || '----';
     const carPrice = car.price ? car.price.toLocaleString() : '0';
+  const isSold = car.status === "sold";
     const carCurrency = getCurrencySymbol(car.currency);
     const finalImageSrc = getSingleImageSrc(car.images);
     const isSold = car.status === 'sold';
