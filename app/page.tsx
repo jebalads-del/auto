@@ -114,7 +114,7 @@ export default function HomePage() {
     const carModel = car.model || '';
     const carYear = car.year || '----';
     const carPrice = car.price ? car.price.toLocaleString() : '0';
-  const isSold = car.status === "sold";
+  
     const carCurrency = getCurrencySymbol(car.currency);
     const finalImageSrc = getSingleImageSrc(car.images);
     const isSold = car.status === 'sold';
