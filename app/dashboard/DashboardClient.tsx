@@ -161,9 +161,9 @@ export default function DashboardClient({ initialUsers, initialCars }: any) {
                   ) : featuredRequests.map((req: any) => (
                     <tr key={req.id} style={{textAlign: 'center'}}>
                       <td style={styles.td}><strong>#{req.car_id}</strong></td>
-                      <td style={styles.td} style={{color: req.payment_method === 'paypal' ? '#1e3a8a' : '#15803d'}}>{req.payment_method === 'paypal' ? 'PayPal 💰' : 'Western 🏦'}</td>
+                      <td style={{ ...styles.td, color: req.payment_method === 'paypal' ? '#1e3a8a' : '#15803d' }}>{req.payment_method === 'paypal' ? 'PayPal 💰' : 'Western 🏦'}</td>
                       <td style={styles.td}>{req.amount} د.ك</td>
-                      <td style={styles.td} style={{display: 'flex', gap: '5px', justifyContent: 'center'}}>
+                      <td style={{ ...styles.td, display: 'flex', gap: '5px', justifyContent: 'center' }}>
                         <button onClick={() => handleFeaturedAction(req.id, req.car_id, 'approve')} style={{backgroundColor: '#059669', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px'}}>🟢 موافقة</button>
                         <button onClick={() => handleFeaturedAction(req.id, req.car_id, 'reject')} style={{backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px'}}>🔴 رفض</button>
                       </td>
