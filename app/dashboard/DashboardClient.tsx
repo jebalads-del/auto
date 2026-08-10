@@ -46,7 +46,7 @@ export default function DashboardClient({ initialUsers, initialCars }: any) {
       await fetch('/api/admin/featured-actions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, carId, action }) });
       alert('⚙️ تم تنفيذ إجراء التمييز بنجاح!');
       setFeaturedRequests(prev => prev.filter(r => r.id !== requestId));
-      if (action === 'approve') setCarsList(prev => prev.map(c => c.id === carId ? { ...c, is_featured: true } : c));
+      if (action === 'approve') setCarsList((prev: any[]) => prev.map(c => c.id === carId ? { ...c, is_featured: true } : c));
     } catch (e) { alert('❌ فشل الإرسال'); }
   };
 
