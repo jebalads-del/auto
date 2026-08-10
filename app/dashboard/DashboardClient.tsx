@@ -1,5 +1,5 @@
-export const revalidate = 0;
 "use client";
+export const revalidate = 0;
 import React, { useState, useEffect } from "react";
 
 export default function DashboardClient({ initialUsers, initialCars }: any) {
