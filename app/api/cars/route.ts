@@ -91,7 +91,7 @@ export async function POST(request: Request) {
       RETURNING id
     `;
 
-    // 🛡️ التعديل الجوهري الحاسم: استخراج المعرّف باستخدام الترتيب السليم للمصفوفة لمنع أخطاء الـ Build
+    // 🛡️ التعديل الجوهري الحاسم: استخراج المعرّف من مصفوفة الـ SQL بشكل سليم تماماً لتخطي خطأ البناء وتفعيل النشر
     let explicitId = null;
     if (Array.isArray(result) && result.length > 0) {
       explicitId = Number(result[0].id);
