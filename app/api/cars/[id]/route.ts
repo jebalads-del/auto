@@ -1,5 +1,13 @@
-import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
+import { Pool } from 'pg';
+
+// إنشاء اتصال بقاعدة البيانات
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 export async function GET(
   request: Request,
@@ -15,18 +23,24 @@ export async function GET(
       );
     }
 
-    const { rows } = await sql`
-      SELECT * FROM cars WHERE id = ${id}
-    `;
-
-    if (rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'السيارة غير موجودة' },
-        { status: 404 }
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        'SELECT * FROM cars WHERE id = $1',
+        [id]
       );
-    }
 
-    return NextResponse.json({ success: true, car: rows[0] });
+      if (result.rows.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'السيارة غير موجودة' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ success: true, car: result.rows[0] });
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error('خطأ في جلب السيارة:', error);
     return NextResponse.json(
