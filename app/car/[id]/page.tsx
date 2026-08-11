@@ -1,3 +1,4 @@
+cat > app/car/[id]/page.tsx << 'EOF'
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -16,6 +17,7 @@ export default function CarDetailPage() {
       try {
         const res = await fetch(`/api/cars/${params.id}`);
         const data = await res.json();
+        console.log('📸 بيانات السيارة:', data);
         if (data.success && data.car) {
           setCar(data.car);
         }
@@ -29,48 +31,18 @@ export default function CarDetailPage() {
     fetchCarDetail();
   }, [params?.id]);
 
-  // ✅ دالة مبسطة لاستخراج الصورة
+  // ✅ أبسط دالة لاستخراج الصورة
   const getImageUrl = (imagesInput: any): string => {
     if (!imagesInput) return '';
     
-    if (Array.isArray(imagesInput) && imagesInput.length > 0) {
-      const first = imagesInput[0];
-      if (typeof first === 'string') return first.trim();
-      return '';
+    // إذا كانت نصاً عادياً (رابط مباشر)
+    if (typeof imagesInput === 'string') {
+      return imagesInput.trim();
     }
     
-    if (typeof imagesInput === 'string') {
-      const cleanStr = imagesInput.trim();
-      
-      if (cleanStr.startsWith('http://') || cleanStr.startsWith('https://')) {
-        return cleanStr;
-      }
-      
-      if (cleanStr.startsWith('[') && cleanStr.endsWith(']')) {
-        try {
-          const parsed = JSON.parse(cleanStr);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const first = parsed[0];
-            if (typeof first === 'string') return first.trim();
-          }
-        } catch (e) {
-          const match = cleanStr.match(/https?:\/\/[^\s"',\]]+/);
-          if (match) return match[0];
-        }
-      }
-      
-      if (cleanStr.includes(',')) {
-        const parts = cleanStr.split(',').map(s => s.trim());
-        for (const part of parts) {
-          if (part.startsWith('http://') || part.startsWith('https://')) {
-            return part;
-          }
-        }
-        return parts[0] || '';
-      }
-      
-      const match = cleanStr.match(/https?:\/\/[^\s"',\]]+/);
-      if (match) return match[0];
+    // إذا كانت مصفوفة
+    if (Array.isArray(imagesInput) && imagesInput.length > 0) {
+      return String(imagesInput[0]).trim();
     }
     
     return '';
@@ -90,6 +62,7 @@ export default function CarDetailPage() {
   }
 
   const imageUrl = getImageUrl(car.images);
+  console.log('🖼️ رابط الصورة:', imageUrl);
 
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
@@ -102,6 +75,14 @@ export default function CarDetailPage() {
           src={imageUrl} 
           alt={car.model} 
           style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px' }}
+          onError={(e) => {
+            console.error('❌ فشل تحميل الصورة:', imageUrl);
+            (e.target as HTMLImageElement).style.display = 'none';
+            const parent = (e.target as HTMLImageElement).parentElement;
+            if (parent) {
+              parent.innerHTML = '<div style="padding:50px;background:#f1f5f9;text-align:center;border-radius:8px;">🚗 لا توجد صورة</div>';
+            }
+          }}
         />
       ) : (
         <div style={{ padding: '50px', backgroundColor: '#f1f5f9', textAlign: 'center', borderRadius: '8px' }}>
@@ -118,3 +99,4 @@ export default function CarDetailPage() {
     </div>
   );
 }
+EOF
