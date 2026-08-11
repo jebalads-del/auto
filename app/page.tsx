@@ -92,13 +92,15 @@ export default function HomePage() {
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
 
-  // ✅ دالة محسنة لاستخراج الصورة من أي تنسيق
+  // ✅ دالة محسنة لاستخراج الصورة من أي تنسيق (بما في ذلك الروابط المفصولة بفواصل)
   const getSingleImageSrc = (imagesInput: any): string => {
     if (!imagesInput) return '';
     
     // إذا كانت مصفوفة
     if (Array.isArray(imagesInput) && imagesInput.length > 0) {
-      return String(imagesInput[0]).trim();
+      const first = imagesInput[0];
+      if (typeof first === 'string') return first.trim();
+      return '';
     }
     
     // إذا كانت نص
@@ -110,13 +112,27 @@ export default function HomePage() {
         try {
           const parsed = JSON.parse(cleanStr);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            return String(parsed[0]).trim();
+            const first = parsed[0];
+            if (typeof first === 'string') return first.trim();
           }
         } catch (e) {
           // إذا فشل الـ parse، نحاول استخراج الرابط يدوياً
           const match = cleanStr.match(/https?:\/\/[^\s"',\]]+/);
           if (match) return match[0];
         }
+      }
+      
+      // ✅ التعامل مع الروابط المفصولة بفواصل
+      if (cleanStr.includes(',')) {
+        const parts = cleanStr.split(',').map(s => s.trim());
+        // نأخذ أول رابط يبدأ بـ http
+        for (const part of parts) {
+          if (part.startsWith('http://') || part.startsWith('https://')) {
+            return part;
+          }
+        }
+        // إذا لم نجد رابطاً، نأخذ أول جزء
+        return parts[0] || '';
       }
       
       // إذا كان رابط مباشر
@@ -151,6 +167,13 @@ export default function HomePage() {
     const finalImageSrc = getSingleImageSrc(car.images);
     const isSold = car.status === 'sold';
 
+    // سجل في console لتصحيح الأخطاء
+    if (finalImageSrc) {
+      console.log(`✅ ${carBrand} ${carModel}:`, finalImageSrc);
+    } else {
+      console.log(`❌ ${carBrand} ${carModel}: لا توجد صورة`, car.images);
+    }
+
     return (
       <div key={car.id} style={{...styles.card, border: car.is_featured ? '2px solid #f59e0b' : '1px solid #e2e8f0', position: 'relative'}}>
 
@@ -169,6 +192,7 @@ export default function HomePage() {
               alt={carBrand} 
               style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', opacity: isSold ? 0.6 : 1 }}
               onError={(e) => {
+                console.error('❌ فشل تحميل الصورة:', finalImageSrc);
                 (e.target as HTMLImageElement).style.display = 'none';
                 const parent = (e.target as HTMLImageElement).parentElement;
                 if (parent) {
