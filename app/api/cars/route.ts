@@ -8,32 +8,33 @@ const pool = new Pool({
 
 export const dynamic = 'force-dynamic';
 
-// ✅ جلب السيارات مع الصور
+// ✅ جلب السيارات مع الصور (مع تحسين الأداء)
 export async function GET(request: NextRequest) {
   try {
-    console.log('📊 جلب كافة إعلانات السيارات مع الصور...');
-    
+    console.log('📊 جلب إعلانات السيارات مع الصور (آخر 50)...');
+
     const client = await pool.connect();
     try {
-      // ✅ التعديل الجوهري: إضافة حقل images
+      // ✅ إضافة LIMIT 50 لتسريع الاستعلام
       const result = await client.query(`
-        SELECT 
-          id, 
-          brand, 
-          model, 
-          year, 
-          price, 
-          kilometers, 
-          color, 
-          description, 
+        SELECT
+          id,
+          brand,
+          model,
+          year,
+          price,
+          kilometers,
+          color,
+          description,
           images,
           status,
           is_featured,
           currency,
           created_at
-        FROM cars 
+        FROM cars
         WHERE status = 'approved' OR status = 'pending' OR status = 'active'
         ORDER BY id DESC
+        LIMIT 50
       `);
 
       const cars = result.rows.map((car: any) => ({
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     console.log('📩 استلام طلب نشر إعلان:', body);
 
     const {
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
     try {
       // ✅ حفظ الإعلان مع الصور (إذا وجدت)
       const result = await client.query(
-        `INSERT INTO cars 
+        `INSERT INTO cars
          (user_id, brand, model, year, price, kilometers, color, description, images, status, is_featured, currency, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
          RETURNING *`,
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
           kilometers || null,
           color || 'رمادي',
           description || null,
-          images || null,  // ✅ حفظ روابط الصور
+          images || null,
           status || 'pending',
           is_featured || false,
           currency || 'KWD'
