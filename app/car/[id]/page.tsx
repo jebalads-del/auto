@@ -30,16 +30,14 @@ export default function CarDetailPage() {
     fetchCarDetail();
   }, [params?.id]);
 
-  // ✅ أبسط دالة لاستخراج الصورة
+  // ✅ دالة صحيحة لاستخراج الصورة
   const getImageUrl = (imagesInput: any): string => {
     if (!imagesInput) return '';
     
-    // إذا كانت نصاً عادياً (رابط مباشر)
     if (typeof imagesInput === 'string') {
       return imagesInput.trim();
     }
     
-    // إذا كانت مصفوفة
     if (Array.isArray(imagesInput) && imagesInput.length > 0) {
       return String(imagesInput[0]).trim();
     }
@@ -61,18 +59,18 @@ export default function CarDetailPage() {
   }
 
   const imageUrl = getImageUrl(car.images);
-  console.log('🖼️ رابط الصورة:', imageUrl);
+  console.log('🖼️ رابط الصورة المستخرج:', imageUrl);
 
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <Link href="/">← العودة لمعرض السيارات</Link>
-      
+
       <h1>{car.brand} {car.model}</h1>
-      
+
       {imageUrl ? (
-        <img 
-          src={imageUrl} 
-          alt={car.model} 
+        <img
+          src={imageUrl}
+          alt={car.model}
           style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px' }}
           onError={(e) => {
             console.error('❌ فشل تحميل الصورة:', imageUrl);
@@ -88,7 +86,7 @@ export default function CarDetailPage() {
           🚗 لا توجد صورة
         </div>
       )}
-      
+
       <p><strong>السعر:</strong> {car.price} د.ك</p>
       <p><strong>السنة:</strong> {car.year || '---'}</p>
       <p><strong>اللون:</strong> {car.color || '---'}</p>
