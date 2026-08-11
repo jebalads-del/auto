@@ -24,19 +24,12 @@ export default function HomePage() {
       <h1 style={{ textAlign: 'center' }}>🚗 سيارتي</h1>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
         {cars.map((car: any) => {
-          // استخراج الصورة مباشرة
           let imageUrl = '/images/default-car.jpg';
           if (car.images) {
             if (typeof car.images === 'string') {
-              // إذا كان رابطاً، استخدمه
-              if (car.images.startsWith('http')) {
-                imageUrl = car.images;
-              }
+              imageUrl = car.images;
             } else if (Array.isArray(car.images) && car.images.length > 0) {
-              const first = String(car.images[0]);
-              if (first.startsWith('http')) {
-                imageUrl = first;
-              }
+              imageUrl = car.images[0];
             }
           }
 
@@ -48,7 +41,6 @@ export default function HomePage() {
                   alt={car.title}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   onError={(e) => {
-                    // إذا فشلت الصورة، استخدم الصورة الافتراضية
                     (e.target as HTMLImageElement).src = '/images/default-car.jpg';
                   }}
                 />

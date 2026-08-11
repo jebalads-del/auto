@@ -38,11 +38,11 @@ export default function CarDetailPage() {
       <h1>{car.brand} {car.model}</h1>
       
       <div style={{ width: '100%', maxHeight: '400px', overflow: 'hidden', borderRadius: '8px', background: '#f1f5f9' }}>
+        {/* ✅ استخدام img عادي بدون unoptimized */}
         <img
           src={imageUrl}
           alt={car.model}
           style={{ width: '100%', height: 'auto', maxHeight: '400px', objectFit: 'cover' }}
-          unoptimized={true}
           onError={(e) => {
             (e.target as HTMLImageElement).src = '/images/default-car.jpg';
           }}
