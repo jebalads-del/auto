@@ -15,13 +15,13 @@ interface Car {
   description: string;
   images: any;
   status: string;
-  is_featured: boolean; // إضافة حقل التميز بالواجهة
+  is_featured: boolean;
   currency: string;
 }
 
 const POPULAR_BRANDS = [
-  'تويوتا', 'نيسان', 'هيونداي', 'كيا', 'هوندا', 
-  'بي إم دبليو', 'مرسيدس', 'أودي', 'فورد', 'شيفورليه', 
+  'تويوتا', 'نيسان', 'هيونداي', 'كيا', 'هوندا',
+  'بي إم دبليو', 'مرسيدس', 'أودي', 'فورد', 'شيفورليه',
   'جيب', 'لكزس', 'مازدا', 'ميتسوبيشي', 'جي إم سي'
 ];
 
@@ -29,7 +29,7 @@ export default function HomePage() {
   const router = useRouter();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchBrand, setSearchBrand] = useState('');
   const [searchModel, setSearchModel] = useState('');
@@ -71,33 +71,65 @@ export default function HomePage() {
     if (String(currency).toUpperCase() === 'SAR') return 'ر.س';
     return 'د.ك';
   };
+
   const filteredCars = Array.isArray(cars) ? cars.filter(car => {
     if (!car) return false;
     if (searchBrand && String(car.brand).toLowerCase() !== searchBrand.toLowerCase()) return false;
     if (searchModel && String(car.model).toLowerCase() !== searchModel.toLowerCase()) return false;
     if (maxPrice && Number(car.price) > Number(maxPrice)) return false;
-    if (car.status === "sold") return false; // إخفاء السيارات المباعة من المعرض العام
+    if (car.status === "sold") return false;
     if (minYear && Number(car.year) < Number(minYear)) return false;
     return true;
   }) : [];
 
-  // تقسيم السيارات على ذوقي: مصفوفة للمميز ومصفوفة للإعلانات العادية
   const featuredCars = filteredCars.filter(car => car.is_featured);
   const regularCars = filteredCars.filter(car => !car.is_featured);
 
   const dynamicBrands = Array.isArray(cars) ? cars.map(car => car?.brand).filter(Boolean) : [];
   const allBrands = Array.from(new Set([...POPULAR_BRANDS, ...dynamicBrands])).sort();
 
-  const availableModels = Array.isArray(cars) && searchBrand 
+  const availableModels = Array.isArray(cars) && searchBrand
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
 
+  // ✅ دالة محسنة لاستخراج الصورة من أي تنسيق
   const getSingleImageSrc = (imagesInput: any): string => {
     if (!imagesInput) return '';
-    if (Array.isArray(imagesInput) && imagesInput.length > 0) return String(imagesInput[0] || '').trim();
-    const cleanStr = String(imagesInput).replace(/[\{\}\"\'\s]/g, '');
-    const parts = cleanStr.split(',');
-    return parts[0] && parts[0].startsWith('http') ? parts[0] : '';
+    
+    // إذا كانت مصفوفة
+    if (Array.isArray(imagesInput) && imagesInput.length > 0) {
+      return String(imagesInput[0]).trim();
+    }
+    
+    // إذا كانت نص
+    if (typeof imagesInput === 'string') {
+      const cleanStr = imagesInput.trim();
+      
+      // إذا كانت JSON مصفوفة
+      if (cleanStr.startsWith('[') && cleanStr.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(cleanStr);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return String(parsed[0]).trim();
+          }
+        } catch (e) {
+          // إذا فشل الـ parse، نحاول استخراج الرابط يدوياً
+          const match = cleanStr.match(/https?:\/\/[^\s"',\]]+/);
+          if (match) return match[0];
+        }
+      }
+      
+      // إذا كان رابط مباشر
+      if (cleanStr.startsWith('http://') || cleanStr.startsWith('https://')) {
+        return cleanStr;
+      }
+      
+      // محاولة استخراج رابط من النص
+      const match = cleanStr.match(/https?:\/\/[^\s"',\]]+/);
+      if (match) return match[0];
+    }
+    
+    return '';
   };
 
   if (loading) {
@@ -114,27 +146,36 @@ export default function HomePage() {
     const carModel = car.model || '';
     const carYear = car.year || '----';
     const carPrice = car.price ? car.price.toLocaleString() : '0';
-  
+
     const carCurrency = getCurrencySymbol(car.currency);
     const finalImageSrc = getSingleImageSrc(car.images);
     const isSold = car.status === 'sold';
 
     return (
       <div key={car.id} style={{...styles.card, border: car.is_featured ? '2px solid #f59e0b' : '1px solid #e2e8f0', position: 'relative'}}>
-        
-        {/* 🟢 شريط مباعة */}
+
         {isSold && (
           <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#10b981', color: 'white', padding: '4px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', zIndex: 5 }}>✓ مباعة</div>
         )}
 
-        {/* 👑 شارة الإعلان المميز الذهبية الفخمة */}
         {car.is_featured && !isSold && (
           <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#f59e0b', color: '#1e293b', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', zIndex: 5, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>👑 مميز</div>
         )}
 
         <div style={styles.gallery}>
-          {finalImageSrc && finalImageSrc !== '' ? (
-            <img src={finalImageSrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', opacity: isSold ? 0.6 : 1 }} />
+          {finalImageSrc ? (
+            <img 
+              src={finalImageSrc} 
+              alt={carBrand} 
+              style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', opacity: isSold ? 0.6 : 1 }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+                const parent = (e.target as HTMLImageElement).parentElement;
+                if (parent) {
+                  parent.innerHTML = '<div style="height:160px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;">🚗 لا توجد صورة</div>';
+                }
+              }}
+            />
           ) : (
             <div style={styles.noImage}>🚗 لا توجد صورة</div>
           )}
@@ -154,7 +195,7 @@ export default function HomePage() {
       <div style={styles.heroSection}>
         <header style={styles.header}>
           <div style={styles.headerContent}>
-            <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
+            <h1 style={styles.headerTitle}> 🚗 سيارتي</h1>
             <Link href="/login" style={styles.headerLink}>👤 تسجيل الدخول</Link>
           </div>
         </header>
@@ -204,7 +245,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 👑 قسم الإعلانات المميزة الفخم في الأعلى على ذوقي البرمجي */}
         {featuredCars.length > 0 && (
           <div style={{ marginBottom: '30px', backgroundColor: '#fff9db', padding: '15px', borderRadius: '16px', border: '1px solid #ffe066' }}>
             <h2 style={{ fontSize: '15px', fontWeight: 'bold', color: '#b45309', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '5px' }}>👑 إعلانات مميزة وموصى بها (سرعة في البيع)</h2>
@@ -212,7 +252,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 🚗 قسم الإعلانات العادية والحديثة تالياً */}
         <h2 style={styles.sectionTitle}>✨ أحدث الإعلانات المضافة حالياً ({regularCars.length})</h2>
         {regularCars.length === 0 && featuredCars.length === 0 ? (
           <div style={styles.noCars}>لا توجد سيارات متوفرة حالياً 🔍</div>
@@ -223,6 +262,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   heroSection: { background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)', color: 'white', paddingBottom: '25px' },
