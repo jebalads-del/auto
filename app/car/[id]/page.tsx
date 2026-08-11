@@ -11,82 +11,43 @@ export default function CarDetailPage() {
 
   useEffect(() => {
     if (!params?.id) return;
-
-    const fetchCarDetail = async () => {
-      try {
-        const res = await fetch(`/api/cars/${params.id}`);
-        const data = await res.json();
-        console.log('📸 بيانات السيارة:', data);
-        if (data.success && data.car) {
-          setCar(data.car);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
+    fetch(`/api/cars/${params.id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setCar(data.car);
         setLoading(false);
-      }
-    };
-
-    fetchCarDetail();
+      })
+      .catch(() => setLoading(false));
   }, [params?.id]);
 
-  // ✅ دالة صحيحة لاستخراج الصورة
-  const getImageUrl = (imagesInput: any): string => {
-    if (!imagesInput) return '';
-    
-    if (typeof imagesInput === 'string') {
-      return imagesInput.trim();
+  if (loading) return <div style={{ padding: '50px', textAlign: 'center' }}>⏳ جاري التحميل...</div>;
+  if (!car) return <div style={{ padding: '50px', textAlign: 'center' }}>❌ السيارة غير موجودة</div>;
+
+  // استخراج الصورة مباشرة
+  let imageUrl = '/images/default-car.jpg';
+  if (car.images) {
+    if (typeof car.images === 'string' && car.images.startsWith('http')) {
+      imageUrl = car.images;
+    } else if (Array.isArray(car.images) && car.images.length > 0) {
+      const first = String(car.images[0]);
+      if (first.startsWith('http')) imageUrl = first;
     }
-    
-    if (Array.isArray(imagesInput) && imagesInput.length > 0) {
-      return String(imagesInput[0]).trim();
-    }
-    
-    return '';
-  };
-
-  if (loading) {
-    return <div style={{ textAlign: 'center', padding: '50px' }}>⏳ جاري التحميل...</div>;
   }
-
-  if (!car) {
-    return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
-        <h2>❌ السيارة غير موجودة</h2>
-        <Link href="/">← العودة للمعرض</Link>
-      </div>
-    );
-  }
-
-  const imageUrl = getImageUrl(car.images);
-  console.log('🖼️ رابط الصورة المستخرج:', imageUrl);
 
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <Link href="/">← العودة لمعرض السيارات</Link>
-
       <h1>{car.brand} {car.model}</h1>
-
-      {imageUrl ? (
+      <div style={{ width: '100%', maxHeight: '400px', overflow: 'hidden', borderRadius: '8px', background: '#f1f5f9' }}>
         <img
           src={imageUrl}
           alt={car.model}
-          style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '8px' }}
+          style={{ width: '100%', height: 'auto', maxHeight: '400px', objectFit: 'cover' }}
           onError={(e) => {
-            console.error('❌ فشل تحميل الصورة:', imageUrl);
-            (e.target as HTMLImageElement).style.display = 'none';
-            const parent = (e.target as HTMLImageElement).parentElement;
-            if (parent) {
-              parent.innerHTML = '<div style="padding:50px;background:#f1f5f9;text-align:center;border-radius:8px;">🚗 لا توجد صورة</div>';
-            }
+            (e.target as HTMLImageElement).src = '/images/default-car.jpg';
           }}
         />
-      ) : (
-        <div style={{ padding: '50px', backgroundColor: '#f1f5f9', textAlign: 'center', borderRadius: '8px' }}>
-          🚗 لا توجد صورة
-        </div>
-      )}
-
+      </div>
       <p><strong>السعر:</strong> {car.price} د.ك</p>
       <p><strong>السنة:</strong> {car.year || '---'}</p>
       <p><strong>اللون:</strong> {car.color || '---'}</p>
