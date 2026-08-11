@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
-// إنشاء اتصال بقاعدة البيانات
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
 export async function GET(
@@ -15,7 +12,7 @@ export async function GET(
 ) {
   try {
     const id = parseInt(params.id);
-    
+
     if (isNaN(id)) {
       return NextResponse.json(
         { success: false, error: 'معرف غير صحيح' },
@@ -25,8 +22,13 @@ export async function GET(
 
     const client = await pool.connect();
     try {
+      // ✅ أهم تعديل: إضافة حقل `images` إلى الاستعلام
       const result = await client.query(
-        'SELECT * FROM cars WHERE id = $1',
+        `SELECT
+          id, brand, model, year, price, kilometers,
+          color, description, images, status, is_featured, currency, created_at
+         FROM cars
+         WHERE id = $1`,
         [id]
       );
 
@@ -37,14 +39,23 @@ export async function GET(
         );
       }
 
-      return NextResponse.json({ success: true, car: result.rows[0] });
+      const car = result.rows[0];
+
+      // ✅ إعادة البيانات مع `images`
+      return NextResponse.json({
+        success: true,
+        car: {
+          ...car,
+          images: car.images || '',
+        }
+      });
     } finally {
       client.release();
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('خطأ في جلب السيارة:', error);
     return NextResponse.json(
-      { success: false, error: 'حدث خطأ في الخادم' },
+      { success: false, error: error.message },
       { status: 500 }
     );
   }
