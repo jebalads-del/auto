@@ -92,7 +92,7 @@ export default function HomePage() {
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
 
-  // ✅ دالة محسنة لاستخراج الصورة من أي تنسيق (بما في ذلك الروابط المفصولة بفواصل)
+  // ✅ أبسط دالة لاستخراج الصورة
   const getSingleImageSrc = (imagesInput: any): string => {
     if (!imagesInput) return '';
     
@@ -106,6 +106,11 @@ export default function HomePage() {
     // إذا كانت نص
     if (typeof imagesInput === 'string') {
       const cleanStr = imagesInput.trim();
+      
+      // إذا كان رابطاً مباشراً (يبدأ بـ http)
+      if (cleanStr.startsWith('http://') || cleanStr.startsWith('https://')) {
+        return cleanStr;
+      }
       
       // إذا كانت JSON مصفوفة
       if (cleanStr.startsWith('[') && cleanStr.endsWith(']')) {
@@ -122,25 +127,18 @@ export default function HomePage() {
         }
       }
       
-      // ✅ التعامل مع الروابط المفصولة بفواصل
+      // إذا كانت روابط مفصولة بفواصل
       if (cleanStr.includes(',')) {
         const parts = cleanStr.split(',').map(s => s.trim());
-        // نأخذ أول رابط يبدأ بـ http
         for (const part of parts) {
           if (part.startsWith('http://') || part.startsWith('https://')) {
             return part;
           }
         }
-        // إذا لم نجد رابطاً، نأخذ أول جزء
         return parts[0] || '';
       }
       
-      // إذا كان رابط مباشر
-      if (cleanStr.startsWith('http://') || cleanStr.startsWith('https://')) {
-        return cleanStr;
-      }
-      
-      // محاولة استخراج رابط من النص
+      // محاولة استخراج أي رابط من النص
       const match = cleanStr.match(/https?:\/\/[^\s"',\]]+/);
       if (match) return match[0];
     }
@@ -167,12 +165,8 @@ export default function HomePage() {
     const finalImageSrc = getSingleImageSrc(car.images);
     const isSold = car.status === 'sold';
 
-    // سجل في console لتصحيح الأخطاء
-    if (finalImageSrc) {
-      console.log(`✅ ${carBrand} ${carModel}:`, finalImageSrc);
-    } else {
-      console.log(`❌ ${carBrand} ${carModel}: لا توجد صورة`, car.images);
-    }
+    // ✅ سجل في console لتصحيح الأخطاء
+    console.log(`🚗 ${carBrand} ${carModel} (ID: ${car.id}):`, finalImageSrc || '❌ لا توجد صورة');
 
     return (
       <div key={car.id} style={{...styles.card, border: car.is_featured ? '2px solid #f59e0b' : '1px solid #e2e8f0', position: 'relative'}}>
