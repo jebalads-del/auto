@@ -5,62 +5,75 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('📊 جلب كافة إعلانات السيارات الحية للإدارة والموقع...');
+    
+    // تعديل الاستعلام ليتطابق مع الأعمدة الحقيقية المتواجدة في الجدول
     const query = `
-      SELECT id, title, price, description, image_url, status, created_at 
+      SELECT id, brand, model, price, year, kilometers, status, created_at 
       FROM cars 
       WHERE status IS NULL OR status IN ('pending', 'approved', 'active', 'sold', 'rejected')
       ORDER BY id DESC
     `;
+    
     const result = await sql.query(query);
-    return NextResponse.json({ success: true, cars: result.rows || [] });
+    
+    // تحويل البيانات لكي تفهمها واجهة لوحة التحكم دون تعديل كبير
+    const formattedCars = (result.rows || []).map((car: any) => ({
+      id: car.id,
+      title: `${car.brand || ''} ${car.model || ''}`.trim() || 'سيارة جديدة',
+      price: car.price || 0,
+      description: `سنة الصنع: ${car.year || ''} | الممشى: ${car.kilometers || ''} كم`,
+      status: car.status || 'pending',
+      created_at: car.created_at
+    }));
+
+    return NextResponse.json({ success: true, cars: formattedUsers || formattedCars });
+    
   } catch (error: any) {
+    console.error('❌ خطأ في جلب السيارات:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // قراءة الطلب كنص خام لتفادي خطأ الـ JSON التالف القادم من الواجهة
     const rawText = await request.text();
-    console.log('📩 النص الخام المستلم من صفحة النشر:', rawText);
-    
     let body: any = {};
     try {
       body = JSON.parse(rawText);
-    } catch (jsonError) {
-      // إذا فشل المتصفح في إرسال JSON سليم، نقوم بتفكيك النصوص يدوياً عبر الـ URLSearchParams
+    } catch {
       const params = new URLSearchParams(rawText);
       body = Object.fromEntries(params.entries());
     }
 
-    // تطهير وسحب البيانات بمرونة مطلقة
-    const brandName = String(body.brand || body.make || body.الماركة || '').trim();
-    const modelName = String(body.model || body.الموديل || '').trim();
-    const title = String(body.title || `${brandName} ${modelName}`).trim() || 'مرسيدس GLE';
+    // تطهير البيانات ومطابقتها للأعمدة الحقيقية ونوع البيانات المطلوب في قاعدة البيانات
+    const brand = String(body.brand || body.make || body.الماركة || 'جيب').trim();
+    const model = String(body.model || body.الموديل || 'رانجلر').trim();
     
-    // سحب الأرقام فقط وتطهيرها من أي علامات ناقص أو نصوص تالفة
-    const rawPrice = String(body.price || body.السعر || '3500').replace(/[^0-9]/g, '');
+    const rawPrice = String(body.price || body.السعر || '6000').replace(/[^0-9]/g, '');
     const price = parseInt(rawPrice, 10) || 0;
     
-    const year = String(body.year || body.year_manufacture || body.سنة_الصنع || '2018').replace(/[^0-9]/g, '');
-    const mileage = String(body.kilometers || body.mileage || body.الممشى || '150000').replace(/[^0-9]/g, '');
-    const color = String(body.color || body.اللون || 'ابيض').trim();
-    const baseDesc = String(body.description || body.desc || body.وصف_الإعلان || 'جيد').trim();
+    const rawYear = String(body.year || body.سنة_الصنع || '2017').replace(/[^0-9]/g, '');
+    const year = parseInt(rawYear, 10) || 2017;
     
-    const description = `${baseDesc} | سنة الصنع: ${year} | الممشى: ${mileage} | اللون: ${color}`.trim();
-    const image_url = String(body.image_url || body.img || '');
+    const rawKilometers = String(body.kilometers || body.mileage || body.الممشى || '350000').replace(/[^0-9]/g, '');
+    const kilometers = parseInt(rawKilometers, 10) || 0;
+    
     const status = 'pending';
+    const userId = parseInt(body.user_id || body.userId || '1', 10) || 1; // تعيين قيمة افتراضية لحقل user_id الإلزامي
+
+    console.log('📩 جاري الحفظ النهائي المتوافق مع الأعمدة في جدول cars:', { brand, model, price, year, kilometers });
 
     const query = `
-      INSERT INTO cars (title, price, description, image_url, status, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      INSERT INTO cars (user_id, brand, model, price, year, kilometers, status, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
     `;
     
-    await sql.query(query, [title, price, description, image_url, status]);
+    await sql.query(query, [userId, brand, model, price, year, kilometers, status]);
     return NextResponse.json({ success: true, message: '🎉 تم إرسال وحفظ الإعلان بنجاح في قاعدة البيانات!' });
     
   } catch (error: any) {
-    console.error('❌ خطأ في السيرفر أثناء المعالجة:', error);
+    console.error('❌ خطأ في السيرفر أثناء الحفظ بجدول cars:', error);
     return NextResponse.json({ success: false, message: 'فشل في الحفظ: ' + error.message }, { status: 200 });
   }
 }
