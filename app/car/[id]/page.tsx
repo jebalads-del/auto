@@ -23,14 +23,12 @@ export default function CarDetailPage() {
   if (loading) return <div style={{ padding: '50px', textAlign: 'center' }}>⏳ جاري التحميل...</div>;
   if (!car) return <div style={{ padding: '50px', textAlign: 'center' }}>❌ السيارة غير موجودة</div>;
 
-  // ✅ أبسط طريقة لاستخراج الصورة
-  let imageUrl = '/images/default-car.jpg'; // الصورة الافتراضية
-
+  let imageUrl = '/images/default-car.jpg';
   if (car.images) {
     if (typeof car.images === 'string') {
-      imageUrl = car.images; // استخدم الرابط مباشرة
+      imageUrl = car.images;
     } else if (Array.isArray(car.images) && car.images.length > 0) {
-      imageUrl = car.images[0]; // استخدم أول رابط في المصفوفة
+      imageUrl = car.images[0];
     }
   }
 
@@ -39,14 +37,13 @@ export default function CarDetailPage() {
       <Link href="/">← العودة لمعرض السيارات</Link>
       <h1>{car.brand} {car.model}</h1>
       
-      {/* عرض الصورة */}
       <div style={{ width: '100%', maxHeight: '400px', overflow: 'hidden', borderRadius: '8px', background: '#f1f5f9' }}>
         <img
           src={imageUrl}
           alt={car.model}
           style={{ width: '100%', height: 'auto', maxHeight: '400px', objectFit: 'cover' }}
+          unoptimized={true}
           onError={(e) => {
-            // إذا فشلت الصورة، استخدم الصورة الافتراضية
             (e.target as HTMLImageElement).src = '/images/default-car.jpg';
           }}
         />
