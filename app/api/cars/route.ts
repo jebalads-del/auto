@@ -22,25 +22,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('📩 استقبال بيانات الإعلان وتطهيرها:', body);
     
-    // دعم ودمج كافة المسميات العربية والإنجليزية المحتملة القادمة من حقول صفحة النشر
-    const brandName = body.brand || body.make || body.الماركة || '';
-    const modelName = body.model || body.الموديل || '';
-    const title = body.title || `${brandName} ${modelName}`.trim() || 'إعلان سيارة جديد';
+    const brandName = String(body.brand || body.make || body.الماركة || '').trim();
+    const modelName = String(body.model || body.الموديل || '').trim();
+    const title = String(body.title || `${brandName} ${modelName}`).trim() || 'إعلان سيارة جديد';
     
-    const price = body.price || body.السعر || 0;
+    // التحويل القسري والمضمون للسعر ليصبح رقماً صحيحاً وتجنب انهيار قاعدة البيانات
+    const rawPrice = body.price || body.السعر || 0;
+    const price = isNaN(Number(rawPrice)) ? 0 : Math.floor(Number(rawPrice));
     
-    // دمج بقية البيانات التفصيلية كاللون والممشى وسنة الصنع في الوصف لمنع ضياعها
     const year = body.year || body.سنة_الصنع || '';
-    const mileage = body.mileage || body.الممشى || '';
+    const mileage = body.kilometers || body.mileage || body.الممشى || '';
     const color = body.color || body.اللون || '';
     const baseDesc = body.description || body.desc || body.وصف_الإعلان || 'ممتاز';
     
     const description = `${baseDesc} | سنة الصنع: ${year} | الممشى: ${mileage} | اللون: ${color}`.trim();
-    const image_url = body.image_url || body.img || body.images?.[0] || '';
+    const image_url = String(body.image_url || body.img || '');
     const status = 'pending';
-
-    console.log('📩 جاري حفظ سيارة تفصيلية في جدول cars:', { title, price });
 
     const query = `
       INSERT INTO cars (title, price, description, image_url, status, created_at, updated_at)
@@ -51,8 +50,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, message: '🎉 تم إرسال الإعلان بنجاح وينتظر موافقة الإدارة' });
     
   } catch (error: any) {
-    console.error('❌ خطأ في السيرفر أثناء الحفظ بجدول cars:', error);
-    // إرسال استجابة سليمة بصيغة JSON لمنع تشنج المتصفح وظهور الخطأ الأحمر القديم
-    return NextResponse.json({ success: false, message: error.message }, { status: 200 });
+    console.error('❌ خطأ قاتل في السيرفر أثناء الحفظ بجدول cars:', error);
+    // إرجاع رد JSON سليم ومغلق تماماً لمنع حدوث خطأ الـ JSON الموقعي الخاطف
+    return NextResponse.json({ success: false, message: 'فشل في حفظ البيانات: ' + error.message }, { status: 200 });
   }
 }
