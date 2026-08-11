@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '36'); // قمنا بزيادة الليميت ليظهر كامل الـ 34 إعلان في الصفحة الأولى
+    const limit = parseInt(searchParams.get('limit') || '36');
     const offset = (page - 1) * limit;
 
     // ✅ جلب السيارات المقبولة والمباعة معاً مع Pagination
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
           // إذا كانت مخزنة بتنسيق مصفوفة PostgreSQL التقليدية مثل {url1,url2}
           if (str.startsWith('{') && str.endsWith('}')) {
             str = str.substring(1, str.length - 1);
-            cleanedImages = str.split(',').map(img => img.replace(/["]/g, '').trim()).filter(Boolean);
+            cleanedImages = str.split(',').map((img: any) => img.replace(/["]/g, '').trim()).filter(Boolean);
           } 
           // إذا كانت مخزنة بتنسيق JSON String مثل ["url1"]
           else if (str.startsWith('[') && str.endsWith(']')) {
@@ -51,8 +51,7 @@ export async function GET(request: NextRequest) {
 
       return {
         ...car,
-        // إرسال أول صورة صالحة مباشرة كـ String أو إرسال المصفوفة كاملة بعد تنظيفها لتتوافق مع الواجهة
-        images: cleanedImages.length > 0 ? cleanedImages[0] : ''
+        images: cleanedImages.length > 0 ? cleanedImages : ''
       };
     });
     // ✅ جلب العدد الإجمالي للسيارات المقبولة والمباعة
@@ -61,7 +60,7 @@ export async function GET(request: NextRequest) {
     `;
     const total = parseInt(countResult[0].total);
 
-    // ✅ إرجاع النتيجة مع تعتيم الكاش لضمان التحديث اللحظي للصور
+    // ✅ إرجاع النتيجة مع تعطيل الكاش لضمان التحديث اللحظي للصور
     return NextResponse.json(
       {
         success: true,
