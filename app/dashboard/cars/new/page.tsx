@@ -14,10 +14,10 @@ const currencies = [
 ];
 
 const BRANDS = [
-  'تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 
-  'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 
-  'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو', 
-  'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو', 'جاغوار', 
+  'تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي',
+  'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي',
+  'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو',
+  'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو', 'جاغوار',
   'لاند روفر', 'بورش', 'فيات', 'ألفا روميو', 'أخرى'
 ];
 
@@ -74,12 +74,12 @@ export default function NewCarPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const maxImages = 4;
-    
+
     if (files.length + images.length > maxImages) {
       setError(`يمكنك رفع ${maxImages} صور فقط`);
       return;
     }
-    
+
     setImages([...images, ...files]);
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreviews([...imagePreviews, ...previews]);
@@ -89,7 +89,7 @@ export default function NewCarPage() {
     const newImages = [...images];
     newImages.splice(index, 1);
     setImages(newImages);
-    
+
     const newPreviews = [...imagePreviews];
     newPreviews.splice(index, 1);
     setImagePreviews(newPreviews);
@@ -153,12 +153,17 @@ export default function NewCarPage() {
 
       const carId = data.data?.[0]?.id || data.id;
 
-      // ✅ 2. رفع الصور إلى Vercel Blob مع حفظ الروابط في قاعدة البيانات
+      // ✅ 2. رفع الصور إلى Vercel Blob
       if (images.length > 0 && carId) {
         try {
           const formData = new FormData();
-          images.forEach(file => formData.append('images', file));
+          images.forEach(file => {
+            formData.append('images', file);
+          });
           formData.append('carId', carId.toString());
+
+          console.log('📸 جاري رفع الصور للسيارة:', carId);
+          console.log('📸 عدد الصور:', images.length);
 
           const uploadRes = await fetch('/api/cars/upload', {
             method: 'POST',
@@ -194,7 +199,7 @@ export default function NewCarPage() {
       });
       setImages([]);
       setImagePreviews([]);
-      
+
       setTimeout(() => { router.push('/'); }, 2000);
 
     } catch (err: any) {
@@ -226,7 +231,7 @@ export default function NewCarPage() {
       {success && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>✅ {success}</div>}
 
       <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        
+
         <div style={{ marginBottom: '15px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الماركة *</label>
           <select required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={styIn}>
@@ -284,7 +289,7 @@ export default function NewCarPage() {
             onChange={handleImageUpload}
             style={styIn}
           />
-          
+
           {imagePreviews.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
               {imagePreviews.map((preview, index) => (
