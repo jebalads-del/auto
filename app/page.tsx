@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 interface Car {
   id: number;
@@ -13,7 +12,7 @@ interface Car {
   kilometers: number;
   color: string;
   description: string;
-  images: string[];
+  images: any; // جعلناها مرنة لتفادي أخطاء النوع القادم من الداتابيز
   status: string;
   currency: string;
 }
@@ -74,13 +73,6 @@ export default function HomePage() {
     return acc;
   }, []);
 
-  const getCarImageUrl = (images: any): string => {
-    if (!images) return '';
-    if (Array.isArray(images) && images.length > 0) return images[0];
-    if (typeof images === 'string') return images;
-    return '';
-  };
-
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
@@ -140,21 +132,25 @@ export default function HomePage() {
         ) : (
           <div style={styles.grid}>
             {filteredCars.map((car) => {
-              const mainImgUrl = getCarImageUrl(car.images);
+              // استخراج رابط الصورة بشكل محمي ومرن للغاية لمنع الكراش
+              let displaySrc = '';
+              if (car.images) {
+                if (Array.isArray(car.images) && car.images.length > 0) {
+                  displaySrc = car.images[0];
+                } else if (typeof car.images === 'string') {
+                  displaySrc = car.images;
+                }
+              }
+
               return (
                 <div key={car.id} style={styles.card}>
                   <div style={styles.gallery}>
-                    {mainImgUrl ? (
-                      <div style={{ position: 'relative', width: '100%', height: '160px', overflow: 'hidden', borderRadius: '8px' }}>
-                        <Image 
-                          src={mainImgUrl} 
-                          alt={car.brand} 
-                          fill
-                          sizes="(max-w-7xl) 33vw"
-                          style={{ objectFit: 'cover' }}
-                          unoptimized={true}
-                        />
-                      </div>
+                    {displaySrc ? (
+                      <img 
+                        src={displaySrc} 
+                        alt={car.brand} 
+                        style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} 
+                      />
                     ) : (
                       <div style={styles.noImage}>🚗 لا توجد صورة</div>
                     )}
@@ -203,7 +199,7 @@ const styles = {
   filterInput: { padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', width: '100%', color: '#1e293b', backgroundColor: '#f8fafc' },
   sectionTitle: { fontSize: '16px', color: '#1e293b', marginBottom: '12px', fontWeight: 'bold' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' },
-  card: { backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' as const, transition: 'transform 0.2s' },
+  card: { backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' as const },
   gallery: { backgroundColor: '#f1f5f9', width: '100%', height: '160px' },
   noImage: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#94a3b8', fontSize: '13px' },
   cardBody: { padding: '15px', display: 'flex', flexDirection: 'column' as const, gap: '8px' },
@@ -216,5 +212,5 @@ const styles = {
   adImage: { maxWidth: '100%', height: 'auto', display: 'block' },
   noCars: { textAlign: 'center' as const, padding: '40px', color: '#64748b', fontSize: '14px', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' },
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
-  spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #2563eb', borderRadius: '50%', transform: 'rotate(0deg)' }
+  spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #2563eb', borderRadius: '50%' }
 };
