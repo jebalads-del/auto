@@ -12,7 +12,7 @@ interface Car {
   kilometers: number;
   color: string;
   description: string;
-  images: any; // جعلناها مرنة لتفادي أخطاء النوع القادم من الداتابيز
+  images: any; 
   status: string;
   currency: string;
 }
@@ -41,8 +41,8 @@ export default function HomePage() {
         ]);
         const carsData = await carsRes.json();
         const adsData = await adsRes.json();
-        if (carsData.success) setCars(carsData.cars);
-        if (adsData.success) setAds(adsData.ads);
+        if (carsData && carsData.success && Array.isArray(carsData.cars)) setCars(carsData.cars);
+        if (adsData && adsData.success && Array.isArray(adsData.ads)) setAds(adsData.ads);
       } catch (error) {
         console.error(error);
       } finally {
@@ -57,18 +57,22 @@ export default function HomePage() {
     return 'د.ك';
   };
 
-  const headerAd = ads.find(ad => ad.position === 'header' && ad.status === 'approved');
-  const footerAd = ads.find(ad => ad.position === 'footer' && ad.status === 'approved');
+  const approvedAds = Array.isArray(ads) ? ads : [];
+  const headerAd = approvedAds.find(ad => ad.position === 'header' && ad.status === 'approved');
+  const footerAd = approvedAds.find(ad => ad.position === 'footer' && ad.status === 'approved');
 
-  const filteredCars = cars.filter(car => {
+  const validCars = Array.isArray(cars) ? cars : [];
+  const filteredCars = validCars.filter(car => {
+    if (!car || !car.model) return false;
     if (!selectedModel) return true;
     return car.model.toLowerCase() === selectedModel.toLowerCase();
   });
 
-  const uniqueModels = cars.reduce((acc: { brand: string; model: string }[], current) => {
+  const uniqueModels = validCars.reduce((acc: { brand: string; model: string }[], current) => {
+    if (!current || !current.model) return acc;
     const x = acc.find(item => item.model.toLowerCase() === current.model.toLowerCase());
-    if (!x && current.model) {
-      acc.push({ brand: current.brand, model: current.model });
+    if (!x) {
+      acc.push({ brand: current.brand || '', model: current.model });
     }
     return acc;
   }, []);
@@ -94,7 +98,7 @@ export default function HomePage() {
           <h2 style={styles.heroMainTitle}>ابحث عن سيارتك المثالية</h2>
           <p style={styles.heroSubTitle}>تصفح الإعلانات وأرسل إعلانك مجاناً</p>
           <div style={styles.statsContainer}>
-            <div style={styles.statBox}><span style={styles.statNumber}>{cars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
+            <div style={styles.statBox}><span style={styles.statNumber}>{validCars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
             <div style={styles.statDivider}></div>
             <div style={styles.statBox}><span style={styles.statNumber}>4</span><span style={styles.statBoxLabel}>مدينة</span></div>
           </div>
@@ -102,7 +106,7 @@ export default function HomePage() {
       </div>
 
       <div style={styles.content}>
-        {headerAd && headerAd.image_url && (
+        {headerAd && headerAd.image_url && typeof headerAd.image_url === 'string' && (
           <div style={styles.adBanner}>
             <img src={headerAd.image_url} alt="إعلان" style={styles.adImage} />
           </div>
@@ -132,23 +136,35 @@ export default function HomePage() {
         ) : (
           <div style={styles.grid}>
             {filteredCars.map((car) => {
-              // استخراج رابط الصورة بشكل محمي ومرن للغاية لمنع الكراش
+              if (!car) return null;
+              
+              // فحص صارم ومحمي لاستخراج أول رابط صورة صالح يبتدئ بـ http
               let displaySrc = '';
-              if (car.images) {
-                if (Array.isArray(car.images) && car.images.length > 0) {
-                  displaySrc = car.images[0];
-                } else if (typeof car.images === 'string') {
-                  displaySrc = car.images;
+              try {
+                if (car.images) {
+                  if (Array.isArray(car.images) && car.images.length > 0 && typeof car.images[0] === 'string') {
+                    displaySrc = car.images[0];
+                  } else if (typeof car.images === 'string') {
+                    if (car.images.startsWith('http')) {
+                      displaySrc = car.images;
+                    } else if (car.images.startsWith('[')) {
+                      // محاولة فك الشفرة إذا كانت محفوظة كمصفوفة نصية JSON داخل الـ String
+                      const parsed = JSON.parse(car.images);
+                      if (Array.isArray(parsed) && parsed.length > 0) displaySrc = parsed[0];
+                    }
+                  }
                 }
+              } catch (e) {
+                console.error("Image parsing error", e);
               }
 
               return (
                 <div key={car.id} style={styles.card}>
                   <div style={styles.gallery}>
-                    {displaySrc ? (
+                    {displaySrc && displaySrc.startsWith('http') ? (
                       <img 
                         src={displaySrc} 
-                        alt={car.brand} 
+                        alt={car.brand || 'Car'} 
                         style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} 
                       />
                     ) : (
@@ -156,9 +172,9 @@ export default function HomePage() {
                     )}
                   </div>
                   <div style={styles.cardBody}>
-                    <h3 style={styles.carTitle}>{car.brand} {car.model}</h3>
-                    <div style={styles.carPrice}>{car.price.toLocaleString()} {getCurrencySymbol(car.currency)}</div>
-                    <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {car.year}</span></div>
+                    <h3 style={styles.carTitle}>{car.brand || ''} {car.model || ''}</h3>
+                    <div style={styles.carPrice}>{(car.price || 0).toLocaleString()} {getCurrencySymbol(car.currency || '')}</div>
+                    <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {car.year || ''}</span></div>
                     <Link href={`/car/${car.id}`} style={styles.viewLink}>عرض التفاصيل ←</Link>
                   </div>
                 </div>
@@ -167,7 +183,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {footerAd && footerAd.image_url && (
+        {footerAd && footerAd.image_url && typeof footerAd.image_url === 'string' && (
           <div style={styles.adBanner}>
             <img src={footerAd.image_url} alt="إعلان" style={styles.adImage} />
           </div>
