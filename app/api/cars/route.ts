@@ -1,133 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import sql from '../db';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
-export const dynamic = 'force-dynamic';
-
-// ✅ جلب السيارات مع الصور (مع تحسين الأداء)
 export async function GET(request: NextRequest) {
   try {
-    console.log('📊 جلب إعلانات السيارات مع الصور (آخر 50)...');
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '36'); // قمنا بزيادة الليميت ليظهر كامل الـ 34 إعلان في الصفحة الأولى
+    const offset = (page - 1) * limit;
 
-    const client = await pool.connect();
-    try {
-      // ✅ إضافة LIMIT 50 لتسريع الاستعلام
-      const result = await client.query(`
-        SELECT
-          id,
-          brand,
-          model,
-          year,
-          price,
-          kilometers,
-          color,
-          description,
-          images,
-          status,
-          is_featured,
-          currency,
-          created_at
-        FROM cars
-        WHERE status = 'approved' OR status = 'pending' OR status = 'active'
-        ORDER BY id DESC
-        LIMIT 50
-      `);
+    // ✅ جلب السيارات المقبولة والمباعة معاً مع Pagination
+    const rawCars = await sql`
+      SELECT id, brand, model, year, price, kilometers, color, 
+             description, images, status, created_at, currency 
+      FROM cars 
+      WHERE status IN ('approved', 'sold') 
+      ORDER BY created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
 
-      const cars = result.rows.map((car: any) => ({
-        id: car.id,
-        title: `${car.brand || ''} ${car.model || ''}`.trim() || 'سيارة جديدة',
-        brand: car.brand || '',
-        model: car.model || '',
-        year: car.year || null,
-        price: car.price || 0,
-        kilometers: car.kilometers || 0,
-        color: car.color || '',
-        description: car.description || `سنة الصنع: ${car.year || ''} | الممشى: ${car.kilometers || ''} كم | اللون: ${car.color || 'غير محدد'}`,
-        images: car.images || '',
-        status: car.status || 'pending',
-        is_featured: car.is_featured || false,
-        currency: car.currency || 'KWD',
-        created_at: car.created_at
-      }));
+    // معالجة البيانات وتنظيف حقل الصور بشكل صارم لضمان استخراج روابط Vercel Blob السليمة
+    const cars = rawCars.map((car: any) => {
+      let cleanedImages: string[] = [];
 
-      return NextResponse.json({ success: true, cars });
-    } finally {
-      client.release();
-    }
-  } catch (error: any) {
-    console.error('❌ خطأ في جلب السيارات:', error);
+      if (car.images) {
+        if (Array.isArray(car.images)) {
+          cleanedImages = car.images.map((img: any) => typeof img === 'string' ? img.trim() : '').filter(Boolean);
+        } else if (typeof car.images === 'string') {
+          let str = car.images.trim();
+          
+          // إذا كانت مخزنة بتنسيق مصفوفة PostgreSQL التقليدية مثل {url1,url2}
+          if (str.startsWith('{') && str.endsWith('}')) {
+            str = str.substring(1, str.length - 1);
+            cleanedImages = str.split(',').map(img => img.replace(/["]/g, '').trim()).filter(Boolean);
+          } 
+          // إذا كانت مخزنة بتنسيق JSON String مثل ["url1"]
+          else if (str.startsWith('[') && str.endsWith(']')) {
+            try {
+              const parsed = JSON.parse(str);
+              if (Array.isArray(parsed)) {
+                cleanedImages = parsed.map((img: any) => typeof img === 'string' ? img.trim() : '').filter(Boolean);
+              }
+            } catch (e) {
+              cleanedImages = [str];
+            }
+          } else {
+            cleanedImages = [str];
+          }
+        }
+      }
+
+      return {
+        ...car,
+        // إرسال أول صورة صالحة مباشرة كـ String أو إرسال المصفوفة كاملة بعد تنظيفها لتتوافق مع الواجهة
+        images: cleanedImages.length > 0 ? cleanedImages[0] : ''
+      };
+    });
+    // ✅ جلب العدد الإجمالي للسيارات المقبولة والمباعة
+    const countResult = await sql`
+      SELECT COUNT(*) as total FROM cars WHERE status IN ('approved', 'sold')
+    `;
+    const total = parseInt(countResult[0].total);
+
+    // ✅ إرجاع النتيجة مع تعتيم الكاش لضمان التحديث اللحظي للصور
     return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-// ✅ حفظ الإعلان مع دعم الصور
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-
-    console.log('📩 استلام طلب نشر إعلان:', body);
-
-    const {
-      brand, model, year, price, kilometers,
-      color, description, user_id, currency,
-      images, status = 'pending', is_featured = false
-    } = body;
-
-    // التحقق من البيانات المطلوبة
-    if (!brand || !model || !price) {
-      return NextResponse.json(
-        { success: false, error: 'الماركة، الموديل، والسعر مطلوبة' },
-        { status: 400 }
-      );
-    }
-
-    const client = await pool.connect();
-    try {
-      // ✅ حفظ الإعلان مع الصور (إذا وجدت)
-      const result = await client.query(
-        `INSERT INTO cars
-         (user_id, brand, model, year, price, kilometers, color, description, images, status, is_featured, currency, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
-         RETURNING *`,
-        [
-          parseInt(user_id) || 1,
-          brand.trim(),
-          model.trim(),
-          year || null,
-          parseFloat(price) || 0,
-          kilometers || null,
-          color || 'رمادي',
-          description || null,
-          images || null,
-          status || 'pending',
-          is_featured || false,
-          currency || 'KWD'
-        ]
-      );
-
-      console.log('✅ تم حفظ الإعلان بنجاح:', result.rows[0]);
-
-      return NextResponse.json({
+      {
         success: true,
-        message: '🎉 تم إرسال وحفظ الإعلان بنجاح!',
-        data: result.rows[0]
-      });
-
-    } finally {
-      client.release();
-    }
-
-  } catch (error: any) {
-    console.error('❌ خطأ في حفظ الإعلان:', error);
+        cars,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, must-revalidate',
+        },
+      }
+    );
+  } catch (error) {
+    console.error('خطأ في جلب الإعلانات:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, message: 'حدث خطأ أثناء جلب الإعلانات' },
       { status: 500 }
     );
   }
