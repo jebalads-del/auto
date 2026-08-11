@@ -138,30 +138,30 @@ export default function HomePage() {
             {filteredCars.map((car) => {
               if (!car) return null;
               
-              // فحص صارم ومحمي لاستخراج أول رابط صورة صالح يبتدئ بـ http
+              // التفكيك والفرز الذكي لاستخراج أول صورة صالحة حية
               let displaySrc = '';
-              try {
-                if (car.images) {
-                  if (Array.isArray(car.images) && car.images.length > 0 && typeof car.images[0] === 'string') {
-                    displaySrc = car.images[0];
-                  } else if (typeof car.images === 'string') {
-                    if (car.images.startsWith('http')) {
-                      displaySrc = car.images;
-                    } else if (car.images.startsWith('[')) {
-                      // محاولة فك الشفرة إذا كانت محفوظة كمصفوفة نصية JSON داخل الـ String
-                      const parsed = JSON.parse(car.images);
-                      if (Array.isArray(parsed) && parsed.length > 0) displaySrc = parsed[0];
-                    }
+              if (car.images) {
+                if (Array.isArray(car.images) && car.images.length > 0) {
+                  displaySrc = car.images[0];
+                } else if (typeof car.images === 'string') {
+                  const cleanedStr = car.images.trim();
+                  // إذا كانت مصفوفة نصوص مدمجة ومفصولة بفاصلة
+                  if (cleanedStr.includes(',')) {
+                    const splitUrls = cleanedStr.split(',');
+                    if (splitUrls.length > 0) displaySrc = splitUrls[0].trim();
+                  } else {
+                    displaySrc = cleanedStr;
                   }
                 }
-              } catch (e) {
-                console.error("Image parsing error", e);
               }
+
+              // التأكد من تعديل الروابط المكسورة أو إظهار الصورة الافتراضية
+              const hasValidImage = displaySrc && (displaySrc.startsWith('http') || displaySrc.startsWith('/'));
 
               return (
                 <div key={car.id} style={styles.card}>
                   <div style={styles.gallery}>
-                    {displaySrc && displaySrc.startsWith('http') ? (
+                    {hasValidImage ? (
                       <img 
                         src={displaySrc} 
                         alt={car.brand || 'Car'} 
