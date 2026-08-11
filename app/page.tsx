@@ -42,8 +42,8 @@ export default function HomePage() {
         const carsRes = await fetch(`/api/cars?t=${Date.now()}`, {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache' }
-        }).catch(() => null);
-        const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
+        });
+        const carsData = await carsRes.json();
         if (carsData && carsData.success) {
           setCars(carsData.cars || []);
         }
@@ -92,7 +92,7 @@ export default function HomePage() {
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
 
-  // ✅ أبسط دالة لاستخراج الصورة
+  // ✅ دالة مبسطة لاستخراج الصورة - تتعامل مع النص العادي والروابط المباشرة
   const getSingleImageSrc = (imagesInput: any): string => {
     if (!imagesInput) return '';
     
@@ -121,7 +121,6 @@ export default function HomePage() {
             if (typeof first === 'string') return first.trim();
           }
         } catch (e) {
-          // إذا فشل الـ parse، نحاول استخراج الرابط يدوياً
           const match = cleanStr.match(/https?:\/\/[^\s"',\]]+/);
           if (match) return match[0];
         }
