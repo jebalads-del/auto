@@ -1,4 +1,3 @@
-cat > app/car/[id]/page.tsx << 'EOF'
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -99,4 +98,3 @@ export default function CarDetailPage() {
     </div>
   );
 }
-EOF
