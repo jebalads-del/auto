@@ -1,38 +1,16 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+"use client";
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-const CAR_DATABASE: { [key: string]: string[] } = {
-  'تويوتا': ['كامري', 'كورولا', 'لاندكروزر', 'يارس', 'راف فور', 'هيلوكس'],
-  'نيسان': ['ألتيما', 'صني', 'باترول', 'باثفايندر', 'نافارا', 'إكس تريل'],
-  'هيونداي': ['إلنترا', 'أكسنت', 'سوناتا', 'توسان', 'سانتا في', 'أزيرا'],
-  'كيا': ['سيراتو', 'أوبتيما', 'سبورتج', 'ريو', 'سورينتو', 'بيجاس'],
-  'هوندا': ['أكورد', 'سيفيك', 'سي آر في', 'سيتي', 'بايلوت'],
-  'بي إم دبليو': ['الفئة الثالثة', 'الفئة الخامسة', 'الفئة السابعة', 'X5', 'X6', 'X3'],
-  'مرسيدس': ['C-Class', 'E-Class', 'S-Class', 'GLE', 'GLC', 'A-Class'],
-  'أودي': ['A4', 'A6', 'Q5', 'Q7', 'A8'],
-  'فورد': ['تورس', 'إكسبلورر', 'موستانج', 'إيدج', 'فليكس', 'إف 150'],
-  'لكزس': ['ES', 'LS', 'LX570', 'RX', 'IS', 'GX'],
-  'شيفورليه': ['تاهو', 'ماليبو', 'كابتيفا', 'سيلفرادو', 'ترافرس'],
-  'جيب': ['جراند شيروكي', 'روبيكون', 'رانجلر', 'كومباس', 'شيروكي'],
-  'مازدا': ['مازدا 6', 'مازدا 3', 'CX-5', 'CX-9', 'CX-30']
-};
-
-export default function NewCarAd() {
+export default function NewCarPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [images, setImages] = useState<File[]>([]);
-  
   const [formData, setFormData] = useState({
     brand: '', model: '', year: '', price: '', kilometers: '', color: '', description: ''
   });
-
-  const uniqueBrands = Object.keys(CAR_DATABASE);
-  const availableModels = formData.brand ? CAR_DATABASE[formData.brand] : [];
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,117 +19,71 @@ export default function NewCarAd() {
     setSuccess('');
 
     try {
-      if (!formData.brand || !formData.model || !formData.price) {
-        setError('يرجى اختيار الماركة والموديل وتحديد السعر الإجباري');
-        setLoading(false);
-        return;
-      }
-
-      const dataToSend = new FormData();
-      dataToSend.append('brand', formData.brand);
-      dataToSend.append('model', formData.model);
-      dataToSend.append('year', formData.year);
-      dataToSend.append('price', formData.price);
-      dataToSend.append('kilometers', formData.kilometers);
-      dataToSend.append('color', formData.color);
-      dataToSend.append('description', formData.description);
-      dataToSend.append('user_id', localStorage.getItem('userId') || localStorage.getItem('user_id') || '1');
-      dataToSend.append('payment_method', 'cash');
-
-      // 🛡️ التحديث العبقري: إرسال الـ 3 صور معاً في الحقل الممتد للـ API
-      images.forEach((file) => {
-        dataToSend.append('images', file);
-      });
-
       const response = await fetch('/api/cars', {
         method: 'POST',
-        body: dataToSend,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       });
-
-      const data = await response.json().catch(() => null);
-
-      if (!data || !data.success) {
-        setError(data?.error || data?.message || 'فشل السيرفر في معالجة ورفع الإعلان');
-        setLoading(false);
-        return;
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuccess('🎉 تم نشر وحفظ الإعلان بنجاح في قاعدة البيانات وينتظر مراجعة الإدارة!');
+        setFormData({ brand: '', model: '', year: '', price: '', kilometers: '', color: '', description: '' });
+        setTimeout(() => { router.push('/dashboard/admin'); }, 2000);
+      } else {
+        setError(data.message || 'فشل في حفظ البيانات، تأكد من المعايير');
       }
-
-      setSuccess('🎉 مبروك! تم رفع مواصفات السيارة بالقوائم و الصور الـ 3 بنجاح، بانتظار تفعيل الأدمن ميكانيكياً!');
-      setFormData({ brand: '', model: '', year: '', price: '', kilometers: '', color: '', description: '' });
-      setImages([]);
-
-    } catch (globalError: any) {
-      setError(`حدث خطأ أثناء معالجة الإعلان: ${globalError.message}`);
+    } catch (err: any) {
+      setError('حدث خطأ أثناء معالجة البيانات: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
-  return (
-    <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
-        <Link href="/dashboard" style={{ display: 'inline-block', marginBottom: '15px', color: '#2563eb', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}>← العودة للوحة التحكم</Link>
-        <h1 style={{ fontSize: '20px', marginBottom: '20px', color: '#1e293b' }}>➕ إضافة إعلان سيارة جديدة</h1>
-        
-        {error && <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px', fontWeight: 'bold' }}>❌ {error}</div>}
-        {success && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px', fontWeight: 'bold' }}>✅ {success}</div>}
-        
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الماركة *</label>
-            <select value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={{ width: '100%', padding: '11px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', outline: 'none', fontSize: '13px' }} required>
-              <option value="">اختر ماركة السيارة...</option>
-              {uniqueBrands.map((brand, idx) => <option key={idx} value={brand}>{brand}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الموديل *</label>
-            <select value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} disabled={!formData.brand} style={{ width: '100%', padding: '11px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', outline: 'none', fontSize: '13px', opacity: formData.brand ? 1 : 0.6 }} required>
-              <option value="">{formData.brand ? 'اختر موديل السيارة تالياً...' : 'يرجى اختيار الماركة أولاً 👆'}</option>
-              {availableModels.map((model, idx) => <option key={idx} value={model}>{model}</option>)}
-            </select>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>السعر * (د.ك)</label>
-              <input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px' }} placeholder="مثال: 4500" required />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>سنة الصنع</label>
-              <input type="number" value={formData.year} onChange={(e) => setFormData({ ...formData, year: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px' }} placeholder="مثال: 2022" />
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>الممشى (كم)</label>
-              <input type="number" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px' }} placeholder="مثال: 50000" />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>اللون</label>
-              <input type="text" value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px' }} placeholder="مثال: أبيض" />
-            </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>وصف الإعلان</label>
-            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', height: '80px', resize: 'none', fontSize: '13px' }} placeholder="اكتب تفاصيل إضافية وطريقة التواصل..."></textarea>
-          </div>
-          
-          {/* تفعيل خاصية الاختيار المتعدد لـ 3 صور بلمسة واحدة لراحة العملاء */}
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', color: '#475569', marginBottom: '5px' }}>تحميل صور السيارة (يمكنك تحديد حتى 3 صور مخصصة) *</label>
-            <input type="file" accept="image/*" multiple onChange={(e) => { 
-              if (e.target.files) {
-                const filesArray = Array.from(e.target.files).slice(0, 3);
-                setImages(filesArray);
-              }
-            }} style={{ fontSize: '12px' }} />
-            <p style={{ margin: '5px 0 0 0', fontSize: '11px', color: '#64748b' }}>📸 تم تحديد: {images.length} صور حالياً</p>
-          </div>
 
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: loading ? '#94a3b8' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', marginTop: '10px' }}>
-            {loading ? '⏳ جاري معالجة ورفع المواصفات الفنية والـ 3 صور لـ Blob...' : '🚀 انشر الإعلان بالقوائم والصور الآن'}
-          </button>
-        </form>
-      </div>
+  return (
+    <div style={{ padding: '15px', direction: 'rtl', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+      <Link href="/dashboard/admin" style={{ color: '#2563eb', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold' }}>← العودة للوحة التحكم</Link>
+      <h2 style={{ color: '#1e293b', marginTop: '15px', marginBottom: '20px' }}>➕ إضافة إعلان سيارة جديدة</h2>
+      
+      {error && <p style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '10px', borderRadius: '6px', fontSize: '13px', border: '1px solid #fca5a5' }}>❌ {error}</p>}
+      {success && <p style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '6px', fontSize: '13px', border: '1px solid #a7f3d0' }}>{success}</p>}
+
+      <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>الماركة *</label>
+          <input type="text" required value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} placeholder="مثال: تويوتا، نيسان" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>الموديل *</label>
+          <input type="text" required value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})} placeholder="مثال: كامري، ألتيما" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>السعر (د.ك) *</label>
+            <input type="number" required value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>سنة الصنع *</label>
+            <input type="number" required value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>الممشي (كم) *</label>
+            <input type="number" required value={formData.kilometers} onChange={e => setFormData({...formData, kilometers: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>اللون *</label>
+            <input type="text" required value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} placeholder="مثال: أبيض، أسود" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
+          </div>
+        </div>
+        <div>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>وصف الإعلان</label>
+          <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={2} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontFamily: 'sans-serif' }} />
+        </div>
+        <button type="submit" disabled={loading} style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%', marginTop: '10px', fontSize: '14px' }}>{loading ? 'جاري النشر وتطهير المعايير...' : '🚀 نشر الإعلان الآن'}</button>
+      </form>
     </div>
   );
 }
