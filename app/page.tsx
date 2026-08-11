@@ -1,128 +1,220 @@
-export const dynamic = 'force-dynamic';
+'use client';
 
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
-// واجهة البيانات المتوقعة من قاعدة بيانات Neon
-interface CarAd {
+interface Car {
   id: number;
-  title: string;
-  price: number;
   brand: string;
+  model: string;
   year: number;
-  image_url?: string; // جعلناها اختيارية لحماية الصفحة من الانكسار
+  price: number;
+  kilometers: number;
+  color: string;
+  description: string;
+  images: string[];
+  status: string;
+  currency: string;
 }
 
-// دالة جلب البيانات من الـ API الخاص بمشروعك
-async function getCars(): Promise<CarAd[]> {
-  try {
-    // استبدل الرابط برابط الـ API الفعلي لديك إذا كان مختلفاً
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/cars`, {
-      cache: 'no-store' // لضمان جلب الإعلانات الجديدة فوراً بعد موافقة الأدمن
-    });
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (error) {
-    console.error("Failed to fetch cars:", error);
-    return [];
+interface CommercialAd {
+  id: number;
+  position: string;
+  status: string;
+  image_url: string;
+}
+
+export default function HomePage() {
+  const [cars, setCars] = useState<Car[]>([]);
+  const [ads, setAds] = useState<CommercialAd[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [carsRes, adsRes] = await Promise.all([
+          fetch('/api/cars'),
+          fetch('/api/admin/commercial-ads')
+        ]);
+        const carsData = await carsRes.json();
+        const adsData = await adsRes.json();
+        if (carsData.success) setCars(carsData.cars);
+        if (adsData.success) setAds(adsData.ads);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const getCurrencySymbol = (currency: string) => {
+    if (currency === 'SAR') return 'ر.س';
+    return 'د.ك';
+  };
+
+  const headerAd = ads.find(ad => ad.position === 'header' && ad.status === 'approved');
+  const footerAd = ads.find(ad => ad.position === 'footer' && ad.status === 'approved');
+
+  const filteredCars = cars.filter(car => {
+    if (!selectedModel) return true;
+    return car.model.toLowerCase() === selectedModel.toLowerCase();
+  });
+
+  const uniqueModels = cars.reduce((acc: { brand: string; model: string }[], current) => {
+    const x = acc.find(item => item.model.toLowerCase() === current.model.toLowerCase());
+    if (!x && current.model) {
+      acc.push({ brand: current.brand, model: current.model });
+    }
+    return acc;
+  }, []);
+
+  const getCarImageUrl = (images: any): string => {
+    if (!images) return '';
+    if (Array.isArray(images) && images.length > 0) return images[0];
+    if (typeof images === 'string') return images;
+    return '';
+  };
+
+  if (loading) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinner}></div>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري تحميل صالة العرض...</p>
+      </div>
+    );
   }
-}
-
-export default async function HomePage() {
-  const cars = await getCars();
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-      {/* شريط الملاحة العلوي */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-blue-600 tracking-tight">
-            AUTO<span className="text-gray-700">ADS</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition">
-              تسجيل الدخول
-            </Link>
-            <Link href="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-              أعلن عن سيارتك
-            </Link>
+    <div style={styles.container}>
+      <div style={styles.heroSection}>
+        <header style={styles.header}>
+          <div style={styles.headerContent}>
+            <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
+            <Link href="/login" style={styles.headerLink}>👤 تسجيل الدخول</Link>
+          </div>
+        </header>
+        <div style={styles.heroBody}>
+          <h2 style={styles.heroMainTitle}>ابحث عن سيارتك المثالية</h2>
+          <p style={styles.heroSubTitle}>تصفح الإعلانات وأرسل إعلانك مجاناً</p>
+          <div style={styles.statsContainer}>
+            <div style={styles.statBox}><span style={styles.statNumber}>{cars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
+            <div style={styles.statDivider}></div>
+            <div style={styles.statBox}><span style={styles.statNumber}>4</span><span style={styles.statBoxLabel}>مدينة</span></div>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* القسم الترحيبي (Hero Section) */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-16 px-4 text-center">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
-            سوق السيارات الأول لإعلاناتك
-          </h1>
-          <p className="text-lg text-blue-100 mb-8">
-            تصفح آلاف السيارات المعروضة للبيع أو أضف إعلانك الخاص مجاناً وبكل سهولة.
-          </p>
-        </div>
-      </section>
-
-      {/* قسم عرض الإعلانات */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h2 className="text-2xl font-bold text-gray-800 mb-8 pb-2 border-b border-gray-200">
-          أحدث السيارات المضافة
-        </h2>
-
-        {cars.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
-            <p className="text-gray-500 text-lg">لا توجد إعلانات متاحة حالياً.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {cars.map((car) => (
-              <Link 
-                key={car.id} 
-                href={`/car/${car.id}`}
-                className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition border border-gray-100 flex flex-col"
-              >
-                {/* منطقة الصورة وحمايتها */}
-                <div className="relative aspect-[16/10] w-full bg-gray-100 overflow-hidden">
-                  {car.image_url ? (
-                    <Image
-                      src={car.image_url}
-                      alt={car.title}
-                      fill
-                      sizes="(max-w-7xl) 25vw"
-                      className="object-cover group-hover:scale-105 transition duration-300"
-                      priority={false}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-4 text-center">
-                      <span className="text-sm font-medium">لا توجد صورة متوفرة</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* تفاصيل السيارة */}
-                <div className="p-4 flex flex-col flex-grow justify-between">
-                  <div>
-                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                      {car.brand}
-                    </span>
-                    <h3 className="font-bold text-gray-900 mt-2 text-base line-clamp-1 group-hover:text-blue-600 transition">
-                      {car.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-1">موديل {car.year}</p>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
-                    <span className="text-lg font-extrabold text-green-600">
-                      {car.price.toLocaleString()} <span className="text-xs font-normal">دولار</span>
-                    </span>
-                    <span className="text-xs text-blue-500 font-medium group-hover:underline">
-                      التفاصيل ←
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+      <div style={styles.content}>
+        {headerAd && headerAd.image_url && (
+          <div style={styles.adBanner}>
+            <img src={headerAd.image_url} alt="إعلان" style={styles.adImage} />
           </div>
         )}
-      </main>
+
+        <div style={styles.actionButtonsGrid}>
+          <Link href="/dashboard/cars/new" style={styles.actionButtonPost}>➕ أرسل إعلانك مجاناً</Link>
+          <button type="button" onClick={() => setIsFilterOpen(!isFilterOpen)} style={styles.actionButtonSearch}>🔍 اختر موديل السيارة</button>
+        </div>
+
+        {isFilterOpen && (
+          <div style={styles.searchSection}>
+            <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} style={styles.filterInput}>
+              <option value="">عرض كل الماركات والموديلات المتاحة</option>
+              {uniqueModels.map((m: any) => (
+                <option key={m.model} value={m.model}>
+                  {m.brand} - {m.model}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <h2 style={styles.sectionTitle}>✨ السيارات المعروضة ({filteredCars.length})</h2>
+        {filteredCars.length === 0 ? (
+          <div style={styles.noCars}>لا توجد سيارات متوفرة حالياً 🔍</div>
+        ) : (
+          <div style={styles.grid}>
+            {filteredCars.map((car) => {
+              const mainImgUrl = getCarImageUrl(car.images);
+              return (
+                <div key={car.id} style={styles.card}>
+                  <div style={styles.gallery}>
+                    {mainImgUrl ? (
+                      <div style={{ position: 'relative', width: '100%', height: '160px', overflow: 'hidden', borderRadius: '8px' }}>
+                        <Image 
+                          src={mainImgUrl} 
+                          alt={car.brand} 
+                          fill
+                          sizes="(max-w-7xl) 33vw"
+                          style={{ objectFit: 'cover' }}
+                          unoptimized={true}
+                        />
+                      </div>
+                    ) : (
+                      <div style={styles.noImage}>🚗 لا توجد صورة</div>
+                    )}
+                  </div>
+                  <div style={styles.cardBody}>
+                    <h3 style={styles.carTitle}>{car.brand} {car.model}</h3>
+                    <div style={styles.carPrice}>{car.price.toLocaleString()} {getCurrencySymbol(car.currency)}</div>
+                    <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {car.year}</span></div>
+                    <Link href={`/car/${car.id}`} style={styles.viewLink}>عرض التفاصيل ←</Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {footerAd && footerAd.image_url && (
+          <div style={styles.adBanner}>
+            <img src={footerAd.image_url} alt="إعلان" style={styles.adImage} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+const styles = {
+  container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
+  heroSection: { background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)', color: 'white', paddingBottom: '25px' },
+  header: { padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' },
+  headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  headerTitle: { color: 'white', margin: 0, fontSize: '18px', fontWeight: 'bold' },
+  headerLink: { color: '#cbd5e1', textDecoration: 'none', fontSize: '13px' },
+  heroBody: { maxWidth: '1200px', margin: '0 auto', padding: '20px', textAlign: 'center' as const },
+  heroMainTitle: { fontSize: '24px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 5px 0' },
+  heroSubTitle: { fontSize: '13px', color: '#94a3b8', margin: '0 0 15px 0' },
+  statsContainer: { display: 'flex', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '12px', padding: '10px', maxWidth: '400px', margin: '0 auto', justifyContent: 'space-around' },
+  statBox: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
+  statNumber: { fontSize: '16px', fontWeight: 'bold', color: '#f59e0b' },
+  statBoxLabel: { fontSize: '11px', color: '#cbd5e1' },
+  statDivider: { width: '1px', height: '25px', backgroundColor: 'rgba(255,255,255,0.15)' },
+  content: { maxWidth: '1200px', margin: '0 auto', padding: '15px' },
+  actionButtonsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' },
+  actionButtonPost: { display: 'block', textAlign: 'center' as const, backgroundColor: '#f59e0b', color: '#1e293b', padding: '12px', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' },
+  actionButtonSearch: { backgroundColor: '#38bdf8', color: '#1e293b', padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' },
+  searchSection: { backgroundColor: 'white', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e2e8f0' },
+  filterInput: { padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', width: '100%', color: '#1e293b', backgroundColor: '#f8fafc' },
+  sectionTitle: { fontSize: '16px', color: '#1e293b', marginBottom: '12px', fontWeight: 'bold' },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' },
+  card: { backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' as const, transition: 'transform 0.2s' },
+  gallery: { backgroundColor: '#f1f5f9', width: '100%', height: '160px' },
+  noImage: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#94a3b8', fontSize: '13px' },
+  cardBody: { padding: '15px', display: 'flex', flexDirection: 'column' as const, gap: '8px' },
+  carTitle: { margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#1e293b' },
+  carPrice: { fontSize: '16px', fontWeight: 'bold', color: '#10b981' },
+  carMeta: { display: 'flex', gap: '8px' },
+  metaBadge: { backgroundColor: '#f1f5f9', color: '#475569', fontSize: '11px', padding: '4px 8px', borderRadius: '6px' },
+  viewLink: { display: 'block', textAlign: 'center' as const, marginTop: '5px', color: '#2563eb', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' },
+  adBanner: { width: '100%', backgroundColor: '#e2e8f0', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px', display: 'flex', justifyContent: 'center' },
+  adImage: { maxWidth: '100%', height: 'auto', display: 'block' },
+  noCars: { textAlign: 'center' as const, padding: '40px', color: '#64748b', fontSize: '14px', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' },
+  loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
+  spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #2563eb', borderRadius: '50%', transform: 'rotate(0deg)' }
+};
