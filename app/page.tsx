@@ -2,321 +2,64 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-
-interface Car {
-  id: number;
-  brand: string;
-  model: string;
-  year: number;
-  price: number;
-  kilometers: number;
-  color: string;
-  description: string;
-  images: any;
-  status: string;
-  is_featured: boolean;
-  currency: string;
-}
-
-const POPULAR_BRANDS = [
-  'تويوتا', 'نيسان', 'هيونداي', 'كيا', 'هوندا',
-  'بي إم دبليو', 'مرسيدس', 'أودي', 'فورد', 'شيفورليه',
-  'جيب', 'لكزس', 'مازدا', 'ميتسوبيشي', 'جي إم سي'
-];
 
 export default function HomePage() {
-  const router = useRouter();
-  const [cars, setCars] = useState<Car[]>([]);
+  const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [searchBrand, setSearchBrand] = useState('');
-  const [searchModel, setSearchModel] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [minYear, setMinYear] = useState('');
-
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const carsRes = await fetch(`/api/cars?t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' }
-        });
-        const carsData = await carsRes.json();
-        if (carsData && carsData.success) {
-          setCars(carsData.cars || []);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
+    fetch('/api/cars')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setCars(data.cars);
         setLoading(false);
-      }
-    };
-    fetchData();
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  const handlePostAdClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token') || localStorage.getItem('user') || document.cookie.includes('session');
-    if (!token) {
-      router.push('/login');
-    } else {
-      router.push('/dashboard/cars/new');
-    }
-  };
-
-  const getCurrencySymbol = (currency: string) => {
-    if (!currency) return 'د.ك';
-    if (String(currency).toUpperCase() === 'SAR') return 'ر.س';
-    return 'د.ك';
-  };
-
-  const filteredCars = Array.isArray(cars) ? cars.filter(car => {
-    if (!car) return false;
-    if (searchBrand && String(car.brand).toLowerCase() !== searchBrand.toLowerCase()) return false;
-    if (searchModel && String(car.model).toLowerCase() !== searchModel.toLowerCase()) return false;
-    if (maxPrice && Number(car.price) > Number(maxPrice)) return false;
-    if (car.status === "sold") return false;
-    if (minYear && Number(car.year) < Number(minYear)) return false;
-    return true;
-  }) : [];
-
-  const featuredCars = filteredCars.filter(car => car.is_featured);
-  const regularCars = filteredCars.filter(car => !car.is_featured);
-
-  const dynamicBrands = Array.isArray(cars) ? cars.map(car => car?.brand).filter(Boolean) : [];
-  const allBrands = Array.from(new Set([...POPULAR_BRANDS, ...dynamicBrands])).sort();
-
-  const availableModels = Array.isArray(cars) && searchBrand
-    ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
-    : [];
-
-  // ✅ دالة مبسطة لاستخراج الصورة - تتعامل مع النص العادي والروابط المباشرة
-  const getSingleImageSrc = (imagesInput: any): string => {
-    if (!imagesInput) return '';
-    
-    // إذا كانت مصفوفة
-    if (Array.isArray(imagesInput) && imagesInput.length > 0) {
-      const first = imagesInput[0];
-      if (typeof first === 'string') return first.trim();
-      return '';
-    }
-    
-    // إذا كانت نص
-    if (typeof imagesInput === 'string') {
-      const cleanStr = imagesInput.trim();
-      
-      // إذا كان رابطاً مباشراً (يبدأ بـ http)
-      if (cleanStr.startsWith('http://') || cleanStr.startsWith('https://')) {
-        return cleanStr;
-      }
-      
-      // إذا كانت JSON مصفوفة
-      if (cleanStr.startsWith('[') && cleanStr.endsWith(']')) {
-        try {
-          const parsed = JSON.parse(cleanStr);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const first = parsed[0];
-            if (typeof first === 'string') return first.trim();
-          }
-        } catch (e) {
-          const match = cleanStr.match(/https?:\/\/[^\s"',\]]+/);
-          if (match) return match[0];
-        }
-      }
-      
-      // إذا كانت روابط مفصولة بفواصل
-      if (cleanStr.includes(',')) {
-        const parts = cleanStr.split(',').map(s => s.trim());
-        for (const part of parts) {
-          if (part.startsWith('http://') || part.startsWith('https://')) {
-            return part;
-          }
-        }
-        return parts[0] || '';
-      }
-      
-      // محاولة استخراج أي رابط من النص
-      const match = cleanStr.match(/https?:\/\/[^\s"',\]]+/);
-      if (match) return match[0];
-    }
-    
-    return '';
-  };
-
-  if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b' }}>جاري تحميل صالة العرض المميزة...</p>
-      </div>
-    );
-  }
-
-  const renderCarCard = (car: Car) => {
-    const carBrand = car.brand || 'سيارة';
-    const carModel = car.model || '';
-    const carYear = car.year || '----';
-    const carPrice = car.price ? car.price.toLocaleString() : '0';
-
-    const carCurrency = getCurrencySymbol(car.currency);
-    const finalImageSrc = getSingleImageSrc(car.images);
-    const isSold = car.status === 'sold';
-
-    // ✅ سجل في console لتصحيح الأخطاء
-    console.log(`🚗 ${carBrand} ${carModel} (ID: ${car.id}):`, finalImageSrc || '❌ لا توجد صورة');
-
-    return (
-      <div key={car.id} style={{...styles.card, border: car.is_featured ? '2px solid #f59e0b' : '1px solid #e2e8f0', position: 'relative'}}>
-
-        {isSold && (
-          <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#10b981', color: 'white', padding: '4px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', zIndex: 5 }}>✓ مباعة</div>
-        )}
-
-        {car.is_featured && !isSold && (
-          <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#f59e0b', color: '#1e293b', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', zIndex: 5, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>👑 مميز</div>
-        )}
-
-        <div style={styles.gallery}>
-          {finalImageSrc ? (
-            <img 
-              src={finalImageSrc} 
-              alt={carBrand} 
-              style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px', opacity: isSold ? 0.6 : 1 }}
-              onError={(e) => {
-                console.error('❌ فشل تحميل الصورة:', finalImageSrc);
-                (e.target as HTMLImageElement).style.display = 'none';
-                const parent = (e.target as HTMLImageElement).parentElement;
-                if (parent) {
-                  parent.innerHTML = '<div style="height:160px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;">🚗 لا توجد صورة</div>';
-                }
-              }}
-            />
-          ) : (
-            <div style={styles.noImage}>🚗 لا توجد صورة</div>
-          )}
-        </div>
-        <div style={styles.cardBody}>
-          <h3 style={styles.carTitle}>{carBrand} {carModel}</h3>
-          <div style={{...styles.carPrice, color: isSold ? '#94a3b8' : (car.is_featured ? '#b45309' : '#059669'), textDecoration: isSold ? 'line-through' : 'none'}}>{carPrice} {carCurrency}</div>
-          <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {carYear}</span></div>
-          <Link href={`/car/${car.id}`} style={{...styles.viewLink, backgroundColor: isSold ? '#64748b' : (car.is_featured ? '#d97706' : '#1e3a8a')}}>{isSold ? 'عرض الإعلان المباع ←' : 'عرض التفاصيل ←'}</Link>
-        </div>
-      </div>
-    );
-  };
+  if (loading) return <div style={{ padding: '20px' }}>⏳ جاري التحميل...</div>;
 
   return (
-    <div style={styles.container}>
-      <div style={styles.heroSection}>
-        <header style={styles.header}>
-          <div style={styles.headerContent}>
-            <h1 style={styles.headerTitle}> 🚗 سيارتي</h1>
-            <Link href="/login" style={styles.headerLink}>👤 تسجيل الدخول</Link>
-          </div>
-        </header>
-        <div style={styles.heroBody}>
-          <h2 style={styles.heroMainTitle}>ابحث عن سيارتك المثالية</h2>
-          <p style={styles.heroSubTitle}>تصفح صالة العرض وأرسل إعلانك أو ميزه لزيادة مبيعاتك</p>
-          <div style={styles.statsContainer}>
-            <div style={styles.statBox}><span style={styles.statNumber}>{filteredCars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
-            <div style={styles.statDivider}></div>
-            <div style={styles.statBox}><span style={styles.statNumber}>10 د.ك</span><span style={styles.statBoxLabel}>تميز شهري</span></div>
-          </div>
-        </div>
-      </div>
+    <div style={{ direction: 'rtl', padding: '20px' }}>
+      <h1>🚗 سيارتي</h1>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
+        {cars.map((car: any) => {
+          // استخراج الصورة مباشرة
+          let imageUrl = '/images/default-car.jpg';
+          if (car.images) {
+            if (typeof car.images === 'string') {
+              // إذا كان نصاً، استخدمه مباشرة
+              imageUrl = car.images;
+            } else if (Array.isArray(car.images) && car.images.length > 0) {
+              imageUrl = String(car.images[0]);
+            }
+          }
+          // التأكد من أن الرابط صحيح
+          if (!imageUrl.startsWith('http')) {
+            imageUrl = '/images/default-car.jpg';
+          }
 
-      <div style={styles.content}>
-        <div style={styles.actionButtonsGrid}>
-          <button type="button" onClick={handlePostAdClick} style={styles.actionButtonPost}>➕ أرسل إعلانك مجاناً</button>
-          <button type="button" onClick={() => setIsFilterOpen(!isFilterOpen)} style={styles.actionButtonSearch}>🔍 {isFilterOpen ? 'إغلاق محرك البحث' : 'تخصيص فلاتر البحث'}</button>
-        </div>
-
-        {isFilterOpen && (
-          <div style={styles.searchSection}>
-            <div style={styles.filterGrid}>
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>الماركة:</label>
-                <select value={searchBrand} onChange={(e) => { setSearchBrand(e.target.value); setSearchModel(''); }} style={styles.filterInput}>
-                  <option value="">كل الماركات</option>
-                  {allBrands.map((brand, idx) => <option key={idx} value={brand}>{brand}</option>)}
-                </select>
-              </div>
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>الموديل:</label>
-                <select value={searchModel} onChange={(e) => setSearchModel(e.target.value)} disabled={!searchBrand} style={{...styles.filterInput, opacity: searchBrand ? 1 : 0.6}}>
-                  <option value="">كل الموديلات</option>
-                  {availableModels.map((model, idx) => <option key={idx} value={model}>{model}</option>)}
-                </select>
-              </div>
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>السعر الأقصى:</label>
-                <input type="number" placeholder="مثال: 5000" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={styles.filterInput} />
-              </div>
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>سنة الصنع:</label>
-                <input type="number" placeholder="مثال: 2018" value={minYear} onChange={(e) => setMinYear(e.target.value)} style={styles.filterInput} />
+          return (
+            <div key={car.id} style={{ border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
+              <img
+                src={imageUrl}
+                alt={car.title}
+                style={{ width: '100%', height: '200px', objectFit: 'cover' }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/default-car.jpg';
+                }}
+              />
+              <div style={{ padding: '10px' }}>
+                <h3>{car.title}</h3>
+                <p>{car.price} د.ك</p>
+                <Link href={`/car/${car.id}`} style={{ display: 'inline-block', background: '#2563eb', color: 'white', padding: '5px 10px', borderRadius: '5px', textDecoration: 'none' }}>
+                  عرض التفاصيل
+                </Link>
               </div>
             </div>
-          </div>
-        )}
-
-        {featuredCars.length > 0 && (
-          <div style={{ marginBottom: '30px', backgroundColor: '#fff9db', padding: '15px', borderRadius: '16px', border: '1px solid #ffe066' }}>
-            <h2 style={{ fontSize: '15px', fontWeight: 'bold', color: '#b45309', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '5px' }}>👑 إعلانات مميزة وموصى بها (سرعة في البيع)</h2>
-            <div style={styles.grid}>{featuredCars.map(renderCarCard)}</div>
-          </div>
-        )}
-
-        <h2 style={styles.sectionTitle}>✨ أحدث الإعلانات المضافة حالياً ({regularCars.length})</h2>
-        {regularCars.length === 0 && featuredCars.length === 0 ? (
-          <div style={styles.noCars}>لا توجد سيارات متوفرة حالياً 🔍</div>
-        ) : (
-          <div style={styles.grid}>{regularCars.map(renderCarCard)}</div>
-        )}
+          );
+        })}
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
-  heroSection: { background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)', color: 'white', paddingBottom: '25px' },
-  header: { padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' },
-  headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { color: 'white', margin: 0, fontSize: '18px', fontWeight: 'bold' },
-  headerLink: { color: '#cbd5e1', textDecoration: 'none', fontSize: '13px' },
-  heroBody: { maxWidth: '1200px', margin: '0 auto', padding: '20px', textAlign: 'center' as const },
-  heroMainTitle: { fontSize: '24px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 5px 0' },
-  heroSubTitle: { fontSize: '13px', color: '#94a3b8', margin: '0 0 15px 0' },
-  statsContainer: { display: 'flex', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '12px', padding: '10px', maxWidth: '400px', margin: '0 auto', justifyContent: 'space-around' },
-  statBox: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
-  statNumber: { fontSize: '16px', fontWeight: 'bold', color: '#f59e0b' },
-  statBoxLabel: { fontSize: '11px', color: '#cbd5e1' },
-  statDivider: { width: '1px', height: '25px', backgroundColor: 'rgba(255,255,255,0.15)' },
-  content: { maxWidth: '1200px', margin: '0 auto', padding: '15px' },
-  actionButtonsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' },
-  actionButtonPost: { display: 'block', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'center' as const, backgroundColor: '#f59e0b', color: '#1e293b', padding: '12px', borderRadius: '10px', fontWeight: 'bold' as const, fontSize: '13px' },
-  actionButtonSearch: { backgroundColor: '#38bdf8', color: '#1e293b', padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 'bold' as const, fontSize: '13px' },
-  searchSection: { backgroundColor: 'white', padding: '15px', borderRadius: '12px', marginBottom: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' },
-  filterGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '15px' },
-  filterGroup: { display: 'flex', flexDirection: 'column' as const, gap: '5px' },
-  filterLabel: { fontSize: '12px', fontWeight: 'bold', color: '#475569' },
-  filterInput: { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '13px', outline: 'none', boxSizing: 'border-box' as const },
-  resetButton: { backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' as const, display: 'block', marginRight: 'auto' },
-  sectionTitle: { fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px' },
-  noCars: { textAlign: 'center' as const, padding: '40px', backgroundColor: 'white', borderRadius: '12px', color: '#64748b', border: '1px dashed #cbd5e1' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '15px' },
-  card: { backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 6px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' },
-  gallery: { position: 'relative' as const, backgroundColor: '#f1f5f9' },
-  noImage: { height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '13px' },
-  cardBody: { padding: '12px' },
-  carTitle: { fontSize: '15px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 5px 0' },
-  carPrice: { fontSize: '16px', fontWeight: 'bold', color: '#059669', margin: '0 0 8px 0' },
-  carMeta: { display: 'flex', gap: '8px', marginBottom: '12px' },
-  metaBadge: { backgroundColor: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontSize: '11px' },
-  viewLink: { display: 'block', textAlign: 'center' as const, backgroundColor: '#1e3a8a', color: 'white', padding: '8px', borderRadius: '8px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold' as const },
-  loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '12px' },
-  spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
-};
