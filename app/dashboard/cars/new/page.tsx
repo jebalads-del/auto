@@ -13,7 +13,6 @@ const currencies = [
   { code: 'OMR', symbol: 'ر.ع', name: 'ريال عماني' },
 ];
 
-// ✅ قائمة الماركات
 const BRANDS = [
   'تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 
   'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 
@@ -22,7 +21,6 @@ const BRANDS = [
   'لاند روفر', 'بورش', 'فيات', 'ألفا روميو', 'أخرى'
 ];
 
-// ✅ الموديلات حسب الماركة
 const MODELS: Record<string, string[]> = {
   'تويوتا': ['كامري', 'كورولا', 'لاندكروزر', 'برادو', 'أفالون', 'راف فور', 'يارس', 'هيلوكس', 'هايلوكس', 'فورتشنر', 'أخرى'],
   'هوندا': ['أكورد', 'سيفيك', 'سي آر في', 'بايلوت', 'أوديسي', 'سيتي', 'HR-V', 'أخرى'],
@@ -52,7 +50,6 @@ const MODELS: Record<string, string[]> = {
   'أخرى': ['أخرى']
 };
 
-// ✅ الألوان
 const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'];
 
 export default function NewCarPage() {
@@ -156,23 +153,35 @@ export default function NewCarPage() {
 
       const carId = data.data?.[0]?.id || data.id;
 
-      // 2. رفع الصور
+      // ✅ 2. رفع الصور إلى Vercel Blob مع حفظ الروابط في قاعدة البيانات
       if (images.length > 0 && carId) {
-        const formData = new FormData();
-        images.forEach(file => formData.append('images', file));
-        formData.append('carId', carId.toString());
+        try {
+          const formData = new FormData();
+          images.forEach(file => formData.append('images', file));
+          formData.append('carId', carId.toString());
 
-        const uploadRes = await fetch('/api/cars/upload', {
-          method: 'POST',
-          body: formData,
-        });
+          const uploadRes = await fetch('/api/cars/upload', {
+            method: 'POST',
+            body: formData,
+          });
 
-        if (!uploadRes.ok) {
-          console.warn('تم نشر الإعلان لكن فشل رفع الصور');
+          const uploadData = await uploadRes.json();
+
+          if (uploadRes.ok && uploadData.success) {
+            console.log('✅ تم رفع الصور بنجاح:', uploadData.urls);
+            setSuccess('✅ تم نشر الإعلان مع الصور بنجاح!');
+          } else {
+            console.error('❌ فشل رفع الصور:', uploadData.error);
+            setSuccess('⚠️ تم نشر الإعلان لكن فشل رفع الصور');
+          }
+        } catch (error) {
+          console.error('❌ خطأ في رفع الصور:', error);
+          setSuccess('⚠️ تم نشر الإعلان لكن حدث خطأ في رفع الصور');
         }
+      } else {
+        setSuccess('✅ تم نشر الإعلان بنجاح!');
       }
 
-      setSuccess('✅ تم نشر الإعلان بنجاح!');
       setFormData({
         brand: '',
         model: '',
@@ -185,6 +194,7 @@ export default function NewCarPage() {
       });
       setImages([]);
       setImagePreviews([]);
+      
       setTimeout(() => { router.push('/'); }, 2000);
 
     } catch (err: any) {
@@ -217,7 +227,6 @@ export default function NewCarPage() {
 
       <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         
-        {/* ✅ الماركة - قائمة منسدلة */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الماركة *</label>
           <select required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={styIn}>
@@ -226,7 +235,6 @@ export default function NewCarPage() {
           </select>
         </div>
 
-        {/* ✅ الموديل - قائمة منسدلة تعتمد على الماركة */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الموديل *</label>
           <select required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} style={styIn} disabled={!formData.brand}>
@@ -235,13 +243,11 @@ export default function NewCarPage() {
           </select>
         </div>
 
-        {/* ✅ السعر */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>السعر *</label>
           <input type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} placeholder="مثال: 5000" />
         </div>
 
-        {/* ✅ العملة */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>💰 العملة</label>
           <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={styIn}>
@@ -249,7 +255,6 @@ export default function NewCarPage() {
           </select>
         </div>
 
-        {/* ✅ سنة الصنع */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>سنة الصنع</label>
           <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} style={styIn}>
@@ -257,13 +262,11 @@ export default function NewCarPage() {
           </select>
         </div>
 
-        {/* ✅ الممشي */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الممشي (كم)</label>
           <input type="number" min="0" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} placeholder="مثال: 50000" />
         </div>
 
-        {/* ✅ اللون - قائمة منسدلة */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>اللون</label>
           <select value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={styIn}>
@@ -272,7 +275,6 @@ export default function NewCarPage() {
           </select>
         </div>
 
-        {/* ✅ رفع الصور (حد أقصى 4) */}
         <div style={{ marginBottom: '15px', border: '2px dashed #2563eb', padding: '15px', borderRadius: '8px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>📸 صور السيارة (حد أقصى 4)</label>
           <input
@@ -304,7 +306,6 @@ export default function NewCarPage() {
           </p>
         </div>
 
-        {/* ✅ الوصف */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>وصف الإعلان</label>
           <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: '80px', resize: 'none' }} placeholder="اكتب وصفاً مفصلاً للسيارة..." />
