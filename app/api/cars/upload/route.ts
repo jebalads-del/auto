@@ -1,6 +1,14 @@
 import { put } from '@vercel/blob';
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { Pool } from 'pg';
+
+// إنشاء اتصال بقاعدة البيانات
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,11 +42,15 @@ export async function POST(request: NextRequest) {
     // تخزين الروابط كنص مفصول بفواصل (comma-separated)
     const imagesString = uploadedUrls.join(',');
 
-    await sql`
-      UPDATE cars 
-      SET images = ${imagesString}
-      WHERE id = ${parseInt(carId)}
-    `;
+    const client = await pool.connect();
+    try {
+      await client.query(
+        'UPDATE cars SET images = $1 WHERE id = $2',
+        [imagesString, parseInt(carId)]
+      );
+    } finally {
+      client.release();
+    }
 
     console.log('✅ تم رفع الصور:', uploadedUrls);
 
