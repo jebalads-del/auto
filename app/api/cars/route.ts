@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       created_at: car.created_at
     }));
 
-    return NextResponse.json({ success: true, cars: formattedUsers || formattedCars });
+    return NextResponse.json({ success: true, cars: formattedCars });
     
   } catch (error: any) {
     console.error('❌ خطأ في جلب السيارات:', error);
