@@ -150,7 +150,6 @@ export default function HomePage() {
             {filteredCars.map((car) => {
               if (!car) return null;
               
-              // جلب المتغيرات مع تأمين حالة الأحرف الكبيرة والصغيرة القادمة من قاعدة البيانات
               const carId = car.id || car.ID;
               const carBrand = car.brand || car.BRAND || '';
               const carModel = car.model || car.MODEL || '';
@@ -162,12 +161,13 @@ export default function HomePage() {
               let displaySrc = '';
               if (carImagesRaw) {
                 if (Array.isArray(carImagesRaw) && carImagesRaw.length > 0) {
-                  displaySrc = carImagesRaw;
+                  const firstArrItem = carImagesRaw[0];
+                  if (typeof firstArrItem === 'string') displaySrc = firstArrItem.trim();
                 } else if (typeof carImagesRaw === 'string') {
                   const cleanedStr = carImagesRaw.trim();
                   if (cleanedStr.includes(',')) {
                     const splitUrls = cleanedStr.split(',');
-                    const firstUrl = splitUrls;
+                    const firstUrl = splitUrls[0];
                     if (firstUrl) displaySrc = firstUrl.trim();
                   } else {
                     displaySrc = cleanedStr;
