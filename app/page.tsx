@@ -147,9 +147,14 @@ export default function HomePage() {
                   const cleanedStr = car.images.trim();
                   // إذا كانت مصفوفة نصوص مدمجة ومفصولة بفاصلة
                   if (cleanedStr.includes(',')) {
+                                      if (cleanedStr.includes(',')) {
                     const splitUrls = cleanedStr.split(',');
-                    if (splitUrls.length > 0) displaySrc = splitUrls[0].trim(); // تم الإصلاح هنا يا بطل!
+                    const firstUrl = splitUrls[0];
+                    if (firstUrl) {
+                      displaySrc = firstUrl.trim();
+                    }
                   } else {
+
                     displaySrc = cleanedStr;
                   }
                 }
