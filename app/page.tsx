@@ -138,29 +138,22 @@ export default function HomePage() {
             {filteredCars.map((car) => {
               if (!car) return null;
               
-              // التفكيك والفرز الذكي لاستخراج أول صورة صالحة حية بشكل محمي
               let displaySrc = '';
               if (car.images) {
                 if (Array.isArray(car.images) && car.images.length > 0) {
                   displaySrc = car.images[0];
                 } else if (typeof car.images === 'string') {
                   const cleanedStr = car.images.trim();
-                  // إذا كانت مصفوفة نصوص مدمجة ومفصولة بفاصلة
                   if (cleanedStr.includes(',')) {
-                                      if (cleanedStr.includes(',')) {
                     const splitUrls = cleanedStr.split(',');
                     const firstUrl = splitUrls[0];
-                    if (firstUrl) {
-                      displaySrc = firstUrl.trim();
-                    }
+                    if (firstUrl) displaySrc = firstUrl.trim();
                   } else {
-
                     displaySrc = cleanedStr;
                   }
                 }
               }
 
-              // التوثق من المسارات والامتدادات
               const hasValidImage = displaySrc && (displaySrc.startsWith('http') || displaySrc.startsWith('/'));
 
               return (
