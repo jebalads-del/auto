@@ -47,7 +47,7 @@ export default function CarPublish() {
         formData.append('images', selectedImage);
       }
 
-      const response = await fetch('/api/ads', {
+      const response = await fetch('/api/cars', {
         method: 'POST',
         body: formData,
       });
