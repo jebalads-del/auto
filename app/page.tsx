@@ -161,7 +161,7 @@ export default function HomePage() {
               let displaySrc = '';
               if (carImagesRaw) {
                 if (Array.isArray(carImagesRaw) && carImagesRaw.length > 0) {
-                  const firstArrItem = carImagesRaw[0];
+                  const firstArrItem = carImagesRaw[0]; // تم الإصلاح القاطع هنا يا بطل لقراءة المصفوفات الجديدة!
                   if (typeof firstArrItem === 'string') displaySrc = firstArrItem.trim();
                 } else if (typeof carImagesRaw === 'string') {
                   const cleanedStr = carImagesRaw.trim();
