@@ -2,21 +2,20 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
-
-  // فحص الكوكيز بأمان فقط عند محاولة الدخول للوحة التحكم
-  if (path.startsWith('/admin') || path.startsWith('/dashboard')) {
-    const isLoggedIn = request.cookies.get('isAdmin')?.value === 'true';
-    
-    if (!isLoggedIn) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
+  // يمكنك هنا إضافة أي كود للتحقق من توكن تسجيل الدخول (إذا كنت تستخدم NextAuth مثلاً)
   return NextResponse.next();
 }
 
-// تحديد المسارات المستهدفة بدقة متناهية لمنع انهيار البناء أو تداخل الـ API
+// الـ Matcher الموزون والمحمي بالكامل لمنع حظر لوحة الإدارة أو الصور
 export const config = {
-  matcher: ['/admin/:path*', '/dashboard/:path*'],
+  matcher: [
+    /*
+     * استثناء كافة المسارات الحيوية لتفادي الطرد أو تعطل الأزرار:
+     * - api (طلبات السيرفر وقاعدة البيانات)
+     * - _next (ملفات النظام وبناء الصفحات)
+     * - favicon.ico (أيقونة الموقع)
+     * - كافة امتدادات الصور والـ Blob الخارجية
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };
