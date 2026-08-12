@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '../../../db';
+import sql from '../../db'; // تم تصحيح مسار الداتابيز هنا ليصبح خطوتين فقط للخلف
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     if (imagesRaw) {
       if (Array.isArray(imagesRaw) && imagesRaw.length > 0) {
-        cleanedImagesStr = String(imagesRaw).trim();
+        cleanedImagesStr = String(imagesRaw[0]).trim();
       } else if (typeof imagesRaw === 'string') {
         const rawStr = imagesRaw.trim();
         if (rawStr.includes(',')) {
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       status: car.status || car.STATUS || '',
       currency: car.currency || car.CURRENCY || 'KWD',
       created_at: car.created_at || car.CREATED_AT,
-      images: cleanedImagesStr // نمرر المسار المستقر الصافي
+      images: cleanedImagesStr
     };
 
     return NextResponse.json(
