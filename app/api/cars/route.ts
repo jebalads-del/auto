@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '36');
     const offset = (page - 1) * limit;
 
-    // ✅ جلب السيارات المقبولة والمباعة معاً مع Pagination
+    // جلب البيانات حية من قاعدة بيانات Neon
     const rawCars = await sql`
       SELECT id, brand, model, year, price, kilometers, color, 
              description, images, status, created_at, currency 
@@ -18,49 +18,49 @@ export async function GET(request: NextRequest) {
       LIMIT ${limit} OFFSET ${offset}
     `;
 
-    // معالجة البيانات وتنظيف حقل الصور بشكل صارم لضمان استخراج روابط Vercel Blob السليمة
+    // معالجة وتوحيد أسماء الحقول لضمان وصولها للمتصفح بحروف صغيرة سليمة
     const cars = rawCars.map((car: any) => {
-      let cleanedImages: string[] = [];
+      // التعامل الذكي مع حالة الأحرف الكبيرة والصغيرة القادمة من الداتابيز
+      const imagesRaw = car.images || car.IMAGES || '';
+      let cleanedImagesStr = '';
 
-      if (car.images) {
-        if (Array.isArray(car.images)) {
-          cleanedImages = car.images.map((img: any) => typeof img === 'string' ? img.trim() : '').filter(Boolean);
-        } else if (typeof car.images === 'string') {
-          let str = car.images.trim();
-          
-          // إذا كانت مخزنة بتنسيق مصفوفة PostgreSQL التقليدية مثل {url1,url2}
-          if (str.startsWith('{') && str.endsWith('}')) {
-            str = str.substring(1, str.length - 1);
-            cleanedImages = str.split(',').map((img: any) => img.replace(/["]/g, '').trim()).filter(Boolean);
-          } 
-          // إذا كانت مخزنة بتنسيق JSON String مثل ["url1"]
-          else if (str.startsWith('[') && str.endsWith(']')) {
-            try {
-              const parsed = JSON.parse(str);
-              if (Array.isArray(parsed)) {
-                cleanedImages = parsed.map((img: any) => typeof img === 'string' ? img.trim() : '').filter(Boolean);
-              }
-            } catch (e) {
-              cleanedImages = [str];
-            }
+      if (imagesRaw) {
+        if (Array.isArray(imagesRaw) && imagesRaw.length > 0) {
+          cleanedImagesStr = String(imagesRaw[0]).trim();
+        } else if (typeof imagesRaw === 'string') {
+          const rawStr = imagesRaw.trim();
+          if (rawStr.includes(',')) {
+            const splitArr = rawStr.split(',');
+            if (splitArr.length > 0) cleanedImagesStr = splitArr[0].trim();
           } else {
-            cleanedImages = [str];
+            cleanedImagesStr = rawStr;
           }
         }
       }
 
       return {
-        ...car,
-        images: cleanedImages.length > 0 ? cleanedImages : ''
+        id: car.id || car.ID,
+        brand: car.brand || car.BRAND || '',
+        model: car.model || car.MODEL || '',
+        year: car.year || car.YEAR || 0,
+        price: car.price || car.PRICE || 0,
+        kilometers: car.kilometers || car.KILOMETERS || 0,
+        color: car.color || car.COLOR || '',
+        description: car.description || car.DESCRIPTION || '',
+        status: car.status || car.STATUS || '',
+        currency: car.currency || car.CURRENCY || 'KWD',
+        created_at: car.created_at || car.CREATED_AT,
+        // حقن الرابط المفرد والمستقر مباشرة ليتلقاه المتصفح بدون تعقيد الـ map
+        images: cleanedImagesStr
       };
     });
-    // ✅ جلب العدد الإجمالي للسيارات المقبولة والمباعة
+    // جلب العدد الإجمالي للسيارات
     const countResult = await sql`
       SELECT COUNT(*) as total FROM cars WHERE status IN ('approved', 'sold')
     `;
-    const total = parseInt(countResult[0].total);
+    const total = parseInt(countResult[0]?.total || countResult?.total || '0');
 
-    // ✅ إرجاع النتيجة مع تعطيل الكاش لضمان التحديث اللحظي للصور
+    // إرجاع النتيجة الحية مع كسر الكاش لضمان معالجة فورية
     return NextResponse.json(
       {
         success: true,
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          'Cache-Control': 'no-store, must-revalidate',
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
         },
       }
     );
