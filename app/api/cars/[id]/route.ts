@@ -1,62 +1,70 @@
-import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { NextRequest, NextResponse } from 'next/server';
+import sql from '../../../db';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const id = parseInt(params.id);
-
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { success: false, error: 'معرف غير صحيح' },
-        { status: 400 }
-      );
+    const id = params.id;
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'معرف السيارة مفقود' }, { status: 400 });
     }
 
-    const client = await pool.connect();
-    try {
-      // ✅ أهم تعديل: إضافة حقل `images` إلى الاستعلام
-      const result = await client.query(
-        `SELECT
-          id, brand, model, year, price, kilometers,
-          color, description, images, status, is_featured, currency, created_at
-         FROM cars
-         WHERE id = $1`,
-        [id]
-      );
+    // استعلام جلب بيانات سيارة مفردة حية من Neon PostgreSQL
+    const carResult = await sql`
+      SELECT id, brand, model, year, price, kilometers, color, 
+             description, images, status, created_at, currency 
+      FROM cars 
+      WHERE id = ${id}
+    `;
 
-      if (result.rows.length === 0) {
-        return NextResponse.json(
-          { success: false, error: 'السيارة غير موجودة' },
-          { status: 404 }
-        );
-      }
+    if (!carResult || carResult.length === 0) {
+      return NextResponse.json({ success: false, message: 'الإعلان غير موجود' }, { status: 404 });
+    }
 
-      const car = result.rows[0];
+    const car = carResult[0];
 
-      // ✅ إعادة البيانات مع `images`
-      return NextResponse.json({
-        success: true,
-        car: {
-          ...car,
-          images: car.images || '',
+    // تنظيف وتفكيك حقل الصور الصارم ليخرج للمتصفح كروابط نظيفة ومستقرة دائماً
+    const imagesRaw = car.images || car.IMAGES || '';
+    let cleanedImagesStr = '';
+
+    if (imagesRaw) {
+      if (Array.isArray(imagesRaw) && imagesRaw.length > 0) {
+        cleanedImagesStr = String(imagesRaw).trim();
+      } else if (typeof imagesRaw === 'string') {
+        const rawStr = imagesRaw.trim();
+        if (rawStr.includes(',')) {
+          const splitArr = rawStr.split(',');
+          if (splitArr.length > 0 && splitArr[0]) cleanedImagesStr = splitArr[0].trim();
+        } else {
+          cleanedImagesStr = rawStr;
         }
-      });
-    } finally {
-      client.release();
+      }
     }
-  } catch (error: any) {
-    console.error('خطأ في جلب السيارة:', error);
+    // بناء كائن الرد النموذجي بحروف صغيرة متوافقة تماماً مع شاشات الموقع
+    const sanitizedCar = {
+      id: car.id || car.ID,
+      brand: car.brand || car.BRAND || '',
+      model: car.model || car.MODEL || '',
+      year: car.year || car.YEAR || 0,
+      price: car.price || car.PRICE || 0,
+      kilometers: car.kilometers || car.KILOMETERS || 0,
+      color: car.color || car.COLOR || '',
+      description: car.description || car.DESCRIPTION || '',
+      status: car.status || car.STATUS || '',
+      currency: car.currency || car.CURRENCY || 'KWD',
+      created_at: car.created_at || car.CREATED_AT,
+      images: cleanedImagesStr // نمرر المسار المستقر الصافي
+    };
+
     return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
+      { success: true, car: sanitizedCar },
+      {
+        headers: { 'Cache-Control': 'no-store, must-revalidate' }
+      }
     );
+  } catch (error) {
+    console.error('خطأ في جلب تفاصيل الإعلان:', error);
+    return NextResponse.json({ success: false, message: 'حدث خطأ في السيرفر' }, { status: 500 });
   }
 }
