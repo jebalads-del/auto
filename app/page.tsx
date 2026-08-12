@@ -164,15 +164,16 @@ export default function HomePage() {
                   const firstArrItem = carImagesRaw[0];
                   if (typeof firstArrItem === 'string') displaySrc = firstArrItem.trim();
                 } else if (typeof carImagesRaw === 'string') {
-                                    if (cleanedStr.includes(',')) {
+                  const cleanedStr = carImagesRaw.trim();
+                  if (cleanedStr.includes(',')) {
                     const splitUrls = cleanedStr.split(',');
                     if (splitUrls.length > 0) {
-                      displaySrc = splitUrls[0].trim(); // أضفنا [0] هنا لتحديد الصورة الأولى بنجاح
+                      const firstUrl = splitUrls[0];
+                      if (firstUrl) displaySrc = firstUrl.trim();
                     }
                   } else {
                     displaySrc = cleanedStr;
                   }
-
                 }
               }
 
