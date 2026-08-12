@@ -4,17 +4,28 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 interface Car {
-  id: number;
-  brand: string;
-  model: string;
-  year: number;
-  price: number;
-  kilometers: number;
-  color: string;
-  description: string;
-  images: any; 
-  status: string;
-  currency: string;
+  id?: number;
+  ID?: number;
+  brand?: string;
+  BRAND?: string;
+  model?: string;
+  MODEL?: string;
+  year?: number;
+  YEAR?: number;
+  price?: number;
+  PRICE?: number;
+  kilometers?: number;
+  KILOMETERS?: number;
+  color?: string;
+  COLOR?: string;
+  description?: string;
+  DESCRIPTION?: string;
+  images?: any; 
+  IMAGES?: any;
+  status?: string;
+  STATUS?: string;
+  currency?: string;
+  CURRENCY?: string;
 }
 
 interface CommercialAd {
@@ -52,27 +63,28 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  const getCurrencySymbol = (currency: string) => {
-    if (currency === 'SAR') return 'ر.س';
-    return 'د.ك';
-  };
-
   const approvedAds = Array.isArray(ads) ? ads : [];
   const headerAd = approvedAds.find(ad => ad.position === 'header' && ad.status === 'approved');
   const footerAd = approvedAds.find(ad => ad.position === 'footer' && ad.status === 'approved');
 
   const validCars = Array.isArray(cars) ? cars : [];
+  
   const filteredCars = validCars.filter(car => {
-    if (!car || !car.model) return false;
+    if (!car) return false;
+    const carModel = car.model || car.MODEL || '';
+    if (!carModel) return false;
     if (!selectedModel) return true;
-    return car.model.toLowerCase() === selectedModel.toLowerCase();
+    return carModel.toLowerCase() === selectedModel.toLowerCase();
   });
 
   const uniqueModels = validCars.reduce((acc: { brand: string; model: string }[], current) => {
-    if (!current || !current.model) return acc;
-    const x = acc.find(item => item.model.toLowerCase() === current.model.toLowerCase());
+    if (!current) return acc;
+    const carModel = current.model || current.MODEL || '';
+    const carBrand = current.brand || current.BRAND || '';
+    if (!carModel) return acc;
+    const x = acc.find(item => item.model.toLowerCase() === carModel.toLowerCase());
     if (!x) {
-      acc.push({ brand: current.brand || '', model: current.model });
+      acc.push({ brand: carBrand, model: carModel });
     }
     return acc;
   }, []);
@@ -138,15 +150,24 @@ export default function HomePage() {
             {filteredCars.map((car) => {
               if (!car) return null;
               
+              // جلب المتغيرات مع تأمين حالة الأحرف الكبيرة والصغيرة القادمة من قاعدة البيانات
+              const carId = car.id || car.ID;
+              const carBrand = car.brand || car.BRAND || '';
+              const carModel = car.model || car.MODEL || '';
+              const carPrice = car.price || car.PRICE || 0;
+              const carYear = car.year || car.YEAR || '';
+              const carCurrency = car.currency || car.CURRENCY || '';
+              const carImagesRaw = car.images || car.IMAGES;
+
               let displaySrc = '';
-              if (car.images) {
-                if (Array.isArray(car.images) && car.images.length > 0) {
-                  displaySrc = car.images[0];
-                } else if (typeof car.images === 'string') {
-                  const cleanedStr = car.images.trim();
+              if (carImagesRaw) {
+                if (Array.isArray(carImagesRaw) && carImagesRaw.length > 0) {
+                  displaySrc = carImagesRaw;
+                } else if (typeof carImagesRaw === 'string') {
+                  const cleanedStr = carImagesRaw.trim();
                   if (cleanedStr.includes(',')) {
                     const splitUrls = cleanedStr.split(',');
-                    const firstUrl = splitUrls[0];
+                    const firstUrl = splitUrls;
                     if (firstUrl) displaySrc = firstUrl.trim();
                   } else {
                     displaySrc = cleanedStr;
@@ -157,12 +178,12 @@ export default function HomePage() {
               const hasValidImage = displaySrc && (displaySrc.startsWith('http') || displaySrc.startsWith('/'));
 
               return (
-                <div key={car.id} style={styles.card}>
+                <div key={carId} style={styles.card}>
                   <div style={styles.gallery}>
                     {hasValidImage ? (
                       <img 
                         src={displaySrc} 
-                        alt={car.brand || 'Car'} 
+                        alt={carBrand} 
                         style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} 
                       />
                     ) : (
@@ -170,10 +191,10 @@ export default function HomePage() {
                     )}
                   </div>
                   <div style={styles.cardBody}>
-                    <h3 style={styles.carTitle}>{car.brand || ''} {car.model || ''}</h3>
-                    <div style={styles.carPrice}>{(car.price || 0).toLocaleString()} {getCurrencySymbol(car.currency || '')}</div>
-                    <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {car.year || ''}</span></div>
-                    <Link href={`/car/${car.id}`} style={styles.viewLink}>عرض التفاصيل ←</Link>
+                    <h3 style={styles.carTitle}>{carBrand} {carModel}</h3>
+                    <div style={styles.carPrice}>{carPrice.toLocaleString()} {carCurrency === 'SAR' ? 'ر.س' : 'د.ك'}</div>
+                    <div style={styles.carMeta}><span style={styles.metaBadge}>📅 {carYear}</span></div>
+                    <Link href={`/car/${carId}`} style={styles.viewLink}>عرض التفاصيل ←</Link>
                   </div>
                 </div>
               );
