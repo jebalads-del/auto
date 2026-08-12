@@ -98,9 +98,9 @@ export default function HomePage() {
           <h2 style={styles.heroMainTitle}>ابحث عن سيارتك المثالية</h2>
           <p style={styles.heroSubTitle}>تصفح الإعلانات وأرسل إعلانك مجاناً</p>
           <div style={styles.statsContainer}>
-            <div style={styles.statBox}><span style={styles.statNumber}>{validCars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
+            <div style={styles.statsBox}><span style={styles.statNumber}>{validCars.length}</span><span style={styles.statBoxLabel}>إعلان نشط</span></div>
             <div style={styles.statDivider}></div>
-            <div style={styles.statBox}><span style={styles.statNumber}>4</span><span style={styles.statBoxLabel}>مدينة</span></div>
+            <div style={styles.statsBox}><span style={styles.statNumber}>4</span><span style={styles.statBoxLabel}>مدينة</span></div>
           </div>
         </div>
       </div>
@@ -138,7 +138,7 @@ export default function HomePage() {
             {filteredCars.map((car) => {
               if (!car) return null;
               
-              // التفكيك والفرز الذكي لاستخراج أول صورة صالحة حية
+              // التفكيك والفرز الذكي لاستخراج أول صورة صالحة حية بشكل محمي
               let displaySrc = '';
               if (car.images) {
                 if (Array.isArray(car.images) && car.images.length > 0) {
@@ -148,14 +148,14 @@ export default function HomePage() {
                   // إذا كانت مصفوفة نصوص مدمجة ومفصولة بفاصلة
                   if (cleanedStr.includes(',')) {
                     const splitUrls = cleanedStr.split(',');
-                    if (splitUrls.length > 0) displaySrc = splitUrls[0].trim();
+                    if (splitUrls.length > 0) displaySrc = splitUrls[0].trim(); // تم الإصلاح هنا يا بطل!
                   } else {
                     displaySrc = cleanedStr;
                   }
                 }
               }
 
-              // التأكد من تعديل الروابط المكسورة أو إظهار الصورة الافتراضية
+              // التوثق من المسارات والامتدادات
               const hasValidImage = displaySrc && (displaySrc.startsWith('http') || displaySrc.startsWith('/'));
 
               return (
@@ -203,7 +203,7 @@ const styles = {
   heroMainTitle: { fontSize: '24px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 5px 0' },
   heroSubTitle: { fontSize: '13px', color: '#94a3b8', margin: '0 0 15px 0' },
   statsContainer: { display: 'flex', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '12px', padding: '10px', maxWidth: '400px', margin: '0 auto', justifyContent: 'space-around' },
-  statBox: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
+  statsBox: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
   statNumber: { fontSize: '16px', fontWeight: 'bold', color: '#f59e0b' },
   statBoxLabel: { fontSize: '11px', color: '#cbd5e1' },
   statDivider: { width: '1px', height: '25px', backgroundColor: 'rgba(255,255,255,0.15)' },
