@@ -19,12 +19,12 @@ export default function CarPublish() {
   const [color, setColor] = useState('');
   const [price, setPrice] = useState('');
   const [notes, setNotes] = useState('');
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedImage(e.target.files[0]);
+      setImageFile(e.target.files[0]);
     }
   };
 
@@ -33,30 +33,45 @@ export default function CarPublish() {
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('brand', brand);
-      formData.append('model', model);
-      formData.append('year', year);
-      formData.append('color', color);
-      formData.append('price', price);
-      formData.append('notes', notes);
-      formData.append('status', 'pending');
+      let finalImageUrl = '';
 
-      // إرسال ملف الصورة الفردي المباشر والمتوافق مع السيرفر الخلفي
-      if (selectedImage) {
-        formData.append('images', selectedImage);
+      // 1. رفع الصورة أولاً عبر مسار الرفع المخصص بمشروعك والناجح في الـ Logs
+      if (imageFile) {
+        const imgFormData = new FormData();
+        imgFormData.append('file', imageFile); // اعتماد اسم الحقل 'file' الشائع لمسارات الرفع
+
+        const uploadRes = await fetch('/api/cars/upload', {
+          method: 'POST',
+          body: imgFormData,
+        });
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          finalImageUrl = uploadData.url || uploadData.image_url || '';
+        }
       }
 
+      // 2. إرسال البيانات النظيفة كـ JSON متوافق 100% مع جدول قاعدة البيانات
       const response = await fetch('/api/cars', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand,
+          model,
+          year,
+          color,
+          price: Number(price),
+          kilometers: 0,
+          description: notes,
+          currency: '$',
+          images: finalImageUrl,
+          status: 'pending'
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error('فشل الحفظ في السيرفر');
-      }
+      if (!response.ok) throw new Error('Failed');
 
-      alert(`✅ تم إرسال إعلان السيارة للمراجعة بنجاح وسيظهر في قسم الانتظار لإدارته!`);
+      alert(`✅ تم إرسال إعلان السيارة للمراجعة بنجاح وسيظهر في لوحة التحكم لإدارته!`);
 
       setBrand('');
       setModel('');
@@ -64,10 +79,10 @@ export default function CarPublish() {
       setColor('');
       setPrice('');
       setNotes('');
-      setSelectedImage(null);
+      setImageFile(null);
     } catch (error) {
       console.error(error);
-      alert('❌ عذراً، فشل إرسال الإعلان للسيرفر. يرجى التحقق من الاتصال والمحاولة مرة أخرى.');
+      alert('❌ فشل إرسال الإعلان. يرجى التأكد من ملء الحقول والمحاولة مرة أخرى.');
     } finally {
       setLoading(false);
     }
@@ -78,7 +93,7 @@ export default function CarPublish() {
       <form onSubmit={handlePublishSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">الماركة الأساسية:</label>
-          <select value={brand} onChange={(e) => { setBrand(e.target.value); setModel(''); }} required className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white transition outline-none">
+          <select value={brand} onChange={(e) => { setBrand(e.target.value); setModel(''); }} required className="w-full p-2 border rounded-lg text-sm bg-gray-50 outline-none">
             <option value="">-- اختر الماركة --</option>
             {Object.keys(carBrandsAndModels).map(b => <option key={b} value={b}>{b}</option>)}
           </select>
@@ -86,7 +101,7 @@ export default function CarPublish() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">الموديل أو الطراز:</label>
-          <select value={model} onChange={(e) => setModel(e.target.value)} required disabled={!brand} className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white transition disabled:opacity-50 outline-none">
+          <select value={model} onChange={(e) => setModel(e.target.value)} required disabled={!brand} className="w-full p-2 border rounded-lg text-sm bg-gray-50 disabled:opacity-50 outline-none">
             <option value="">-- اختر الموديل --</option>
             {brand && carBrandsAndModels[brand].map(m => <option key={m} value={m}>{m}</option>)}
           </select>
@@ -95,14 +110,14 @@ export default function CarPublish() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">سنة الصنع:</label>
-            <select value={year} onChange={(e) => setYear(e.target.value)} required className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none">
+            <select value={year} onChange={(e) => setYear(e.target.value)} required className="w-full p-2 border rounded-lg text-sm bg-gray-50 outline-none">
               <option value="">-- السنة --</option>
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">اللون الأساسي:</label>
-            <select value={color} onChange={(e) => setColor(e.target.value)} required className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none">
+            <select value={color} onChange={(e) => setColor(e.target.value)} required className="w-full p-2 border rounded-lg text-sm bg-gray-50 outline-none">
               <option value="">-- اللون --</option>
               {colors.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -110,23 +125,22 @@ export default function CarPublish() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">السعر المتوقع (إدخال يدوي):</label>
-          <input type="number" placeholder="مثال: 17000" value={price} onChange={(e) => setPrice(e.target.value)} required className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none" />
+          <label className="block text-sm font-medium text-gray-700 mb-1">السعر المتوقع ($):</label>
+          <input type="number" placeholder="مثال: 17000" value={price} onChange={(e) => setPrice(e.target.value)} required className="w-full p-2 border rounded-lg text-sm bg-gray-50 outline-none" />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">ملاحظات إضافية ومواصفات:</label>
-          <textarea rows={3} placeholder="اكتب تفاصيل حالة السيارة، الصبغ، الفحص..." value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white outline-none"></textarea>
+          <textarea rows={3} placeholder="اكتب تفاصيل حالة السيارة، الصبغ، الفحص..." value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-2 border rounded-lg text-sm bg-gray-50 outline-none"></textarea>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">صورة السيارة المرفقة:</label>
-          <input type="file" accept="image/*" onChange={handleImageChange} required className="w-full text-xs text-gray-500 file:ml-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-          <p className="text-[11px] text-gray-400 mt-1">{selectedImage ? `✓ تم اختيار ملف: ${selectedImage.name}` : "يرجى اختيار صورة للسيارة مجاناً لرفعها."}</p>
+          <input type="file" accept="image/*" onChange={handleImageChange} required className="w-full text-xs text-gray-500 file:ml-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700" />
         </div>
 
-        <button type="submit" disabled={loading} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700 transition disabled:opacity-50 mt-2">
-          {loading ? 'جاري رفع الملف وحفظ البيانات...' : '🚀 إرسال السيارة للمراجعة الآن'}
+        <button type="submit" disabled={loading} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700 disabled:opacity-50 mt-2">
+          {loading ? 'جاري معالجة ورفع الصورة الحقيقية...' : '🚀 إرسال السيارة للمراجعة الآن'}
         </button>
       </form>
     </div>
