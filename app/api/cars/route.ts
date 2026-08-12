@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
 
     // معالجة وتوحيد أسماء الحقول لضمان وصولها للمتصفح بحروف صغيرة سليمة
     const cars = rawCars.map((car: any) => {
-      // التعامل الذكي مع حالة الأحرف الكبيرة والصغيرة القادمة من الداتابيز
       const imagesRaw = car.images || car.IMAGES || '';
       let cleanedImagesStr = '';
 
@@ -31,7 +30,7 @@ export async function GET(request: NextRequest) {
           const rawStr = imagesRaw.trim();
           if (rawStr.includes(',')) {
             const splitArr = rawStr.split(',');
-            if (splitArr.length > 0) cleanedImagesStr = splitArr[0].trim();
+            if (splitArr.length > 0 && splitArr[0]) cleanedImagesStr = splitArr[0].trim();
           } else {
             cleanedImagesStr = rawStr;
           }
@@ -50,15 +49,14 @@ export async function GET(request: NextRequest) {
         status: car.status || car.STATUS || '',
         currency: car.currency || car.CURRENCY || 'KWD',
         created_at: car.created_at || car.CREATED_AT,
-        // حقن الرابط المفرد والمستقر مباشرة ليتلقاه المتصفح بدون تعقيد الـ map
         images: cleanedImagesStr
       };
     });
-    // جلب العدد الإجمالي للسيارات
+    // جلب العدد الإجمالي للسيارات مع معالجة النوع البرمجي المصلحة
     const countResult = await sql`
       SELECT COUNT(*) as total FROM cars WHERE status IN ('approved', 'sold')
     `;
-    const total = parseInt(countResult[0]?.total || countResult?.total || '0');
+    const total = countResult && countResult[0] ? parseInt(countResult[0].total || '0') : 0;
 
     // إرجاع النتيجة الحية مع كسر الكاش لضمان معالجة فورية
     return NextResponse.json(
