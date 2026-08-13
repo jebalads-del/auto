@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
         if (file && file.size > 0) {
           const blob = await put(`cars/${Date.now()}-${file.name}`, file, {
             access: 'public',
-            token: process.env.CARS_BLOB_READ_WRITE_TOKEN, // الإجبار على الـ Blob الجديد
+            token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
+            storeId: process.env.CARS_BLOB_STORE_ID, // ✅ تمت إضافة storeId
           });
           uploadedImagesUrls.push(blob.url);
         }
