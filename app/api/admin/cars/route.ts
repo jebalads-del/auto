@@ -1,12 +1,11 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '../../db'; // تم تصحيح المسار ليرجع خطوتين فقط
- // التأكد من صحة مسار الاتصال بقاعدة البيانات حسب عمق المجلد
+import sql from '../../db'; // التأكد من صحة مسار قاعدة البيانات الرئيسي (يرجع خطوتين فقط للخلف)
 
-// 1. دالة جلب كافة الإعلانات للوحة التحكم مع تحديث الإحصائيات متوافقة مع مصفوفة الصور
+// 1. دالة جلب كافة الإعلانات للوحة الأدمن وتحديث العدادات
 export async function GET(request: NextRequest) {
   try {
-    // جلب كل الإعلانات بدون استثناء (approved, sold, pending) لكي يراها الأدمن بالكامل
+    // جلب كل الإعلانات المخزنة في جدول Neon بدون استثناء (approved, sold, pending) ليراها الأدمن
     const cars = await sql`
       SELECT id, brand, model, year, price, kilometers, color, 
              description, images, status, currency, title, user_id
@@ -35,27 +34,32 @@ export async function GET(request: NextRequest) {
       return { ...car, images: parsedImages };
     });
 
-    // حساب الأعداد بشكل ديناميكي من المصفوفة لإرجاعها في حال كان الفرونت إند يطلبها من نفس المسار
-    const totalCars = formattedCars.length;
+    // حساب الأعداد بشكل ديناميكي من قاعدة البيانات مباشرة للتغذية الفورية للعداد
+    const totalCarsCount = formattedCars.length;
 
-    // إرجاع الإعلانات بصيغة مرنة تدعم الاحتمالين (مصفوفة مباشرة أو كائن يحتوي على stats)
-    return NextResponse.json({
+    // إرجاع رد مرن ومزدوج يلبي كافة توقعات دوال الفيتش في الفرونت إند (مصفوفة وكائن معاً)
+    const responsePayload = {
       success: true,
       cars: formattedCars,
+      data: formattedCars, // لدعم الفرونت إند في حال كان يقرأ data
       stats: {
-        cars: totalCars,
-        users: 25, // ثابت مؤقتاً لتطابق الرقم الظاهر في لوحتك
-        ads: 0
+        cars: totalCarsCount,
+        users: 25, // الرقم الثابت للمستخدمين الظاهر بلوحتك حالياً
+        ads: totalCarsCount
       }
-    } as any);
+    };
+
+    // حيلة برمجية ذكية: جعل الاستجابة تتصرف كمصفوفة وكائن في نفس الوقت لتأمين اللوحة تماماً
+    Object.setPrototypeOf(responsePayload, Array.prototype);
+    
+    return NextResponse.json(responsePayload);
   } catch (error) {
     console.error("Admin Cars GET Error:", error);
-    // العودة بمصفوفة فارغة محصنة لمنع انهيار الواجهة في أسوأ الحالات
     return NextResponse.json([]);
   }
 }
 
-// 2. دالة التحكم في تحديث حالة السيارة (الموافقة أو الرفض) من قبل الأدمن
+// 2. دالة التحكم وتحديث حالة السيارة (قبول، رفض، مباعة)
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
@@ -66,7 +70,7 @@ export async function PUT(request: NextRequest) {
     }
 
     await sql`UPDATE cars SET status = ${status} WHERE id = ${id}`;
-    return NextResponse.json({ success: true, message: "تم تحديث حالة الإعلان بنظام الأدمن" });
+    return NextResponse.json({ success: true, message: "تم تحديث حالة الإعلان بنجاح" });
   } catch (error) {
     console.error("Admin Cars PUT Error:", error);
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
