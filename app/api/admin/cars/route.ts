@@ -6,10 +6,11 @@ import sql from '../../db';
 
 export async function GET() {
   try {
+    // ✅ تم تصحيح اسم الجدول هنا إلى auth_users ليتطابق مع قاعدة البيانات
     const cars = await sql`
       SELECT c.*, u.name as user_name, u.email as user_email
       FROM cars c
-      LEFT JOIN users u ON c.user_id = u.id
+      LEFT JOIN auth_users u ON c.user_id = u.id
       ORDER BY c.created_at DESC
     `;
 
@@ -53,9 +54,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ التحقق من وجود المستخدم
+    // ✅ التحقق من وجود المستخدم في جدول auth_users
     const userCheck = await sql`
-      SELECT id FROM users WHERE id = ${user_id}
+      SELECT id FROM auth_users WHERE id = ${user_id}
     `;
 
     if (userCheck.length === 0) {
@@ -80,11 +81,11 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `;
 
-    console.log('✅ تم إنشاء الإعلان:', result[0]);
+    console.log('✅ تم إنشاء الإعلان:', result);
 
     return NextResponse.json({ 
       success: true, 
-      car: result[0],
+      car: result,
       message: 'تم إرسال الإعلان للمراجعة' 
     });
 
