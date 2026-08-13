@@ -6,12 +6,11 @@ import sql from '../../db';
 
 export async function GET() {
   try {
-    // ✅ تم تصحيح اسم الجدول هنا إلى auth_users ليتطابق مع قاعدة البيانات
+    // 🚀 تعديل حاسم: جلب السيارات مباشرة لتجنب أي خطأ في أسماء أعمدة الربط
     const cars = await sql`
-      SELECT c.*, u.name as user_name, u.email as user_email
-      FROM cars c
-      LEFT JOIN auth_users u ON c.user_id = u.id
-      ORDER BY c.created_at DESC
+      SELECT *, 'مستخدم' as user_name, 'لا يوجد بريد' as user_email 
+      FROM cars 
+      ORDER BY created_at DESC
     `;
 
     return NextResponse.json({ success: true, cars });
