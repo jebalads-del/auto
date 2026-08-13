@@ -105,7 +105,7 @@ export default function AdminCarsPage() {
 
       {/* لوحة العرض وحالة التحميل */}
       {loading ? (
-        <div style={{ textAlignment: 'center', padding: '40px', color: '#64748b' }}>جاري تحميل السيارات وتحديث الأرقام...</div>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>جاري تحميل السيارات وتحديث الأرقام...</div>
       ) : cars.length === 0 ? (
         <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', textAlignment: 'center', color: '#64748b', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
           📭 لا توجد إعلانات سيارات منشورة حالياً في قاعدة البيانات.
