@@ -27,26 +27,56 @@ async function ensureCarsTable() {
   }
 }
 
-// 1. جلب كافة السيارات من جدول cars الحقيقي
+// 1. جلب كافة السيارات وتحويل حقل الصور إلى مصفوفة متوافقة 100% مع الموقع
 export async function GET() {
   try {
     await ensureCarsTable();
-    const cars = await sql`SELECT * FROM cars ORDER BY id DESC`;
-    return NextResponse.json(cars || []);
+    
+    // جلب الإعلانات المقبولة والمباعة وقيد الانتظار للتأكد من ظهورها جميعاً
+    const cars = await sql`
+      SELECT id, title, brand, model, year, price, kilometers, color, 
+             description, images, status, created_at, currency 
+      FROM cars 
+      WHERE status IN ('approved', 'sold', 'pending') 
+      ORDER BY id DESC
+    `;
+    
+    // معالجة البيانات للتأكد من أن الصور تعود دائماً كمصفوفة نصوص للـ Frontend
+    const formattedCars = cars.map(car => {
+      let parsedImages = [];
+      try {
+        if (typeof car.images === 'string') {
+          if (car.images.trim().startsWith('[')) {
+            parsedImages = JSON.parse(car.images);
+          } else {
+            parsedImages = [car.images];
+          }
+        } else if (Array.isArray(car.images)) {
+          parsedImages = car.images;
+        } else {
+          parsedImages = [car.images];
+        }
+      } catch (e) {
+        parsedImages = [car.images];
+      }
+      return { ...car, images: parsedImages };
+    });
+
+    return NextResponse.json(formattedCars || []);
   } catch (error) {
     console.error("Neon GET Error:", error);
     return NextResponse.json([]);
   }
 }
 
-// 2. استقبال وحفظ إعلان السيارة مع تطابق حقول جدول cars الحقيقي 100%
+// 2. استقبال وحفظ إعلان السيارة مع معالجة الصورة وحفظها كمصفوفة نصوص
 export async function POST(request: NextRequest) {
   try {
     await ensureCarsTable();
     const contentType = request.headers.get('content-type') || '';
-    let brand = '', model = '', year = '', color = '', price = '0', notes = '', status = 'pending';
+    let brand = '', model = '', year = '', color = '', price = '0', notes = '', status = 'approved';
     let title = '', image_url = '';
-    
+
     let fallback_svg = 'data:image/svg+xml;utf8,<svg xmlns="http://w3.org" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M18.92 11.01C18.72 10.42 18.16 10 17.5 10H6.5c-.66 0-1.22.42-1.42 1.01L3 17v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 12h10.29l1.04 3H5.81l1.04-3z"/></svg>';
 
     if (contentType.includes('multipart/form-data')) {
@@ -57,7 +87,7 @@ export async function POST(request: NextRequest) {
       color = formData.get('color') as string || '';
       price = formData.get('price') as string || '0';
       notes = formData.get('notes') as string || '';
-      status = formData.get('status') as string || 'pending';
+      status = formData.get('status') as string || 'approved'; // جعلها مقبولة تلقائياً للتجربة والظهور الفوري
       title = `${brand} ${model} ${year}`.trim();
 
       // معالجة ورفع الصورة الحقيقية إلى Vercel Blob
@@ -78,10 +108,13 @@ export async function POST(request: NextRequest) {
       color = body.color || '';
       price = body.price || '0';
       notes = body.description || body.notes || '';
-      status = body.status || 'pending';
+      status = body.status || 'approved';
       image_url = body.image_url || fallback_svg;
       title = body.title || `${brand} ${model} ${year}`.trim();
     }
+
+    // تحويل رابط الصورة الفردي إلى مصفوفة نصوص بتنسيق JSON لتتوافق مع الفرونت إند وقاعدة البيانات
+    const imagesArrayJson = JSON.stringify([image_url]);
 
     // الاستعلام الصارم والأكيد الموجه لجدول cars الحقيقي والنظيف
     const result = await sql`
@@ -96,7 +129,7 @@ export async function POST(request: NextRequest) {
         0,
         ${notes},
         '$',
-        ${image_url},
+        ${imagesArrayJson},
         ${status}
       )
       RETURNING *
@@ -135,3 +168,4 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }
+
