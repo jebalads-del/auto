@@ -24,9 +24,11 @@ export async function POST(request: NextRequest) {
         // توليد اسم فريد للملف لتفادي التكرار
         const uniqueFilename = `car-${Date.now()}-${file.name}`;
         
-        // استخدام دالة put المباشرة والمعتمدة على التوكن الافتراضي لـ Vercel تلقائياً
+        // استخدام دالة put مع التوكن و storeId
         const blob = await put(uniqueFilename, file, {
           access: 'public',
+          token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
+          storeId: process.env.CARS_BLOB_STORE_ID,
         });
         
         if (blob && blob.url) {
