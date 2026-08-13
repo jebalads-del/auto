@@ -3,13 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import sql from '../db';
 
-// دالة مساعدة للتأكد من وجود جدول cars بالهيكلية الصحيحة في Neon
+// دالة مساعدة للتأكد من تحديث وهيكلة جدول cars بشكل صحيح
 async function ensureCarsTable() {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS cars (
         id SERIAL PRIMARY KEY,
-        title TEXT,
         brand TEXT,
         model TEXT,
         year INTEGER,
@@ -22,26 +21,25 @@ async function ensureCarsTable() {
         status TEXT DEFAULT 'pending'
       )
     `;
+    await sql`ALTER TABLE cars ADD COLUMN IF NOT EXISTS title TEXT`;
+    await sql`ALTER TABLE cars ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
   } catch (e) {
-    console.error("Error creating cars table:", e);
+    console.error("Error ensuring table columns:", e);
   }
 }
 
-// 1. جلب كافة السيارات وتحويل حقل الصور إلى مصفوفة متوافقة 100% مع الموقع
+// 1. جلب السيارات
 export async function GET() {
   try {
     await ensureCarsTable();
-    
-    // جلب الإعلانات المقبولة والمباعة وقيد الانتظار للتأكد من ظهورها جميعاً
     const cars = await sql`
-      SELECT id, title, brand, model, year, price, kilometers, color, 
-             description, images, status, created_at, currency 
+      SELECT id, brand, model, year, price, kilometers, color, 
+             description, images, status, currency 
       FROM cars 
       WHERE status IN ('approved', 'sold', 'pending') 
       ORDER BY id DESC
     `;
     
-    // معالجة البيانات للتأكد من أن الصور تعود دائماً كمصفوفة نصوص للـ Frontend
     const formattedCars = cars.map(car => {
       let parsedImages = [];
       try {
@@ -57,7 +55,7 @@ export async function GET() {
           parsedImages = [car.images];
         }
       } catch (e) {
-        parsedImages = [car.images];
+        parsedImages = car.images ? [car.images] : [];
       }
       return { ...car, images: parsedImages };
     });
@@ -69,13 +67,13 @@ export async function GET() {
   }
 }
 
-// 2. استقبال وحفظ إعلان السيارة مع معالجة الصورة وحفظها كمصفوفة نصوص
+// 2. استقبال وحفظ إعلان السيارة مع دعم رفع صور متعددة
 export async function POST(request: NextRequest) {
   try {
     await ensureCarsTable();
     const contentType = request.headers.get('content-type') || '';
     let brand = '', model = '', year = '', color = '', price = '0', notes = '', status = 'approved';
-    let title = '', image_url = '';
+    let uploadedImagesUrls: string[] = [];
 
     let fallback_svg = 'data:image/svg+xml;utf8,<svg xmlns="http://w3.org" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M18.92 11.01C18.72 10.42 18.16 10 17.5 10H6.5c-.66 0-1.22.42-1.42 1.01L3 17v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 12h10.29l1.04 3H5.81l1.04-3z"/></svg>';
 
@@ -86,21 +84,21 @@ export async function POST(request: NextRequest) {
       year = formData.get('year') as string || '';
       color = formData.get('color') as string || '';
       price = formData.get('price') as string || '0';
-      notes = formData.get('notes') as string || '';
-      status = formData.get('status') as string || 'approved'; // جعلها مقبولة تلقائياً للتجربة والظهور الفوري
-      title = `${brand} ${model} ${year}`.trim();
+      notes = formData.get('notes') as string || formData.get('description') as string || '';
+      status = formData.get('status') as string || 'approved'; 
 
-      // معالجة ورفع الصورة الحقيقية إلى Vercel Blob
-      const imageFile = formData.get('images') as File;
-      if (imageFile && imageFile.size > 0) {
-     const blob = await put(`cars/${Date.now()}-${imageFile.name}`, imageFile, {
-  access: 'public',
-  token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
-});
-
-        image_url = blob.url;
-      } else {
-        image_url = fallback_svg;
+      // جلب جميع الملفات المرفوعة تحت أي مسمى حقل محتمل لضمان الدعم الكامل
+      const imageFiles = formData.getAll('images').concat(formData.getAll('image')).concat(formData.getAll('file')) as File[];
+      
+      // معالجة ورفع كل الصور المحددة في لوحة التحكم حلقة تكرارية (Loop)
+      for (const file of imageFiles) {
+        if (file && file.size > 0) {
+          const blob = await put(`cars/${Date.now()}-${file.name}`, file, {
+            access: 'public',
+            token: process.env.CARS_BLOB_READ_WRITE_TOKEN, // الإجبار على الـ Blob الجديد
+          });
+          uploadedImagesUrls.push(blob.url);
+        }
       }
     } else {
       const body = await request.json();
@@ -111,14 +109,18 @@ export async function POST(request: NextRequest) {
       price = body.price || '0';
       notes = body.description || body.notes || '';
       status = body.status || 'approved';
-      image_url = body.image_url || fallback_svg;
-      title = body.title || `${brand} ${model} ${year}`.trim();
+      if (body.image_url) uploadedImagesUrls.push(body.image_url);
     }
 
-    // تحويل رابط الصورة الفردي إلى مصفوفة نصوص بتنسيق JSON لتتوافق مع الفرونت إند وقاعدة البيانات
-    const imagesArrayJson = JSON.stringify([image_url]);
+    // إذا لم يتم رفع أي صورة، نضع الصورة الاحتياطية
+    if (uploadedImagesUrls.length === 0) {
+      uploadedImagesUrls.push(fallback_svg);
+    }
 
-    // الاستعلام الصارم والأكيد الموجه لجدول cars الحقيقي والنظيف
+    const title = `${brand} ${model} ${year}`.trim();
+    const imagesArrayJson = JSON.stringify(uploadedImagesUrls);
+
+    // حفظ البيانات في Neon
     const result = await sql`
       INSERT INTO cars (title, brand, model, year, color, price, kilometers, description, currency, images, status)
       VALUES (
@@ -144,7 +146,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 3. تحديث حالة السيارة (موافقة، رفض، مُباعة) داخل جدول cars
+// 3. تحديث الحالة
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
@@ -157,7 +159,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// 4. حذف السيارة نهائياً من جدول cars
+// 4. الحذف
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -170,4 +172,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }
-
