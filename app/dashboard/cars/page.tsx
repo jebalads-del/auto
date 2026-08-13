@@ -107,12 +107,12 @@ export default function AdminCarsPage() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>جاري تحميل السيارات وتحديث الأرقام...</div>
       ) : cars.length === 0 ? (
-        <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', textAlignment: 'center', color: '#64748b', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+        <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center', color: '#64748b', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
           📭 لا توجد إعلانات سيارات منشورة حالياً في قاعدة البيانات.
         </div>
       ) : (
         <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlignment: 'right' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
             <thead>
               <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
                 <th style={{ padding: '12px 15px', color: '#475569' }}>الصورة</th>
@@ -120,7 +120,7 @@ export default function AdminCarsPage() {
                 <th style={{ padding: '12px 15px', color: '#475569' }}>الموديل</th>
                 <th style={{ padding: '12px 15px', color: '#475569' }}>السعر</th>
                 <th style={{ padding: '12px 15px', color: '#475569' }}>الحالة</th>
-                <th style={{ padding: '12px 15px', color: '#475569', textAlignment: 'center' }}>التحكم</th>
+                <th style={{ padding: '12px 15px', color: '#475569', textAlign: 'center' }}>التحكم</th>
               </tr>
             </thead>
             <tbody>
@@ -147,7 +147,7 @@ export default function AdminCarsPage() {
                         {car.status === 'approved' ? 'مقبول' : car.status === 'sold' ? 'مباع' : 'قيد الانتظار'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 15px', textAlignment: 'center' }}>
+                    <td style={{ padding: '12px 15px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
                         <button disabled={actionLoading === car.id} onClick={() => handleUpdateStatus(car.id, car.status)} style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
                           🔄 تغيير الحالة
