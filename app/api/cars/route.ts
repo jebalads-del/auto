@@ -93,9 +93,11 @@ export async function POST(request: NextRequest) {
       // معالجة ورفع الصورة الحقيقية إلى Vercel Blob
       const imageFile = formData.get('images') as File;
       if (imageFile && imageFile.size > 0) {
-        const blob = await put(`cars/${Date.now()}-${imageFile.name}`, imageFile, {
-          access: 'public',
-        });
+     const blob = await put(`cars/${Date.now()}-${imageFile.name}`, imageFile, {
+  access: 'public',
+  token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
+});
+
         image_url = blob.url;
       } else {
         image_url = fallback_svg;
