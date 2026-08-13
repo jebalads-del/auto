@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '../../../db'; // التأكد من صحة مسار الاتصال بقاعدة البيانات حسب عمق المجلد
+import sql from '../../db'; // تم تصحيح المسار ليرجع خطوتين فقط
+ // التأكد من صحة مسار الاتصال بقاعدة البيانات حسب عمق المجلد
 
 // 1. دالة جلب كافة الإعلانات للوحة التحكم مع تحديث الإحصائيات متوافقة مع مصفوفة الصور
 export async function GET(request: NextRequest) {
