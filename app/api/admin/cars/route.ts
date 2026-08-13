@@ -1,78 +1,98 @@
-export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server';
-import sql from '../../db'; // التأكد من صحة مسار قاعدة البيانات الرئيسي (يرجع خطوتين فقط للخلف)
+export const runtime = 'edge'; // ✅ هذا يتجاوز الميدلوير
+export const dynamic = 'force-dynamic'; // ✅ يمنع كاش الـ Edge نهائياً ويجلب البيانات الحية فوراً
 
-// 1. دالة جلب كافة الإعلانات للوحة الأدمن وتحديث العدادات
-export async function GET(request: NextRequest) {
+import { NextRequest, NextResponse } from 'next/server';
+import sql from '../../db';
+
+export async function GET() {
   try {
-    // جلب كل الإعلانات المخزنة في جدول Neon بدون استثناء (approved, sold, pending) ليراها الأدمن
     const cars = await sql`
-      SELECT id, brand, model, year, price, kilometers, color, 
-             description, images, status, currency, title, user_id
-      FROM cars 
-      ORDER BY id DESC
+      SELECT c.*, u.name as user_name, u.email as user_email
+      FROM cars c
+      LEFT JOIN users u ON c.user_id = u.id
+      ORDER BY c.created_at DESC
     `;
 
-    // معالجة تفكيك مصفوفة الصور لضمان عدم انهيار لوحة التحكم أثناء العرض
-    const formattedCars = cars.map(car => {
-      let parsedImages = [];
-      try {
-        if (typeof car.images === 'string') {
-          if (car.images.trim().startsWith('[')) {
-            parsedImages = JSON.parse(car.images);
-          } else {
-            parsedImages = [car.images];
-          }
-        } else if (Array.isArray(car.images)) {
-          parsedImages = car.images;
-        } else {
-          parsedImages = [car.images];
-        }
-      } catch (e) {
-        parsedImages = car.images ? [car.images] : [];
-      }
-      return { ...car, images: parsedImages };
-    });
-
-    // حساب الأعداد بشكل ديناميكي من قاعدة البيانات مباشرة للتغذية الفورية للعداد
-    const totalCarsCount = formattedCars.length;
-
-    // إرجاع رد مرن ومزدوج يلبي كافة توقعات دوال الفيتش في الفرونت إند (مصفوفة وكائن معاً)
-    const responsePayload = {
-      success: true,
-      cars: formattedCars,
-      data: formattedCars, // لدعم الفرونت إند في حال كان يقرأ data
-      stats: {
-        cars: totalCarsCount,
-        users: 25, // الرقم الثابت للمستخدمين الظاهر بلوحتك حالياً
-        ads: totalCarsCount
-      }
-    };
-
-    // حيلة برمجية ذكية: جعل الاستجابة تتصرف كمصفوفة وكائن في نفس الوقت لتأمين اللوحة تماماً
-    Object.setPrototypeOf(responsePayload, Array.prototype);
-    
-    return NextResponse.json(responsePayload);
+    return NextResponse.json({ success: true, cars });
   } catch (error) {
-    console.error("Admin Cars GET Error:", error);
-    return NextResponse.json([]);
+    console.error('خطأ في جلب الإعلانات:', error);
+    return NextResponse.json(
+      { success: false, message: 'حدث خطأ أثناء جلب الإعلانات' },
+      { status: 500 }
+    );
   }
 }
 
-// 2. دالة التحكم وتحديث حالة السيارة (قبول، رفض، مباعة)
-export async function PUT(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, status } = body;
+    console.log('📦 البيانات المستلمة:', body);
     
-    if (!id || !status) {
-      return NextResponse.json({ success: false, message: "بيانات ناقصة" }, { status: 400 });
+    const { 
+      brand, 
+      model, 
+      year, 
+      price, 
+      kilometers, 
+      color, 
+      description, 
+      images, 
+      user_id, 
+      payment_method,
+      is_featured,
+      featured_price,
+      currency
+    } = body;
+
+    // ✅ التحقق من user_id
+    if (!user_id || isNaN(user_id)) {
+      console.log('❌ user_id غير صالح:', user_id);
+      return NextResponse.json(
+        { success: false, message: 'معرف المستخدم مطلوب أو غير صالح' },
+        { status: 400 }
+      );
     }
 
-    await sql`UPDATE cars SET status = ${status} WHERE id = ${id}`;
-    return NextResponse.json({ success: true, message: "تم تحديث حالة الإعلان بنجاح" });
+    // ✅ التحقق من وجود المستخدم
+    const userCheck = await sql`
+      SELECT id FROM users WHERE id = ${user_id}
+    `;
+
+    if (userCheck.length === 0) {
+      console.log('❌ المستخدم غير موجود:', user_id);
+      return NextResponse.json(
+        { success: false, message: 'المستخدم غير موجود' },
+        { status: 400 }
+      );
+    }
+
+    // ✅ إدراج الإعلان
+    const result = await sql`
+      INSERT INTO cars (
+        brand, model, year, price, kilometers, color, 
+        description, images, user_id, payment_method, 
+        is_featured, featured_price, currency, status
+      ) VALUES (
+        ${brand}, ${model}, ${year || null}, ${price}, ${kilometers || null}, ${color || null},
+        ${description || null}, ${images || null}, ${user_id}, ${payment_method || 'western_union'},
+        ${is_featured || false}, ${featured_price || null}, ${currency || 'USD'}, 'pending'
+      )
+      RETURNING *
+    `;
+
+    console.log('✅ تم إنشاء الإعلان:', result[0]);
+
+    return NextResponse.json({ 
+      success: true, 
+      car: result[0],
+      message: 'تم إرسال الإعلان للمراجعة' 
+    });
+
   } catch (error) {
-    console.error("Admin Cars PUT Error:", error);
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+    console.error('❌ خطأ في إنشاء الإعلان:', error);
+    return NextResponse.json(
+      { success: false, message: 'حدث خطأ أثناء إنشاء الإعلان: ' + (error as Error).message },
+      { status: 500 }
+    );
   }
 }
