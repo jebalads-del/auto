@@ -14,10 +14,8 @@ interface Car {
 }
 
 export default function ProfilePage() {
-  // وضع جدار حماية لـ useSession لتجنب توقف بناء السيرفر في Vercel
   const sessionCtx = useSession();
   const session = sessionCtx ? sessionCtx.data : null;
-  const sessionStatus = sessionCtx ? sessionCtx.status : 'loading';
 
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,39 +27,42 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
-    if (sessionStatus === 'loading') return;
-
     const fetchUserData = async () => {
       try {
-        const activeEmail = session?.user?.email || '';
+        // قراءة البيانات من الجلسة أو وضع قيم احتياطية فورية لتجنب التعليق
+        const activeEmail = session?.user?.email || 'user@example.com';
         const activeName = session?.user?.name || 'مستعمل حراج';
 
-        const userRes = await fetch('/api/user', { cache: 'no-store' });
-        const userData = await userRes.json();
-        
-        let dbPhone = '';
-        let finalName = activeName;
-        let finalEmail = activeEmail;
+        setUserInfo(prev => ({ ...prev, name: activeName, email: activeEmail }));
+        setNewName(activeName);
 
-        if (userData && userData.success && userData.user) {
-          dbPhone = userData.user.phone || '';
-          if (userData.user.name) finalName = userData.user.name;
-          if (userData.user.email) finalEmail = userData.user.email;
+        // جلب تفاصيل المستخدم الإضافية كالهاتف من قاعدة البيانات
+        const userRes = await fetch('/api/user', { cache: 'no-store' });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData && userData.success && userData.user) {
+            const dbPhone = userData.user.phone || '';
+            const dbName = userData.user.name || activeName;
+            const dbEmail = userData.user.email || activeEmail;
+            
+            setUserInfo({ name: dbName, email: dbEmail, phone: dbPhone });
+            setNewName(dbName);
+            setNewPhone(dbPhone);
+          }
         }
 
-        setUserInfo({ name: finalName, email: finalEmail, phone: dbPhone });
-        setNewName(finalName);
-        setNewPhone(dbPhone);
-
+        // جلب الإعلانات وتصفيتها
         const carsRes = await fetch('/api/cars', { cache: 'no-store' });
-        const carsData = await carsRes.json();
-        
-        if (carsData && carsData.success && Array.isArray(carsData.cars) && finalEmail) {
-          const filtered = carsData.cars.filter((car: any) => {
-            const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
-            return carEmail.toLowerCase() === finalEmail.toLowerCase();
-          });
-          setMyCars(filtered);
+        if (carsRes.ok) {
+          const carsData = await carsRes.json();
+          if (carsData && carsData.success && Array.isArray(carsData.cars)) {
+            const finalEmail = session?.user?.email || userInfo.email || '';
+            const filtered = carsData.cars.filter((car: any) => {
+              const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
+              return carEmail.toLowerCase() === finalEmail.toLowerCase();
+            });
+            setMyCars(filtered);
+          }
         }
       } catch (error) {
         console.error(error);
@@ -71,7 +72,7 @@ export default function ProfilePage() {
     };
 
     fetchUserData();
-  }, [session, sessionStatus]);
+  }, [session]);
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -112,11 +113,11 @@ export default function ProfilePage() {
 
   const validCars = Array.isArray(myCars) ? myCars : [];
 
-  if (loading || sessionStatus === 'loading') {
+  if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري التحقق من الحساب والأمان الحركي...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح الملف الشخصي بأمان...</p>
       </div>
     );
   }
