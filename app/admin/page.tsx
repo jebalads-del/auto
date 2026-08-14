@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardClient from '../DashboardClient';
+import DashboardClient from '../dashboard/DashboardClient';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
