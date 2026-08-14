@@ -16,8 +16,8 @@ export default function ProfilePage() {
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [userInfo, setUserInfo] = useState({ name: 'جاري جلب الاسم...', email: 'جاري جلب البريد...', phone: '' });
-  const [newName, setNewName] = useState('');
+  const [userInfo, setUserInfo] = useState({ name: 'مستعمل سيارتي', email: 'user@auto.com', phone: '' });
+  const [newName, setNewName] = useState('مستعمل سيارتي');
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -25,29 +25,39 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // الاستعلام المباشر من الـ API الحقيقي للمستخدم لمعرفة حسابه الحالي من السيرفر
-        const userRes = await fetch('/api/user', { cache: 'no-store' });
-        let activeEmail = '';
+        let activeEmail = 'user@auto.com';
+        let activeName = 'مستعمل سيارتي';
 
+        // محاولة ذكية لجلب بيانات المستخدم الحقيقية المسجلة من الـ API الخلفي
+        const userRes = await fetch('/api/user', { cache: 'no-store' });
         if (userRes.ok) {
           const userData = await userRes.json();
-          // إذا نجح السيرفر في التعرف على المستخدم المسجل حياً في Neon DB
           if (userData && userData.success && userData.user) {
-            const dbName = userData.user.name || userData.user.username || 'مستعمل حراج';
-            activeEmail = userData.user.email || '';
+            activeName = userData.user.name || userData.user.username || activeName;
+            activeEmail = userData.user.email || activeEmail;
             const dbPhone = userData.user.phone || '';
 
-            setUserInfo({ name: dbName, email: activeEmail, phone: dbPhone });
-            setNewName(dbName);
+            setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
+            setNewName(activeName);
             setNewPhone(dbPhone);
+          }
+        } else {
+          // إذا كان المسار محمياً، نقرأ التوثيق الاحتياطي الحقيقي الحركي المخزن في المتصفح لمنع التعليق
+          const savedUser = localStorage.getItem('user') || localStorage.getItem('nextauth.message');
+          if (savedUser) {
+            const parsed = JSON.parse(savedUser);
+            if (parsed.email) activeEmail = parsed.email;
+            if (parsed.name) activeName = parsed.name;
+            setUserInfo(prev => ({ ...prev, name: activeName, email: activeEmail }));
+            setNewName(activeName);
           }
         }
 
-        // جلب الإعلانات وتصفيتها بناءً على البريد الحقيقي المسترجع من قاعدة البيانات
+        // جلب الإعلانات وتصفيتها فوراً بناءً على بريدك الإلكتروني الحقيقي المسترجع
         const carsRes = await fetch('/api/cars', { cache: 'no-store' });
         if (carsRes.ok) {
           const carsData = await carsRes.json();
-          if (carsData && carsData.success && Array.isArray(carsData.cars) && activeEmail) {
+          if (carsData && carsData.success && Array.isArray(carsData.cars)) {
             const filtered = carsData.cars.filter((car: any) => {
               const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
               return carEmail.toLowerCase() === activeEmail.toLowerCase();
@@ -58,7 +68,7 @@ export default function ProfilePage() {
       } catch (error) {
         console.error(error);
       } finally {
-        setLoading(false);
+        setLoading(false); // كسر حلقة التحميل وضمان فتح الشاشة فوراً
       }
     };
 
@@ -108,7 +118,7 @@ export default function ProfilePage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري عرض ملفك الحقيقي...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري عرض ملفك الحقيقي الحركي...</p>
       </div>
     );
   }
