@@ -38,36 +38,54 @@ export default function UsersManagement() {
       setLoading(false);
     }
   };
-
   const handleUserAction = async (userId: number, action: string) => {
     if (action === 'delete' && !confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً؟')) return;
 
     try {
       setLoading(true);
       setError('');
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
+      
+      // تم تعديل المسار والمنطق لتجنب خطأ شبكة الاتصال وتجربة المسار المباشر أو الإداري
+      const url = action === 'delete' ? `/api/user/${userId}` : '/api/admin/users';
+      const methodType = action === 'delete' ? 'DELETE' : 'POST';
+
+      const response = await fetch(url, {
+        method: methodType,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, action }),
       });
       const data = await response.json();
 
-      if (data.success) {
-        setSuccess(data.message);
+      if (data.success || response.ok) {
+        setSuccess(data.message || 'تمت العملية بنجاح');
+        // تحديث القائمة فورياً في الواجهة بشكل سريع
+        setUsers(prev => prev.filter(u => u.id !== userId));
         setTimeout(() => fetchUsers(), 500);
         setTimeout(() => setSuccess(''), 3000);
       } else {
         setError(data.message || 'فشل معالجة الطلب');
-        setLoading(false);
         setTimeout(() => setError(''), 4000);
       }
     } catch {
+      // إذا فشل الـ DELETE المباشر، نجرب كتابة المحاولة البديلة عبر مسار الإدارة العام
+      try {
+        const response = await fetch('/api/admin/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, action })
+        });
+        if (response.ok) {
+          setSuccess('تمت العملية بنجاح');
+          setTimeout(() => fetchUsers(), 500);
+          return;
+        }
+      } catch {}
       setError('خطأ في شبكة الاتصال');
-      setLoading(false);
       setTimeout(() => setError(''), 4000);
+    } finally {
+      setLoading(false);
     }
   };
-
   return (
     <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif' }}>
       <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>👥 إدارة المستخدمين</h1>
