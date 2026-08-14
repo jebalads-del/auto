@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react'; // جلب مكتبة الجلسات الحية الفعالة
+import { useSession } from 'next-auth/react';
 
 interface Car {
   id?: number; ID?: number; brand?: string; BRAND?: string;
@@ -14,18 +14,21 @@ interface Car {
 }
 
 export default function ProfilePage() {
-  const { data: session, status: sessionStatus } = useSession(); // قراءة بيانات الجلسة الحقيقية
+  // وضع جدار حماية لـ useSession لتجنب توقف بناء السيرفر في Vercel
+  const sessionCtx = useSession();
+  const session = sessionCtx ? sessionCtx.data : null;
+  const sessionStatus = sessionCtx ? sessionCtx.status : 'loading';
+
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [userInfo, setUserInfo] = useState({ name: 'جاري التحميل...', email: 'loading...', phone: '' });
+  const [userInfo, setUserInfo] = useState({ name: 'مستعمل حراج', email: 'user@example.com', phone: '' });
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
-    // ننتظر حتى تكتمل قراءة الجلسة أولاً لضمان وجود الحساب الحقيقي
     if (sessionStatus === 'loading') return;
 
     const fetchUserData = async () => {
@@ -33,7 +36,6 @@ export default function ProfilePage() {
         const activeEmail = session?.user?.email || '';
         const activeName = session?.user?.name || 'مستعمل حراج';
 
-        // محاولة جلب الهاتف والبيانات الإضافية من السيرفر الخلفي
         const userRes = await fetch('/api/user', { cache: 'no-store' });
         const userData = await userRes.json();
         
@@ -51,7 +53,6 @@ export default function ProfilePage() {
         setNewName(finalName);
         setNewPhone(dbPhone);
 
-        // جلب وفلترة السيارات الخاصة بهذا الإيميل الحقيقي فقط
         const carsRes = await fetch('/api/cars', { cache: 'no-store' });
         const carsData = await carsRes.json();
         
@@ -71,7 +72,6 @@ export default function ProfilePage() {
 
     fetchUserData();
   }, [session, sessionStatus]);
-
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -111,6 +111,7 @@ export default function ProfilePage() {
   };
 
   const validCars = Array.isArray(myCars) ? myCars : [];
+
   if (loading || sessionStatus === 'loading') {
     return (
       <div style={styles.loadingContainer}>
@@ -122,7 +123,6 @@ export default function ProfilePage() {
 
   return (
     <div style={styles.container}>
-      {/* الهيدر الشخصي والواجهة الزرقاء الحقيقية */}
       <div style={styles.heroSection}>
         <header style={styles.header}>
           <div style={styles.headerContent}>
@@ -137,12 +137,10 @@ export default function ProfilePage() {
       </div>
 
       <div style={styles.content}>
-        {/* زر نشر إعلان سيارة جديد الثابت */}
         <div style={styles.actionButtonsGrid}>
           <Link href="/dashboard/cars/new" style={styles.actionButtonPost}>➕ نشر إعلان سيارة جديد</Link>
         </div>
 
-        {/* قسم تعديل الحساب والبيانات مع حماية الإيميل */}
         <div style={styles.settingsSection}>
           <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px' }}>⚙️ إعدادات الحساب والأمان</h3>
           
@@ -175,7 +173,6 @@ export default function ProfilePage() {
             <button type="submit" style={styles.passwordButton}>تحديث كلمة السر بأمان</button>
           </form>
         </div>
-
         <h2 style={styles.sectionTitle}>🚗 إعلاناتي الحالية ({validCars.length})</h2>
         {validCars.length === 0 ? (
           <div style={styles.noCars}>لم تقم بنشر أي سيارات حتى الآن 🔍</div>
@@ -204,6 +201,7 @@ export default function ProfilePage() {
     </div>
   );
 }
+
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   heroSection: { background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: '#ffffff', paddingBottom: '30px', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px' },
