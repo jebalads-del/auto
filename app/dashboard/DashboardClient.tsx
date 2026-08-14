@@ -6,14 +6,12 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
   const [usersList, setUsersList] = useState(initialUsers);
   const [carsList, setCarsList] = useState(initialCars);
 
-  // إعدادات بوابات الدفع
   const [westernName, setWesternName] = useState("محمد أحمد محمود");
   const [westernCountry, setWesternCountry] = useState("الكويت");
   const [paypalEmail, setPaypalEmail] = useState("payment@auto-gulf.com");
   const [isWesternActive, setIsWesternActive] = useState(true);
   const [isPaypalActive, setIsPaypalActive] = useState(true);
 
-  // إعدادات العملات وتغيير اسم الموقع والصيانة
   const [siteName, setSiteName] = useState("حراج السيارات الخليجي الفعلي");
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [defaultCurrency, setDefaultCurrency] = useState("KWD");
@@ -34,8 +32,6 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
   const handleDeleteUser = (id: any) => {
     setUsersList(prev => prev.filter(u => u.id !== id));
   };
-
-  // دالة الموافقة الحية والمربوطة بـ Neon DB الفعلي عبر السيرفر
   const handleApproveCar = async (id: any) => {
     try {
       const response = await fetch('/api/cars', {
@@ -152,13 +148,13 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
                         <td style={styles.td}>
                           <div style={{ fontWeight: '600' }}>{car.brand || car.title} {car.model}</div>
                           <div style={{ color: '#10b981', fontWeight: 'bold' }}>{car.price} {car.currency || "KWD"}</div>
-                          <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>الحالة: {currentStatus === 'approved' ? 'معروض ✅' : 'بانتظار المراجعة ⏳'}</div>
+                          <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>الحالة: {currentStatus}</div>
                         </td>
                         <td style={styles.td}>
-                          {currentStatus !== "approved" && (
-                            <button onClick={() => handleApproveCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#2563eb' }}>موافقة 👍</button>
+                          {currentStatus === "pending" && (
+                            <button onClick={() => handleApproveCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#10b981' }}>موافقة</button>
                           )}
-                          <button onClick={() => handleMarkAsSold(car.id)} style={{ ...styles.btnAction, backgroundColor: '#10b981' }}>مُباعة</button>
+                          <button onClick={() => handleMarkAsSold(car.id)} style={{ ...styles.btnAction, backgroundColor: '#f59e0b' }}>مباعة</button>
                           <button onClick={() => handleDeleteCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
                         </td>
                       </tr>
@@ -166,72 +162,6 @@ export default function DashboardClient({ initialUsers, initialCars }: { initial
                   })}
                 </tbody>
               </table>
-            </div>
-          </div>
-        )}
-        {activeTab === 'payments' && (
-          <div>
-            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#1e3a8a' }}>💱 تخصيص العملات الخليجية للموقع</h2>
-            <div style={{ padding: '12px', border: '1px solid #cbd5e1', borderRadius: '10px', marginBottom: '16px', backgroundColor: '#f8fafc' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>العملة الافتراضية للموقع الأساسي:</label>
-              <select value={defaultCurrency} onChange={(e) => setDefaultCurrency(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', marginTop: '4px' }}>
-                <option value="KWD">🇰🇼 دينار كويتي (الافتراضية)</option>
-                <option value="SAR">🇸🇦 ريال سعودي</option>
-                <option value="AED">🇦🇪 درهم إماراتي</option>
-              </select>
-              <div style={{ marginTop: '12px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>العملات المتاحة للمعليين الخليجيين:</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '4px' }}>
-                  {Object.keys(allowedCurrencies).map((code) => (
-                    <label key={code} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', background: '#fff', padding: '6px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                      <input type="checkbox" checked={allowedCurrencies[code as keyof typeof allowedCurrencies]} onChange={() => handleToggleCurrency(code)} />
-                      {code}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>💳 بوابات الدفع وحساب المستلم</h2>
-            <div style={{ padding: '12px', border: isWesternActive ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '10px', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: '13px' }}>📌 بوابة ويسترن يونيون</strong>
-                <input type="checkbox" checked={isWesternActive} onChange={() => setIsWesternActive(!isWesternActive)} />
-              </div>
-              <div style={{ opacity: isWesternActive ? 1 : 0.4 }}>
-                <input type="text" placeholder="اسم المستلم" disabled={!isWesternActive} value={westernName} onChange={(e) => setWesternName(e.target.value)} style={styles.inputField} />
-                <input type="text" placeholder="البلد" disabled={!isWesternActive} value={westernCountry} onChange={(e) => setWesternCountry(e.target.value)} style={styles.inputField} />
-              </div>
-            </div>
-
-            <div style={{ padding: '12px', border: isPaypalActive ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: '13px' }}>💳 بوابة باي بال (PayPal)</strong>
-                <input type="checkbox" checked={isPaypalActive} onChange={() => setIsPaypalActive(!isPaypalActive)} />
-              </div>
-              <div style={{ opacity: isPaypalActive ? 1 : 0.4 }}>
-                <input type="email" placeholder="البريد الإلكتروني لباي بال" disabled={!isPaypalActive} value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} style={styles.inputField} />
-              </div>
-            </div>
-            <button onClick={() => alert("تم الحفظ!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', width: '100%', marginTop: '12px', fontWeight: 'bold' }}>حفظ التعديلات الحية 💾</button>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div>
-            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>إعدادات الموقع العامة</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>اسم تطبيق الحراج الأصلي:</label>
-                <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} style={styles.inputField} />
-              </div>
-              <div style={{ padding: '14px', border: isMaintenanceMode ? '2px solid #ef4444' : '1px solid #cbd5e1', borderRadius: '10px', backgroundColor: isMaintenanceMode ? '#fef2f2' : '#f8fafc' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong>🛠️ وضع الصيانة العام</strong>
-                  <input type="checkbox" checked={isMaintenanceMode} onChange={() => setIsMaintenanceMode(!isMaintenanceMode)} />
-                </div>
-              </div>
-              <button onClick={() => alert("تم الحفظ!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold', width: '100%' }}>حفظ الإعدادات 💾</button>
             </div>
           </div>
         )}
