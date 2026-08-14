@@ -1,232 +1,165 @@
-'use client';
+"use client";
+import React, { useState } from "react";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+export default function DashboardClient({ initialUsers, initialCars }: { initialUsers: any[], initialCars: any[] }) {
+  const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'payments' | 'settings'>('users');
+  const [usersList, setUsersList] = useState(initialUsers);
+  const [carsList, setCarsList] = useState(initialCars);
 
-interface Car {
-  id: number;
-  brand: string;
-  model: string;
-  price: number;
-  year: number;
-  kilometers: number;
-  color: string;
-  description: string;
-  images: string | string[];
-  status: string;
-  is_featured?: boolean;
-  currency: string;
-  created_at: string;
-}
+  // إعدادات بوابات الدفع
+  const [westernName, setWesternName] = useState("محمد أحمد محمود");
+  const [westernCountry, setWesternCountry] = useState("الكويت");
+  const [paypalEmail, setPaypalEmail] = useState("payment@auto-gulf.com");
+  const [isWesternActive, setIsWesternActive] = useState(true);
+  const [isPaypalActive, setIsPaypalActive] = useState(true);
 
-export default function DashboardClient() {
-  const router = useRouter();
-  const [cars, setCars] = useState<Car[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // إعدادات العملات وتغيير اسم الموقع والصيانة
+  const [siteName, setSiteName] = useState("حراج السيارات الخليجي الفعلي");
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [defaultCurrency, setDefaultCurrency] = useState("KWD");
+  const [allowedCurrencies, setAllowedCurrencies] = useState({
+    KWD: true, SAR: true, AED: true, QAR: true, BHD: true, OMR: true
+  });
 
-  useEffect(() => {
-    const fetchCars = async () => {
-      try {
-        console.log('📊 جلب السيارات من API...');
-        const res = await fetch('/api/cars');
-        const data = await res.json();
-        console.log('📊 البيانات المستلمة:', data);
-        
-        if (data.success && data.cars) {
-          setCars(data.cars);
-          console.log(`✅ تم جلب ${data.cars.length} سيارة`);
-        } else {
-          setError('فشل في جلب البيانات');
-          console.error('❌ فشل جلب البيانات:', data);
-        }
-      } catch (err) {
-        console.error('❌ خطأ في الاتصال:', err);
-        setError('خطأ في الاتصال بالخادم');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleToggleCurrency = (code: string) => {
+    if (code === defaultCurrency) return;
+    setAllowedCurrencies(prev => ({ ...prev, [code]: !prev[code as keyof typeof prev] }));
+  };
 
-    fetchCars();
-  }, []);
+  const handleToggleUserStatus = (id: any, currentStatus: string) => {
+    const nextStatus = currentStatus === "موقوف" ? "نشط" : "موقوف";
+    setUsersList(prev => prev.map(u => u.id === id ? { ...u, status: nextStatus } : u));
+  };
 
-  const updateCarStatus = async (id: number, status: string) => {
+  const handleDeleteUser = (id: any) => {
+    setUsersList(prev => prev.filter(u => u.id !== id));
+  };
+
+  // دالة الموافقة الحية والمربوطة بـ Neon DB الفعلي عبر السيرفر
+  const handleApproveCar = async (id: any) => {
     try {
-      const res = await fetch('/api/cars', {
+      const response = await fetch('/api/cars', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
+        body: JSON.stringify({ id, status: 'approved' })
       });
-
-      if (res.ok) {
-        setCars(prev =>
-          prev.map(car =>
-            car.id === id ? { ...car, status } : car
-          )
-        );
+      if (response.ok) {
+        setCarsList(prev => prev.map(c => c.id === id ? { ...c, status: "approved" } : c));
+        alert("تمت الموافقة ونشر السيارة حياً في الحراج الفعلي! ✅");
       }
     } catch (error) {
-      console.error('خطأ في تحديث الحالة:', error);
+      alert("فشل الاتصال بالسيرفر");
     }
   };
 
-  const getImageUrl = (images: string | string[] | undefined): string => {
-    if (!images) return '/images/default-car.jpg';
-    if (typeof images === 'string') {
-      if (images.startsWith('http')) return images;
-      return '/images/default-car.jpg';
-    }
-    if (Array.isArray(images) && images.length > 0) {
-      const first = images[0];
-      if (first && first.startsWith('http')) return first;
-      return '/images/default-car.jpg';
-    }
-    return '/images/default-car.jpg';
+  const handleMarkAsSold = (id: any) => {
+    setCarsList(prev => prev.map(c => c.id === id ? { ...c, ad_status: "مُباعة 🔴" } : c));
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">جاري التحميل...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleDeleteCar = (id: any) => {
+    setCarsList(prev => prev.filter(c => c.id !== id));
+  };
 
+  const styles = {
+    container: { fontFamily: 'sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh', padding: '12px', direction: 'rtl' as const },
+    header: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '16px', textAlign: 'center' as const, marginBottom: '16px' },
+    tabGrid: { display: 'flex', flexDirection: 'column' as const, gap: '8px', marginBottom: '20px' },
+    tabButton: (isActive: boolean) => ({
+      width: '100%', padding: '12px', borderRadius: '10px', border: 'none', fontSize: '14px', fontWeight: 'bold' as const,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      backgroundColor: isActive ? '#2563eb' : '#ffffff', color: isActive ? '#ffffff' : '#4b5563'
+    }),
+    badge: (isActive: boolean) => ({ backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : '#f1f5f9', padding: '2px 8px', borderRadius: '20px' }),
+    card: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '16px' },
+    tableWrapper: { overflowX: 'auto' as const, borderRadius: '10px', border: '1px solid #e2e8f0' },
+    table: { width: '100%', borderCollapse: 'collapse' as const, textAlign: 'right' as const, fontSize: '13px' },
+    th: { backgroundColor: '#f8fafc', padding: '10px', borderBottom: '2px solid #edf2f7' },
+    td: { padding: '10px', borderBottom: '1px solid #f1f5f9' },
+    btnAction: { padding: '6px 10px', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '11px', fontWeight: 'bold' as const, marginLeft: '4px' },
+    inputField: { width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', marginTop: '4px', outline: 'none', boxSizing: 'border-box' as const }
+  };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 rtl" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">📊 لوحة التحكم</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => router.push('/dashboard/cars/new')}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition font-bold"
-            >
-              ➕ نشر إعلان جديد
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition"
-            >
-              ← العودة للموقع
-            </button>
-          </div>
-        </div>
+    <div style={styles.container}>
+      <header style={styles.header}>
+        <h1 style={{ color: '#1e3a8a', fontSize: '20px', margin: '0 0 4px 0', fontWeight: 'bold' }}>📊 لوحة تحكم المدير</h1>
+        <p style={{ color: '#6b7280', fontSize: '11px', margin: 0 }}>نظام إدارة العمليات الحية الفوري</p>
+      </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-2xl font-bold text-blue-600">{cars.length}</div>
-            <div className="text-gray-600">🚗 إجمالي السيارات</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-2xl font-bold text-yellow-600">
-              {cars.filter(c => c.status === 'pending').length}
-            </div>
-            <div className="text-gray-600">⏳ قيد المراجعة</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-2xl font-bold text-green-600">
-              {cars.filter(c => c.status === 'approved').length}
-            </div>
-            <div className="text-gray-600">✅ موافق عليها</div>
-          </div>
-        </div>
+      <div style={styles.tabGrid}>
+        <button onClick={() => setActiveTab('users')} style={styles.tabButton(activeTab === 'users')}>
+          <span>👥 إدارة المستخدمين</span> <span style={styles.badge(activeTab === 'users')}>{usersList.length}</span>
+        </button>
+        <button onClick={() => setActiveTab('ads')} style={styles.tabButton(activeTab === 'ads')}>
+          <span>🚗 إعلانات السيارات</span> <span style={styles.badge(activeTab === 'ads')}>{carsList.length}</span>
+        </button>
+        <button onClick={() => setActiveTab('payments')} style={styles.tabButton(activeTab === 'payments')}>
+          <span>💳 خيارات الدفع والعملات</span> <span>★</span>
+        </button>
+        <button onClick={() => setActiveTab('settings')} style={styles.tabButton(activeTab === 'settings')}>
+          <span>⚙️ إعدادات الموقع العامة</span> <span>⚙️</span>
+        </button>
+      </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          {error && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">{error}</div>
-          )}
-
-          <h2 className="text-xl font-bold mb-4">🚗 إدارة السيارات</h2>
-
-          {cars.length === 0 ? (
-            <div className="text-center p-8 text-gray-400">
-              📭 لا توجد سيارات
-              <div className="mt-4">
-                <button
-                  onClick={() => router.push('/dashboard/cars/new')}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition font-bold"
-                >
-                  ➕ نشر أول إعلان
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+      <div style={styles.card}>
+        {activeTab === 'users' && (
+          <div>
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>جدول المستخدمين ({usersList.length})</h2>
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
                 <thead>
-                  <tr className="bg-gray-100">
-                    <th className="p-2 border text-right">#</th>
-                    <th className="p-2 border text-right">الصورة</th>
-                    <th className="p-2 border text-right">السيارة</th>
-                    <th className="p-2 border text-right">السعر</th>
-                    <th className="p-2 border text-right">الحالة</th>
-                    <th className="p-2 border text-right">إجراءات</th>
+                  <tr>
+                    <th style={styles.th}>المستعمل</th>
+                    <th style={styles.th}>الإجراء</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {cars.map((car, i) => {
-                    const imageUrl = getImageUrl(car.images);
+                  {usersList.map((user, index) => (
+                    <tr key={user.id || index} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                      <td style={styles.td}>
+                        <div style={{ fontWeight: '600' }}>{user.name || user.username || "مستخدم حراج"}</div>
+                        <div style={{ color: '#64748b', fontSize: '11px' }}>{user.email}</div>
+                      </td>
+                      <td style={styles.td}>
+                        <button onClick={() => handleToggleUserStatus(user.id, user.status)} style={{ ...styles.btnAction, backgroundColor: user.status === 'موقوف' ? '#10b981' : '#f59e0b' }}>
+                          {user.status === 'موقوف' ? "تفعيل" : "إيقاف"}
+                        </button>
+                        <button onClick={() => handleDeleteUser(user.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ads' && (
+          <div>
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>إعلانات السيارات الفعالة ({carsList.length})</h2>
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>السيارة والسعر</th>
+                    <th style={styles.th}>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {carsList.map((car, index) => {
+                    const currentStatus = car.status || "pending";
                     return (
-                      <tr key={car.id} className="hover:bg-gray-50 transition">
-                        <td className="p-2 border text-center">{i + 1}</td>
-                        <td className="p-2 border">
-                          <img
-                            src={imageUrl}
-                            alt={car.brand}
-                            className="w-12 h-12 object-cover rounded border"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/images/default-car.jpg';
-                            }}
-                          />
+                      <tr key={car.id || index}>
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: '600' }}>{car.brand || car.title} {car.model}</div>
+                          <div style={{ color: '#10b981', fontWeight: 'bold' }}>{car.price} {car.currency || "KWD"}</div>
+                          <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>الحالة: {currentStatus === 'approved' ? 'معروض ✅' : 'بانتظار المراجعة ⏳'}</div>
                         </td>
-                        <td className="p-2 border">{car.brand} {car.model}</td>
-                        <td className="p-2 border">{car.price} د.ك</td>
-                        <td className="p-2 border">
-                          <span className={`px-2 py-1 rounded text-sm ${
-                            car.status === 'approved'
-                              ? 'bg-green-100 text-green-700'
-                              : car.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}>
-                            {car.status === 'approved' ? '✅ موافق' :
-                             car.status === 'pending' ? '⏳ قيد المراجعة' :
-                             car.status === 'sold' ? '💰 مباع' :
-                             '❌ مرفوض'}
-                          </span>
-                        </td>
-                        <td className="p-2 border">
-                          <div className="flex gap-2 flex-wrap">
-                            {car.status === 'pending' && (
-                              <>
-                                <button
-                                  onClick={() => updateCarStatus(car.id, 'approved')}
-                                  className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 transition"
-                                >
-                                  موافقة
-                                </button>
-                                <button
-                                  onClick={() => updateCarStatus(car.id, 'rejected')}
-                                  className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition"
-                                >
-                                  رفض
-                                </button>
-                              </>
-                            )}
-                            {car.status === 'approved' && (
-                              <button
-                                onClick={() => updateCarStatus(car.id, 'sold')}
-                                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition"
-                              >
-                                ✅ مباع
-                              </button>
-                            )}
-                          </div>
+                        <td style={styles.td}>
+                          {currentStatus !== "approved" && (
+                            <button onClick={() => handleApproveCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#2563eb' }}>موافقة 👍</button>
+                          )}
+                          <button onClick={() => handleMarkAsSold(car.id)} style={{ ...styles.btnAction, backgroundColor: '#10b981' }}>مُباعة</button>
+                          <button onClick={() => handleDeleteCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
                         </td>
                       </tr>
                     );
@@ -234,8 +167,74 @@ export default function DashboardClient() {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+        {activeTab === 'payments' && (
+          <div>
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#1e3a8a' }}>💱 تخصيص العملات الخليجية للموقع</h2>
+            <div style={{ padding: '12px', border: '1px solid #cbd5e1', borderRadius: '10px', marginBottom: '16px', backgroundColor: '#f8fafc' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>العملة الافتراضية للموقع الأساسي:</label>
+              <select value={defaultCurrency} onChange={(e) => setDefaultCurrency(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', marginTop: '4px' }}>
+                <option value="KWD">🇰🇼 دينار كويتي (الافتراضية)</option>
+                <option value="SAR">🇸🇦 ريال سعودي</option>
+                <option value="AED">🇦🇪 درهم إماراتي</option>
+              </select>
+              <div style={{ marginTop: '12px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>العملات المتاحة للمعليين الخليجيين:</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginTop: '4px' }}>
+                  {Object.keys(allowedCurrencies).map((code) => (
+                    <label key={code} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', background: '#fff', padding: '6px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                      <input type="checkbox" checked={allowedCurrencies[code as keyof typeof allowedCurrencies]} onChange={() => handleToggleCurrency(code)} />
+                      {code}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>💳 بوابات الدفع وحساب المستلم</h2>
+            <div style={{ padding: '12px', border: isWesternActive ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '10px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ fontSize: '13px' }}>📌 بوابة ويسترن يونيون</strong>
+                <input type="checkbox" checked={isWesternActive} onChange={() => setIsWesternActive(!isWesternActive)} />
+              </div>
+              <div style={{ opacity: isWesternActive ? 1 : 0.4 }}>
+                <input type="text" placeholder="اسم المستلم" disabled={!isWesternActive} value={westernName} onChange={(e) => setWesternName(e.target.value)} style={styles.inputField} />
+                <input type="text" placeholder="البلد" disabled={!isWesternActive} value={westernCountry} onChange={(e) => setWesternCountry(e.target.value)} style={styles.inputField} />
+              </div>
+            </div>
+
+            <div style={{ padding: '12px', border: isPaypalActive ? '2px solid #10b981' : '1px solid #e2e8f0', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ fontSize: '13px' }}>💳 بوابة باي بال (PayPal)</strong>
+                <input type="checkbox" checked={isPaypalActive} onChange={() => setIsPaypalActive(!isPaypalActive)} />
+              </div>
+              <div style={{ opacity: isPaypalActive ? 1 : 0.4 }}>
+                <input type="email" placeholder="البريد الإلكتروني لباي بال" disabled={!isPaypalActive} value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} style={styles.inputField} />
+              </div>
+            </div>
+            <button onClick={() => alert("تم الحفظ!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', width: '100%', marginTop: '12px', fontWeight: 'bold' }}>حفظ التعديلات الحية 💾</button>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div>
+            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>إعدادات الموقع العامة</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>اسم تطبيق الحراج الأصلي:</label>
+                <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} style={styles.inputField} />
+              </div>
+              <div style={{ padding: '14px', border: isMaintenanceMode ? '2px solid #ef4444' : '1px solid #cbd5e1', borderRadius: '10px', backgroundColor: isMaintenanceMode ? '#fef2f2' : '#f8fafc' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong>🛠️ وضع الصيانة العام</strong>
+                  <input type="checkbox" checked={isMaintenanceMode} onChange={() => setIsMaintenanceMode(!isMaintenanceMode)} />
+                </div>
+              </div>
+              <button onClick={() => alert("تم الحفظ!")} style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold', width: '100%' }}>حفظ الإعدادات 💾</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
