@@ -1,11 +1,6 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-// ... باقي الكود
-cat > app/dashboard/DashboardClient.tsx << 'EOF'
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -376,4 +371,3 @@ export default function DashboardClient() {
     </div>
   );
 }
-EOF
