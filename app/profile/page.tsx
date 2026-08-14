@@ -9,12 +9,18 @@ interface Car {
   price?: number; PRICE?: number; kilometers?: number; KILOMETERS?: number;
   color?: string; COLOR?: string; description?: string; DESCRIPTION?: string;
   images?: any; IMAGES?: any; status?: string; STATUS?: string; currency?: string; CURRENCY?: string;
+  user_email?: string; USER_EMAIL?: string; // إضافة حقل البريد التابع للإعلان
 }
 
 export default function ProfilePage() {
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState({ name: 'مستعمل حراج', email: 'user@example.com' });
+  
+  const [userInfo, setUserInfo] = useState({ name: 'مستعمل حراج', email: 'user@example.com', phone: '' });
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -26,11 +32,20 @@ export default function ProfilePage() {
         const carsData = await carsRes.json();
         const userData = await userRes.json();
         
-        if (carsData && carsData.success && Array.isArray(carsData.cars)) {
-          setMyCars(carsData.cars);
-        }
         if (userData && userData.success && userData.user) {
           setUserInfo(userData.user);
+          setNewName(userData.user.name || '');
+          setNewPhone(userData.user.phone || '');
+          
+          // فلترة السيارات لتعرض فقط السيارات التي تطابق إيميل المستخدم الحالي المسجل
+          if (carsData && carsData.success && Array.isArray(carsData.cars)) {
+            const userEmail = userData.user.email || '';
+            const filtered = carsData.cars.filter((car: any) => {
+              const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
+              return carEmail.toLowerCase() === userEmail.toLowerCase();
+            });
+            setMyCars(filtered);
+          }
         }
       } catch (error) {
         console.error(error);
@@ -40,6 +55,44 @@ export default function ProfilePage() {
     };
     fetchUserData();
   }, []);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/user/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName, phone: newPhone })
+      });
+      if (res.ok) {
+        alert('تم تحديث البيانات الشخصية بنجاح! ✅');
+        setUserInfo(prev => ({ ...prev, name: newName, phone: newPhone }));
+      }
+    } catch {
+      alert('خطأ في تحديث البيانات');
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword) return alert('الرجاء تعبئة كافة حقول كلمة السر');
+    try {
+      const res = await fetch('/api/user/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      if (res.ok) {
+        alert('تم تغيير كلمة السر بنجاح! 🔒');
+        setCurrentPassword('');
+        setNewPassword('');
+      } else {
+        alert('فشل تغيير كلمة السر، تأكد من الكلمة الحالية');
+      }
+    } catch {
+      alert('خطأ في الاتصال بالسيرفر');
+    }
+  };
 
   const validCars = Array.isArray(myCars) ? myCars : [];
   if (loading) {
@@ -53,7 +106,7 @@ export default function ProfilePage() {
 
   return (
     <div style={styles.container}>
-      {/* الهيدر الشخصي */}
+      {/* الهيدر الشخصي والواجهة الزرقاء */}
       <div style={styles.heroSection}>
         <header style={styles.header}>
           <div style={styles.headerContent}>
@@ -68,9 +121,43 @@ export default function ProfilePage() {
       </div>
 
       <div style={styles.content}>
-        {/* تم تصحيح التوجيه هنا بنجاح إلى صفحة إضافة السيارات الحركية */}
+        {/* زر نشر إعلان سيارة جديد الثابت */}
         <div style={styles.actionButtonsGrid}>
           <Link href="/dashboard/cars/new" style={styles.actionButtonPost}>➕ نشر إعلان سيارة جديد</Link>
+        </div>
+
+        {/* قسم تعديل الحساب والبيانات مع حماية الإيميل */}
+        <div style={styles.settingsSection}>
+          <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px' }}>⚙️ إعدادات الحساب والأمان</h3>
+          
+          <form onSubmit={handleUpdateProfile} style={{ marginBottom: '25px' }}>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={styles.labelField}>البريد الإلكتروني (محمي لا يمكن تعديله) 🛡️</label>
+              <input type="text" value={userInfo.email} disabled style={styles.disabledInput} />
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={styles.labelField}>الاسم الكامل</label>
+              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} style={styles.inputField} />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={styles.labelField}>رقم الهاتف</label>
+              <input type="text" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="أدخل رقم هاتفك هنا" style={styles.inputField} />
+            </div>
+            <button type="submit" style={styles.saveButton}>حفظ التغييرات الشخصية</button>
+          </form>
+
+          <hr style={{ border: '0', height: '1px', backgroundColor: '#e2e8f0', margin: '20px 0' }} />
+
+          <form onSubmit={handleChangePassword}>
+            <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#475569', marginBottom: '10px' }}>🔒 تغيير كلمة السر</h4>
+            <div style={{ marginBottom: '12px' }}>
+              <input type="password" placeholder="كلمة السر الحالية" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={styles.inputField} />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <input type="password" placeholder="كلمة السر الجديدة" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={styles.inputField} />
+            </div>
+            <button type="submit" style={styles.passwordButton}>تحديث كلمة السر بأمان</button>
+          </form>
         </div>
 
         <h2 style={styles.sectionTitle}>🚗 إعلاناتي الحالية ({validCars.length})</h2>
@@ -112,8 +199,14 @@ const styles = {
   heroMainTitle: { fontSize: '26px', fontWeight: '800', color: '#ffffff', marginBottom: '8px' },
   heroSubTitle: { fontSize: '14px', color: '#bfdbfe' },
   content: { maxWidth: '1200px', margin: '0 auto', padding: '25px 20px' },
-  actionButtonsGrid: { display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginBottom: '30px' },
+  actionButtonsGrid: { display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginBottom: '25px' },
   actionButtonPost: { display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#10b981', color: '#ffffff', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 'bold', textDecoration: 'none', textAlign: 'center' as const },
+  settingsSection: { backgroundColor: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '30px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
+  labelField: { display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '5px' },
+  inputField: { width: '100%', padding: '11px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const },
+  disabledInput: { width: '100%', padding: '11px', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#edf2f7', color: '#718096', fontSize: '14px', cursor: 'not-allowed', boxSizing: 'border-box' as const },
+  saveButton: { width: '100%', padding: '12px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' },
+  passwordButton: { width: '100%', padding: '12px', backgroundColor: '#475569', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' },
   sectionTitle: { fontSize: '18px', fontWeight: 'bold', color: '#1e293b', marginBottom: '20px' },
   noCars: { textAlign: 'center' as const, padding: '40px 20px', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', color: '#64748b' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' },
