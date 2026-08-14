@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 interface Car {
   id?: number; ID?: number; brand?: string; BRAND?: string;
@@ -13,11 +14,14 @@ interface Car {
 }
 
 export default function ProfilePage() {
+  const sessionCtx = useSession();
+  const session = sessionCtx ? sessionCtx.data : null;
+
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [userInfo, setUserInfo] = useState({ name: 'مستعمل سيارتي', email: 'user@auto.com', phone: '' });
-  const [newName, setNewName] = useState('مستعمل سيارتي');
+  const [userInfo, setUserInfo] = useState({ name: 'جاري جلب الاسم...', email: 'جاري جلب البريد...', phone: '' });
+  const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -25,10 +29,21 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        let activeEmail = 'user@auto.com';
-        let activeName = 'مستعمل سيارتي';
+        // 1. محاولة قراءة الحساب الفوري النشط من جلسة المتصفح الحية الموثقة
+        let activeEmail = session?.user?.email || '';
+        let activeName = session?.user?.name || '';
 
-        // محاولة ذكية لجلب بيانات المستخدم الحقيقية المسجلة من الـ API الخلفي
+        // 2. إذا لم تكتمل قراءة الجلسة، نقرأ التوثيق الاحتياطي المخزن محلياً لضمان جلب البريد والاسم الحقيقي فوراً
+        if (!activeEmail) {
+          const localUser = localStorage.getItem('user') || localStorage.getItem('nextauth.message');
+          if (localUser) {
+            const parsed = JSON.parse(localUser);
+            if (parsed.email) activeEmail = parsed.email;
+            if (parsed.name) activeName = parsed.name;
+          }
+        }
+
+        // 3. جلب البيانات الإضافية كالهاتف من الـ API المباشر وقاعدة بيانات Neon
         const userRes = await fetch('/api/user', { cache: 'no-store' });
         if (userRes.ok) {
           const userData = await userRes.json();
@@ -36,26 +51,19 @@ export default function ProfilePage() {
             activeName = userData.user.name || userData.user.username || activeName;
             activeEmail = userData.user.email || activeEmail;
             const dbPhone = userData.user.phone || '';
-
+            
             setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
             setNewName(activeName);
             setNewPhone(dbPhone);
           }
-        } else {
-          // إذا كان المسار محمياً، نقرأ التوثيق الاحتياطي الحقيقي الحركي المخزن في المتصفح لمنع التعليق
-          const savedUser = localStorage.getItem('user') || localStorage.getItem('nextauth.message');
-          if (savedUser) {
-            const parsed = JSON.parse(savedUser);
-            if (parsed.email) activeEmail = parsed.email;
-            if (parsed.name) activeName = parsed.name;
-            setUserInfo(prev => ({ ...prev, name: activeName, email: activeEmail }));
-            setNewName(activeName);
-          }
+        } else if (activeEmail) {
+          setUserInfo({ name: activeName, email: activeEmail, phone: '' });
+          setNewName(activeName);
         }
 
-        // جلب الإعلانات وتصفيتها فوراً بناءً على بريدك الإلكتروني الحقيقي المسترجع
+        // 4. جلب إعلانات السيارات وتصفيتها بناءً على الإيميل الحقيقي المسترجع بدقة
         const carsRes = await fetch('/api/cars', { cache: 'no-store' });
-        if (carsRes.ok) {
+        if (carsRes.ok && activeEmail) {
           const carsData = await carsRes.json();
           if (carsData && carsData.success && Array.isArray(carsData.cars)) {
             const filtered = carsData.cars.filter((car: any) => {
@@ -68,12 +76,12 @@ export default function ProfilePage() {
       } catch (error) {
         console.error(error);
       } finally {
-        setLoading(false); // كسر حلقة التحميل وضمان فتح الشاشة فوراً
+        setLoading(false);
       }
     };
 
     fetchUserData();
-  }, []);
+  }, [session]);
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -118,7 +126,7 @@ export default function ProfilePage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري عرض ملفك الحقيقي الحركي...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري جلب ملفك الحقيقي الموثق...</p>
       </div>
     );
   }
