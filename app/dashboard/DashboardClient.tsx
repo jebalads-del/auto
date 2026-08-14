@@ -16,6 +16,7 @@ interface Car {
   description: string;
   images: string | string[];
   status: 'pending' | 'approved' | 'rejected' | 'sold';
+  is_featured?: boolean;
   created_at: string;
 }
 
@@ -34,7 +35,6 @@ export default function DashboardClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // ✅ جلب البيانات من قاعدة البيانات
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -58,7 +58,6 @@ export default function DashboardClient() {
     fetchData();
   }, []);
 
-  // ✅ تحديث حالة السيارة
   const updateCarStatus = async (id: number, status: Car['status']) => {
     try {
       const res = await fetch('/api/cars', {
@@ -79,7 +78,6 @@ export default function DashboardClient() {
     }
   };
 
-  // ✅ دالة لاستخراج رابط الصورة
   const getImageUrl = (images: string | string[] | undefined): string => {
     if (!images) return '/images/default-car.jpg';
     if (typeof images === 'string') return images;
@@ -119,7 +117,6 @@ export default function DashboardClient() {
           </div>
         </div>
 
-        {/* الأزرار العلوية */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <button
             onClick={() => setActiveTab('cars')}
@@ -158,24 +155,14 @@ export default function DashboardClient() {
           </button>
         </div>
 
-        {/* عرض المحتوى حسب التاب المختار */}
         <div className="bg-white rounded-lg shadow-lg p-6">
           {error && (
             <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">{error}</div>
           )}
 
-          {/* تبويب السيارات */}
           {activeTab === 'cars' && (
             <div>
               <h2 className="text-xl font-bold mb-4">🚗 إدارة السيارات</h2>
-              <div className="flex gap-2 mb-4 flex-wrap">
-                <button
-                  onClick={() => router.push('/dashboard/cars/new')}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition font-bold"
-                >
-                  ➕ نشر إعلان جديد
-                </button>
-              </div>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
@@ -265,7 +252,6 @@ export default function DashboardClient() {
             </div>
           )}
 
-          {/* تبويب المستخدمين */}
           {activeTab === 'users' && (
             <div>
               <h2 className="text-xl font-bold text-gray-800 mb-4">👥 إدارة المستخدمين</h2>
@@ -338,7 +324,6 @@ export default function DashboardClient() {
             </div>
           )}
 
-          {/* تبويب الإعلانات المميزة */}
           {activeTab === 'stats' && (
             <div>
               <h2 className="text-xl font-bold mb-4">⭐ الإعلانات المميزة</h2>
