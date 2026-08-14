@@ -1,6 +1,5 @@
-cat << 'EOF' > app/page.tsx
+cat << 'EOF' >> app/page.tsx
 'use client';
-
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -38,7 +37,6 @@ export default function HomePage() {
   const validCars = Array.isArray(cars) ? cars : [];
 EOF
 cat << 'EOF' >> app/page.tsx
-
   const filteredCars = validCars.filter(car => {
     if (!car) return false;
     const carModel = car.model || car.MODEL || '';
