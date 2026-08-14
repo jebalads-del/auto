@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 
 interface Car {
   id?: number; ID?: number; brand?: string; BRAND?: string;
@@ -14,13 +13,10 @@ interface Car {
 }
 
 export default function ProfilePage() {
-  const sessionCtx = useSession();
-  const session = sessionCtx ? sessionCtx.data : null;
-
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [userInfo, setUserInfo] = useState({ name: 'مستعمل حراج', email: 'user@example.com', phone: '' });
+  const [userInfo, setUserInfo] = useState({ name: 'جاري جلب الاسم...', email: 'جاري جلب البريد...', phone: '' });
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -29,37 +25,32 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // قراءة البيانات من الجلسة أو وضع قيم احتياطية فورية لتجنب التعليق
-        const activeEmail = session?.user?.email || 'user@example.com';
-        const activeName = session?.user?.name || 'مستعمل حراج';
-
-        setUserInfo(prev => ({ ...prev, name: activeName, email: activeEmail }));
-        setNewName(activeName);
-
-        // جلب تفاصيل المستخدم الإضافية كالهاتف من قاعدة البيانات
+        // الاستعلام المباشر من الـ API الحقيقي للمستخدم لمعرفة حسابه الحالي من السيرفر
         const userRes = await fetch('/api/user', { cache: 'no-store' });
+        let activeEmail = '';
+
         if (userRes.ok) {
           const userData = await userRes.json();
+          // إذا نجح السيرفر في التعرف على المستخدم المسجل حياً في Neon DB
           if (userData && userData.success && userData.user) {
+            const dbName = userData.user.name || userData.user.username || 'مستعمل حراج';
+            activeEmail = userData.user.email || '';
             const dbPhone = userData.user.phone || '';
-            const dbName = userData.user.name || activeName;
-            const dbEmail = userData.user.email || activeEmail;
-            
-            setUserInfo({ name: dbName, email: dbEmail, phone: dbPhone });
+
+            setUserInfo({ name: dbName, email: activeEmail, phone: dbPhone });
             setNewName(dbName);
             setNewPhone(dbPhone);
           }
         }
 
-        // جلب الإعلانات وتصفيتها
+        // جلب الإعلانات وتصفيتها بناءً على البريد الحقيقي المسترجع من قاعدة البيانات
         const carsRes = await fetch('/api/cars', { cache: 'no-store' });
         if (carsRes.ok) {
           const carsData = await carsRes.json();
-          if (carsData && carsData.success && Array.isArray(carsData.cars)) {
-            const finalEmail = session?.user?.email || userInfo.email || '';
+          if (carsData && carsData.success && Array.isArray(carsData.cars) && activeEmail) {
             const filtered = carsData.cars.filter((car: any) => {
               const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
-              return carEmail.toLowerCase() === finalEmail.toLowerCase();
+              return carEmail.toLowerCase() === activeEmail.toLowerCase();
             });
             setMyCars(filtered);
           }
@@ -72,7 +63,7 @@ export default function ProfilePage() {
     };
 
     fetchUserData();
-  }, [session]);
+  }, []);
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -117,7 +108,7 @@ export default function ProfilePage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح الملف الشخصي بأمان...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري عرض ملفك الحقيقي...</p>
       </div>
     );
   }
