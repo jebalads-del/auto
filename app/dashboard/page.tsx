@@ -10,7 +10,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({
     cars: 0,
     users: 0,
-    ads: 0,
   });
 
   useEffect(() => {
@@ -39,12 +38,12 @@ export default function DashboardPage() {
 
   return (
     <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      
+
       {/* الهيدر مع زر الخروج */}
-      <div style={{ 
-        backgroundColor: '#1e293b', 
-        padding: '20px', 
-        borderRadius: '12px', 
+      <div style={{
+        backgroundColor: '#1e293b',
+        padding: '20px',
+        borderRadius: '12px',
         marginBottom: '20px',
         color: 'white',
         display: 'flex',
@@ -57,8 +56,8 @@ export default function DashboardPage() {
           <h1 style={{ fontSize: '24px', marginBottom: '5px' }}>📊 لوحة التحكم</h1>
           <p style={{ color: '#94a3b8' }}>مرحباً بك في لوحة تحكم سيارتي</p>
         </div>
-        <button 
-          onClick={handleLogout} 
+        <button
+          onClick={handleLogout}
           style={{
             backgroundColor: '#dc2626',
             color: 'white',
@@ -73,65 +72,54 @@ export default function DashboardPage() {
           🚪 تسجيل خروج
         </button>
       </div>
-
-      {/* أزرار التنقل */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '10px', 
-        marginBottom: '20px', 
-        flexWrap: 'wrap' 
+      {/* أزرار التنقل النظيفة بدون الزر البرتقالي */}
+      <div style={{
+        display: 'flex',
+        gap: '10px',
+        marginBottom: '20px',
+        flexWrap: 'wrap'
       }}>
-        <Link href="/dashboard" style={{ 
-          backgroundColor: '#2563eb', 
-          color: 'white', 
-          padding: '10px 20px', 
-          borderRadius: '8px', 
+        <Link href="/dashboard" style={{
+          backgroundColor: '#2563eb',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '8px',
           textDecoration: 'none',
           fontWeight: 'bold',
           fontSize: '14px'
         }}>
           📊 الرئيسية
         </Link>
-        
-        <Link href="/dashboard/users" style={{ 
-          backgroundColor: '#8b5cf6', 
-          color: 'white', 
-          padding: '10px 20px', 
-          borderRadius: '8px', 
+
+        <Link href="/dashboard/users" style={{
+          backgroundColor: '#8b5cf6',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '8px',
           textDecoration: 'none',
           fontWeight: 'bold',
           fontSize: '14px'
         }}>
           👥 المستخدمين
         </Link>
-        
-        <Link href="/dashboard/cars" style={{ 
-          backgroundColor: '#059669', 
-          color: 'white', 
-          padding: '10px 20px', 
-          borderRadius: '8px', 
+
+        <Link href="/dashboard/cars" style={{
+          backgroundColor: '#059669',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '8px',
           textDecoration: 'none',
           fontWeight: 'bold',
           fontSize: '14px'
         }}>
           🚗 الإعلانات
         </Link>
-        <Link href="/dashboard/commercial-ads" style={{ 
-  backgroundColor: '#d97706', 
-  color: 'white', 
-  padding: '10px 20px', 
-  borderRadius: '8px', 
-  textDecoration: 'none',
-  fontWeight: 'bold',
-  fontSize: '14px'
-}}>
-  📢 الإعلانات التجارية
-</Link>
-        <Link href="/dashboard/settings" style={{ 
-          backgroundColor: '#6b7280', 
-          color: 'white', 
-          padding: '10px 20px', 
-          borderRadius: '8px', 
+
+        <Link href="/dashboard/settings" style={{
+          backgroundColor: '#6b7280',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '8px',
           textDecoration: 'none',
           fontWeight: 'bold',
           fontSize: '14px'
@@ -139,18 +127,17 @@ export default function DashboardPage() {
           ⚙️ الإعدادات
         </Link>
       </div>
-
-      {/* الإحصائيات */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+      {/* الإحصائيات النظيفة */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
         gap: '20px',
         marginBottom: '30px'
       }}>
-        <div style={{ 
-          backgroundColor: 'white', 
-          padding: '20px', 
-          borderRadius: '12px', 
+        <div style={{
+          backgroundColor: 'white',
+          padding: '20px',
+          borderRadius: '12px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           textAlign: 'center'
         }}>
@@ -160,10 +147,10 @@ export default function DashboardPage() {
           <div style={{ color: '#64748b' }}>🚗 السيارات</div>
         </div>
 
-        <div style={{ 
-          backgroundColor: 'white', 
-          padding: '20px', 
-          borderRadius: '12px', 
+        <div style={{
+          backgroundColor: 'white',
+          padding: '20px',
+          borderRadius: '12px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           textAlign: 'center'
         }}>
@@ -172,55 +159,42 @@ export default function DashboardPage() {
           </div>
           <div style={{ color: '#64748b' }}>👥 المستخدمين</div>
         </div>
-
-        <div style={{ 
-          backgroundColor: 'white', 
-          padding: '20px', 
-          borderRadius: '12px', 
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#d97706' }}>
-            {loading ? '...' : stats.ads}
-          </div>
-          <div style={{ color: '#64748b' }}>📢 الإعلانات</div>
-        </div>
       </div>
 
       {/* إجراءات سريعة */}
-      <div style={{ 
-        backgroundColor: 'white', 
-        padding: '20px', 
-        borderRadius: '12px', 
+      <div style={{
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '12px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
         <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>⚡ إجراءات سريعة</h2>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <Link href="/dashboard/cars/new" style={{ 
-            backgroundColor: '#2563eb', 
-            color: 'white', 
-            padding: '8px 16px', 
-            borderRadius: '6px', 
+          <Link href="/dashboard/cars/new" style={{
+            backgroundColor: '#2563eb',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '6px',
             textDecoration: 'none',
             fontSize: '14px'
           }}>
             ➕ إضافة سيارة جديدة
           </Link>
-          <Link href="/dashboard/users" style={{ 
-            backgroundColor: '#8b5cf6', 
-            color: 'white', 
-            padding: '8px 16px', 
-            borderRadius: '6px', 
+          <Link href="/dashboard/users" style={{
+            backgroundColor: '#8b5cf6',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '6px',
             textDecoration: 'none',
             fontSize: '14px'
           }}>
             👥 إدارة المستخدمين
           </Link>
-          <Link href="/dashboard/settings" style={{ 
-            backgroundColor: '#6b7280', 
-            color: 'white', 
-            padding: '8px 16px', 
-            borderRadius: '6px', 
+          <Link href="/dashboard/settings" style={{
+            backgroundColor: '#6b7280',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '6px',
             textDecoration: 'none',
             fontSize: '14px'
           }}>
