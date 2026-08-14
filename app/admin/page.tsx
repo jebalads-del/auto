@@ -1,99 +1,84 @@
-xl">⭐</div>
-            <div className="font-bold">إعلانات مميزة</div>
-            <div className="text-sm">(مدفوعة)</div>
-          </button>
+'use client';
+
+import { useEffect, useState } from 'react';
+import DashboardClient from '../DashboardClient';
+
+export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/admin/check');
+        const data = await res.json();
+        setIsAuthenticated(data.authenticated);
+      } catch (error) {
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+          <h1 className="text-2xl font-bold text-center mb-6">🔐 تسجيل الدخول</h1>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target as HTMLFormElement);
+              const password = formData.get('password');
+
+              try {
+                const res = await fetch('/api/admin/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ password }),
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                  setIsAuthenticated(true);
+                  window.location.reload();
+                } else {
+                  alert('كلمة المرور غير صحيحة');
+                }
+              } catch (error) {
+                alert('حدث خطأ في تسجيل الدخول');
+              }
+            }}
+          >
+            <input
+              type="password"
+              name="password"
+              placeholder="كلمة المرور"
+              className="w-full p-3 border rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
+              required
+            />
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-bold"
+            >
+              دخول
+            </button>
+          </form>
         </div>
+      </div>
+    );
+  }
 
-        {/* عرض المحتوى حسب التاب المختار */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          {error && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">{error}</div>
-          )}
-
-          {/* تبويب السيارات */}
-          {activeTab === 'cars' && (
-            <div>
-              <h2 className="text-xl font-bold mb-4">🚗 إدارة السيارات</h2>
-              <div className="flex gap-2 mb-4">
-                <button className="bg-yellow-500 text-white px-4 py-2 rounded">قيد المراجعة</button>
-                <button className="bg-green-500 text-white px-4 py-2 rounded">تم الموافقة</button>
-                <button className="bg-red-500 text-white px-4 py-2 rounded">مباع</button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="p-2 border">#</th>
-                      <th className="p-2 border">السيارة</th>
-                      <th className="p-2 border">السعر</th>
-                      <th className="p-2 border">الحالة</th>
-                      <th className="p-2 border">إجراءات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data.cars || []).map((car: any, i: number) => (
-                      <tr key={car.id} className="hover:bg-gray-50">
-                        <td className="p-2 border">{i + 1}</td>
-                        <td className="p-2 border">{car.title || car.brand}</td>
-                        <td className="p-2 border">{car.price} $</td>
-                        <td className="p-2 border">
-                          <span className={`px-2 py-1 rounded text-sm ${
-                            car.status === 'approved' ? 'bg-green-100 text-green-700' :
-                            car.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {car.status === 'approved' ? '✅ موافق' :
-                             car.status === 'pending' ? '⏳ قيد المراجعة' :
-                             '❌ مرفوض'}
-                          </span>
-                        </td>
-                        <td className="p-2 border">
-                          <div className="flex gap-2">
-                            {car.status === 'pending' && (
-                              <>
-                                <button
-                                  onClick={() => updateCarStatus(car.id, 'approved')}
-                                  className="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600"
-                                >
-                                  موافقة
-                                </button>
-                                <button
-                                  onClick={() => updateCarStatus(car.id, 'rejected')}
-                                  className="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600"
-                                >
-                                  رفض
-                                </button>
-                              </>
-                            )}
-                            {car.status === 'approved' && (
-                              <button
-                                onClick={() => updateCarStatus(car.id, 'sold')}
-                                className="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600"
-                              >
-                                ✅ مباع
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {(data.cars || []).length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="text-center p-4 text-gray-500">
-                          لا توجد سيارات
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* تبويب المستخدمين */}
-          {activeTab === 'users' && (
-            <div>
-              <h2 className="text-xl font-bold mb-4">👥 إدارة المستخدمين</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <
+  return <DashboardClient />;
+}
