@@ -1,5 +1,5 @@
-cat << 'EOF' >> app/page.tsx
 'use client';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -35,8 +35,6 @@ export default function HomePage() {
   }, []);
 
   const validCars = Array.isArray(cars) ? cars : [];
-EOF
-cat << 'EOF' >> app/page.tsx
   const filteredCars = validCars.filter(car => {
     if (!car) return false;
     const carModel = car.model || car.MODEL || '';
@@ -158,9 +156,6 @@ cat << 'EOF' >> app/page.tsx
     </div>
   );
 }
-EOF
-cat << 'EOF' >> app/page.tsx
-
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   heroSection: { background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', color: '#ffffff', paddingBottom: '30px', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' },
@@ -197,4 +192,3 @@ const styles = {
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #38bdf8', borderRadius: '50%' }
 };
-EOF
