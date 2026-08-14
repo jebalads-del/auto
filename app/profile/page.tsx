@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react'; // جلب مكتبة الجلسات الحية الفعالة
 
 interface Car {
   id?: number; ID?: number; brand?: string; BRAND?: string;
@@ -9,43 +10,57 @@ interface Car {
   price?: number; PRICE?: number; kilometers?: number; KILOMETERS?: number;
   color?: string; COLOR?: string; description?: string; DESCRIPTION?: string;
   images?: any; IMAGES?: any; status?: string; STATUS?: string; currency?: string; CURRENCY?: string;
-  user_email?: string; USER_EMAIL?: string; // إضافة حقل البريد التابع للإعلان
+  user_email?: string; USER_EMAIL?: string;
 }
 
 export default function ProfilePage() {
+  const { data: session, status: sessionStatus } = useSession(); // قراءة بيانات الجلسة الحقيقية
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [userInfo, setUserInfo] = useState({ name: 'مستعمل حراج', email: 'user@example.com', phone: '' });
+  const [userInfo, setUserInfo] = useState({ name: 'جاري التحميل...', email: 'loading...', phone: '' });
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
+    // ننتظر حتى تكتمل قراءة الجلسة أولاً لضمان وجود الحساب الحقيقي
+    if (sessionStatus === 'loading') return;
+
     const fetchUserData = async () => {
       try {
-        const [carsRes, userRes] = await Promise.all([
-          fetch('/api/cars', { cache: 'no-store' }),
-          fetch('/api/user', { cache: 'no-store' })
-        ]);
-        const carsData = await carsRes.json();
+        const activeEmail = session?.user?.email || '';
+        const activeName = session?.user?.name || 'مستعمل حراج';
+
+        // محاولة جلب الهاتف والبيانات الإضافية من السيرفر الخلفي
+        const userRes = await fetch('/api/user', { cache: 'no-store' });
         const userData = await userRes.json();
         
+        let dbPhone = '';
+        let finalName = activeName;
+        let finalEmail = activeEmail;
+
         if (userData && userData.success && userData.user) {
-          setUserInfo(userData.user);
-          setNewName(userData.user.name || '');
-          setNewPhone(userData.user.phone || '');
-          
-          // فلترة السيارات لتعرض فقط السيارات التي تطابق إيميل المستخدم الحالي المسجل
-          if (carsData && carsData.success && Array.isArray(carsData.cars)) {
-            const userEmail = userData.user.email || '';
-            const filtered = carsData.cars.filter((car: any) => {
-              const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
-              return carEmail.toLowerCase() === userEmail.toLowerCase();
-            });
-            setMyCars(filtered);
-          }
+          dbPhone = userData.user.phone || '';
+          if (userData.user.name) finalName = userData.user.name;
+          if (userData.user.email) finalEmail = userData.user.email;
+        }
+
+        setUserInfo({ name: finalName, email: finalEmail, phone: dbPhone });
+        setNewName(finalName);
+        setNewPhone(dbPhone);
+
+        // جلب وفلترة السيارات الخاصة بهذا الإيميل الحقيقي فقط
+        const carsRes = await fetch('/api/cars', { cache: 'no-store' });
+        const carsData = await carsRes.json();
+        
+        if (carsData && carsData.success && Array.isArray(carsData.cars) && finalEmail) {
+          const filtered = carsData.cars.filter((car: any) => {
+            const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
+            return carEmail.toLowerCase() === finalEmail.toLowerCase();
+          });
+          setMyCars(filtered);
         }
       } catch (error) {
         console.error(error);
@@ -53,8 +68,9 @@ export default function ProfilePage() {
         setLoading(false);
       }
     };
+
     fetchUserData();
-  }, []);
+  }, [session, sessionStatus]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,18 +111,18 @@ export default function ProfilePage() {
   };
 
   const validCars = Array.isArray(myCars) ? myCars : [];
-  if (loading) {
+  if (loading || sessionStatus === 'loading') {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري تحميل ملفك الشخصي...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري التحقق من الحساب والأمان الحركي...</p>
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
-      {/* الهيدر الشخصي والواجهة الزرقاء */}
+      {/* الهيدر الشخصي والواجهة الزرقاء الحقيقية */}
       <div style={styles.heroSection}>
         <header style={styles.header}>
           <div style={styles.headerContent}>
