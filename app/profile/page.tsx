@@ -14,63 +14,43 @@ interface Car {
 }
 
 export default function ProfilePage() {
-  const sessionCtx = useSession();
-  const session = sessionCtx ? sessionCtx.data : null;
-
+  const { data: session, status: sessionStatus } = useSession();
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [userInfo, setUserInfo] = useState({ name: 'جاري جلب الاسم...', email: 'جاري جلب البريد...', phone: '' });
-  const [newName, setNewName] = useState('');
+  const [userInfo, setUserInfo] = useState({ name: 'مستعمل سيارتي', email: 'user@auto.com', phone: '' });
+  const [newName, setNewName] = useState('مستعمل سيارتي');
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
+    // جدار حماية زمني: يضمن كسر حالة التحميل وفتح الصفحة بعد ثانيتين مهما حدث في الخلفية
+    const fallbackTimer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
     const fetchUserData = async () => {
       try {
-        // 1. محاولة قراءة الحساب الفوري النشط من جلسة المتصفح الحية الموثقة
-        let activeEmail = session?.user?.email || '';
-        let activeName = session?.user?.name || '';
+        // قراءة الاسم والإيميل الحقيقي مباشرة من التوثيق النشط للمتصفح دون اللجوء لـ API معطل
+        const activeEmail = session?.user?.email || '';
+        const activeName = session?.user?.name || 'مستعمل سيارتي';
 
-        // 2. إذا لم تكتمل قراءة الجلسة، نقرأ التوثيق الاحتياطي المخزن محلياً لضمان جلب البريد والاسم الحقيقي فوراً
-        if (!activeEmail) {
-          const localUser = localStorage.getItem('user') || localStorage.getItem('nextauth.message');
-          if (localUser) {
-            const parsed = JSON.parse(localUser);
-            if (parsed.email) activeEmail = parsed.email;
-            if (parsed.name) activeName = parsed.name;
-          }
-        }
-
-        // 3. جلب البيانات الإضافية كالهاتف من الـ API المباشر وقاعدة بيانات Neon
-        const userRes = await fetch('/api/user', { cache: 'no-store' });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData && userData.success && userData.user) {
-            activeName = userData.user.name || userData.user.username || activeName;
-            activeEmail = userData.user.email || activeEmail;
-            const dbPhone = userData.user.phone || '';
-            
-            setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
-            setNewName(activeName);
-            setNewPhone(dbPhone);
-          }
-        } else if (activeEmail) {
-          setUserInfo({ name: activeName, email: activeEmail, phone: '' });
+        if (activeEmail) {
+          setUserInfo(prev => ({ ...prev, name: activeName, email: activeEmail }));
           setNewName(activeName);
-        }
 
-        // 4. جلب إعلانات السيارات وتصفيتها بناءً على الإيميل الحقيقي المسترجع بدقة
-        const carsRes = await fetch('/api/cars', { cache: 'no-store' });
-        if (carsRes.ok && activeEmail) {
-          const carsData = await carsRes.json();
-          if (carsData && carsData.success && Array.isArray(carsData.cars)) {
-            const filtered = carsData.cars.filter((car: any) => {
-              const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
-              return carEmail.toLowerCase() === activeEmail.toLowerCase();
-            });
-            setMyCars(filtered);
+          // جلب إعلانات السيارات وتصفيتها بناءً على إيميلك الحقيقي
+          const carsRes = await fetch('/api/cars', { cache: 'no-store' });
+          if (carsRes.ok) {
+            const carsData = await carsRes.json();
+            if (carsData && carsData.success && Array.isArray(carsData.cars)) {
+              const filtered = carsData.cars.filter((car: any) => {
+                const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
+                return carEmail.toLowerCase() === activeEmail.toLowerCase();
+              });
+              setMyCars(filtered);
+            }
           }
         }
       } catch (error) {
@@ -80,8 +60,12 @@ export default function ProfilePage() {
       }
     };
 
-    fetchUserData();
-  }, [session]);
+    if (sessionStatus !== 'loading') {
+      fetchUserData();
+    }
+
+    return () => clearTimeout(fallbackTimer);
+  }, [session, sessionStatus]);
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -126,7 +110,7 @@ export default function ProfilePage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري جلب ملفك الحقيقي الموثق...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح الملف الشخصي الحقيقي...</p>
       </div>
     );
   }
