@@ -1,208 +1,174 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-const BRANDS = ['تويوتا', 'لكزس', 'نيسان', 'فورد', 'شيفروليه', 'جي إم سي', 'هيونداي', 'كيا', 'مرسيدس', 'بي إم دبليو', 'أودي', 'بورش', 'هوندا', 'مازدا', 'ميتسوبيشي', 'جيب', 'لاند روفر', 'أخرى'];
-const CURRENCIES = [
-  { code: 'KWD', label: 'دينار كويتي' },
-  { code: 'SAR', label: 'ريال سعودي' },
-  { code: 'AED', label: 'درهم إماراتي' },
-  { code: 'QAR', label: 'ريال قطري' },
-  { code: 'BHD', label: 'دينار بحريني' },
-  { code: 'OMR', label: 'ريال عماني' }
-];
+import Link from 'next/link';
 
 export default function NewCarPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [errors, setErrors] = useState<any>({});
-  
-  const [formData, setFormData] = useState({
-    brand: '',
-    model: '',
-    year: '',
-    price: '',
-    kilometers: '',
-    color: '',
-    description: '',
-    currency: 'KWD'
-  });
+  const [isAuth, setIsAuth] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev: any) => ({ ...prev, [name]: '' }));
-  };
+  // المتغيرات الحركية لجمع بيانات السيارة
+  const [brand, setBrand] = useState('');
+  const [model, setModel] = useState('');
+  const [year, setYear] = useState('');
+  const [price, setPrice] = useState('');
+  const [kilometers, setKilometers] = useState('');
+  const [currency, setCurrency] = useState('KWD');
+  const [color, setColor] = useState('');
+  const [description, setDescription] = useState('');
+  const [images, setImages] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      setImageFiles(filesArray);
-      if (errors.images) setErrors((prev: any) => ({ ...prev, images: '' }));
+  useEffect(() => {
+    // فحص حماية الصفحة لمنع غير المسجلين من إرسال إعلانات مجهولة
+    const savedEmail = localStorage.getItem('userEmail');
+    if (!savedEmail) {
+      alert('🔒 عذراً، يجب عليك تسجيل الدخول أولاً لتتمكن من نشر إعلانك!');
+      router.push('/login');
+    } else {
+      setIsAuth(true);
     }
-  };
+    setCheckingAuth(false);
+  }, [router]);
 
-  const imageUpload = async (): Promise<string[]> => {
-    try {
-      const formDataFiles = new FormData();
-      imageFiles.forEach(file => {
-        formDataFiles.append('files', file);
-      });
-
-      const response = await fetch('/api/cars/upload', {
-        method: 'POST',
-        body: formDataFiles,
-      });
-
-      const data = await response.json();
-      if (data.success && Array.isArray(data.urls)) {
-        return data.urls;
-      } else if (data.url) {
-        return [data.url];
-      }
-      return [];
-    } catch (error) {
-      console.error('Image upload failure:', error);
-      return [];
-    }
-  };
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmitAd = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setErrors({});
-
-    if (imageFiles.length === 0) {
-      setErrors({ images: 'يرجى اختيار صورة واحدة على الأقل لسيارتك' });
-      setLoading(false);
-      return;
+    if (!brand || !model || !year || !price || !kilometers) {
+      return alert('الرجاء تعبئة كافة الحقول الأساسية للسيارة');
     }
 
     try {
-      // رفع الصور واستخراج الروابط السليمة من السيرفر
-      const imageUrls = await imageUpload();
-      if (!imageUrls || imageUrls.length === 0) {
-        alert('فشل رفع الصور لـ Vercel Blob. يرجى التحقق من الشبكة وإعادة المحاولة.');
-        setLoading(false);
-        return;
-      }
-
-      // تجهيز البيانات المطابقة لقاعدة بيانات Neon
-      const payload = {
-        brand: formData.brand,
-        model: formData.model,
-        year: parseInt(formData.year) || 0,
-        price: parseFloat(formData.price) || 0,
-        kilometers: parseInt(formData.kilometers) || 0,
-        color: formData.color,
-        description: formData.description,
-        status: 'pending',
-        currency: formData.currency,
-        images: imageUrls.join(','), // حفظ المصفوفة كنص مفصول بفاصلة ليعمل في الواجهة
-      };
-
-      const response = await fetch('/api/cars', {
+      setSubmitting(true);
+      const userEmail = localStorage.getItem('userEmail') || '';
+      
+      const res = await fetch('/api/cars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          brand, model, year: parseInt(year, 10), price: parseFloat(price),
+          kilometers: parseInt(kilometers, 10), currency, color, description,
+          images, user_email: userEmail, status: 'pending' // ترسل للمراجعة حياً في لوحة الإدارة
+        })
       });
 
-      const resData = await response.json();
-      if (resData.success) {
-        alert('تم إرسال إعلانك بنجاح! سيظهر بالموقع فور موافقة الإدارة المعنية.');
-        router.push('/');
+      if (res.ok) {
+        alert('تم إرسال إعلانك بنجاح وجاري مراجعته من قبل الإدارة! 🎉');
+        router.push('/profile');
       } else {
-        alert(resData.message || 'فشل السيرفر في معالجة طلبك وحفظ الإعلان.');
+        alert('فشل السيرفر في حفظ الإعلان الجديد');
       }
-    } catch (error) {
-      console.error(error);
-      alert('خطأ فني غير متوقع في الاتصال بالشبكة.');
+    } catch {
+      alert('خطأ في شبكة الاتصال أثناء نشر الإعلان');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
+  if (checkingAuth) return <div style={styles.loadingContainer}><div style={styles.spinner}></div></div>;
+  if (!isAuth) return null;
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>➕ إضافة إعلان سيارة جديد</h2>
-        <form onSubmit={handleSubmit} style={styles.form}>
-          
-          <div style={styles.formGroup}>
-            <label style={styles.label}>ماركة السيارة 🚗</label>
-            <select name="brand" value={formData.brand} onChange={handleChange} required style={styles.select}>
-              <option value="">اختر الماركة</option>
-              {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </div>
+      <header style={styles.header}>
+        <div style={styles.headerContent}>
+          <h1 style={styles.headerTitle}>➕ إضافة إعلان سيارة جديد</h1>
+          <Link href="/" style={styles.headerLink}>🏠 الرئيسية</Link>
+        </div>
+      </header>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>موديل السيارة (الطراز) 🏷️</label>
-            <input type="text" name="model" value={formData.model} onChange={handleChange} placeholder="مثال: Camry, Land Cruiser" required style={styles.input} />
-          </div>
-          <div style={styles.grid2}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>سنة الصنع (الموديل) 📅</label>
-              <input type="number" name="year" value={formData.year} onChange={handleChange} placeholder="مثال: 2024" required style={styles.input} />
+      <div style={styles.content}>
+        <div style={styles.formCard}>
+          <form onSubmit={handleSubmit Ad}>
+            
+            {/* ماركة السيارة وطرازها */}
+            <div style={styles.formGridTwo}>
+              <div style={styles.inputGroup}>
+                <label style={styles.labelField}>🚗 ماركة السيارة</label>
+                <input type="text" placeholder="مثال: Toyota, Mercedes" value={brand} onChange={(e) => setBrand(e.target.value)} style={styles.inputField} />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.labelField}>🏷️ الطراز (الموديل)</label>
+                <input type="text" placeholder="مثال: Camry, Land Cruiser" value={model} onChange={(e) => setModel(e.target.value)} style={styles.inputField} />
+              </div>
             </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>المسافة المقطوعة (كم) 🛣️</label>
-              <input type="number" name="kilometers" value={formData.kilometers} onChange={handleChange} placeholder="مثال: 50000" required style={styles.input} />
+
+            {/* سنة الصنع والمسافة المقطوعة */}
+            <div style={styles.formGridTwo}>
+              <div style={styles.inputGroup}>
+                <label style={styles.labelField}>📅 سنة الصنع (الموديل)</label>
+                <input type="number" placeholder="مثال: 2024" value={year} onChange={(e) => setYear(e.target.value)} style={styles.inputField} />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.labelField}>📟 المسافة المقطوعة (كم)</label>
+                <input type="number" placeholder="مثال: 50000" value={kilometers} onChange={(e) => setKilometers(e.target.value)} style={styles.inputField} />
+              </div>
             </div>
-          </div>
 
-          <div style={styles.grid2}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>السعر المطلـوب 💰</label>
-              <input type="number" name="price" value={formData.price} onChange={handleChange} placeholder="السعر" required style={styles.input} />
+            {/* السعر المطلوب والعملة */}
+            <div style={styles.formGridTwo}>
+              <div style={styles.inputGroup}>
+                <label style={styles.labelField}>💰 السعر المطلوب</label>
+                <input type="number" placeholder="أدخل السعر هنا" value={price} onChange={(e) => setPrice(e.target.value)} style={styles.inputField} />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.labelField}>💵 العملة</label>
+                <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={styles.selectField}>
+                  <option value="KWD">دينار كويتي</option>
+                  <option value="SAR">ريال سعودي</option>
+                  <option value="AED">درهم إماراتي</option>
+                  <option value="QAR">ريال قطري</option>
+                </select>
+              </div>
             </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>العملة 💵</label>
-              <select name="currency" value={formData.currency} onChange={handleChange} style={styles.select}>
-                {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-              </select>
+
+            {/* اللون والروابط */}
+            <div style={styles.formGridTwo}>
+              <div style={styles.inputGroup}>
+                <label style={styles.labelField}>🎨 اللون الخارجي</label>
+                <input type="text" placeholder="مثال: أبيض, أسود ميتاليك" value={color} onChange={(e) => setColor(e.target.value)} style={styles.inputField} />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.labelField}>🖼️ رابط صورة السيارة</label>
+                <input type="text" placeholder="ضع رابط الصورة المباشر هنا" value={images} onChange={(e) => setImages(e.target.value)} style={styles.inputField} />
+              </div>
             </div>
-          </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>اللون الخارجي للسيارة 🎨</label>
-            <input type="text" name="color" value={formData.color} onChange={handleChange} placeholder="مثال: أبيض, أسود ميتاليك" required style={styles.input} />
-          </div>
+            {/* تفاصيل السيارة ووصفها */}
+            <div style={styles.inputGroupFull}>
+              <label style={styles.labelField}>📝 تفاصيل ووصف إضافي للسيارة</label>
+              <textarea placeholder="اكتب حالة السيارة، المواصفات، الفحص..." value={description} onChange={(e) => setDescription(e.target.value)} style={styles.textareaField}></textarea>
+            </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>تفاصيل ووصف السيارة الإضافي 📝</label>
-            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="اذكر حالة السيارة، المواصفات، الفحص..." rows={4} required style={styles.textarea}></textarea>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>تحميل صور السيارة (يمكنك اختيار عدة صور) 📸</label>
-            <input type="file" accept="image/*" multiple onChange={handleFileChange} style={styles.fileInput} />
-            {errors.images && <p style={styles.errorText}>{errors.images}</p>}
-          </div>
-
-          <button type="submit" disabled={loading} style={loading ? styles.btnDisabled : styles.btn}>
-            {loading ? 'جاري رفع الصور وحفظ البيانات...' : '🚀 نشر الإعلان مجاناً'}
-          </button>
-        </form>
+            <button type="submit" disabled={submitting} style={styles.submitButton}>
+              {submitting ? 'جاري نشر إعلانك الحركي...' : '🚀 انشر الإعلان الآن'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
 }
-
 const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f1f5f9', padding: '30px 15px', fontFamily: 'sans-serif', direction: 'rtl' as const },
-  card: { maxWidth: '650px', margin: '0 auto', backgroundColor: '#ffffff', borderRadius: '16px', padding: '25px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' },
-  title: { textAlign: 'center' as const, fontSize: '20px', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '25px' },
-  form: { display: 'flex', flexDirection: 'column' as const, gap: '18px' },
-  formGroup: { display: 'flex', flexDirection: 'column' as const, gap: '6px' },
-  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
-  label: { fontSize: '13px', fontWeight: 'bold', color: '#475569' },
-  input: { padding: '11px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' },
-  select: { padding: '11px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', backgroundColor: '#ffffff', outline: 'none' },
-  textarea: { padding: '11px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', resize: 'vertical' as const, outline: 'none' },
-  fileInput: { fontSize: '13px', color: '#64748b', marginTop: '5px' },
-  btn: { backgroundColor: '#f59e0b', color: '#1e293b', padding: '14px', borderRadius: '8px', border: 'none', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', marginTop: '10px' },
-  btnDisabled: { backgroundColor: '#cbd5e1', color: '#94a3b8', padding: '14px', borderRadius: '8px', border: 'none', fontSize: '15px', fontWeight: 'bold', cursor: 'not-allowed', marginTop: '10px' },
-  errorText: { color: '#ef4444', fontSize: '12px', margin: '5px 0 0 0', fontWeight: 'bold' }
+  container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
+  header: { background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', color: '#ffffff', padding: '15px 20px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' },
+  headerContent: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '800px', margin: '0 auto' },
+  headerTitle: { fontSize: '18px', fontWeight: 'bold', margin: 0 },
+  headerLink: { fontSize: '13px', color: '#cbd5e1', textDecoration: 'none' },
+  content: { maxWidth: '800px', margin: '0 auto', padding: '20px 12px' },
+  formCard: { backgroundColor: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' },
+  
+  // تنسيق مصفوفة ذكية تتحول تلقائياً لعمود واحد على الهواتف لمنع اللخبطة وخروج الحقول
+  formGridTwo: { display: 'flex', flexWrap: 'wrap' as const, gap: '15px', marginBottom: '15px' },
+  inputGroup: { flex: '1 1 280px', display: 'flex', flexDirection: 'column' as const, minWidth: '250px' },
+  inputGroupFull: { display: 'flex', flexDirection: 'column' as const, marginBottom: '20px' },
+  
+  labelField: { fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' },
+  inputField: { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const },
+  selectField: { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '14px', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' as const },
+  textareaField: { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '14px', outline: 'none', minHeight: '100px', resize: 'vertical' as const, boxSizing: 'border-box' as const },
+  
+  submitButton: { width: '100%', padding: '14px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px', boxShadow: '0 4px 12px rgba(37,99,235,0.2)' },
+  loadingContainer: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
+  spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTop: '3px solid #2563eb', borderRadius: '50%' }
 };
