@@ -21,11 +21,10 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id') || searchParams.get('userId');
-    const emailParam = searchParams.get('email'); // التقاط البريد الإلكتروني المرسل من الواجهة
+    const emailParam = searchParams.get('email');
 
     let users: any[] = [];
 
-    // 1. البحث أولاً بواسطة البريد الإلكتروني الصريح المرسل من صفحة البروفايل
     if (emailParam) {
       users = await sql`
         SELECT id, name, email, phone, subscription_type
@@ -34,7 +33,6 @@ export async function GET(request: Request) {
         LIMIT 1
       `;
     } 
-    // 2. البحث الاحتياطي بواسطة بريد الجلسة
     if ((!users || users.length === 0) && !idParam && sessionEmail) {
       users = await sql`
         SELECT id, name, email, phone, subscription_type
@@ -43,7 +41,6 @@ export async function GET(request: Request) {
         LIMIT 1
       `;
     } 
-    // 3. البحث الاحتياطي بواسطة المعرف الرقمي
     if ((!users || users.length === 0) && idParam) {
       const userId = parseInt(idParam, 10);
       if (!isNaN(userId)) {
@@ -64,11 +61,11 @@ export async function GET(request: Request) {
       }
     }
 
+    // قراءة العنصر الأول المباشر من مصفوفة الاستعلام الفعلي لحل مشكلة الـ undefined
     const currentUser = users[0];
     
-    // تم إصلاح كائن الاستجابة هنا ليرسل الـ id الرقمي الصارم التابع لقاعدة البيانات
     const responseUser = {
-      id: currentUser.id, // إرسال المعرف الرقمي الأصلي حياً لتستقبله الواجهة
+      id: currentUser.id, // التقاط المعرف الرقمي الحقيقي للصف بنجاح
       name: currentUser.name || 'مستعمل سيارتي',
       email: currentUser.email || 'user@auto.com',
       phone: currentUser.phone || '',
