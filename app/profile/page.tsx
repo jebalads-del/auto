@@ -21,30 +21,46 @@ export default function ProfilePage() {
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+
   useEffect(() => {
+    // مؤقت الأمان لمنع أي تعليق في شاشة التحميل
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
     const fetchUserData = async () => {
       try {
-        let activeEmail = 'user@auto.com';
+        let activeEmail = '';
         let activeName = 'مستعمل سيارتي';
 
-        // قراءة مباشرة وآمنة من المتصفح والـ API الخلفي دون استدعاء أي حزم تعطل البناء
+        // 1. التقاط البريد الإلكتروني الحقيقي الحركي الموثق من الذاكرة المحلية لموقعك
+        const savedEmail = localStorage.getItem('userEmail');
+        if (savedEmail) {
+          activeEmail = savedEmail.trim();
+        }
+
+        // 2. محاولة جلب الهاتف والاسم الكامل من الـ API المباشر وقاعدة بيانات Neon
         const userRes = await fetch('/api/user', { cache: 'no-store' });
         if (userRes.ok) {
           const userData = await userRes.json();
           if (userData && userData.success && userData.user) {
             activeName = userData.user.name || userData.user.username || activeName;
-            activeEmail = userData.user.email || activeEmail;
+            if (userData.user.email) activeEmail = userData.user.email;
             const dbPhone = userData.user.phone || '';
-
+            
             setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
             setNewName(activeName);
             setNewPhone(dbPhone);
           }
+        } else if (activeEmail) {
+          // إذا كان مسار الـ API العام يحتاج تعديل، نعتمد على الإيميل الحقيقي المسترجع من صفحة الدخول فوراً
+          setUserInfo({ name: activeName, email: activeEmail, phone: '' });
+          setNewName(activeName);
         }
 
-        // جلب الإعلانات وتصفيتها فوراً بناءً على الإيميل الحقيقي المسترجع
+        // 3. جلب إعلانات السيارات وتصفيتها بناءً على إيميلك الشخصي الفعلي والملتقط بنجاح
         const carsRes = await fetch('/api/cars', { cache: 'no-store' });
-        if (carsRes.ok) {
+        if (carsRes.ok && activeEmail) {
           const carsData = await carsRes.json();
           if (carsData && carsData.success && Array.isArray(carsData.cars)) {
             const filtered = carsData.cars.filter((car: any) => {
@@ -62,8 +78,8 @@ export default function ProfilePage() {
     };
 
     fetchUserData();
+    return () => clearTimeout(safetyTimer);
   }, []);
-
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -95,7 +111,7 @@ export default function ProfilePage() {
         setCurrentPassword('');
         setNewPassword('');
       } else {
-        alert('فشل تغيير كلمة السر');
+        alert('فشل تغيير كلمة السر، تأكد من الكلمة الحالية');
       }
     } catch {
       alert('خطأ في الاتصال بالسيرفر');
@@ -108,10 +124,11 @@ export default function ProfilePage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري عرض ملفك الشخصي بأمان...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح ملفك الشخصي بأمان...</p>
       </div>
     );
   }
+
   return (
     <div style={styles.container}>
       <div style={styles.heroSection}>
@@ -148,7 +165,9 @@ export default function ProfilePage() {
               <label style={styles.labelField}>رقم الهاتف</label>
               <input type="text" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="أدخل رقم هاتفك هنا" style={styles.inputField} />
             </div>
-            <button type="submit" style={styles.saveButton}>حفظ التغييرات الشخصية</button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" style={styles.saveButton}>حفظ التغييرات الشخصية</button>
+            </div>
           </form>
 
           <hr style={{ border: '0', height: '1px', backgroundColor: '#e2e8f0', margin: '20px 0' }} />
@@ -164,7 +183,6 @@ export default function ProfilePage() {
             <button type="submit" style={styles.passwordButton}>تحديث كلمة السر بأمان</button>
           </form>
         </div>
-
         <h2 style={styles.sectionTitle}>🚗 إعلاناتي الحالية ({validCars.length})</h2>
         {validCars.length === 0 ? (
           <div style={styles.noCars}>لم تقم بنشر أي سيارات حتى الآن 🔍</div>
