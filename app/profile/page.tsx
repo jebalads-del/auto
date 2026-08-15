@@ -23,45 +23,52 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
-    // مؤقت الأمان لمنع التعليق
+    // مؤقت الأمان لمنع أي تعليق في شاشة التحميل
     const safetyTimer = setTimeout(() => {
       setLoading(false);
-    }, 2500);
+    }, 2000);
 
     const fetchUserData = async () => {
       try {
         let activeEmail = '';
         let activeName = 'مستعمل سيارتي';
+        let userId = '';
 
-        // 1. ضرب مسار الجلسة الرسمي والفعلي لـ next-auth لسحب الحساب الحالي المسجل
-        const sessionRes = await fetch('/api/auth/session', { cache: 'no-store' });
-        if (sessionRes.ok) {
-          const sessionData = await sessionRes.json();
-          if (sessionData && sessionData.user) {
-            activeEmail = sessionData.user.email || '';
-            activeName = sessionData.user.name || 'مستعمل سيارتي';
+        // 1. قراءة التوثيق الحقيقي المخزن في ذاكرة المتصفح فور تسجيل الدخول الناجح
+        const nextAuthData = localStorage.getItem('nextauth.message') || localStorage.getItem('user');
+        
+        if (nextAuthData) {
+          try {
+            const parsed = JSON.parse(nextAuthData);
+            // استخراج البيانات الحقيقية للمستخدم الحالي حركياً
+            const userObj = parsed.user || parsed;
+            if (userObj.email) activeEmail = userObj.email;
+            if (userObj.name) activeName = userObj.name;
+            if (userObj.id) userId = userObj.id;
+          } catch (e) {
+            console.error('خطأ في تحليل بيانات التوثيق المحلية', e);
           }
         }
 
-        // 2. جلب رقم الهاتف المخزن في قاعدة بيانات Neon التابع للمستخدم
-        const userRes = await fetch('/api/user', { cache: 'no-store' });
-        let dbPhone = '';
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData && userData.success && userData.user) {
-            dbPhone = userData.user.phone || '';
-            if (userData.user.name) activeName = userData.user.name;
-            if (userData.user.email) activeEmail = userData.user.email;
+        // 2. إذا عثرنا على الـ id الحقيقي، نضرب مسار الـ API الذي عثرت عليه بذكاء لجلب تفاصيل الهاتف
+        if (userId) {
+          const userRes = await fetch(`/api/user/${userId}`, { cache: 'no-store' });
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            if (userData && userData.success && userData.user) {
+              if (userData.user.phone) setNewPhone(userData.user.phone);
+              if (userData.user.name) activeName = userData.user.name;
+              if (userData.user.email) activeEmail = userData.user.email;
+            }
           }
         }
 
-        // تثبيت البيانات الحقيقية في الواجهة
+        // تحديث الحقول حياً بالبيانات المسترجعة والواقعية
         if (activeEmail) {
-          setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
+          setUserInfo({ name: activeName, email: activeEmail, phone: newPhone });
           setNewName(activeName);
-          setNewPhone(dbPhone);
 
-          // 3. جلب السيارات وتصفيتها بناءً على الإيميل الحقيقي المسترجع بدقة
+          // 3. جلب السيارات وتصفيتها بناءً على إيميلك الشخصي الحقيقي
           const carsRes = await fetch('/api/cars', { cache: 'no-store' });
           if (carsRes.ok) {
             const carsData = await carsRes.json();
@@ -83,7 +90,7 @@ export default function ProfilePage() {
 
     fetchUserData();
     return () => clearTimeout(safetyTimer);
-  }, []);
+  }, [newPhone]);
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
