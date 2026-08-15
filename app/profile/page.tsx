@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 
 interface Car {
   id?: number; ID?: number; brand?: string; BRAND?: string;
@@ -14,7 +13,6 @@ interface Car {
 }
 
 export default function ProfilePage() {
-  const { data: session, status: sessionStatus } = useSession();
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -25,32 +23,41 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
-    // جدار حماية زمني: يضمن كسر حالة التحميل وفتح الصفحة بعد ثانيتين مهما حدث في الخلفية
-    const fallbackTimer = setTimeout(() => {
+    // مؤقت أمان زمني لكسر التحميل بعد ثانيتين لضمان فتح الواجهة في جميع الظروف
+    const safetyTimer = setTimeout(() => {
       setLoading(false);
     }, 2000);
 
     const fetchUserData = async () => {
       try {
-        // قراءة الاسم والإيميل الحقيقي مباشرة من التوثيق النشط للمتصفح دون اللجوء لـ API معطل
-        const activeEmail = session?.user?.email || '';
-        const activeName = session?.user?.name || 'مستعمل سيارتي';
+        let activeEmail = 'user@auto.com';
+        let activeName = 'مستعمل سيارتي';
 
-        if (activeEmail) {
-          setUserInfo(prev => ({ ...prev, name: activeName, email: activeEmail }));
-          setNewName(activeName);
+        // محاولة مباشرة لقراءة الحساب الفعلي النشط من السيرفر الخلفي
+        const userRes = await fetch('/api/user', { cache: 'no-store' });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData && userData.success && userData.user) {
+            activeName = userData.user.name || userData.user.username || activeName;
+            activeEmail = userData.user.email || activeEmail;
+            const dbPhone = userData.user.phone || '';
 
-          // جلب إعلانات السيارات وتصفيتها بناءً على إيميلك الحقيقي
-          const carsRes = await fetch('/api/cars', { cache: 'no-store' });
-          if (carsRes.ok) {
-            const carsData = await carsRes.json();
-            if (carsData && carsData.success && Array.isArray(carsData.cars)) {
-              const filtered = carsData.cars.filter((car: any) => {
-                const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
-                return carEmail.toLowerCase() === activeEmail.toLowerCase();
-              });
-              setMyCars(filtered);
-            }
+            setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
+            setNewName(activeName);
+            setNewPhone(dbPhone);
+          }
+        }
+
+        // جلب الإعلانات وتصفيتها فوراً بناءً على الإيميل المسترجع
+        const carsRes = await fetch('/api/cars', { cache: 'no-store' });
+        if (carsRes.ok) {
+          const carsData = await carsRes.json();
+          if (carsData && carsData.success && Array.isArray(carsData.cars)) {
+            const filtered = carsData.cars.filter((car: any) => {
+              const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
+              return carEmail.toLowerCase() === activeEmail.toLowerCase();
+            });
+            setMyCars(filtered);
           }
         }
       } catch (error) {
@@ -60,12 +67,9 @@ export default function ProfilePage() {
       }
     };
 
-    if (sessionStatus !== 'loading') {
-      fetchUserData();
-    }
-
-    return () => clearTimeout(fallbackTimer);
-  }, [session, sessionStatus]);
+    fetchUserData();
+    return () => clearTimeout(safetyTimer);
+  }, []);
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -110,7 +114,7 @@ export default function ProfilePage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح الملف الشخصي الحقيقي...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح الملف الشخصي بأمان...</p>
       </div>
     );
   }
