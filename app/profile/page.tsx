@@ -16,7 +16,7 @@ export default function ProfilePage() {
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // إضافة حقل id لحفظ المعرّف الرقمي الحقيقي المسترجع من Neon DB
+  // تهيئة الحقول لتستقبل البيانات الحقيقية من المتصفح مباشرة
   const [userInfo, setUserInfo] = useState({ id: '', name: 'مستعمل سيارتي', email: 'user@auto.com', phone: '' });
   const [newName, setNewName] = useState('مستعمل سيارتي');
   const [newPhone, setNewPhone] = useState('');
@@ -26,45 +26,42 @@ export default function ProfilePage() {
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 1500);
 
-    const fetchUserData = async () => {
+    const loadLocalUserData = async () => {
       try {
-        let activeEmail = '';
-        let activeName = 'مستعمل سيارتي';
+        // قراءة المتغيرات الذهبية الحقيقية المخزنة فور تسجيل دخولك الناجح في الموقع
+        const savedEmail = localStorage.getItem('userEmail') || '';
+        const savedName = localStorage.getItem('userName') || 'مستعمل سيارتي';
+        const savedId = localStorage.getItem('userId') || '';
+
         let dbPhone = '';
-        let dbId = '';
 
-        // 1. التقاط البريد الإلكتروني الحقيقي المخزن محلياً فور تسجيل الدخول
-        const savedEmail = localStorage.getItem('userEmail');
-        if (savedEmail) {
-          activeEmail = savedEmail.trim();
-        }
-
-        // 2. ضرب مسار الـ API الشامل لجلب بيانات الاسم، الهاتف، والـ ID من قاعدة البيانات
-        if (activeEmail) {
-          const userRes = await fetch(`/api/user?email=${encodeURIComponent(activeEmail)}`, { cache: 'no-store' });
+        // جلب رقم الهاتف فقط من قاعدة البيانات باستخدام الـ id الحقيقي والملتقط بنجاح
+        if (savedId) {
+          const userRes = await fetch(`/api/user/${savedId}`, { cache: 'no-store' });
           if (userRes.ok) {
             const userData = await userRes.json();
             if (userData && userData.success && userData.user) {
-              activeName = userData.user.name || userData.user.username || activeName;
               dbPhone = userData.user.phone || '';
-              dbId = userData.user.id || ''; // استخراج الـ ID الحقيقي
             }
           }
+        }
 
-          setUserInfo({ id: dbId, name: activeName, email: activeEmail, phone: dbPhone });
-          setNewName(activeName);
-          setNewPhone(dbPhone);
+        // حقن وتثبيت البيانات الحقيقية 100% داخل حقول الواجهة والشريط الأزرق العلوي
+        setUserInfo({ id: savedId, name: savedName, email: savedEmail, phone: dbPhone });
+        setNewName(savedName);
+        setNewPhone(dbPhone);
 
-          // 3. جلب السيارات وتصفيتها بناءً على إيميلك الشخصي
+        // جلب السيارات وتصفيتها بناءً على بريدك الإلكتروني الفعلي والملتقط
+        if (savedEmail) {
           const carsRes = await fetch('/api/cars', { cache: 'no-store' });
           if (carsRes.ok) {
             const carsData = await carsRes.json();
             if (carsData && carsData.success && Array.isArray(carsData.cars)) {
               const filtered = carsData.cars.filter((car: any) => {
                 const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
-                return carEmail.toLowerCase() === activeEmail.toLowerCase();
+                return carEmail.toLowerCase() === savedEmail.trim().toLowerCase();
               });
               setMyCars(filtered);
             }
@@ -77,30 +74,30 @@ export default function ProfilePage() {
       }
     };
 
-    fetchUserData();
+    loadLocalUserData();
     return () => clearTimeout(safetyTimer);
   }, []);
-  // دالة حفظ التغييرات المعدلة بالكامل لتطابق شروط الـ API الخلفي الفعلي
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    // جدار حماية لمنع إرسال طلبات فارغة في حال عدم التقاط الـ ID
     if (!userInfo.id) {
-      alert('خطأ: لم يتم العثور على معرّف المستخدم الرقمي، الرجاء تحديث الصفحة');
+      alert('خطأ: لم يتم العثور على معرف المستخدم الرقمي المخزن محلياً، الرجاء إعادة تسجيل الدخول لتحديث البيانات');
       return;
     }
     try {
-      // إرسال طلب التحديث باستخدام بروتوكول PUT المتوقع في السيرفر
       const res = await fetch('/api/user/update', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          id: userInfo.id, // إرسال المعرف الرقمي الصارم المطلق للـ SQL
+          id: userInfo.id, // تمرير المعرف الرقمي الحقيقي المستخرج من الـ localStorage للـ SQL
           name: newName, 
           phone: newPhone 
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('تم تحديث بياناتك الشخصية بنجاح في قاعدة البيانات! ✅');
+        alert('تم تحديث بياناتك الشخصية بنجاح واكتمل الحفظ! ✅');
+        localStorage.setItem('userName', newName); // تحديث الاسم محلياً في ذاكرة المتصفح فوراً
         setUserInfo(prev => ({ ...prev, name: newName, phone: newPhone }));
       } else {
         alert(data.message || 'فشل السيرفر في معالجة طلب الحفظ');
@@ -137,7 +134,7 @@ export default function ProfilePage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح الملف الشخصي بأمان...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح ملفك الشخصي بأمان...</p>
       </div>
     );
   }
@@ -148,7 +145,7 @@ export default function ProfilePage() {
         <header style={styles.header}>
           <div style={styles.headerContent}>
             <h1 style={styles.headerTitle}>👤 حسابي الشخصي</h1>
-            <Link href="/" style={styles.headerLink}>🏠 <b>العودة للرئيسية</b></Link>
+            <Link href="/" style={styles.headerLink}>🏠 العودة للرئيسية</Link>
           </div>
         </header>
         <div style={styles.heroBody}>
