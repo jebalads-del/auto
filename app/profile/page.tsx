@@ -23,41 +23,55 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
-    // مؤقت أمان زمني لكسر التحميل بعد ثانيتين لضمان فتح الواجهة في جميع الظروف
+    // مؤقت الأمان لمنع التعليق
     const safetyTimer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 2500);
 
     const fetchUserData = async () => {
       try {
-        let activeEmail = 'user@auto.com';
+        let activeEmail = '';
         let activeName = 'مستعمل سيارتي';
 
-        // محاولة مباشرة لقراءة الحساب الفعلي النشط من السيرفر الخلفي
-        const userRes = await fetch('/api/user', { cache: 'no-store' });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData && userData.success && userData.user) {
-            activeName = userData.user.name || userData.user.username || activeName;
-            activeEmail = userData.user.email || activeEmail;
-            const dbPhone = userData.user.phone || '';
-
-            setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
-            setNewName(activeName);
-            setNewPhone(dbPhone);
+        // 1. ضرب مسار الجلسة الرسمي والفعلي لـ next-auth لسحب الحساب الحالي المسجل
+        const sessionRes = await fetch('/api/auth/session', { cache: 'no-store' });
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+          if (sessionData && sessionData.user) {
+            activeEmail = sessionData.user.email || '';
+            activeName = sessionData.user.name || 'مستعمل سيارتي';
           }
         }
 
-        // جلب الإعلانات وتصفيتها فوراً بناءً على الإيميل المسترجع
-        const carsRes = await fetch('/api/cars', { cache: 'no-store' });
-        if (carsRes.ok) {
-          const carsData = await carsRes.json();
-          if (carsData && carsData.success && Array.isArray(carsData.cars)) {
-            const filtered = carsData.cars.filter((car: any) => {
-              const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
-              return carEmail.toLowerCase() === activeEmail.toLowerCase();
-            });
-            setMyCars(filtered);
+        // 2. جلب رقم الهاتف المخزن في قاعدة بيانات Neon التابع للمستخدم
+        const userRes = await fetch('/api/user', { cache: 'no-store' });
+        let dbPhone = '';
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData && userData.success && userData.user) {
+            dbPhone = userData.user.phone || '';
+            if (userData.user.name) activeName = userData.user.name;
+            if (userData.user.email) activeEmail = userData.user.email;
+          }
+        }
+
+        // تثبيت البيانات الحقيقية في الواجهة
+        if (activeEmail) {
+          setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
+          setNewName(activeName);
+          setNewPhone(dbPhone);
+
+          // 3. جلب السيارات وتصفيتها بناءً على الإيميل الحقيقي المسترجع بدقة
+          const carsRes = await fetch('/api/cars', { cache: 'no-store' });
+          if (carsRes.ok) {
+            const carsData = await carsRes.json();
+            if (carsData && carsData.success && Array.isArray(carsData.cars)) {
+              const filtered = carsData.cars.filter((car: any) => {
+                const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
+                return carEmail.toLowerCase() === activeEmail.toLowerCase();
+              });
+              setMyCars(filtered);
+            }
           }
         }
       } catch (error) {
