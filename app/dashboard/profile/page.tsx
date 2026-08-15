@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react'; // استدعاء حزمة الجلسات الرسمية والمشفرة
 
 interface Car {
   id?: number; ID?: number; brand?: string; BRAND?: string;
@@ -13,8 +12,7 @@ interface Car {
   user_email?: string; USER_EMAIL?: string;
 }
 
-export default function ProfilePage() {
-  const { data: session, status: sessionStatus } = useSession(); // قراءة الجلسة الحية من كوكيز Vercel
+export default function DashboardProfilePage() {
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -25,35 +23,30 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
-    // مؤقت أمان لكسر شاشة التحميل بعد ثانيتين في كل الظروف
-    const safetyTimer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    const fallbackTimer = setTimeout(() => setLoading(false), 2000);
 
-    const loadProfileData = async () => {
-      // التحقق من اكتمال توثيق المستخدم من السيرفر وعثوره على الإيميل الحقيقي
-      if (sessionStatus === 'authenticated' && session?.user) {
-        const activeEmail = session.user.email || '';
-        const activeName = session.user.name || 'مستعمل سيارتي';
+    const fetchUserData = async () => {
+      try {
+        let activeEmail = 'user@auto.com';
+        let activeName = 'مستعمل سيارتي';
 
-        setUserInfo(prev => ({ ...prev, name: activeName, email: activeEmail }));
-        setNewName(activeName);
+        // الاستعلام المباشر من الـ API الحقيقي الموثق للمستخدم المسجل حالياً
+        const userRes = await fetch('/api/user', { cache: 'no-store' });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData && userData.success && userData.user) {
+            activeName = userData.user.name || userData.user.username || activeName;
+            activeEmail = userData.user.email || activeEmail;
+            const dbPhone = userData.user.phone || '';
 
-        try {
-          // جلب الهاتف والبيانات المخصصة المربوطة بـ Neon DB للمستخدم الحالي
-          const userRes = await fetch('/api/user', { cache: 'no-store' });
-          if (userRes.ok) {
-            const userData = await userRes.json();
-            if (userData && userData.success && userData.user) {
-              const dbPhone = userData.user.phone || '';
-              const dbName = userData.user.name || activeName;
-              setUserInfo({ name: dbName, email: activeEmail, phone: dbPhone });
-              setNewName(dbName);
-              setNewPhone(dbPhone);
-            }
+            setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
+            setNewName(activeName);
+            setNewPhone(dbPhone);
           }
+        }
 
-          // جلب السيارات المفلترة بالإيميل الفعلي والمسجل للإعلان
+        // جلب الإعلانات وتصفيتها بناءً على الإيميل الحقيقي
+        if (activeEmail) {
           const carsRes = await fetch('/api/cars', { cache: 'no-store' });
           if (carsRes.ok) {
             const carsData = await carsRes.json();
@@ -65,19 +58,17 @@ export default function ProfilePage() {
               setMyCars(filtered);
             }
           }
-        } catch (error) {
-          console.error(error);
-        } finally {
-          setLoading(false);
         }
-      } else if (sessionStatus === 'unauthenticated') {
-        setLoading(false); // إذا لم يكن مسجلاً، يفتح الحساب بالقيم الافتراضية لحمايته
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadProfileData();
-    return () => clearTimeout(safetyTimer);
-  }, [session, sessionStatus]);
+    fetchUserData();
+    return () => clearTimeout(fallbackTimer);
+  }, []);
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -122,7 +113,7 @@ export default function ProfilePage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح الملف الشخصي بأمان...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح الملف الشخصي الآمن...</p>
       </div>
     );
   }
@@ -133,7 +124,7 @@ export default function ProfilePage() {
         <header style={styles.header}>
           <div style={styles.headerContent}>
             <h1 style={styles.headerTitle}>👤 حسابي الشخصي</h1>
-            <Link href="/" style={styles.headerLink}>🏠 العودة للرئيسية</Link>
+            <Link href="/dashboard" style={styles.headerLink}>📊 لوحة التحكم</Link>
           </div>
         </header>
         <div style={styles.heroBody}>
