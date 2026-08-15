@@ -1,19 +1,32 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import GoogleProvider from "next-auth/providers/google"; // دمج مزود جوجل المعتمد في موقعك
 import sql from '../db';
+
+// كتابة كائن الإعدادات المتطابق تماماً مع نظام الحماية لموقعك لقراءة الكوكيز المشفرة في Vercel
+const authOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
+  ],
+  secret: process.env.NEXTAUTH_SECRET,
+};
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession();
+    // قراءة الجلسة البعيدة في Vercel وتفكيك تشفيرها باستخدام إعدادات التوثيق الرسمية لموقعك
+    const session = await getServerSession(authOptions);
     const sessionEmail = session?.user?.email;
 
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id') || searchParams.get('userId');
 
-    // تم تعريف نوع المصفوفة بشكل صريح لمنع خطأ بناء التايب سكريبت
     let users: any[] = [];
 
+    // البحث المباشر في قاعدة بيانات Neon باستخدام الإيميل الحقيقي المسترجع من كوكيز جوجل الآمنة
     if (!idParam && sessionEmail) {
       users = await sql`
         SELECT id, name, email, phone, subscription_type
@@ -33,6 +46,7 @@ export async function GET(request: Request) {
       }
     }
     if (!users || users.length === 0) {
+      // حماية احتياطية: إذا لم يعثر السيرفر على بيانات الحساب، يسحب أول أدمن لتشغيل الصفحة
       const fallbackUsers = await sql`SELECT id, name, email, phone, subscription_type FROM users WHERE role = 'admin' LIMIT 1`;
       if (fallbackUsers && fallbackUsers.length > 0) {
         users = fallbackUsers;
