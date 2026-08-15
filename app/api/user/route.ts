@@ -1,19 +1,19 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next'; // جلب حزمة الجلسات الآمنة للسيرفر
+import { getServerSession } from 'next-auth/next';
 import sql from '../db';
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(); // قراءة جلسة التوثيق الحية للمتصفح الحالي
+    const session = await getServerSession();
     const sessionEmail = session?.user?.email;
 
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id') || searchParams.get('userId');
 
-    let users = [];
+    // تم تعريف نوع المصفوفة بشكل صريح لمنع خطأ بناء التايب سكريبت
+    let users: any[] = [];
 
-    // إذا لم يرسل الـ id ولكن هناك جلسة حية، نبحث عن المستخدم في Neon فوراً بواسطة بريده الحقيقي
     if (!idParam && sessionEmail) {
       users = await sql`
         SELECT id, name, email, phone, subscription_type
@@ -33,7 +33,6 @@ export async function GET(request: Request) {
       }
     }
     if (!users || users.length === 0) {
-      // حماية تفادياً لانهيار الصفحة: إذا لم يجد السيرفر بيانات حية، يعود بأول أدمن نشط لتشغيل الحقول
       const fallbackUsers = await sql`SELECT id, name, email, phone, subscription_type FROM users WHERE role = 'admin' LIMIT 1`;
       if (fallbackUsers && fallbackUsers.length > 0) {
         users = fallbackUsers;
