@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react'; // استدعاء حزمة الجلسات الرسمية والمشفرة
 
 interface Car {
   id?: number; ID?: number; brand?: string; BRAND?: string;
@@ -13,6 +14,7 @@ interface Car {
 }
 
 export default function ProfilePage() {
+  const { data: session, status: sessionStatus } = useSession(); // قراءة الجلسة الحية من كوكيز Vercel
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -23,52 +25,35 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
-    // مؤقت الأمان لمنع أي تعليق في شاشة التحميل
+    // مؤقت أمان لكسر شاشة التحميل بعد ثانيتين في كل الظروف
     const safetyTimer = setTimeout(() => {
       setLoading(false);
     }, 2000);
 
-    const fetchUserData = async () => {
-      try {
-        let activeEmail = '';
-        let activeName = 'مستعمل سيارتي';
-        let userId = '';
+    const loadProfileData = async () => {
+      // التحقق من اكتمال توثيق المستخدم من السيرفر وعثوره على الإيميل الحقيقي
+      if (sessionStatus === 'authenticated' && session?.user) {
+        const activeEmail = session.user.email || '';
+        const activeName = session.user.name || 'مستعمل سيارتي';
 
-        // 1. قراءة التوثيق الحقيقي المخزن في ذاكرة المتصفح فور تسجيل الدخول الناجح
-        const nextAuthData = localStorage.getItem('nextauth.message') || localStorage.getItem('user');
-        
-        if (nextAuthData) {
-          try {
-            const parsed = JSON.parse(nextAuthData);
-            // استخراج البيانات الحقيقية للمستخدم الحالي حركياً
-            const userObj = parsed.user || parsed;
-            if (userObj.email) activeEmail = userObj.email;
-            if (userObj.name) activeName = userObj.name;
-            if (userObj.id) userId = userObj.id;
-          } catch (e) {
-            console.error('خطأ في تحليل بيانات التوثيق المحلية', e);
-          }
-        }
+        setUserInfo(prev => ({ ...prev, name: activeName, email: activeEmail }));
+        setNewName(activeName);
 
-        // 2. إذا عثرنا على الـ id الحقيقي، نضرب مسار الـ API الذي عثرت عليه بذكاء لجلب تفاصيل الهاتف
-        if (userId) {
-          const userRes = await fetch(`/api/user/${userId}`, { cache: 'no-store' });
+        try {
+          // جلب الهاتف والبيانات المخصصة المربوطة بـ Neon DB للمستخدم الحالي
+          const userRes = await fetch('/api/user', { cache: 'no-store' });
           if (userRes.ok) {
             const userData = await userRes.json();
             if (userData && userData.success && userData.user) {
-              if (userData.user.phone) setNewPhone(userData.user.phone);
-              if (userData.user.name) activeName = userData.user.name;
-              if (userData.user.email) activeEmail = userData.user.email;
+              const dbPhone = userData.user.phone || '';
+              const dbName = userData.user.name || activeName;
+              setUserInfo({ name: dbName, email: activeEmail, phone: dbPhone });
+              setNewName(dbName);
+              setNewPhone(dbPhone);
             }
           }
-        }
 
-        // تحديث الحقول حياً بالبيانات المسترجعة والواقعية
-        if (activeEmail) {
-          setUserInfo({ name: activeName, email: activeEmail, phone: newPhone });
-          setNewName(activeName);
-
-          // 3. جلب السيارات وتصفيتها بناءً على إيميلك الشخصي الحقيقي
+          // جلب السيارات المفلترة بالإيميل الفعلي والمسجل للإعلان
           const carsRes = await fetch('/api/cars', { cache: 'no-store' });
           if (carsRes.ok) {
             const carsData = await carsRes.json();
@@ -80,17 +65,19 @@ export default function ProfilePage() {
               setMyCars(filtered);
             }
           }
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+      } else if (sessionStatus === 'unauthenticated') {
+        setLoading(false); // إذا لم يكن مسجلاً، يفتح الحساب بالقيم الافتراضية لحمايته
       }
     };
 
-    fetchUserData();
+    loadProfileData();
     return () => clearTimeout(safetyTimer);
-  }, [newPhone]);
+  }, [session, sessionStatus]);
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
