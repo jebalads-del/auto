@@ -16,7 +16,8 @@ export default function ProfilePage() {
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [userInfo, setUserInfo] = useState({ name: 'مستعمل سيارتي', email: 'user@auto.com', phone: '' });
+  // إضافة حقل id لحفظ المعرّف الرقمي الحقيقي المسترجع من Neon DB
+  const [userInfo, setUserInfo] = useState({ id: '', name: 'مستعمل سيارتي', email: 'user@auto.com', phone: '' });
   const [newName, setNewName] = useState('مستعمل سيارتي');
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -32,14 +33,15 @@ export default function ProfilePage() {
         let activeEmail = '';
         let activeName = 'مستعمل سيارتي';
         let dbPhone = '';
+        let dbId = '';
 
-        // 1. التقاط البريد الإلكتروني الحقيقي من الذاكرة المحلية الحية لموقعك
+        // 1. التقاط البريد الإلكتروني الحقيقي المخزن محلياً فور تسجيل الدخول
         const savedEmail = localStorage.getItem('userEmail');
         if (savedEmail) {
           activeEmail = savedEmail.trim();
         }
 
-        // 2. ضرب مسار الـ API المطور لجلب الاسم والهاتف الفعلي من Neon DB بواسطة البريد
+        // 2. ضرب مسار الـ API الشامل لجلب بيانات الاسم، الهاتف، والـ ID من قاعدة البيانات
         if (activeEmail) {
           const userRes = await fetch(`/api/user?email=${encodeURIComponent(activeEmail)}`, { cache: 'no-store' });
           if (userRes.ok) {
@@ -47,14 +49,15 @@ export default function ProfilePage() {
             if (userData && userData.success && userData.user) {
               activeName = userData.user.name || userData.user.username || activeName;
               dbPhone = userData.user.phone || '';
+              dbId = userData.user.id || ''; // استخراج الـ ID الحقيقي
             }
           }
 
-          setUserInfo({ name: activeName, email: activeEmail, phone: dbPhone });
+          setUserInfo({ id: dbId, name: activeName, email: activeEmail, phone: dbPhone });
           setNewName(activeName);
           setNewPhone(dbPhone);
 
-          // 3. جلب السيارات وتصفيتها فوراً وبدقة تامة بناءً على إيميلك الفعلي
+          // 3. جلب السيارات وتصفيتها بناءً على إيميلك الشخصي
           const carsRes = await fetch('/api/cars', { cache: 'no-store' });
           if (carsRes.ok) {
             const carsData = await carsRes.json();
@@ -77,27 +80,33 @@ export default function ProfilePage() {
     fetchUserData();
     return () => clearTimeout(safetyTimer);
   }, []);
-  // دالة تحديث البيانات الشخصية بعد ربط متغير البريد لإصلاح عدم الاستجابة
+  // دالة حفظ التغييرات المعدلة بالكامل لتطابق شروط الـ API الخلفي الفعلي
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userInfo.id) {
+      alert('خطأ: لم يتم العثور على معرّف المستخدم الرقمي، الرجاء تحديث الصفحة');
+      return;
+    }
     try {
+      // إرسال طلب التحديث باستخدام بروتوكول PUT المتوقع في السيرفر
       const res = await fetch('/api/user/update', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          email: userInfo.email, // إرسال البريد الإلكتروني ليعرف السيرفر أي سجل يحدّث
+          id: userInfo.id, // إرسال المعرف الرقمي الصارم المطلق للـ SQL
           name: newName, 
           phone: newPhone 
         })
       });
-      if (res.ok) {
-        alert('تم تحديث البيانات الشخصية بنجاح في قاعدة البيانات! ✅');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('تم تحديث بياناتك الشخصية بنجاح في قاعدة البيانات! ✅');
         setUserInfo(prev => ({ ...prev, name: newName, phone: newPhone }));
       } else {
-        alert('فشل السيرفر في معالجة طلب الحفظ');
+        alert(data.message || 'فشل السيرفر في معالجة طلب الحفظ');
       }
     } catch {
-      alert('خطأ في شبكة الاتصال أثناء تحديث البيانات');
+      alert('خطأ في شبكة الاتصال أثناء التحديث');
     }
   };
 
@@ -128,7 +137,7 @@ export default function ProfilePage() {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح ملفك الشخصي بأمان...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح الملف الشخصي بأمان...</p>
       </div>
     );
   }
@@ -139,7 +148,7 @@ export default function ProfilePage() {
         <header style={styles.header}>
           <div style={styles.headerContent}>
             <h1 style={styles.headerTitle}>👤 حسابي الشخصي</h1>
-            <Link href="/" style={styles.headerLink}>🏠 العودة للرئيسية</Link>
+            <Link href="/" style={styles.headerLink}>🏠 <b>العودة للرئيسية</b></Link>
           </div>
         </header>
         <div style={styles.heroBody}>
