@@ -2,13 +2,12 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import sql from '../db';
 
-// 1. دالة الـ GET المسؤولة عن جلب السيارات وعرضها في الصالة الرئيسية بالموقع
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id');
 
-    // إذا تم طلب سيارة محددة بواسطة الـ id الخاص بها
+    // جلب سيارة محددة بواسطة الـ id الخاص بها وعرض مصفوفتها كاملة للواجهة الفاخرة
     if (idParam) {
       const carId = parseInt(idParam, 10);
       if (isNaN(carId)) {
@@ -26,10 +25,11 @@ export async function GET(request: Request) {
         return NextResponse.json({ success: false, message: 'السيارة غير موجودة' }, { status: 404 });
       }
 
+      // إرجاع العنصر الأول مباشرة لحل مشاكل الـ undefined والـ 404 في صفحة التفاصيل
       return NextResponse.json({ success: true, car: cars[0] });
     }
 
-    // الاستعلام المباشر والأكيد من Neon DB لجلب كافة السيارات التي حالتها approved (مقبولة)
+    // جلب كافة السيارات المعتمدة والمقبولة من الأدمن لعرضها حياً في صالة العرض
     const approvedCars = await sql`
       SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency
       FROM cars
@@ -44,7 +44,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-// 2. دالة الـ POST المسؤولة عن استقبال إعلانات السيارات الجديدة وحفظها في قاعدة البيانات
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -54,21 +53,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'البيانات الأساسية مطلوبة' }, { status: 400 });
     }
 
-    // إدخال السيارة الجديدة تلقائياً في قاعدة البيانات وتثبيت حالتها pending بانتظار الأدمن
+    // إدخال الإعلان الجديد حياً ومباشراً في قاعدة البيانات وحفظ نصوص الصور المرفوعة بأمان كامل وبحالة pending بانتظار الأدمن
     const newCar = await sql`
       INSERT INTO cars (brand, model, year, price, kilometers, currency, color, description, images, user_email, status)
       VALUES (${brand}, ${model}, ${year}, ${price}, ${kilometers || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${images || ''}, ${user_email || ''}, 'pending')
       RETURNING id
     `;
 
-    return NextResponse.json({ success: true, message: 'تم إرسال الإعلان بنجاح وهو قيد المراجعة', carId: newCar[0].id });
+    return NextResponse.json({ success: true, message: 'تم إرسال الإعلان بنجاح وجاري مراجعته', carId: newCar[0].id });
 
   } catch (error: any) {
     console.error('POST Cars API Error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-// 3. دالة الـ PUT المسؤولة عن استقبال أوامر الموافقة والتفعيل من لوحة تحكم الأدمن
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
@@ -78,7 +76,6 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, message: 'المعرف والحالة مطلوبان' }, { status: 400 });
     }
 
-    // تحديث حالة السيارة حياً في قاعدة بيانات Neon الفعالة
     const updated = await sql`
       UPDATE cars
       SET status = ${status}
