@@ -28,7 +28,6 @@ export default function NewCarPage() {
   const [color, setColor] = useState('');
   const [description, setDescription] = useState('');
   
-  // مصفوفة لحفظ نصوص الصور المضغوطة والخفيفة حركياً
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -43,10 +42,10 @@ export default function NewCarPage() {
     setCheckingAuth(false);
   }, [router]);
 
-  // دالة برمجية ذكية لرفع وضغط الصور حياً لتقليل حجمها قبل إرسالها للسيرفر
+  // معالج الضغط الفائق: يقلل أبعاد وجودة الصور لدرجة تضمن عبورها حواجز حماية Vercel بأمان كامل
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files).slice(0, 5); // حد أقصى 5 صور لتسهيل الطلب
+      const filesArray = Array.from(e.target.files).slice(0, 4); // تحديد 4 صور كحد أقصى لضمان خفة الطلب
       const base64Promises = filesArray.map(file => {
         return new Promise<string>((resolve) => {
           const reader = new FileReader();
@@ -54,15 +53,15 @@ export default function NewCarPage() {
             const img = new Image();
             img.src = reader.result as string;
             img.onload = () => {
-              // استخدام canvas لضغط الصورة وتصغير حجم البيانات بنسبة 70% لحماية السيرفر
               const canvas = document.createElement('canvas');
               const ctx = canvas.getContext('2d');
-              const max_width = 600; // تصغير الأبعاد لتكون خفيفة وسريعة التحميل
+              // أبعاد اقتصادية مصغرة (320 بكسل) تجعل كود النص قصير وخفيف للغاية على السيرفر
+              const max_width = 320; 
               const scale = max_width / img.width;
               canvas.width = max_width;
               canvas.height = img.height * scale;
               ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-              resolve(canvas.toDataURL('image/jpeg', 0.5)); // جودة مضغوطة خفيفة وممتازة للواجهة
+              resolve(canvas.toDataURL('image/jpeg', 0.4)); // ضغط الجودة لـ 40% لتمرير النص فوراً بنجاح
             };
           };
           reader.readAsDataURL(file);
@@ -97,10 +96,10 @@ export default function NewCarPage() {
       });
 
       if (res.ok) {
-        alert('تم إرسال إعلانك بنجاح ومعرض الصور الحية الخفيفة! 🎉 وجاري مراجعته الآن.');
+        alert('تم إرسال إعلانك بنجاح ومعرض الصور الحية الفائقة الخفة! 🎉');
         router.push('/profile');
       } else {
-        alert('فشل السيرفر في حفظ الإعلان الجديد، حجم الصور لا يزال كبيراً');
+        alert('فشل السيرفر في معالجة الصور، الرجاء تقليل عدد الصور المرفوعة');
       }
     } catch {
       alert('خطأ في شبكة الاتصال أثناء نشر الإعلان');
@@ -163,24 +162,23 @@ export default function NewCarPage() {
                   <option value="KWD">دينار كويتي</option>
                   <option value="SAR">ريال سعودي</option>
                   <option value="AED">درهم إماراتي</option>
-                  <option value="QAR">ريال قطر</option>
+                  <option value="QAR">ريال قطري</option>
                 </select>
               </div>
             </div>
 
-            {/* تم دمج زر التحميل الحقيقي الأنيق من ألبوم الهاتف هنا بنجاح */}
             <div style={styles.formGridTwo}>
               <div style={styles.inputGroup}>
                 <label style={styles.labelField}>🎨 اللون الخارجي</label>
                 <input type="text" placeholder="مثال: أبيض, أسود ميتاليك" value={color} onChange={(e) => setColor(e.target.value)} style={styles.inputField} />
               </div>
               <div style={styles.inputGroup}>
-                <label style={styles.labelField}>📸 تحميل صور السيارة الحية (حتى 5 صور)</label>
-                <label htmlFor="file-upload" style={styles.fileUploadLabel}>📁 اضغط هنا لاختيار الصور من ألبوم الهاتف</label>
+                <label style={styles.labelField}>📸 تحميل صور السيارة من الألبوم (حتى 4 صور)</label>
+                <label htmlFor="file-upload" style={styles.fileUploadLabel}>📁 اختر صور السيارة الحية</label>
                 <input id="file-upload" type="file" multiple accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                 {uploadedImages.length > 0 && (
                   <div style={{ fontSize: '12px', color: '#10b981', marginTop: '6px', fontWeight: 'bold' }}>
-                    ✅ تم ضغط وتجهيز ({uploadedImages.length}) صور للنشر الفوري بأمان
+                    ✅ تم ضغط وتجهيز ({uploadedImages.length}) صور فائقة الخفة للنشر
                   </div>
                 )}
               </div>
@@ -192,7 +190,7 @@ export default function NewCarPage() {
             </div>
 
             <button type="submit" disabled={submitting} style={styles.submitButton}>
-              {submitting ? 'جاري ضغط الصور ونشر الإعلان الحركي...' : '🚀 انشر الإعلان بمعرض الصور الآن'}
+              {submitting ? 'جاري العبور ونشر الإعلان الحركي الخفيف...' : '🚀 انشر الإعلان بمعرض الصور الآن'}
             </button>
           </form>
         </div>
