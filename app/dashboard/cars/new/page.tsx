@@ -28,7 +28,8 @@ export default function NewCarPage() {
   const [color, setColor] = useState('');
   const [description, setDescription] = useState('');
   
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  // مصفوفة لحفظ الملفات المرفوعة الحقيقية مباشرة دون تشفير معقد
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -42,35 +43,10 @@ export default function NewCarPage() {
     setCheckingAuth(false);
   }, [router]);
 
-  // معالج الضغط الفائق: يقلل أبعاد وجودة الصور لدرجة تضمن عبورها حواجز حماية Vercel بأمان كامل
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files).slice(0, 4); // تحديد 4 صور كحد أقصى لضمان خفة الطلب
-      const base64Promises = filesArray.map(file => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const img = new Image();
-            img.src = reader.result as string;
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
-              // أبعاد اقتصادية مصغرة (320 بكسل) تجعل كود النص قصير وخفيف للغاية على السيرفر
-              const max_width = 320; 
-              const scale = max_width / img.width;
-              canvas.width = max_width;
-              canvas.height = img.height * scale;
-              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-              resolve(canvas.toDataURL('image/jpeg', 0.4)); // ضغط الجودة لـ 40% لتمرير النص فوراً بنجاح
-            };
-          };
-          reader.readAsDataURL(file);
-        });
-      });
-
-      Promise.all(base64Promises).then(results => {
-        setUploadedImages(results);
-      });
+      // قبول حتى 5 ملفات صور حقيقية لتسهيل تعبئة الطلب
+      setSelectedFiles(Array.from(e.target.files).slice(0, 5));
     }
   };
 
@@ -83,25 +59,38 @@ export default function NewCarPage() {
     try {
       setSubmitting(true);
       const userEmail = localStorage.getItem('userEmail') || '';
-      const finalImagesString = uploadedImages.join(',');
+
+      // استخدام FormData لرفع البيانات والصور الحية كملفات خفيفة تتقبلها بوابات Vercel فوراً
+      const formData = new FormData();
+      formData.append('brand', brand);
+      formData.append('model', model);
+      formData.append('year', year);
+      formData.append('price', price);
+      formData.append('kilometers', kilometers);
+      formData.append('currency', currency);
+      formData.append('color', color);
+      formData.append('description', description);
+      formData.append('user_email', userEmail);
+      formData.append('status', 'pending');
+
+      // إرفاق الملفات الحية داخل الطلب المباشر
+      selectedFiles.forEach((file) => {
+        formData.append('files', file);
+      });
 
       const res = await fetch('/api/cars', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          brand, model, year: parseInt(year, 10), price: parseFloat(price),
-          kilometers: parseInt(kilometers, 10), currency, color, description,
-          images: finalImagesString, user_email: userEmail, status: 'pending'
-        })
+        body: formData // إرسال خفيف جداً يمر في لمح البصر للسيرفر
       });
 
       if (res.ok) {
-        alert('تم إرسال إعلانك بنجاح ومعرض الصور الحية الفائقة الخفة! 🎉');
+        alert('🎉 تم نشر إعلانك بمعرض صورك الحية بنجاح باهر وجاري مراجعته الآن!');
         router.push('/profile');
       } else {
-        alert('فشل السيرفر في معالجة الصور، الرجاء تقليل عدد الصور المرفوعة');
+        alert('عذراً، فشل السيرفر في حفظ الإعلان الجديد');
       }
-    } catch {
+    } catch (error) {
+      console.error(error);
       alert('خطأ في شبكة الاتصال أثناء نشر الإعلان');
     } finally {
       setSubmitting(false);
@@ -173,12 +162,12 @@ export default function NewCarPage() {
                 <input type="text" placeholder="مثال: أبيض, أسود ميتاليك" value={color} onChange={(e) => setColor(e.target.value)} style={styles.inputField} />
               </div>
               <div style={styles.inputGroup}>
-                <label style={styles.labelField}>📸 تحميل صور السيارة من الألبوم (حتى 4 صور)</label>
-                <label htmlFor="file-upload" style={styles.fileUploadLabel}>📁 اختر صور السيارة الحية</label>
-                <input id="file-upload" type="file" multiple accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
-                {uploadedImages.length > 0 && (
-                  <div style={{ fontSize: '12px', color: '#10b981', marginTop: '6px', fontWeight: 'bold' }}>
-                    ✅ تم ضغط وتجهيز ({uploadedImages.length}) صور فائقة الخفة للنشر
+                <label style={styles.labelField}>📸 تحميل صور السيارة من الألبوم (حتى 5 صور)</label>
+                <label htmlFor="file-upload" style={styles.fileUploadLabel}>📁 اضغط هنا لاختيار الصور الحية</label>
+                <input id="file-upload" type="file" multiple accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                {selectedFiles.length > 0 && (
+                  <div style={{ fontSize: '12px', color: '#2563eb', marginTop: '6px', fontWeight: 'bold' }}>
+                    📁 تم تجهيز ({selectedFiles.length}) ملفات صور حقيقية للنشر المباشر
                   </div>
                 )}
               </div>
@@ -190,7 +179,7 @@ export default function NewCarPage() {
             </div>
 
             <button type="submit" disabled={submitting} style={styles.submitButton}>
-              {submitting ? 'جاري العبور ونشر الإعلان الحركي الخفيف...' : '🚀 انشر الإعلان بمعرض الصور الآن'}
+              {submitting ? 'جاري العبور السريع ونشر الإعلان...' : '🚀 انشر الإعلان بمعرض الصور الآن'}
             </button>
           </form>
         </div>
@@ -214,8 +203,8 @@ const styles = {
   selectField: { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '14px', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' as const },
   disabledSelectField: { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#edf2f7', color: '#a0aec0', fontSize: '14px', cursor: 'not-allowed', boxSizing: 'border-box' as const },
   textareaField: { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '14px', outline: 'none', minHeight: '100px', resize: 'vertical' as const, boxSizing: 'border-box' as const },
-  fileUploadLabel: { display: 'block', padding: '12px', backgroundColor: '#f1f5f9', color: '#475569', border: '2px dashed #10b981', borderRadius: '10px', textAlign: 'center' as const, fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'background-color 0.2s' },
-  submitButton: { width: '100%', padding: '14px', backgroundColor: '#10b981', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px', boxShadow: '0 4px 12px rgba(16,185,129,0.2)' },
+  fileUploadLabel: { display: 'block', padding: '12px', backgroundColor: '#e2e8f0', color: '#2563eb', border: '2px dashed #2563eb', borderRadius: '10px', textAlign: 'center' as const, fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
+  submitButton: { width: '100%', padding: '14px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px', boxShadow: '0 4px 12px rgba(37,99,235,0.2)' },
   loadingContainer: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
-  spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTop: '3px solid #10b981', borderRadius: '50%' }
+  spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTop: '3px solid #2563eb', borderRadius: '50%' }
 };
