@@ -38,11 +38,9 @@ export default function HomePage() {
   const filteredCars = validCars.filter(car => {
     if (!car) return false;
     const carModel = car.model || car.MODEL || '';
-    if (!carModel) return false;
     if (!selectedModel) return true;
     return carModel.toLowerCase() === selectedModel.toLowerCase();
   });
-
   const uniqueModels = validCars.reduce((acc: { brand: string; model: string }[], current) => {
     if (!current) return acc;
     const carModel = current.model || current.MODEL || '';
@@ -68,7 +66,7 @@ export default function HomePage() {
         <header style={styles.header}>
           <div style={styles.headerContent}>
             <h1 style={styles.headerTitle}> 🚗 سيارتي</h1>
-            <Link href="/login" style={styles.headerLink}>👤 تسجيل الدخول</Link>
+            <Link href="/profile" style={styles.headerLink}>👤 ملفي الشخصي</Link>
           </div>
         </header>
         <div style={styles.heroBody}>
@@ -111,34 +109,31 @@ export default function HomePage() {
               const carModel = car.model || car.MODEL || '';
               const carPrice = car.price || car.PRICE || 0;
               const carYear = car.year || car.YEAR || '';
-              const carCurrency = car.currency || car.CURRENCY || '';
-              const carImagesRaw = car.images || car.IMAGES;
+              const carCurrency = car.currency || car.CURRENCY || 'KWD';
+              const carImagesRaw = car.images || car.IMAGES || '';
 
+              // فك تشفير مصفوفة الصور المرفوعة والتقاط الصورة الأولى حياً
               let displaySrc = '';
               if (carImagesRaw) {
-                if (Array.isArray(carImagesRaw) && carImagesRaw.length > 0) {
-                  const firstArrItem = carImagesRaw[0];
-                  if (typeof firstArrItem === 'string') displaySrc = firstArrItem.trim();
-                } else if (typeof carImagesRaw === 'string') {
+                if (typeof carImagesRaw === 'string') {
                   const cleanedStr = carImagesRaw.trim();
                   if (cleanedStr.includes(',')) {
-                    const splitUrls = cleanedStr.split(',');
-                    if (splitUrls.length > 0 && splitUrls[0]) displaySrc = splitUrls[0].trim();
+                    displaySrc = cleanedStr.split(',')[0].trim();
                   } else {
                     displaySrc = cleanedStr;
                   }
                 }
               }
 
-              const hasValidImage = displaySrc && (displaySrc.startsWith('http') || displaySrc.startsWith('/'));
+              const hasValidImage = displaySrc && (displaySrc.startsWith('http') || displaySrc.startsWith('/') || displaySrc.startsWith('data:image'));
 
               return (
                 <div key={carId} style={styles.card}>
                   <div style={styles.gallery}>
                     {hasValidImage ? (
-                      <img src={displaySrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
+                      <img src={displaySrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px 8px 0 0' }} />
                     ) : (
-                      <div style={styles.noImage}>🚗 لا توجد صورة</div>
+                      <div style={styles.noImage}>🚗 صورة السيارة حية</div>
                     )}
                   </div>
                   <div style={styles.cardBody}>
