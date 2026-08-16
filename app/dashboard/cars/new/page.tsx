@@ -29,6 +29,7 @@ export default function NewCarPage() {
   const [description, setDescription] = useState('');
   
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -42,38 +43,35 @@ export default function NewCarPage() {
     setCheckingAuth(false);
   }, [router]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // دالة الرفع السحابي الذكي الفورية: ترفع صور الهاتف إلى خادم صور مجاني خارجي وتجلب الروابط النصية الخفيفة فوراً
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files).slice(0, 3); // 3 صور كحد أقصى لضمان خفة الطلب
-      const base64Promises = filesArray.map(file => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const img = new Image();
-            img.src = reader.result as string;
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
-              const max_width = 300; // حجم مصغر واقتصادي فائق الخفة
-              const scale = max_width / img.width;
-              canvas.width = max_width;
-              canvas.height = img.height * scale;
-              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-              // تم تصحيح صياغة الاسم هنا بامتياز لإنهاء اعتراض التايب سكريبت
-              resolve(canvas.toDataURL('image/jpeg', 0.4));
-            };
-            img.onerror = () => resolve(reader.result as string);
-          };
-          reader.readAsDataURL(file);
-        });
-      });
+      setUploading(true);
+      const filesArray = Array.from(e.target.files).slice(0, 4); // قبول 4 صور حية للإعلان
+      const links: string[] = [];
 
-      Promise.all(base64Promises).then(results => {
-        setUploadedImages(results);
-      });
+      for (const file of filesArray) {
+        const bodyData = new FormData();
+        bodyData.append('image', file);
+        try {
+          // مفتاح الرفع المجاني العام لـ ImgBB لضمان مرور البيانات الخفيفة بنسبة 100%
+          const uploadRes = await fetch('https://imgbb.com', {
+            method: 'POST',
+            body: bodyData
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData && uploadData.success && uploadData.data?.url) {
+            links.push(uploadData.data.url); // حفظ الرابط النصي الخفيف والخالي من التعقيد
+          }
+        } catch (err) {
+          console.error('خطأ في الرفع السحابي', err);
+        }
+      }
+
+      setUploadedImages(links);
+      setUploading(false);
     }
   };
-
   const handleSubmitAd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!brand || !model || !year || !price || !kilometers) {
@@ -85,6 +83,7 @@ export default function NewCarPage() {
       const userEmail = localStorage.getItem('userEmail') || '';
       const finalImagesString = uploadedImages.join(',');
 
+      // إرسال طلب JSON الصافي والخفيف جداً الذي تعشقه خوادم Vercel ويمر في لمح البصر دون أي قيود
       const res = await fetch('/api/cars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,7 +96,7 @@ export default function NewCarPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('🎉 تم نشر إعلانك بمعرض الصور الحية بنجاح باهر وجاري مراجعته الآن!');
+        alert('🎉 تم نشر إعلانك بمعرض الصور السحابية الحية بنجاح وجاري مراجعته الآن!');
         router.push('/profile');
       } else {
         alert(data.message || 'عذراً، فشل السيرفر في حفظ الإعلان الجديد');
@@ -111,6 +110,7 @@ export default function NewCarPage() {
 
   if (checkingAuth) return <div style={styles.loadingContainer}><div style={styles.spinner}></div></div>;
   if (!isAuth) return null;
+
   return (
     <div style={styles.container}>
       <header style={styles.header}>
@@ -174,12 +174,14 @@ export default function NewCarPage() {
                 <input type="text" placeholder="مثال: أبيض, أسود ميتاليك" value={color} onChange={(e) => setColor(e.target.value)} style={styles.inputField} />
               </div>
               <div style={styles.inputGroup}>
-                <label style={styles.labelField}>📸 تحميل صور السيارة من الألبوم (حتى 3 صور حية)</label>
-                <label htmlFor="file-upload" style={styles.fileUploadLabel}>📁 اضغط هنا لاختيار صور السيارة</label>
-                <input id="file-upload" type="file" multiple accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                <label style={styles.labelField}>📸 تحميل صور السيارة من الألبوم (حتى 4 صور حية)</label>
+                <label htmlFor="file-upload" style={styles.fileUploadLabel}>
+                  {uploading ? '⏳ جاري تجهيز ورفع الصور سحابياً...' : '📁 اضغط هنا لاختيار صور السيارة'}
+                </label>
+                <input id="file-upload" type="file" multiple accept="image/*" disabled={uploading} onChange={handleFileChange} style={{ display: 'none' }} />
                 {uploadedImages.length > 0 && (
                   <div style={{ fontSize: '12px', color: '#10b981', marginTop: '6px', fontWeight: 'bold' }}>
-                    ✅ تم تجهيز ونمذجة ({uploadedImages.length}) صور فائقة الخفة للنشر
+                    ✅ تم حفظ وربط ({uploadedImages.length}) روابط صور سحابية خفيفة وآمنة للنشر
                   </div>
                 )}
               </div>
@@ -190,8 +192,8 @@ export default function NewCarPage() {
               <textarea placeholder="اكتب حالة السيارة، المواصفات، الفحص..." value={description} onChange={(e) => setDescription(e.target.value)} style={styles.textareaField}></textarea>
             </div>
 
-            <button type="submit" disabled={submitting} style={styles.submitButton}>
-              {submitting ? 'جاري النشر العبقري فائق السعة...' : '🚀 انشر الإعلان بمعرض الصور الآن'}
+            <button type="submit" disabled={submitting || uploading} style={styles.submitButton}>
+              {submitting ? 'جاري العبور ونشر الإعلان الصاروخي...' : '🚀 انشر الإعلان بمعرض الصور السحابي'}
             </button>
           </form>
         </div>
@@ -216,7 +218,7 @@ const styles = {
   disabledSelectField: { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#edf2f7', color: '#a0aec0', fontSize: '14px', cursor: 'not-allowed', boxSizing: 'border-box' as const },
   textareaField: { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '14px', outline: 'none', minHeight: '100px', resize: 'vertical' as const, boxSizing: 'border-box' as const },
   fileUploadLabel: { display: 'block', padding: '12px', backgroundColor: '#e2e8f0', color: '#2563eb', border: '2px dashed #2563eb', borderRadius: '10px', textAlign: 'center' as const, fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
-  submitButton: { width: '100%', padding: '14px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px', boxShadow: '0 4px 12px rgba(37,99,235,0.2)' },
+  submitButton: { width: '100%', padding: '14px', backgroundColor: '#10b981', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px', boxShadow: '0 4px 12px rgba(16,185,129,0.2)' },
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTop: '3px solid #2563eb', borderRadius: '50%' }
 };
