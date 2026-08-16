@@ -11,7 +11,7 @@ const brands = [
   { id: "4", name: "هوندا", nameAr: "هوندا" }
 ];
 
-const modelsByBrand = {
+const modelsByBrand: any = {
   "1": [
     { id: "1", name: "X5" },
     { id: "2", name: "Series 3" }
@@ -45,7 +45,7 @@ const colors = [
 ];
 
 export default function NewCarPage() {
-  const { data: session } = useSession();
+  const { data: session }: any = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [brand, setBrand] = useState("");
@@ -56,25 +56,25 @@ export default function NewCarPage() {
   const [kilometers, setKilometers] = useState("");
   const [color, setColor] = useState("");
   const [description, setDescription] = useState("");
-  const [images, setImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
+  const [images, setImages] = useState<any[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<any[]>([]);
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
+  const handleImageChange = (e: any) => {
+    const files = Array.from(e.target.files || []);
     if (files.length + images.length > 4) {
       toast.error("الحد الأقصى 4 صور فقط");
       return;
     }
     setImages((prev) => [...prev, ...files]);
-    const previews = files.map((file) => URL.createObjectURL(file));
+    const previews = files.map((file: any) => URL.createObjectURL(file));
     setImagePreviews((prev) => [...prev, ...previews]);
   };
 
-  const removeImage = (index) => {
+  const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!brand || !model || !price || !year || !kilometers || !color) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
@@ -86,7 +86,7 @@ export default function NewCarPage() {
     }
     setLoading(true);
     try {
-      const imageUrls = [];
+      const imageUrls: string[] = [];
       for (const file of images) {
         const formData = new FormData();
         formData.append("file", file);
@@ -100,7 +100,6 @@ export default function NewCarPage() {
         }
       }
 
-      // تحويل مصفوفة الروابط الدقيقة إلى نص JSON
       const imageUrlsString = JSON.stringify(imageUrls);
 
       const carData = {
@@ -116,7 +115,7 @@ export default function NewCarPage() {
         description,
         user_id: session.user.id,
         user_email: session.user.email,
-        images: imageUrlsString // ✅ تم تعديل الاسم هنا ليرسل الروابط الفعلية للصور المرفوعة
+        images: imageUrlsString
       };
 
       const response = await fetch("/api/cars", {
@@ -146,39 +145,39 @@ export default function NewCarPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">الماركة *</label>
-            <select value={brand} onChange={(e) => { setBrand(e.target.value); setModel(""); }} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800">
+            <select value={brand} onChange={(e: any) => { setBrand(e.target.value); setModel(""); }} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800">
               <option value="">اختر الماركة</option>
               {brands.map((b) => <option key={b.id} value={b.nameAr}>{b.nameAr}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">الموديل *</label>
-            <select value={model} onChange={(e) => setModel(e.target.value)} disabled={!brand} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800 disabled:bg-gray-100">
+            <select value={model} onChange={(e: any) => setModel(e.target.value)} disabled={!brand} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800 disabled:bg-gray-100">
               <option value="">اختر الموديل</option>
-              {brand && modelsByBrand[brands.find(b => b.nameAr === brand)?.id]?.map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+              {brand && modelsByBrand[brands.find((b: any) => b.nameAr === brand)?.id || ""]?.map((m: any) => <option key={m.id} value={m.name}>{m.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800" placeholder="5000" />
+            <input type="number" value={price} onChange={(e: any) => setPrice(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800" placeholder="5000" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">العملة *</label>
-            <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800">
+            <select value={currency} onChange={(e: any) => setCurrency(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800">
               {currencies.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">سنة الصنع *</label>
-            <input type="number" value={year} onChange={(e) => setYear(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800" placeholder="2020" />
+            <input type="number" value={year} onChange={(e: any) => setYear(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800" placeholder="2020" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">الممشى (كم) *</label>
-            <input type="number" value={kilometers} onChange={(e) => setKilometers(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800" placeholder="95000" />
+            <input type="number" value={kilometers} onChange={(e: any) => setKilometers(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800" placeholder="95000" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">اللون *</label>
-            <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800">
+            <select value={color} onChange={(e: any) => setColor(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800">
               <option value="">اختر اللون</option>
               {colors.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
@@ -198,7 +197,7 @@ export default function NewCarPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">وصف الإعلان</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800 h-24" placeholder="جيد"></textarea>
+            <textarea value={description} onChange={(e: any) => setDescription(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800 h-24" placeholder="جيد"></textarea>
           </div>
           <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors disabled:bg-blue-400">
             {loading ? "جاري النشر..." : "نشر الإعلان"}
