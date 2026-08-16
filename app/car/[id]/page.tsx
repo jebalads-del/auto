@@ -24,15 +24,16 @@ export default function CarDetailPage() {
         const res = await fetch(`/api/cars?id=${id}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          if (data.success && data.car && data.car.length > 0) {
-            const currentCar = data.car[0];
-            setCar(currentCar);
-            
-            // تقسيم نص مصفوفة الصور المسترجعة وعرضها كألبوم متحرك
-            if (currentCar.images) {
-              const splitUrls = currentCar.images.split(',').map((img: string) => img.trim()).filter(Boolean);
-              setImagesList(splitUrls);
-              if (splitUrls.length > 0) setActiveImage(splitUrls[0]);
+          // فك تشفير مصفوفة الكائنات القادمة من الـ SQL وتثبيت العنصر الأول
+          if (data.success && data.car) {
+            const currentCar = Array.isArray(data.car) ? data.car[0] : data.car;
+            if (currentCar) {
+              setCar(currentCar);
+              if (currentCar.images) {
+                const splitUrls = currentCar.images.split(',').map((img: string) => img.trim()).filter(Boolean);
+                setImagesList(splitUrls);
+                if (splitUrls.length > 0) setActiveImage(splitUrls[0]);
+              }
             }
           }
         }
@@ -57,15 +58,13 @@ export default function CarDetailPage() {
       </header>
 
       <div style={styles.content}>
-        {/* ألبوم ومعرض الصور الحركي المتطور المتوافق مع الهواتف */}
         <div style={styles.imageCard}>
           {activeImage ? (
             <img src={activeImage} alt={car.brand} style={styles.mainImage} />
           ) : (
-            <div style={styles.noImagePlaceholder}>🚗 لا توجد صورة متوفرة</div>
+            <div style={styles.noImagePlaceholder}>🚗 صورة السيارة حية</div>
           )}
           
-          {/* صور مصغرة للتنقل بين لقطات السيارة */}
           {imagesList.length > 1 && (
             <div style={styles.thumbnailContainer}>
               {imagesList.map((img, idx) => (
@@ -78,15 +77,14 @@ export default function CarDetailPage() {
           )}
         </div>
 
-        {/* كارت تفاصيل السعر والمواصفات بشكل فاخر ومبسط */}
         <div style={styles.detailsCard}>
           <h2 style={styles.carMainTitle}>{car.brand} {car.model}</h2>
-          <div style={styles.priceTag}>{car.price.toLocaleString()} {car.currency === 'SAR' ? 'ريال سعودي' : 'دينار كويتي'}</div>
+          <div style={styles.priceTag}>{car.price?.toLocaleString()} {car.currency === 'SAR' ? 'ريال سعودي' : 'دينار كويتي'}</div>
 
           <div style={styles.specsGrid}>
             <div style={styles.specItem}><span style={styles.specLabel}>📅 سنة الصنع:</span><span style={styles.specValue}>{car.year}</span></div>
             <div style={styles.specItem}><span style={styles.specLabel}>🎨 اللون الخارجي:</span><span style={styles.specValue}>{car.color || 'غير محدد'}</span></div>
-            <div style={styles.specItem}><span style={styles.specLabel}>📟 المسافة المقطوعة:</span><span style={styles.specValue}>{car.kilometers.toLocaleString()} كم</span></div>
+            <div style={styles.specItem}><span style={styles.specLabel}>📟 المسافة المقطوعة:</span><span style={styles.specValue}>{car.kilometers?.toLocaleString()} كم</span></div>
             <div style={styles.specItem}><span style={styles.specLabel}>🛡️ حالة الإعلان:</span><span style={styles.statusBadge}>🟢 موافق عليه ونشط</span></div>
           </div>
 
