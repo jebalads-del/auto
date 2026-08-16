@@ -7,7 +7,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id');
 
-    // جلب سيارة محددة بواسطة الـ id الخاص بها وعرض مصفوفتها كاملة للواجهة الفاخرة
     if (idParam) {
       const carId = parseInt(idParam, 10);
       if (isNaN(carId)) {
@@ -25,11 +24,9 @@ export async function GET(request: Request) {
         return NextResponse.json({ success: false, message: 'السيارة غير موجودة' }, { status: 404 });
       }
 
-      // إرجاع العنصر الأول مباشرة لحل مشاكل الـ undefined والـ 404 في صفحة التفاصيل
       return NextResponse.json({ success: true, car: cars[0] });
     }
 
-    // جلب كافة السيارات المعتمدة والمقبولة من الأدمن لعرضها حياً في صالة العرض
     const approvedCars = await sql`
       SELECT id, brand, model, year, price, kilometers, color, description, images, status, currency
       FROM cars
@@ -46,21 +43,44 @@ export async function GET(request: Request) {
 }
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { brand, model, year, price, kilometers, currency, color, description, images, user_email } = body;
+    // ترقية السيرفر ليقرأ البيانات القادمة بنظام الـ FormData (الملفات الحية)
+    const formData = await request.formData();
+    
+    const brand = formData.get('brand') as string;
+    const model = formData.get('model') as string;
+    const year = formData.get('year') as string;
+    const price = formData.get('price') as string;
+    const kilometers = formData.get('kilometers') as string;
+    const currency = formData.get('currency') as string;
+    const color = formData.get('color') as string;
+    const description = formData.get('description') as string;
+    const user_email = formData.get('user_email') as string;
 
     if (!brand || !model || !year || !price) {
       return NextResponse.json({ success: false, message: 'البيانات الأساسية مطلوبة' }, { status: 400 });
     }
 
-    // إدخال الإعلان الجديد حياً ومباشراً في قاعدة البيانات وحفظ نصوص الصور المرفوعة بأمان كامل وبحالة pending بانتظار الأدمن
+    // التقاط مصفوفة ملفات الصور المرفوعة حركياً من الهاتف
+    const files = formData.getAll('files') as File[];
+    const imageUrls: string[] = [];
+
+    // معالجة الصور المرفوعة وتحويلها إلى أكواد نصية خفيفة ومدمجة ومحمية لتخزينها في قاعدة البيانات بأمان كلي
+    for (const file of files) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const base64Image = `data:${file.type};base64,${buffer.toString('base64')}`;
+      imageUrls.push(base64Image);
+    }
+
+    const finalImagesString = imageUrls.join(',');
+
+    // إدخال الإعلان الجديد حياً ومباشراً في قاعدة بيانات Neon مع معرض الصور الحية بنجاح باهر
     const newCar = await sql`
       INSERT INTO cars (brand, model, year, price, kilometers, currency, color, description, images, user_email, status)
-      VALUES (${brand}, ${model}, ${year}, ${price}, ${kilometers || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${images || ''}, ${user_email || ''}, 'pending')
+      VALUES (${brand}, ${model}, ${parseInt(year, 10)}, ${parseFloat(price)}, ${parseInt(kilometers, 10) || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${finalImagesString}, ${user_email || ''}, 'pending')
       RETURNING id
     `;
 
-    return NextResponse.json({ success: true, message: 'تم إرسال الإعلان بنجاح وجاري مراجعته', carId: newCar[0].id });
+    return NextResponse.json({ success: true, message: 'تم إرسال الإعلان بنجاح وجاري مراجعته من قبل الإدارة', carId: newCar[0].id });
 
   } catch (error: any) {
     console.error('POST Cars API Error:', error);
