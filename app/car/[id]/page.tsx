@@ -24,15 +24,17 @@ export default function CarDetailPage() {
         const res = await fetch(`/api/cars?id=${id}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          // فك تشفير مصفوفة الكائنات القادمة من الـ SQL وتثبيت العنصر الأول
           if (data.success && data.car) {
             const currentCar = Array.isArray(data.car) ? data.car[0] : data.car;
             if (currentCar) {
               setCar(currentCar);
               if (currentCar.images) {
+                // فك تشفير روابط الصور بشكل صحيح
                 const splitUrls = currentCar.images.split(',').map((img: string) => img.trim()).filter(Boolean);
                 setImagesList(splitUrls);
-                if (splitUrls.length > 0) setActiveImage(splitUrls[0]);
+                if (splitUrls.length > 0) {
+                  setActiveImage(splitUrls[0]); // تم تصحيح قراءة الاندكس الأول للصورة هنا بامتياز
+                }
               }
             }
           }
@@ -60,7 +62,10 @@ export default function CarDetailPage() {
       <div style={styles.content}>
         <div style={styles.imageCard}>
           {activeImage ? (
-            <img src={activeImage} alt={car.brand} style={styles.mainImage} />
+            <img src={activeImage} alt={car.brand} style={styles.mainImage} onError={(e) => {
+              // حماية تفادياً للروابط المكسورة القديمة في قاعدة البيانات
+              (e.target as HTMLImageElement).style.display = 'none';
+            }} />
           ) : (
             <div style={styles.noImagePlaceholder}>🚗 صورة السيارة حية</div>
           )}

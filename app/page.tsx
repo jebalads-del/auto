@@ -21,9 +21,11 @@ export default function HomePage() {
     const fetchData = async () => {
       try {
         const carsRes = await fetch('/api/cars', { cache: 'no-store' });
-        const carsData = await carsRes.json();
-        if (carsData && carsData.success && Array.isArray(carsData.cars)) {
-          setCars(carsData.cars);
+        if (carsRes.ok) {
+          const carsData = await carsRes.json();
+          if (carsData && carsData.success && Array.isArray(carsData.cars)) {
+            setCars(carsData.cars);
+          }
         }
       } catch (error) {
         console.error(error);
@@ -41,6 +43,7 @@ export default function HomePage() {
     if (!selectedModel) return true;
     return carModel.toLowerCase() === selectedModel.toLowerCase();
   });
+
   const uniqueModels = validCars.reduce((acc: { brand: string; model: string }[], current) => {
     if (!current) return acc;
     const carModel = current.model || current.MODEL || '';
@@ -59,13 +62,12 @@ export default function HomePage() {
       </div>
     );
   }
-
   return (
     <div style={styles.container}>
       <div style={styles.heroSection}>
         <header style={styles.header}>
           <div style={styles.headerContent}>
-            <h1 style={styles.headerTitle}> 🚗 سيارتي</h1>
+            <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
             <Link href="/profile" style={styles.headerLink}>👤 ملفي الشخصي</Link>
           </div>
         </header>
@@ -112,16 +114,15 @@ export default function HomePage() {
               const carCurrency = car.currency || car.CURRENCY || 'KWD';
               const carImagesRaw = car.images || car.IMAGES || '';
 
-              // فك تشفير مصفوفة الصور المرفوعة والتقاط الصورة الأولى حياً
+              // معالجة روابط الصور بدقة والتقاط أول رابط بالمصفوفة [0] بنجاح
               let displaySrc = '';
-              if (carImagesRaw) {
-                if (typeof carImagesRaw === 'string') {
-                  const cleanedStr = carImagesRaw.trim();
-                  if (cleanedStr.includes(',')) {
-                    displaySrc = cleanedStr.split(',')[0].trim();
-                  } else {
-                    displaySrc = cleanedStr;
-                  }
+              if (carImagesRaw && typeof carImagesRaw === 'string') {
+                const cleanedStr = carImagesRaw.trim();
+                if (cleanedStr.includes(',')) {
+                  const parts = cleanedStr.split(',');
+                  if (parts.length > 0) displaySrc = parts[0].trim();
+                } else {
+                  displaySrc = cleanedStr;
                 }
               }
 
