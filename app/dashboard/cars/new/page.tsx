@@ -28,8 +28,8 @@ export default function NewCarPage() {
   const [color, setColor] = useState('');
   const [description, setDescription] = useState('');
   
-  // مصفوفة لحفظ الملفات المرفوعة الحقيقية مباشرة دون تشفير معقد
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  // حفظ نصوص الصور المرفوعة بعد معالجتها الخفيفة
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -43,10 +43,35 @@ export default function NewCarPage() {
     setCheckingAuth(false);
   }, [router]);
 
+  // معالج الرفع السهل: يحول ملفات الهاتف الحية لنصوص مدمجة خفيفة يعبر بها طلب الـ JSON القياسي بأمان كلي
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      // قبول حتى 5 ملفات صور حقيقية لتسهيل تعبئة الطلب
-      setSelectedFiles(Array.from(e.target.files).slice(0, 5));
+      const filesArray = Array.from(e.target.files).slice(0, 3); // قبول حتى 3 صور حية لضمان العبور الصاروخي
+      const base64Promises = filesArray.map(file => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const img = new Image();
+            img.src = reader.result as string;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              const max_width = 300; // حجم مصغر واقتصادي فائق الخفة
+              const scale = max_width / img.width;
+              canvas.width = max_width;
+              canvas.height = img.height * scale;
+              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toToDataURL ? canvas.toDataURL('image/jpeg', 0.4) : (reader.result as string));
+            };
+            img.onerror = () => resolve(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(base64Promises).then(results => {
+        setUploadedImages(results);
+      });
     }
   };
 
@@ -59,38 +84,27 @@ export default function NewCarPage() {
     try {
       setSubmitting(true);
       const userEmail = localStorage.getItem('userEmail') || '';
+      const finalImagesString = uploadedImages.join(',');
 
-      // استخدام FormData لرفع البيانات والصور الحية كملفات خفيفة تتقبلها بوابات Vercel فوراً
-      const formData = new FormData();
-      formData.append('brand', brand);
-      formData.append('model', model);
-      formData.append('year', year);
-      formData.append('price', price);
-      formData.append('kilometers', kilometers);
-      formData.append('currency', currency);
-      formData.append('color', color);
-      formData.append('description', description);
-      formData.append('user_email', userEmail);
-      formData.append('status', 'pending');
-
-      // إرفاق الملفات الحية داخل الطلب المباشر
-      selectedFiles.forEach((file) => {
-        formData.append('files', file);
-      });
-
+      // إرسال الطلب بنظام JSON الصافي والخفيف المتوافق 100% مع بيئة الـ Edge وVercel
       const res = await fetch('/api/cars', {
         method: 'POST',
-        body: formData // إرسال خفيف جداً يمر في لمح البصر للسيرفر
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand, model, year: parseInt(year, 10), price: parseFloat(price),
+          kilometers: parseInt(kilometers, 10), currency, color, description,
+          images: finalImagesString, user_email: userEmail
+        })
       });
 
-      if (res.ok) {
-        alert('🎉 تم نشر إعلانك بمعرض صورك الحية بنجاح باهر وجاري مراجعته الآن!');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('🎉 تم نشر إعلانك بمعرض الصور الحية بنجاح باهر وجاري مراجعته الآن!');
         router.push('/profile');
       } else {
-        alert('عذراً، فشل السيرفر في حفظ الإعلان الجديد');
+        alert(data.message || 'عذراً، فشل السيرفر في حفظ الإعلان الجديد');
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert('خطأ في شبكة الاتصال أثناء نشر الإعلان');
     } finally {
       setSubmitting(false);
@@ -162,12 +176,12 @@ export default function NewCarPage() {
                 <input type="text" placeholder="مثال: أبيض, أسود ميتاليك" value={color} onChange={(e) => setColor(e.target.value)} style={styles.inputField} />
               </div>
               <div style={styles.inputGroup}>
-                <label style={styles.labelField}>📸 تحميل صور السيارة من الألبوم (حتى 5 صور)</label>
-                <label htmlFor="file-upload" style={styles.fileUploadLabel}>📁 اضغط هنا لاختيار الصور الحية</label>
+                <label style={styles.labelField}>📸 تحميل صور السيارة من الألبوم (حتى 3 صور حية)</label>
+                <label htmlFor="file-upload" style={styles.fileUploadLabel}>📁 اضغط هنا لاختيار صور السيارة</label>
                 <input id="file-upload" type="file" multiple accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                {selectedFiles.length > 0 && (
-                  <div style={{ fontSize: '12px', color: '#2563eb', marginTop: '6px', fontWeight: 'bold' }}>
-                    📁 تم تجهيز ({selectedFiles.length}) ملفات صور حقيقية للنشر المباشر
+                {uploadedImages.length > 0 && (
+                  <div style={{ fontSize: '12px', color: '#10b981', marginTop: '6px', fontWeight: 'bold' }}>
+                    ✅ تم تجهيز ونمذجة ({uploadedImages.length}) صور فائقة الخفة للنشر
                   </div>
                 )}
               </div>
@@ -179,7 +193,7 @@ export default function NewCarPage() {
             </div>
 
             <button type="submit" disabled={submitting} style={styles.submitButton}>
-              {submitting ? 'جاري العبور السريع ونشر الإعلان...' : '🚀 انشر الإعلان بمعرض الصور الآن'}
+              {submitting ? 'جاري النشر العبقري فائق السعة...' : '🚀 انشر الإعلان بمعرض الصور الآن'}
             </button>
           </form>
         </div>
@@ -205,6 +219,6 @@ const styles = {
   textareaField: { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '14px', outline: 'none', minHeight: '100px', resize: 'vertical' as const, boxSizing: 'border-box' as const },
   fileUploadLabel: { display: 'block', padding: '12px', backgroundColor: '#e2e8f0', color: '#2563eb', border: '2px dashed #2563eb', borderRadius: '10px', textAlign: 'center' as const, fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
   submitButton: { width: '100%', padding: '14px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px', boxShadow: '0 4px 12px rgba(37,99,235,0.2)' },
-  loadingContainer: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
+  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTop: '3px solid #2563eb', borderRadius: '50%' }
 };
