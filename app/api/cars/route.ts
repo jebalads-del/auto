@@ -43,40 +43,18 @@ export async function GET(request: Request) {
 }
 export async function POST(request: Request) {
   try {
-    // ترقية السيرفر ليقرأ البيانات القادمة بنظام الـ FormData (الملفات الحية)
-    const formData = await request.formData();
-    
-    const brand = formData.get('brand') as string;
-    const model = formData.get('model') as string;
-    const year = formData.get('year') as string;
-    const price = formData.get('price') as string;
-    const kilometers = formData.get('kilometers') as string;
-    const currency = formData.get('currency') as string;
-    const color = formData.get('color') as string;
-    const description = formData.get('description') as string;
-    const user_email = formData.get('user_email') as string;
+    // إعادة الدالة لقراءة طلبات الـ JSON الخفيفة والصافية بنجاح 100%
+    const body = await request.json();
+    const { brand, model, year, price, kilometers, currency, color, description, images, user_email } = body;
 
     if (!brand || !model || !year || !price) {
       return NextResponse.json({ success: false, message: 'البيانات الأساسية مطلوبة' }, { status: 400 });
     }
 
-    // التقاط مصفوفة ملفات الصور المرفوعة حركياً من الهاتف
-    const files = formData.getAll('files') as File[];
-    const imageUrls: string[] = [];
-
-    // معالجة الصور المرفوعة وتحويلها إلى أكواد نصية خفيفة ومدمجة ومحمية لتخزينها في قاعدة البيانات بأمان كلي
-    for (const file of files) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const base64Image = `data:${file.type};base64,${buffer.toString('base64')}`;
-      imageUrls.push(base64Image);
-    }
-
-    const finalImagesString = imageUrls.join(',');
-
-    // إدخال الإعلان الجديد حياً ومباشراً في قاعدة بيانات Neon مع معرض الصور الحية بنجاح باهر
+    // إدخال السيارة الجديدة حياً ومباشراً في قاعدة بيانات Neon الفعالة وتثبيت حالتها pending بانتظار الأدمن
     const newCar = await sql`
       INSERT INTO cars (brand, model, year, price, kilometers, currency, color, description, images, user_email, status)
-      VALUES (${brand}, ${model}, ${parseInt(year, 10)}, ${parseFloat(price)}, ${parseInt(kilometers, 10) || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${finalImagesString}, ${user_email || ''}, 'pending')
+      VALUES (${brand}, ${model}, ${parseInt(year, 10)}, ${parseFloat(price)}, ${parseInt(kilometers, 10) || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${images || ''}, ${user_email || ''}, 'pending')
       RETURNING id
     `;
 
