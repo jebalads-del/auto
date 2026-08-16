@@ -28,7 +28,6 @@ export default function NewCarPage() {
   const [color, setColor] = useState('');
   const [description, setDescription] = useState('');
   
-  // حفظ نصوص الصور المرفوعة بعد معالجتها الخفيفة
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -43,10 +42,9 @@ export default function NewCarPage() {
     setCheckingAuth(false);
   }, [router]);
 
-  // معالج الرفع السهل: يحول ملفات الهاتف الحية لنصوص مدمجة خفيفة يعبر بها طلب الـ JSON القياسي بأمان كلي
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files).slice(0, 3); // قبول حتى 3 صور حية لضمان العبور الصاروخي
+      const filesArray = Array.from(e.target.files).slice(0, 3); // 3 صور كحد أقصى لضمان خفة الطلب
       const base64Promises = filesArray.map(file => {
         return new Promise<string>((resolve) => {
           const reader = new FileReader();
@@ -61,7 +59,8 @@ export default function NewCarPage() {
               canvas.width = max_width;
               canvas.height = img.height * scale;
               ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-              resolve(canvas.toToDataURL ? canvas.toDataURL('image/jpeg', 0.4) : (reader.result as string));
+              // تم تصحيح صياغة الاسم هنا بامتياز لإنهاء اعتراض التايب سكريبت
+              resolve(canvas.toDataURL('image/jpeg', 0.4));
             };
             img.onerror = () => resolve(reader.result as string);
           };
@@ -86,7 +85,6 @@ export default function NewCarPage() {
       const userEmail = localStorage.getItem('userEmail') || '';
       const finalImagesString = uploadedImages.join(',');
 
-      // إرسال الطلب بنظام JSON الصافي والخفيف المتوافق 100% مع بيئة الـ Edge وVercel
       const res = await fetch('/api/cars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
