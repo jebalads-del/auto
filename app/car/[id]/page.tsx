@@ -29,11 +29,24 @@ export default function CarDetailPage() {
             if (currentCar) {
               setCar(currentCar);
               if (currentCar.images) {
-                // فك تشفير روابط الصور بشكل صحيح
-                const splitUrls = currentCar.images.split(',').map((img: string) => img.trim()).filter(Boolean);
-                setImagesList(splitUrls);
-                if (splitUrls.length > 0) {
-                  setActiveImage(splitUrls[0]); // تم تصحيح قراءة الاندكس الأول للصورة هنا بامتياز
+                let parsedUrls: string[] = [];
+                try {
+                  // محاولة قراءة الصور إذا كانت مصفوفة JSON مشفرة (للإعلانات الجديدة)
+                  const cleanImages = currentCar.images.trim();
+                  if (cleanImages.startsWith('[') && cleanImages.endsWith(']')) {
+                    parsedUrls = JSON.parse(cleanImages);
+                  } else {
+                    // الطريقة الاحتياطية القديمة المفصولة بفاصلة
+                    parsedUrls = cleanImages.split(',').map((img: string) => img.trim()).filter(Boolean);
+                  }
+                } catch (e) {
+                  // حماية في حال حدوث خطأ أثناء فك التشفير
+                  parsedUrls = currentCar.images.split(',').map((img: string) => img.trim()).filter(Boolean);
+                }
+                
+                setImagesList(parsedUrls);
+                if (parsedUrls.length > 0) {
+                  setActiveImage(parsedUrls[0]);
                 }
               }
             }
@@ -63,13 +76,12 @@ export default function CarDetailPage() {
         <div style={styles.imageCard}>
           {activeImage ? (
             <img src={activeImage} alt={car.brand} style={styles.mainImage} onError={(e) => {
-              // حماية تفادياً للروابط المكسورة القديمة في قاعدة البيانات
               (e.target as HTMLImageElement).style.display = 'none';
             }} />
           ) : (
-            <div style={styles.noImagePlaceholder}>🚗 صورة السيارة حية</div>
+            <div style={styles.noImagePlaceholder}>🚗 لا توجد صورة متوفرة</div>
           )}
-          
+
           {imagesList.length > 1 && (
             <div style={styles.thumbnailContainer}>
               {imagesList.map((img, idx) => (
