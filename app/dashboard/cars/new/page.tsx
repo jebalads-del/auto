@@ -1,319 +1,223 @@
-'use client';
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
-
-const currencies = [
-  { code: 'KWD', symbol: 'د.ك', name: 'دينار كويتي' },
-  { code: 'SAR', symbol: 'ر.س', name: 'ريال سعودي' },
-  { code: 'AED', symbol: 'د.إ', name: 'درهم إماراتي' },
-  { code: 'QAR', symbol: 'ر.ق', name: 'ريال قطري' },
-  { code: 'BHD', symbol: 'د.ب', name: 'دينار بحريني' },
-  { code: 'OMR', symbol: 'ر.ع', name: 'ريال عماني' },
+const brands = [
+  { id: "1", name: "بي إم دبليو", nameAr: "بي إم دبليو" },
+  { id: "2", name: "مرسيدس", nameAr: "مرسيدس" },
+  { id: "3", name: "تويوتا", nameAr: "تويوتا" },
+  { id: "4", name: "هوندا", nameAr: "هوندا" }
 ];
 
-// ✅ قائمة الماركات
-const BRANDS = [
-  'تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي', 
-  'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي', 
-  'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو', 
-  'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو', 'جاغوار', 
-  'لاند روفر', 'بورش', 'فيات', 'ألفا روميو', 'أخرى'
-];
-
-// ✅ الموديلات حسب الماركة
-const MODELS: Record<string, string[]> = {
-  'تويوتا': ['كامري', 'كورولا', 'لاندكروزر', 'برادو', 'أفالون', 'راف فور', 'يارس', 'هيلوكس', 'هايلوكس', 'فورتشنر', 'أخرى'],
-  'هوندا': ['أكورد', 'سيفيك', 'سي آر في', 'بايلوت', 'أوديسي', 'سيتي', 'HR-V', 'أخرى'],
-  'مرسيدس': ['الفئة C', 'الفئة E', 'الفئة S', 'GLC', 'GLE', 'G-Class', 'CLA', 'A-Class', 'AMG GT', 'أخرى'],
-  'بي إم دبليو': ['الفئة الثالثة', 'الفئة الخامسة', 'الفئة السابعة', 'X5', 'X6', 'X3', 'X7', 'X1', 'Z4', 'أخرى'],
-  'أودي': ['A4', 'A6', 'A8', 'Q5', 'Q7', 'Q8', 'A5', 'A3', 'Q3', 'RS6', 'أخرى'],
-  'فولكس واجن': ['جولف', 'باسات', 'تويج', 'طوارق', 'أطلس', 'بيتل', 'أخرى'],
-  'فورد': ['تورس', 'موستانج', 'إكسبلورر', 'إكسبيدشن', 'إف 150', 'إيدج', 'فوكس', 'فيوجن', 'أخرى'],
-  'شيفروليه': ['تاهو', 'سيلفرادو', 'كامارو', 'ماليبو', 'كابرس', 'ترافرس', 'كورفيت', 'أخرى'],
-  'نيسان': ['باترول', 'ألتيما', 'ماكسيما', 'صني', 'إكس تريل', 'باثفايندر', 'نافارا', 'سفاري', 'أخرى'],
-  'هيونداي': ['إلنترا', 'سوناتا', 'أكسنت', 'سانتا في', 'توسان', 'أزيرا', 'كريتا', 'باليسايد', 'أخرى'],
-  'كيا': ['أوبتيما', 'سيراتو', 'سبورتج', 'سورينتو', 'ريو', 'K5', 'كادينزا', 'ستنجر', 'أخرى'],
-  'مازدا': ['مازدا 3', 'مازدا 6', 'CX-5', 'CX-9', 'MX-5', 'أخرى'],
-  'لكزس': ['LS', 'LX', 'RX', 'ES', 'IS', 'GX', 'NX', 'UX', 'LC', 'أخرى'],
-  'جيب': ['جراند شيروكي', 'روبيكون', 'رولنجر', 'شيروكي', 'كومباس', 'رينيجيد', 'أخرى'],
-  'رينو': ['لوجان', 'سانديرو', 'ميجان', 'كابتشر', 'داستر', 'كوليو', 'أخرى'],
-  'بيجو': ['208', '301', '308', '408', '508', '2008', '3008', '5008', 'بارتنر', 'أخرى'],
-  'سيات': ['إيبيزا', 'ليون', 'طليعة', 'أرونا', 'أتيكا', 'أخرى'],
-  'ميتسوبيشي': ['لانسر', 'باجيرو', 'آوتلاندر', 'ASX', 'إكليبس', 'أخرى'],
-  'سوبارو': ['إمبريزا', 'أوت باك', 'فورستر', 'ليغاسي', 'XV', 'WRX', 'أخرى'],
-  'فولفو': ['S60', 'S90', 'XC40', 'XC60', 'XC90', 'V60', 'أخرى'],
-  'جاغوار': ['XE', 'XF', 'XJ', 'F-PACE', 'E-PACE', 'I-PACE', 'أخرى'],
-  'لاند روفر': ['رينج روفر', 'سبورت', 'فيلار', 'ديسكفري', 'ديفندر', 'أخرى'],
-  'بورش': ['كايين', 'ماكان', 'باناميرا', 'تاي كان', '911', 'بوكستر', 'أخرى'],
-  'فيات': ['500', 'باندا', 'تيبو', 'دوبلو', 'أخرى'],
-  'ألفا روميو': ['جوليا', 'ستيلفيو', 'جوليتا', 'أخرى'],
-  'أخرى': ['أخرى']
+const modelsByBrand: any = {
+  "1": [
+    { id: "1", name: "X5" },
+    { id: "2", name: "Series 3" }
+  ],
+  "2": [
+    { id: "3", name: "C-Class" },
+    { id: "4", name: "E-Class" }
+  ],
+  "3": [
+    { id: "5", name: "Camry" },
+    { id: "6", name: "Corolla" }
+  ],
+  "4": [
+    { id: "7", name: "Civic" },
+    { id: "8", name: "Accord" }
+  ]
 };
 
-// ✅ الألوان
-const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'];
+const currencies = [
+  { id: "1", name: "دينار كويتي" },
+  { id: "2", name: "ريال سعودي" },
+  { id: "3", name: "درهم إماراتي" },
+  { id: "4", name: "دولار أمريكي" }
+];
+
+const colors = [
+  { id: "1", name: "أبيض" },
+  { id: "2", name: "أسود" },
+  { id: "3", name: "فضي" },
+  { id: "4", name: "رمادي" }
+];
 
 export default function NewCarPage() {
+  const { data: session }: any = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("دينار كويتي");
+  const [year, setYear] = useState("");
+  const [kilometers, setKilometers] = useState("");
+  const [color, setColor] = useState("");
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState<any[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<any[]>([]);
 
-  const [formData, setFormData] = useState({
-    brand: '',
-    model: '',
-    year: new Date().getFullYear(),
-    price: '',
-    kilometers: '',
-    color: '',
-    description: '',
-    currency: 'KWD',
-  });
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: any) => {
     const files = Array.from(e.target.files || []);
-    const maxImages = 4;
-    
-    if (files.length + images.length > maxImages) {
-      setError(`يمكنك رفع ${maxImages} صور فقط`);
+    if (files.length + images.length > 4) {
+      toast.error("الحد الأقصى 4 صور فقط");
       return;
     }
-    
-    setImages([...images, ...files]);
-    const previews = files.map(file => URL.createObjectURL(file));
-    setImagePreviews([...imagePreviews, ...previews]);
+    setImages((prev) => [...prev, ...files]);
+    const previews = files.map((file: any) => URL.createObjectURL(file));
+    setImagePreviews((prev) => [...prev, ...previews]);
   };
 
   const removeImage = (index: number) => {
-    const newImages = [...images];
-    newImages.splice(index, 1);
-    setImages(newImages);
-    
-    const newPreviews = [...imagePreviews];
-    newPreviews.splice(index, 1);
-    setImagePreviews(newPreviews);
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
+    if (!brand || !model || !price || !year || !kilometers || !color) {
+      toast.error("يرجى ملء جميع الحقول المطلوبة");
+      return;
+    }
+    if (!session?.user) {
+      toast.error("يجب تسجيل الدخول أولاً");
+      return;
+    }
     setLoading(true);
-    setError('');
-    setSuccess('');
-
     try {
-      if (!formData.brand || !formData.model || !formData.price) {
-        setError('الماركة، الموديل، والسعر مطلوبة');
-        setLoading(false);
-        return;
-      }
+      const imageUrls: string[] = [];
+      
+      for (const file of images) {
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
 
-      const userId = Cookies.get('userId') || localStorage.getItem('userId');
-      if (!userId) {
-        setError('يجب تسجيل الدخول أولاً');
-        setLoading(false);
-        return;
-      }
+          // توجيه الطلب إلى المسار الفعلي والمعد مسبقاً لاستقبال ورفع الصور في مشروعك
+          const uploadRes = await fetch("/api/cars/upload", {
+            method: "POST",
+            body: formData,
+          });
 
-      const userIdNumber = parseInt(userId);
-      if (isNaN(userIdNumber)) {
-        setError('معرف المستخدم غير صحيح');
-        setLoading(false);
-        return;
-      }
-
-      // 1. إنشاء الإعلان
-      const payload = {
-        brand: formData.brand,
-        model: formData.model,
-        year: parseInt(formData.year.toString()) || null,
-        price: parseFloat(formData.price),
-        kilometers: formData.kilometers ? parseFloat(formData.kilometers) : null,
-        color: formData.color || null,
-        description: formData.description || null,
-        images: [],
-        user_id: userIdNumber,
-        currency: formData.currency || 'KWD',
-        status: 'pending',
-      };
-
-      const response = await fetch('/api/cars', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        setError(data.message || 'فشل نشر الإعلان');
-        setLoading(false);
-        return;
-      }
-
-      const carId = data.data?.[0]?.id || data.id;
-
-      // 2. رفع الصور
-      if (images.length > 0 && carId) {
-        const formData = new FormData();
-        images.forEach(file => formData.append('images', file));
-        formData.append('carId', carId.toString());
-
-        const uploadRes = await fetch('/api/cars/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!uploadRes.ok) {
-          console.warn('تم نشر الإعلان لكن فشل رفع الصور');
+          if (uploadRes.ok) {
+            const blobData = await uploadRes.json();
+            // دعم قراءة الرابط سواء كان العائد يسمى url أو secure_url أو blob
+            const finalUrl = blobData.url || blobData.secure_url || blobData.blob?.url;
+            if (finalUrl) {
+              imageUrls.push(finalUrl);
+            }
+          }
+        } catch (uploadError) {
+          console.error("Upload Error: ", uploadError);
         }
       }
 
-      setSuccess('✅ تم نشر الإعلان بنجاح!');
-      setFormData({
-        brand: '',
-        model: '',
-        year: new Date().getFullYear(),
-        price: '',
-        kilometers: '',
-        color: '',
-        description: '',
-        currency: 'KWD',
-      });
-      setImages([]);
-      setImagePreviews([]);
-      setTimeout(() => { router.push('/'); }, 2000);
+      const imageUrlsString = JSON.stringify(imageUrls);
 
-    } catch (err: any) {
-      setError('حدث خطأ غير متوقع');
-      console.error(err);
+      const carData = {
+        brand,
+        model,
+        price: parseFloat(price),
+        ad_type: "بيع",
+        ad_position: "عادي",
+        year: parseInt(year),
+        kilometers: parseInt(kilometers),
+        currency,
+        color,
+        description,
+        user_id: session.user.id,
+        user_email: session.user.email,
+        images: imageUrlsString
+      };
+
+      const response = await fetch("/api/cars", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(carData),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        toast.success("تم نشر الإعلان بنجاح وينتظر موافقة المسؤول");
+        router.push("/dashboard/cars");
+      } else {
+        toast.error(data.message || "فشل نشر الإعلان");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("حدث خطأ غير متوقع");
     } finally {
       setLoading(false);
     }
   };
 
-  const styIn = {
-    width: '100%',
-    padding: '10px',
-    borderRadius: '8px',
-    border: '1px solid #ccc',
-    marginTop: '5px',
-    boxSizing: 'border-box' as const,
-  };
-
   return (
-    <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <button onClick={() => router.push('/')} style={{ marginBottom: '15px', padding: '8px 12px', border: 'none', backgroundColor: '#334155', color: 'white', borderRadius: '6px', cursor: 'pointer' }}>
-        ← العودة للرئيسية
-      </button>
-
-      <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>📢 إضافة إعلان سيارة جديدة</h1>
-
-      {error && <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>❌ {error}</div>}
-      {success && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>✅ {success}</div>}
-
-      <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        
-        {/* ✅ الماركة - قائمة منسدلة */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الماركة *</label>
-          <select required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={styIn}>
-            <option value="">اختر الماركة</option>
-            {BRANDS.map(brand => <option key={brand} value={brand}>{brand}</option>)}
-          </select>
-        </div>
-
-        {/* ✅ الموديل - قائمة منسدلة تعتمد على الماركة */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الموديل *</label>
-          <select required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} style={styIn} disabled={!formData.brand}>
-            <option value="">{formData.brand ? 'اختر الموديل' : 'يرجى اختيار الماركة أولاً'}</option>
-            {formData.brand && (MODELS[formData.brand] || ['أخرى']).map(model => <option key={model} value={model}>{model}</option>)}
-          </select>
-        </div>
-
-        {/* ✅ السعر */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>السعر *</label>
-          <input type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} placeholder="مثال: 5000" />
-        </div>
-
-        {/* ✅ العملة */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>💰 العملة</label>
-          <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={styIn}>
-            {currencies.map(curr => <option key={curr.code} value={curr.code}>{curr.name}</option>)}
-          </select>
-        </div>
-
-        {/* ✅ سنة الصنع */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>سنة الصنع</label>
-          <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} style={styIn}>
-            {Array.from({ length: 40 }, (_, i) => new Date().getFullYear() + 1 - i).map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-        </div>
-
-        {/* ✅ الممشي */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الممشي (كم)</label>
-          <input type="number" min="0" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} placeholder="مثال: 50000" />
-        </div>
-
-        {/* ✅ اللون - قائمة منسدلة */}
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>اللون</label>
-          <select value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={styIn}>
-            <option value="">اختر اللون</option>
-            {COLORS.map(color => <option key={color} value={color}>{color}</option>)}
-          </select>
-        </div>
-
-        {/* ✅ رفع الصور (حد أقصى 4) */}
-        <div style={{ marginBottom: '15px', border: '2px dashed #2563eb', padding: '15px', borderRadius: '8px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>📸 صور السيارة (حد أقصى 4)</label>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleImageUpload}
-            style={styIn}
-          />
-          
-          {imagePreviews.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-              {imagePreviews.map((preview, index) => (
-                <div key={index} style={{ position: 'relative' }}>
-                  <img src={preview} alt={`صورة ${index + 1}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px' }}
-                  >
-                    ✕
-                  </button>
+    <div className="max-w-2xl mx-auto p-4" dir="rtl">
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-bold mb-6 text-center text-gray-800">إضافة إعلان سيارة جديدة</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">الماركة *</label>
+            <select value={brand} onChange={(e: any) => { setBrand(e.target.value); setModel(""); }} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800">
+              <option value="">اختر الماركة</option>
+              {brands.map((b) => <option key={b.id} value={b.nameAr}>{b.nameAr}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">الموديل *</label>
+            <select value={model} onChange={(e: any) => setModel(e.target.value)} disabled={!brand} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800 disabled:bg-gray-100">
+              <option value="">اختر الموديل</option>
+              {brand && modelsByBrand[brands.find((b: any) => b.nameAr === brand)?.id || ""]?.map((m: any) => <option key={m.id} value={m.name}>{m.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
+            <input type="number" value={price} onChange={(e: any) => setPrice(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800" placeholder="5000" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">العملة *</label>
+            <select value={currency} onChange={(e: any) => setCurrency(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800">
+              {currencies.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">سنة الصنع *</label>
+            <input type="number" value={year} onChange={(e: any) => setYear(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800" placeholder="2020" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">الممشى (كم) *</label>
+            <input type="number" value={kilometers} onChange={(e: any) => setKilometers(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800" placeholder="95000" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">اللون *</label>
+            <select value={color} onChange={(e: any) => setColor(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800">
+              <option value="">اختر اللون</option>
+              {colors.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="border border-dashed border-blue-400 rounded-lg p-4 bg-blue-50/30">
+            <label className="block text-sm font-medium text-gray-700 mb-2">صور السيارة (حد أقصى 4)</label>
+            <input type="file" multiple accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            <div className="grid grid-cols-4 gap-2 mt-4">
+              {imagePreviews.map((src, index) => (
+                <div key={index} className="relative aspect-square rounded border overflow-hidden bg-gray-100">
+                  <img src={src} alt="preview" className="object-cover w-full h-full" />
+                  <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
                 </div>
               ))}
             </div>
-          )}
-          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>
-            {images.length}/4 صور تم اختيارها
-          </p>
-        </div>
-
-        {/* ✅ الوصف */}
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>وصف الإعلان</label>
-          <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: '80px', resize: 'none' }} placeholder="اكتب وصفاً مفصلاً للسيارة..." />
-        </div>
-
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
-          {loading ? '⏳ جاري النشر...' : '🚙 نشر الإعلان'}
-        </button>
-      </form>
+            <p className="text-xs text-gray-400 mt-2">{images.length}/4 صور تم اختيارها</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">وصف الإعلان</label>
+            <textarea value={description} onChange={(e: any) => setDescription(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-gray-800 h-24" placeholder="جيد"></textarea>
+          </div>
+          <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors disabled:bg-blue-400">
+            {loading ? "جاري النشر..." : "نشر الإعلان"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
