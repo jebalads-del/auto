@@ -1,59 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    // جلب كافة الملفات المرسلة تحت مسمى 'files' من صفحة النشر
-    const files = formData.getAll('files') as File[];
+    // ✅ تغيير من 'files' إلى 'images' لتطابق صفحة النشر
+    const files = formData.getAll('images') as File[];
+    const carId = formData.get('carId') as string;
 
     if (!files || files.length === 0) {
       return NextResponse.json(
-        { success: false, message: 'لم يتم إرسال أي ملفات صور' },
+        { success: false, message: 'لم يتم إرسال أي صور' },
         { status: 400 }
       );
     }
 
     const uploadedUrls: string[] = [];
 
-    // الرفع المتتالي لكافة الصور حياً إلى Vercel Blob
     for (const file of files) {
       if (file && file.size > 0) {
-        // توليد اسم فريد للملف لتفادي التكرار
-        const uniqueFilename = `car-${Date.now()}-${file.name}`;
-        
-        // استخدام دالة put مع التوكن و storeId
-        const blob = await put(uniqueFilename, file, {
-          access: 'public',
-          token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
-          storeId: process.env.CARS_BLOB_STORE_ID,
-        });
-        
+        const blob = await put(
+          `cars/${carId || 'temp'}/${Date.now()}-${file.name}`,
+          file,
+          {
+            access: 'public',
+            token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
+            storeId: process.env.CARS_BLOB_STORE_ID,
+            addRandomSuffix: true,
+          }
+        );
         if (blob && blob.url) {
           uploadedUrls.push(blob.url);
         }
       }
     }
 
-    if (uploadedUrls.length === 0) {
-      return NextResponse.json(
-        { success: false, message: 'فشل رفع الصور إلى خادم التخزين' },
-        { status: 500 }
-      );
+    // ✅ حفظ الروابط في قاعدة البيانات
+    if (carId && uploadedUrls.length > 0) {
+      const imagesString = uploadedUrls.join(',');
+      const client = await pool.connect();
+      try {
+        await client.query(
+          'UPDATE cars SET images = $1 WHERE id = $2',
+          [imagesString, parseInt(carId)]
+        );
+      } finally {
+        client.release();
+      }
     }
 
-    // إرجاع مصفوفة الروابط الحية والكاملة للواجهة بنجاح
     return NextResponse.json({
       success: true,
       urls: uploadedUrls,
     });
 
-  } catch (error) {
-    console.error('خطأ قاتل أثناء رفع الصور لـ Blob:', error);
+  } catch (error: any) {
+    console.error('خطأ في رفع الصور:', error);
     return NextResponse.json(
-      { success: false, message: 'حدث خطأ داخلي في خادم رفع الصور' },
+      { success: false, message: error.message || 'فشل رفع الصور' },
       { status: 500 }
     );
   }
