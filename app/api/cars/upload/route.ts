@@ -12,7 +12,6 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    // ✅ تغيير من 'files' إلى 'images' لتطابق صفحة النشر
     const files = formData.getAll('images') as File[];
     const carId = formData.get('carId') as string;
 
@@ -28,7 +27,7 @@ export async function POST(request: NextRequest) {
     for (const file of files) {
       if (file && file.size > 0) {
         const blob = await put(
-          `cars/${carId || 'temp'}/${Date.now()}-${file.name}`,
+          `cars/${carId}/${Date.now()}-${file.name}`,
           file,
           {
             access: 'public',
@@ -43,8 +42,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (uploadedUrls.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'فشل رفع الصور إلى التخزين' },
+        { status: 500 }
+      );
+    }
+
     // ✅ حفظ الروابط في قاعدة البيانات
-    if (carId && uploadedUrls.length > 0) {
+    if (carId) {
       const imagesString = uploadedUrls.join(',');
       const client = await pool.connect();
       try {
