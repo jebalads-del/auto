@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useSession } from "next-auth/react";
 
-// إجبار Vercel على معاملة الصفحة كمسار ديناميكي لمنع خطأ الـ Prerender أثناء البناء
 export const dynamic = "force-dynamic";
 
 const brands = [
@@ -129,7 +128,7 @@ export default function NewCarPage() {
         currency,
         color,
         description,
-        user_id: session.user.id,
+        user_id: (session.user as any).id || "", // حماية وتخطي فحص TypeScript هنا بامتياز
         user_email: session.user.email,
         images: imageUrlsString
       };
