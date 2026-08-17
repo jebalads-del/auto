@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useSession } from "next-auth/react";
 
+// إجبار Vercel على معاملة الصفحة كمسار ديناميكي لمنع خطأ الـ Prerender أثناء البناء
+export const dynamic = "force-dynamic";
+
 const brands = [
   { id: "1", name: "بي إم دبليو", nameAr: "بي إم دبليو" },
   { id: "2", name: "مرسيدس", nameAr: "مرسيدس" },
@@ -45,7 +48,9 @@ const colors = [
 ];
 
 export default function NewCarPage() {
-  const { data: session }: any = useSession();
+  const sessionContext = useSession();
+  const session = sessionContext ? sessionContext.data : null;
+  
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [brand, setBrand] = useState("");
@@ -94,7 +99,6 @@ export default function NewCarPage() {
           const formData = new FormData();
           formData.append("file", file);
 
-          // توجيه الطلب إلى المسار الفعلي والمعد مسبقاً لاستقبال ورفع الصور في مشروعك
           const uploadRes = await fetch("/api/cars/upload", {
             method: "POST",
             body: formData,
@@ -102,7 +106,6 @@ export default function NewCarPage() {
 
           if (uploadRes.ok) {
             const blobData = await uploadRes.json();
-            // دعم قراءة الرابط سواء كان العائد يسمى url أو secure_url أو blob
             const finalUrl = blobData.url || blobData.secure_url || blobData.blob?.url;
             if (finalUrl) {
               imageUrls.push(finalUrl);
