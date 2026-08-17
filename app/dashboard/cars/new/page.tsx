@@ -6,38 +6,25 @@ import { useSession } from "next-auth/react";
 
 export const dynamic = "force-dynamic";
 
-const brands = [
+interface Brand { id: string; name: string; nameAr: string; }
+interface Model { id: string; name: string; }
+
+const brands: Brand[] = [
   { id: "1", name: "بي إم دبليو", nameAr: "بي إم دبليو" },
   { id: "2", name: "مرسيدس", nameAr: "مرسيدس" },
   { id: "3", name: "تويوتا", nameAr: "تويوتا" },
   { id: "4", name: "هوندا", nameAr: "هوندا" }
 ];
 
-const modelsByBrand: any = {
+const modelsByBrand: Record<string, Model[]> = {
   "1": [{ id: "1", name: "X5" }, { id: "2", name: "Series 3" }],
   "2": [{ id: "3", name: "C-Class" }, { id: "4", name: "E-Class" }],
   "3": [{ id: "5", name: "Camry" }, { id: "6", name: "Corolla" }],
   "4": [{ id: "7", name: "Civic" }, { id: "8", name: "Accord" }]
 };
 
-const currencies = [
-  { id: "1", name: "دينار كويتي" },
-  { id: "2", name: "ريال سعودي" },
-  { id: "3", name: "درهم إماراتي" },
-  { id: "4", name: "دولار أمريكي" }
-];
-
-const colors = [
-  { id: "1", name: "أبيض" },
-  { id: "2", name: "أسود" },
-  { id: "3", name: "فضي" },
-  { id: "4", name: "رمادي" }
-];
-
 export default function NewCarPage() {
-  const sessionContext = useSession();
-  const session = sessionContext ? sessionContext.data : null;
-  
+  const { data: session }: any = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [brand, setBrand] = useState("");
@@ -48,17 +35,17 @@ export default function NewCarPage() {
   const [kilometers, setKilometers] = useState("");
   const [color, setColor] = useState("");
   const [description, setDescription] = useState("");
-  const [images, setImages] = useState<any[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<any[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
-  const handleImageChange = (e: any) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length + images.length > 4) {
       toast.error("الحد الأقصى 4 صور فقط");
       return;
     }
     setImages((prev) => [...prev, ...files]);
-    const previews = files.map((file: any) => URL.createObjectURL(file));
+    const previews = files.map((file) => URL.createObjectURL(file));
     setImagePreviews((prev) => [...prev, ...previews]);
   };
 
@@ -66,7 +53,7 @@ export default function NewCarPage() {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!brand || !model || !price || !year || !kilometers || !color) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
@@ -102,8 +89,6 @@ export default function NewCarPage() {
         }
       }
 
-      const imageUrlsString = JSON.stringify(imageUrls);
-
       const carData = {
         brand,
         model,
@@ -117,7 +102,7 @@ export default function NewCarPage() {
         description,
         user_id: (session.user as any).id || "",
         user_email: session.user.email,
-        images: imageUrlsString
+        images: JSON.stringify(imageUrls)
       };
 
       const response = await fetch("/api/cars", {
@@ -126,11 +111,11 @@ export default function NewCarPage() {
         body: JSON.stringify(carData),
       });
 
-      const data = await response.json();
       if (response.ok) {
-        toast.success("تم نشر الإعلان بنجاح وينتظر موافقة المسؤول");
+        toast.success("تم نشر الإعلان بنجاح");
         router.push("/dashboard/cars");
       } else {
+        const data = await response.json();
         toast.error(data.message || "فشل نشر الإعلان");
       }
     } catch (error) {
@@ -153,7 +138,7 @@ export default function NewCarPage() {
             <label className="block text-sm font-semibold text-gray-700 mb-2">الماركة *</label>
             <select 
               value={brand} 
-              onChange={(e: any) => { setBrand(e.target.value); setModel(""); }} 
+              onChange={(e) => { setBrand(e.target.value); setModel(""); }} 
               className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base"
             >
               <option value="">اختر الماركة</option>
@@ -165,12 +150,12 @@ export default function NewCarPage() {
             <label className="block text-sm font-semibold text-gray-700 mb-2">الموديل *</label>
             <select 
               value={model} 
-              onChange={(e: any) => setModel(e.target.value)} 
+              onChange={(e) => setModel(e.target.value)} 
               disabled={!brand} 
               className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base disabled:opacity-50 disabled:bg-gray-100"
             >
               <option value="">اختر الموديل</option>
-              {brand && modelsByBrand[brands.find((b: any) => b.nameAr === brand)?.id || ""]?.map((m: any) => <option key={m.id} value={m.name}>{m.name}</option>)}
+              {brand && modelsByBrand[brands.find((b) => b.nameAr === brand)?.id || ""]?.map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
             </select>
           </div>
 
@@ -180,7 +165,7 @@ export default function NewCarPage() {
               <input 
                 type="number" 
                 value={price} 
-                onChange={(e) => setPrice(e.target.value)} 
+                onChange={(e: any) => setPrice(e.target.value)} 
                 className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base" 
                 placeholder="مثال: 5000" 
               />
@@ -190,10 +175,13 @@ export default function NewCarPage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">العملة *</label>
               <select 
                 value={currency} 
-                onChange={(e) => setCurrency(e.target.value)} 
+                onChange={(e: any) => setCurrency(e.target.value)} 
                 className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base"
               >
-                {currencies.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                <option value="دينار كويتي">دينار كويتي</option>
+                <option value="ريال سعودي">ريال سعودي</option>
+                <option value="درهم إماراتي">درهم إماراتي</option>
+                <option value="دولار أمريكي">دولار أمريكي</option>
               </select>
             </div>
           </div>
@@ -204,7 +192,7 @@ export default function NewCarPage() {
               <input 
                 type="number" 
                 value={year} 
-                onChange={(e) => setYear(e.target.value)} 
+                onChange={(e: any) => setYear(e.target.value)} 
                 className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base" 
                 placeholder="مثال: 2021" 
               />
@@ -215,7 +203,7 @@ export default function NewCarPage() {
               <input 
                 type="number" 
                 value={kilometers} 
-                onChange={(e) => setKilometers(e.target.value)} 
+                onChange={(e: any) => setKilometers(e.target.value)} 
                 className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base" 
                 placeholder="مثال: 135000" 
               />
@@ -230,7 +218,10 @@ export default function NewCarPage() {
               className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base"
             >
               <option value="">اختر اللون</option>
-              {colors.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+              <option value="أبيض">أبيض</option>
+              <option value="أسود">أسود</option>
+              <option value="فضي">فضي</option>
+              <option value="رمادي">رمادي</option>
             </select>
           </div>
 
@@ -280,15 +271,7 @@ export default function NewCarPage() {
             disabled={loading} 
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl text-base shadow-md hover:shadow-lg transition-all disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://w3.org" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                جاري رفع الصور ونشر الإعلان...
-              </>
-            ) : "نشر الإعلان"}
+            {loading ? "جاري رفع الصور ونشر الإعلان..." : "نشر الإعلان"}
           </button>
         </form>
       </div>
