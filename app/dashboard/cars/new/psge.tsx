@@ -92,7 +92,7 @@ export default function NewCarPage() {
         formData.append("file", file);
         const uploadRes = await fetch(`/api/upload?filename=${file.name}`, {
           method: "POST",
-          body: file,
+          body: formData,
         });
         if (uploadRes.ok) {
           const blobData = await uploadRes.json();

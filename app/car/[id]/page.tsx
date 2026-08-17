@@ -32,6 +32,7 @@ export default function CarDetailsPage() {
       if (!params.id) return;
       
       try {
+<<<<<<< HEAD
         const response = await fetch(`/api/car/${params.id}`);
         const data = await response.json();
 
@@ -39,6 +40,38 @@ export default function CarDetailsPage() {
           setCar(data.car);
         } else {
           setError(data.message || 'الإعلان غير موجود');
+=======
+        const res = await fetch(`/api/cars?id=${id}`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.car) {
+            const currentCar = Array.isArray(data.car) ? data.car[0] : data.car;
+            if (currentCar) {
+              setCar(currentCar);
+              if (currentCar.images) {
+                let parsedUrls: string[] = [];
+                try {
+                  // محاولة قراءة الصور إذا كانت مصفوفة JSON مشفرة (للإعلانات الجديدة)
+                  const cleanImages = currentCar.images.trim();
+                  if (cleanImages.startsWith('[') && cleanImages.endsWith(']')) {
+                    parsedUrls = JSON.parse(cleanImages);
+                  } else {
+                    // الطريقة الاحتياطية القديمة المفصولة بفاصلة
+                    parsedUrls = cleanImages.split(',').map((img: string) => img.trim()).filter(Boolean);
+                  }
+                } catch (e) {
+                  // حماية في حال حدوث خطأ أثناء فك التشفير
+                  parsedUrls = currentCar.images.split(',').map((img: string) => img.trim()).filter(Boolean);
+                }
+                
+                setImagesList(parsedUrls);
+                if (parsedUrls.length > 0) {
+                  setActiveImage(parsedUrls[0]);
+                }
+              }
+            }
+          }
+>>>>>>> eeafb989f (fix: frontend images rendering for home and details pages)
         }
       } catch {
         setError('حدث خطأ أثناء جلب البيانات');
@@ -82,6 +115,7 @@ export default function CarDetailsPage() {
       </header>
 
       <div style={styles.content}>
+<<<<<<< HEAD
         <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
 
         {/* معرض الصور */}
@@ -96,6 +130,24 @@ export default function CarDetailsPage() {
                   style={styles.mainImage}
                   onClick={() => setSelectedImage(img)}
                 />
+=======
+        <div style={styles.imageCard}>
+          {activeImage ? (
+            <img src={activeImage} alt={car.brand} style={styles.mainImage} onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }} />
+          ) : (
+            <div style={styles.noImagePlaceholder}>🚗 لا توجد صورة متوفرة</div>
+          )}
+
+          {imagesList.length > 1 && (
+            <div style={styles.thumbnailContainer}>
+              {imagesList.map((img, idx) => (
+                <img key={idx} src={img} alt="thumbnail" onClick={() => setActiveImage(img)} style={{
+                  ...styles.thumbnail,
+                  border: activeImage === img ? '2px solid #2563eb' : '1px solid #cbd5e1'
+                }} />
+>>>>>>> eeafb989f (fix: frontend images rendering for home and details pages)
               ))}
             </div>
           ) : (

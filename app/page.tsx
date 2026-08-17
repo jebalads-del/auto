@@ -184,8 +184,18 @@ export default function HomePage() {
               const carPrice = car.price ? car.price.toLocaleString() : '0';
               const carCurrency = getCurrencySymbol(car.currency);
               
-              let carImageSrc = car.images ? String(car.images) : '';
-              carImageSrc = carImageSrc.replace(/[\{\}\"\'\s]/g, '').split(',')[0] || '';
+              let carImageSrc = "/images/default-car.jpg";
+              try {
+                if (car.images) {
+                  const cleanImgs = String(car.images).trim();
+                  if (cleanImgs.startsWith("[") && cleanImgs.endsWith("]")) {
+                    const parsedList = JSON.parse(cleanImgs);
+                    if (parsedList.length > 0) carImageSrc = parsedList[0];
+                  } else {
+                    carImageSrc = cleanImgs.split(",")[0]?.trim() || "/images/default-car.jpg";
+                  }
+                }
+              } catch (e) { carImageSrc = "/images/default-car.jpg"; }
 
               return (
                 <div key={car.id || Math.random()} style={styles.card}>
