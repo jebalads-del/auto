@@ -1,13 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  compress: true,
+  swcMinify: true,
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-hostname: '*.public.blob.vercel-storage.com',
-      },
-    ],
+    domains: ['sayarty.store'],
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
