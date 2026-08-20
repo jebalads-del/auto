@@ -55,7 +55,8 @@ const finalImages = images || image_url || image || '';
     // إدخال السيارة الجديدة حياً ومباشراً في قاعدة بيانات Neon الفعالة وتثبيت حالتها pending بانتظار الأدمن
     const newCar = await sql`
       INSERT INTO cars (brand, model, year, price, kilometers, currency, color, description, images, user_email, status)
-      VALUES (${brand}, ${model}, ${parseInt(year, 10)}, ${parseFloat(price)}, ${parseInt(kilometers, 10) || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${finalImages || ''}, ${user_email || ''}, 'pending')
+      VALUES (${brand}, ${model}, ${parseInt(year, 10)}, ${parseFloat(price)}, ${parseInt(kilometers, 10) || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${finalImages ? `{${finalImages}}` : '{}'}
+, ${user_email || ''}, 'pending')
       RETURNING id
     `;
 
