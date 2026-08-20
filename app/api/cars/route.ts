@@ -45,7 +45,8 @@ export async function POST(request: Request) {
   try {
     // إعادة الدالة لقراءة طلبات الـ JSON الخفيفة والصافية بنجاح 100%
     const body = await request.json();
-    const { brand, model, year, price, kilometers, currency, color, description, images, user_email } = body;
+   const { brand, model, year, price, kilometers, currency, color, description, images, image_url, image, user_email } = body;
+const finalImages = images || image_url || image || '';
 
     if (!brand || !model || !year || !price) {
       return NextResponse.json({ success: false, message: 'البيانات الأساسية مطلوبة' }, { status: 400 });
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
     // إدخال السيارة الجديدة حياً ومباشراً في قاعدة بيانات Neon الفعالة وتثبيت حالتها pending بانتظار الأدمن
     const newCar = await sql`
       INSERT INTO cars (brand, model, year, price, kilometers, currency, color, description, images, user_email, status)
-      VALUES (${brand}, ${model}, ${parseInt(year, 10)}, ${parseFloat(price)}, ${parseInt(kilometers, 10) || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${images || ''}, ${user_email || ''}, 'pending')
+      VALUES (${brand}, ${model}, ${parseInt(year, 10)}, ${parseFloat(price)}, ${parseInt(kilometers, 10) || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${finalImages || ''}, ${user_email || ''}, 'pending')
       RETURNING id
     `;
 
