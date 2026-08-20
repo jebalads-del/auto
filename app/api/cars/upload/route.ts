@@ -28,8 +28,11 @@ export async function POST(request: NextRequest) {
     }
 
     const uploadedUrls: string[] = [];
-    // اعتماد الـ Token الافتراضي والمعدل معاً لضمان صلاحيات الرفع
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN || process.env.CARS_BLOB_READ_WRITE_TOKEN;
+    
+    // فحص شامل لجميع مسميات التوكنز المتاحة في سيرفر Vercel
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN || 
+                      process.env.CARS_BLOB_READ_WRITE_TOKEN || 
+                      process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN;
 
     for (const file of files) {
       if (file && file.size > 0) {
@@ -46,13 +49,13 @@ export async function POST(request: NextRequest) {
         );
         if (blob && blob.url) {
           uploadedUrls.push(blob.url);
-          console.log(`✅ [UPLOAD] تم رفع الملف: ${blob.url}`);
+          console.log(`✅ [UPLOAD] تم رفع الملف بنجاح: ${blob.url}`);
         }
       }
     }
 
     if (uploadedUrls.length === 0) {
-      console.log('❌ [UPLOAD] فشل رفع جميع الملفات');
+      console.log('❌ [UPLOAD] فشل رفع جميع الملفات إلى التخزين الرقمي');
       return NextResponse.json(
         { success: false, message: 'فشل رفع الصور إلى التخزين' },
         { status: 500 }
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
           'UPDATE cars SET images = $1::text[] WHERE id = $2',
           [uploadedUrls, parseInt(carId, 10)]
         );
-        console.log(`✅ [UPLOAD] تم تحديث السيارة ${carId} بالصور بنجاح`);
+        console.log(`✅ [UPLOAD] تم تحديث السيارة ${carId} بالصور بنجاح في قاعدة البيانات`);
       } finally {
         client.release();
       }
@@ -81,7 +84,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ [UPLOAD] خطأ:', error);
+    console.error('❌ [UPLOAD] حدث خطأ أثناء المعالجة:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'فشل رفع الصور' },
       { status: 500 }
