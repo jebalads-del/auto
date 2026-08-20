@@ -45,6 +45,8 @@ export async function POST(request: Request) {
   try {
     // إعادة الدالة لقراءة طلبات الـ JSON الخفيفة والصافية بنجاح 100%
     const body = await request.json();
+  console.log("=== CAR POST BODY ===", body);
+
    const { brand, model, year, price, kilometers, currency, color, description, images, image_url, image, user_email } = body;
 const finalImages = images || image_url || image || '';
 
