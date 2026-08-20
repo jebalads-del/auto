@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
     }
 
     const uploadedUrls: string[] = [];
+    // اعتماد الـ Token الافتراضي والمعدل معاً لضمان صلاحيات الرفع
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN || process.env.CARS_BLOB_READ_WRITE_TOKEN;
 
     for (const file of files) {
       if (file && file.size > 0) {
@@ -38,9 +40,7 @@ export async function POST(request: NextRequest) {
           file,
           {
             access: 'public',
-         token: process.env.CARS_BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN,
-
-            storeId: process.env.CARS_BLOB_STORE_ID,
+            token: blobToken,
             addRandomSuffix: true,
           }
         );
@@ -59,18 +59,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ حفظ الروابط في قاعدة البيانات
-if (carId) {
-  console.log(`📸 [UPLOAD] حفظ الروابط في قاعدة البيانات:`, uploadedUrls);
+    // ✅ حفظ الروابط بصيغة مصفوفة صريحة متوافقة 100% مع PostgreSQL
+    if (carId && uploadedUrls.length > 0) {
+      console.log(`📸 [UPLOAD] حفظ الروابط في قاعدة البيانات:`, uploadedUrls);
 
-  const client = await pool.connect();
-  try {
-    await client.query(
-      'UPDATE cars SET images = $1 WHERE id = $2',
-      [uploadedUrls, parseInt(carId)]
-    );
-
-        console.log(`✅ [UPLOAD] تم تحديث السيارة ${carId} بالصور`);
+      const client = await pool.connect();
+      try {
+        await client.query(
+          'UPDATE cars SET images = $1::text[] WHERE id = $2',
+          [uploadedUrls, parseInt(carId, 10)]
+        );
+        console.log(`✅ [UPLOAD] تم تحديث السيارة ${carId} بالصور بنجاح`);
       } finally {
         client.release();
       }
