@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
           file,
           {
             access: 'public',
-            token: process.env.CARS_BLOB_READ_WRITE_TOKEN,
+         token: process.env.CARS_BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN,
+
             storeId: process.env.CARS_BLOB_STORE_ID,
             addRandomSuffix: true,
           }
@@ -59,16 +60,16 @@ export async function POST(request: NextRequest) {
     }
 
     // ✅ حفظ الروابط في قاعدة البيانات
-    if (carId) {
-      const imagesString = uploadedUrls.join(',');
-      console.log(`📸 [UPLOAD] حفظ الروابط في قاعدة البيانات: ${imagesString}`);
-      
-      const client = await pool.connect();
-      try {
-        await client.query(
-          'UPDATE cars SET images = $1 WHERE id = $2',
-          [imagesString, parseInt(carId)]
-        );
+if (carId) {
+  console.log(`📸 [UPLOAD] حفظ الروابط في قاعدة البيانات:`, uploadedUrls);
+
+  const client = await pool.connect();
+  try {
+    await client.query(
+      'UPDATE cars SET images = $1 WHERE id = $2',
+      [uploadedUrls, parseInt(carId)]
+    );
+
         console.log(`✅ [UPLOAD] تم تحديث السيارة ${carId} بالصور`);
       } finally {
         client.release();
