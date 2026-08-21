@@ -190,18 +190,31 @@ export default function HomePage() {
                   const cleanImgs = String(car.images).trim();
                   if (cleanImgs.startsWith("[") && cleanImgs.endsWith("]")) {
                     const parsedList = JSON.parse(cleanImgs);
-                    if (parsedList.length > 0) carImageSrc = parsedList[0];
+                    if (parsedList.length > 0 && parsedList[0]) carImageSrc = parsedList[0];
+                  } else if (cleanImgs.startsWith("http")) {
+                    carImageSrc = cleanImgs;
                   } else {
-                    carImageSrc = cleanImgs.split(",")[0]?.trim() || "/default-car.jpg";
+                    const urls = cleanImgs.split(",").map(url => url.trim()).filter(Boolean);
+                    if (urls.length > 0) carImageSrc = urls[0];
                   }
                 }
-              } catch (e) { carImageSrc = "/default-car.jpg"; }
+              } catch (e) { 
+                console.error('Image parsing error:', e);
+                carImageSrc = "/default-car.jpg"; 
+              }
 
               return (
                 <div key={car.id || Math.random()} style={styles.card}>
                   <div style={styles.gallery}>
                     {carImageSrc && carImageSrc.trim() !== '' ? (
-                      <img src={carImageSrc} alt={carBrand} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
+                      <img 
+                        src={carImageSrc} 
+                        alt={carBrand} 
+                        style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/default-car.jpg';
+                        }}
+                      />
                     ) : (
                       <div style={styles.noImage}>🚗 لا توجد صورة</div>
                     )}
@@ -245,7 +258,7 @@ const styles = {
   filterGroup: { display: 'flex', flexDirection: 'column' as const, gap: '5px' },
   filterLabel: { fontSize: '12px', fontWeight: 'bold', color: '#475569' },
   filterInput: { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '13px', outline: 'none', boxSizing: 'border-box' as const },
-  resetButton: { backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' as const, display: 'block', marginRight: 'auto' },
+  resetButton: { backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' as const, display: 'block', margin: '0 auto' },
   sectionTitle: { fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px' },
   noCars: { textAlign: 'center' as const, padding: '40px', backgroundColor: 'white', borderRadius: '12px', color: '#64748b', border: '1px dashed #cbd5e1' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '15px' },
