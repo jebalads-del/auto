@@ -14,7 +14,7 @@ export default function EditAdPage({ params }: { params: Promise<{ id: string }>
 
   useEffect(() => {
     // جلب بيانات الإعلان الحالي من قاعدة البيانات السحابية
-    fetch(`/api/ads/${id}`)
+    fetch(`/api/cars/${id}`)
       .then(res => res.json())
       .then(data => {
         // فحص مرن لتجنب الانهيار: سواء كانت البيانات كائناً مفرداً أو مصفوفة من قاعدة البيانات
@@ -38,7 +38,7 @@ export default function EditAdPage({ params }: { params: Promise<{ id: string }>
     setSaving(true)
 
     try {
-      const res = await fetch(`/api/ads/${id}`, {
+      const res = await fetch(`/api/cars/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, price, description })
