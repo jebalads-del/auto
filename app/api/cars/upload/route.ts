@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import sql from '../../db'; // استخدام نفس ملف الاتصال المركزي المستقر لموقعك
+import sql from '../../db';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📸 [UPLOAD] بدء عملية رفع الصور الموحدة...');
+    console.log('📸 [UPLOAD] Starting image upload...');
     
     const formData = await request.formData();
     
-    // قراءة الملفات سواء أرسلتها الواجهة باسم 'file' أو 'images'
     const filesFromImages = formData.getAll('images') as File[];
     const filesFromFile = formData.getAll('file') as File[];
     const files = filesFromFile.length > 0 ? filesFromFile : filesFromImages;
@@ -18,7 +17,7 @@ export async function POST(request: NextRequest) {
     const carId = formData.get('carId') as string;
 
     if (!files || files.length === 0) {
-      return NextResponse.json({ success: false, message: 'لم يتم إرسال أي صور صالحة' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'No valid images provided' }, { status: 400 });
     }
 
     const uploadedUrls: string[] = [];
@@ -42,24 +41,26 @@ export async function POST(request: NextRequest) {
     }
 
     if (uploadedUrls.length === 0) {
-      return NextResponse.json({ success: false, message: 'فشل رفع الصور إلى التخزين السحابي' }, { status: 500 });
+      return NextResponse.json({ success: false, message: 'Failed to upload images to cloud storage' }, { status: 500 });
     }
 
     const firstImageUrl = uploadedUrls[0] || '';
+    // Store as JSON string, not array
+    const imagesJsonString = JSON.stringify(uploadedUrls);
     const imagesString = uploadedUrls.join(',');
 
-    // ✅ التحديث باستخدام محرّك الاتصال الأصلي المضمون لموقعك لمنع التعارض والبطء
+    // Update database with proper string format
     if (carId) {
       const targetId = parseInt(carId, 10);
       
       await sql`
         UPDATE cars 
-        SET images = ${uploadedUrls}, 
+        SET images = ${imagesJsonString}, 
             image_url = ${firstImageUrl},
             image = ${imagesString}
         WHERE id = ${targetId}
       `;
-      console.log(`✅ [UPLOAD] تم تحديث السيارة رقم ${carId} بالصور عبر المعالج الرئيسي بنجاح`);
+      console.log(`✅ [UPLOAD] Successfully updated car #${carId} with images`);
     }
 
     return NextResponse.json({
@@ -71,6 +72,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ [UPLOAD ERROR]:', error);
-    return NextResponse.json({ success: false, message: error.message || 'فشل رفع الصور' }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message || 'Failed to upload images' }, { status: 500 });
   }
 }
