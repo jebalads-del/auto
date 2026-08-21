@@ -41,24 +41,31 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
 export async function POST(request: Request) {
   try {
-    // إعادة الدالة لقراءة طلبات الـ JSON الخفيفة والصافية بنجاح 100%
     const body = await request.json();
-  console.log("=== CAR POST BODY ===", body);
+    console.log("=== CAR POST BODY ===", body);
 
-   const { brand, model, year, price, kilometers, currency, color, description, images, image_url, image, user_email } = body;
-const finalImages = images || image_url || image || '';
+    const { brand, model, year, price, kilometers, currency, color, description, images, image_url, image, user_email } = body;
+    
+    // Store images as JSON string properly
+    let finalImages = '';
+    if (images) {
+      finalImages = typeof images === 'string' ? images : JSON.stringify(images);
+    } else if (image_url) {
+      finalImages = JSON.stringify([image_url]);
+    } else if (image) {
+      finalImages = typeof image === 'string' ? image : JSON.stringify(image);
+    }
 
     if (!brand || !model || !year || !price) {
       return NextResponse.json({ success: false, message: 'البيانات الأساسية مطلوبة' }, { status: 400 });
     }
 
-    // إدخال السيارة الجديدة حياً ومباشراً في قاعدة بيانات Neon الفعالة وتثبيت حالتها pending بانتظار الأدمن
     const newCar = await sql`
       INSERT INTO cars (brand, model, year, price, kilometers, currency, color, description, images, user_email, status)
-      VALUES (${brand}, ${model}, ${parseInt(year, 10)}, ${parseFloat(price)}, ${parseInt(kilometers, 10) || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${finalImages ? `{${finalImages}}` : '{}'}
-, ${user_email || ''}, 'pending')
+      VALUES (${brand}, ${model}, ${parseInt(year, 10)}, ${parseFloat(price)}, ${parseInt(kilometers, 10) || 0}, ${currency || 'KWD'}, ${color || ''}, ${description || ''}, ${finalImages}, ${user_email || ''}, 'pending')
       RETURNING id
     `;
 
@@ -69,6 +76,7 @@ const finalImages = images || image_url || image || '';
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
@@ -89,7 +97,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, message: 'لم يتم العثور على السيارة لتحديثها' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, message: 'تم تحديث حالة السيارة بنجاح حياً!' });
+    return NextResponse.json({ success: true, message: 'تم تحديث حالة السيارة بنجاح!' });
 
   } catch (error: any) {
     console.error('PUT Cars API Error:', error);
