@@ -11,33 +11,30 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📸 [UPLOAD] بدء عملية رفع الصور...');
+    console.log('📸 [UPLOAD] بدء عملية رفع الصور المصححة...');
     
     const formData = await request.formData();
-    const files = formData.getAll('images') as File[];
+    
+    // الحل السحري: قراءة الملفات سواء أرسلتها الواجهة باسم 'file' أو 'images'
+    const filesFromImages = formData.getAll('images') as File[];
+    const filesFromFile = formData.getAll('file') as File[];
+    const files = filesFromFile.length > 0 ? filesFromFile : filesFromImages;
+    
     const carId = formData.get('carId') as string;
 
-    console.log(`📸 [UPLOAD] عدد الملفات: ${files.length}, carId: ${carId}`);
+    console.log(`📸 [UPLOAD] عدد الملفات المكتشفة: ${files.length}, carId: ${carId}`);
 
-    if (!files || files.length === 0) {
-      console.log('❌ [UPLOAD] لا توجد ملفات');
-      return NextResponse.json(
-        { success: false, message: 'لم يتم إرسال أي صور' },
-        { status: 400 }
-      );
+    if (!files || files.length === 0 || !files[0] || files[0].size === 0) {
+      console.log('❌ [UPLOAD] لا توجد ملفات صالحة للرفع');
+      return NextResponse.json({ success: false, message: 'لم يتم إرسال أي صور صالحة' }, { status: 400 });
     }
 
     const uploadedUrls: string[] = [];
-    
-    // فحص شامل لجميع مسميات التوكنز المتاحة في سيرفر Vercel
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN || 
-                      process.env.CARS_BLOB_READ_WRITE_TOKEN || 
-                      process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN;
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN || process.env.CARS_BLOB_READ_WRITE_TOKEN || process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN;
 
     for (const file of files) {
       if (file && file.size > 0) {
-        console.log(`📸 [UPLOAD] رفع ملف: ${file.name}, الحجم: ${file.size} bytes`);
-        
+        console.log(`📸 [UPLOAD] جاري رفع ملف الواجهة: ${file.name}`);
         const blob = await put(
           `cars/${carId}/${Date.now()}-${file.name}`,
           file,
@@ -49,45 +46,46 @@ export async function POST(request: NextRequest) {
         );
         if (blob && blob.url) {
           uploadedUrls.push(blob.url);
-          console.log(`✅ [UPLOAD] تم رفع الملف بنجاح: ${blob.url}`);
+          console.log(`✅ [UPLOAD] تم الرفع بنجاح: ${blob.url}`);
         }
       }
     }
 
     if (uploadedUrls.length === 0) {
-      console.log('❌ [UPLOAD] فشل رفع جميع الملفات إلى التخزين الرقمي');
-      return NextResponse.json(
-        { success: false, message: 'فشل رفع الصور إلى التخزين' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, message: 'فشل رفع الصور إلى التخزين' }, { status: 500 });
     }
 
-    // ✅ حفظ الروابط بصيغة مصفوفة صريحة متوافقة 100% مع PostgreSQL
-    if (carId && uploadedUrls.length > 0) {
-      console.log(`📸 [UPLOAD] حفظ الروابط في قاعدة البيانات:`, uploadedUrls);
+    const firstImageUrl = uploadedUrls[0];
+    const imagesString = uploadedUrls.join(',');
 
+    // ✅ تحديث قاعدة البيانات بكافة الصيغ لضمان التوافق المطلق مع الواجهة القديمة والمطورة
+    if (carId) {
       const client = await pool.connect();
       try {
         await client.query(
-          'UPDATE cars SET images = $1::text[] WHERE id = $2',
-          [uploadedUrls, parseInt(carId, 10)]
+          `UPDATE cars 
+           SET images = $1::text[], 
+               image_url = $2,
+               image = $3
+           WHERE id = $4`,
+          [uploadedUrls, firstImageUrl, imagesString, parseInt(carId, 10)]
         );
-        console.log(`✅ [UPLOAD] تم تحديث السيارة ${carId} بالصور بنجاح في قاعدة البيانات`);
+        console.log(`✅ [UPLOAD] تم حقن الروابط بنجاح في قاعدة البيانات للسيارة رقم: ${carId}`);
       } finally {
         client.release();
       }
     }
 
+    // إرجاع الاستجابة بكافة الصيغ المتوقعة في السطر 50 للواجهة (url و image_url و urls)
     return NextResponse.json({
       success: true,
+      url: firstImageUrl,
+      image_url: firstImageUrl,
       urls: uploadedUrls,
     });
 
   } catch (error: any) {
-    console.error('❌ [UPLOAD] حدث خطأ أثناء المعالجة:', error);
-    return NextResponse.json(
-      { success: false, message: error.message || 'فشل رفع الصور' },
-      { status: 500 }
-    );
+    console.error('❌ [UPLOAD ERROR]:', error);
+    return NextResponse.json({ success: false, message: error.message || 'فشل رفع الصور' }, { status: 500 });
   }
 }
