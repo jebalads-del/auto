@@ -21,38 +21,23 @@ export default function CarPublish() {
   const [notes, setNotes] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImageFile(e.target.files[0]);
+      setUploadError('');
     }
   };
 
   const handlePublishSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setUploadError('');
 
     try {
-      let finalImageUrl = '';
-
-      // 1. رفع الصورة أولاً عبر مسار الرفع المخصص بمشروعك والناجح في الـ Logs
-      if (imageFile) {
-        const imgFormData = new FormData();
-        imgFormData.append('file', imageFile); // اعتماد اسم الحقل 'file' الشائع لمسارات الرفع
-
-        const uploadRes = await fetch('/api/cars/upload', {
-          method: 'POST',
-          body: imgFormData,
-        });
-
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          finalImageUrl = uploadData.url || uploadData.image_url || '';
-        }
-      }
-
-      // 2. إرسال البيانات النظيفة كـ JSON متوافق 100% مع جدول قاعدة البيانات
-      const response = await fetch('/api/cars', {
+      // 1. First create the car WITHOUT images
+      const carResponse = await fetch('/api/cars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -64,15 +49,43 @@ export default function CarPublish() {
           kilometers: 0,
           description: notes,
           currency: '$',
-          images: finalImageUrl,
+          images: '', // Empty initially
           status: 'pending'
         }),
       });
 
-      if (!response.ok) throw new Error('Failed');
+      if (!carResponse.ok) {
+        throw new Error('Failed to create car');
+      }
+
+      const carData = await carResponse.json();
+      const carId = carData.carId;
+
+      // 2. Upload image with carId
+      if (imageFile && carId) {
+        try {
+          const imgFormData = new FormData();
+          imgFormData.append('file', imageFile);
+          imgFormData.append('carId', String(carId)); // Add carId to form data
+
+          const uploadRes = await fetch('/api/cars/upload', {
+            method: 'POST',
+            body: imgFormData,
+          });
+
+          if (!uploadRes.ok) {
+            console.warn('Image upload failed, but car was created');
+            setUploadError('⚠️ السيارة تم إنشاؤها لكن حدث خطأ في رفع الصورة');
+          }
+        } catch (uploadErr) {
+          console.error('Upload error:', uploadErr);
+          setUploadError('⚠️ السيارة تم إنشاؤها لكن حدث خطأ في رفع الصورة');
+        }
+      }
 
       alert(`✅ تم إرسال إعلان السيارة للمراجعة بنجاح وسيظهر في لوحة التحكم لإدارته!`);
 
+      // Reset form
       setBrand('');
       setModel('');
       setYear('');
@@ -82,6 +95,7 @@ export default function CarPublish() {
       setImageFile(null);
     } catch (error) {
       console.error(error);
+      setUploadError('❌ فشل إرسال الإعلان. يرجى التأكد من ملء الحقول والمحاولة مرة أخرى.');
       alert('❌ فشل إرسال الإعلان. يرجى التأكد من ملء الحقول والمحاولة مرة أخرى.');
     } finally {
       setLoading(false);
@@ -136,8 +150,12 @@ export default function CarPublish() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">صورة السيارة المرفقة:</label>
-          <input type="file" accept="image/*" onChange={handleImageChange} required className="w-full text-xs text-gray-500 file:ml-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700" />
+          <input type="file" accept="image/*" onChange={handleImageChange} required className="w-full text-xs text-gray-500" />
         </div>
+
+        {uploadError && (
+          <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded">{uploadError}</div>
+        )}
 
         <button type="submit" disabled={loading} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700 disabled:opacity-50 mt-2">
           {loading ? 'جاري معالجة ورفع الصورة الحقيقية...' : '🚀 إرسال السيارة للمراجعة الآن'}
