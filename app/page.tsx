@@ -184,7 +184,7 @@ export default function HomePage() {
               const carPrice = car.price ? car.price.toLocaleString() : '0';
               const carCurrency = getCurrencySymbol(car.currency);
               
-              let carImageSrc = "/images/default-car.jpg";
+              let carImageSrc = "/default-car.jpg";
               try {
                 if (car.images) {
                   const cleanImgs = String(car.images).trim();
@@ -192,7 +192,7 @@ export default function HomePage() {
                     const parsedList = JSON.parse(cleanImgs);
                     if (parsedList.length > 0) carImageSrc = parsedList[0];
                   } else {
-                    carImageSrc = cleanImgs.split(",")[0]?.trim() || "/images/default-car.jpg";
+                    carImageSrc = cleanImgs.split(",")[0]?.trim() || "/default-car.jpg";
                   }
                 }
               } catch (e) { carImageSrc = "/images/default-car.jpg"; }
