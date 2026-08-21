@@ -195,7 +195,7 @@ export default function HomePage() {
                     carImageSrc = cleanImgs.split(",")[0]?.trim() || "/default-car.jpg";
                   }
                 }
-              } catch (e) { carImageSrc = "/images/default-car.jpg"; }
+              } catch (e) { carImageSrc = "/default-car.jpg"; }
 
               return (
                 <div key={car.id || Math.random()} style={styles.card}>
