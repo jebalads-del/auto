@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import sql from '../../db';
+import sql from '../../db'; // المعالج الرئيسي والمستقر للاتصال بقاعدة بياناتك
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📸 [UPLOAD] Starting image upload...');
+    console.log('📸 [UPLOAD] بدء عملية رفع الصور بصيغة JSONB...');
     
     const formData = await request.formData();
     
+    // قراءة الملفات سواء أرسلتها الواجهة باسم 'file' أو 'images'
     const filesFromImages = formData.getAll('images') as File[];
     const filesFromFile = formData.getAll('file') as File[];
     const files = filesFromFile.length > 0 ? filesFromFile : filesFromImages;
@@ -17,7 +18,8 @@ export async function POST(request: NextRequest) {
     const carId = formData.get('carId') as string;
 
     if (!files || files.length === 0) {
-      return NextResponse.json({ success: false, message: 'No valid images provided' }, { status: 400 });
+      console.log('❌ [UPLOAD] لا توجد ملفات صالحة للرفع');
+      return NextResponse.json({ success: false, message: 'لم يتم إرسال أي صور صالحة' }, { status: 400 });
     }
 
     const uploadedUrls: string[] = [];
@@ -25,6 +27,7 @@ export async function POST(request: NextRequest) {
 
     for (const file of files) {
       if (file && file.size > 0) {
+        console.log(`📸 [UPLOAD] جاري رفع ملف: ${file.name}`);
         const blob = await put(
           `cars/${carId}/${Date.now()}-${file.name}`,
           file,
@@ -36,31 +39,31 @@ export async function POST(request: NextRequest) {
         );
         if (blob && blob.url) {
           uploadedUrls.push(blob.url);
+          console.log(`✅ [UPLOAD] تم الرفع بنجاح: ${blob.url}`);
         }
       }
     }
 
     if (uploadedUrls.length === 0) {
-      return NextResponse.json({ success: false, message: 'Failed to upload images to cloud storage' }, { status: 500 });
+      return NextResponse.json({ success: false, message: 'فشل رفع الصور إلى التخزين السحابي' }, { status: 500 });
     }
 
     const firstImageUrl = uploadedUrls[0] || '';
-    // Store as JSON string, not array
-    const imagesJsonString = JSON.stringify(uploadedUrls);
     const imagesString = uploadedUrls.join(',');
 
-    // Update database with proper string format
+    // ✅ التعديل السحري: تحويل مصفوفة الروابط إلى نص JSON حقيقي قبل إرساله لقاعدة البيانات
     if (carId) {
       const targetId = parseInt(carId, 10);
-      
+      const jsonUrls = JSON.stringify(uploadedUrls); // تحويل ['url1', 'url2'] إلى '["url1", "url2"]'
+
       await sql`
         UPDATE cars 
-        SET images = ${imagesJsonString}, 
+        SET images = ${jsonUrls}::jsonb, 
             image_url = ${firstImageUrl},
             image = ${imagesString}
         WHERE id = ${targetId}
       `;
-      console.log(`✅ [UPLOAD] Successfully updated car #${carId} with images`);
+      console.log(`✅ [UPLOAD] تم تحديث السيارة رقم ${carId} بالصور في عمود JSONB بنجاح`);
     }
 
     return NextResponse.json({
@@ -72,6 +75,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ [UPLOAD ERROR]:', error);
-    return NextResponse.json({ success: false, message: error.message || 'Failed to upload images' }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message || 'فشل رفع الصور' }, { status: 500 });
   }
 }
