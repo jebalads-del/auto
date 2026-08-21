@@ -31,14 +31,17 @@ export default function CarDetailPage() {
               if (currentCar.images) {
                 let parsedUrls: string[] = [];
                 try {
-                  const cleanImages = currentCar.images.trim();
+                  const cleanImages = String(currentCar.images).trim();
                   if (cleanImages.startsWith('[') && cleanImages.endsWith(']')) {
                     parsedUrls = JSON.parse(cleanImages);
+                  } else if (cleanImages.startsWith('http')) {
+                    parsedUrls = [cleanImages];
                   } else {
                     parsedUrls = cleanImages.split(',').map((img: string) => img.trim()).filter(Boolean);
                   }
                 } catch (e) {
-                  parsedUrls = currentCar.images.split(',').map((img: string) => img.trim()).filter(Boolean);
+                  console.error('Error parsing images:', e);
+                  parsedUrls = String(currentCar.images).split(',').map((img: string) => img.trim()).filter(Boolean);
                 }
                 
                 setImagesList(parsedUrls);
@@ -72,9 +75,14 @@ export default function CarDetailPage() {
       <div style={styles.content}>
         <div style={styles.imageCard}>
           {activeImage ? (
-            <img src={activeImage} alt={car.brand} style={styles.mainImage} onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }} />
+            <img 
+              src={activeImage} 
+              alt={car.brand} 
+              style={styles.mainImage}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/default-car.jpg';
+              }}
+            />
           ) : (
             <div style={styles.noImagePlaceholder}>🚗 لا توجد صورة متوفرة</div>
           )}
@@ -82,10 +90,19 @@ export default function CarDetailPage() {
           {imagesList.length > 1 && (
             <div style={styles.thumbnailContainer}>
               {imagesList.map((img, idx) => (
-                <img key={idx} src={img} alt="thumbnail" onClick={() => setActiveImage(img)} style={{
-                  ...styles.thumbnail,
-                  border: activeImage === img ? '2px solid #2563eb' : '1px solid #cbd5e1'
-                }} />
+                <img 
+                  key={idx} 
+                  src={img} 
+                  alt="thumbnail" 
+                  onClick={() => setActiveImage(img)} 
+                  style={{
+                    ...styles.thumbnail,
+                    border: activeImage === img ? '2px solid #2563eb' : '1px solid #cbd5e1'
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/default-car.jpg';
+                  }}
+                />
               ))}
             </div>
           )}
