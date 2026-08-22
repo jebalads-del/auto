@@ -1,40 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSql } from '@/lib/db'; // استخدم الدالة الجديدة
+import supabase from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    // استخدام الدالة للحصول على اتصال قاعدة البيانات
-    const sql = getSql();
-    
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const { email, password } = body;
 
     if (!email || !password) {
-      return NextResponse.json({ success: false, message: 'يرجى إدخال البريد الإلكتروني وكلمة المرور' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: 'يرجى إدخال البريد الإلكتروني وكلمة المرور' },
+        { status: 400 }
+      );
     }
 
     console.log(`🔐 [LOGIN] محاولة تسجيل دخول للحساب: ${email}`);
 
-    const users = await sql`
-      SELECT id, email, password, role, status 
-      FROM users 
-      WHERE email = ${email.toLowerCase().trim()} 
-      LIMIT 1
-    `;
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, email, password, role, status')
+      .eq('email', email.toLowerCase().trim())
+      .limit(1);
 
-    if (users.length === 0) {
+    if (error) {
+      console.error('❌ [LOGIN DB ERROR]:', error);
+      return NextResponse.json(
+        { success: false, message: 'خطأ في قاعدة البيانات: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    if (!users || users.length === 0) {
       console.log('❌ [LOGIN] الحساب غير موجود');
-      return NextResponse.json({ success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
+        { status: 401 }
+      );
     }
 
     const user = users[0];
-    const isPasswordValid = password === user.password || user.password.includes(password);
+    const isPasswordValid = password === user.password || user.password?.includes(password);
 
     if (!isPasswordValid) {
       console.log('❌ [LOGIN] كلمة المرور غير مطابقة');
-      return NextResponse.json({ success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
+        { status: 401 }
+      );
     }
 
     console.log(`✅ [LOGIN] تم التحقق بنجاح! الرتبة: ${user.role}`);
@@ -44,13 +58,17 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
-        role: user.role,
-        status: user.status
+        role: user.role || 'user',
+        status: user.status || 'active'
       }
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ [LOGIN ERROR]:', error);
-    return NextResponse.json({ success: false, message: error.message || 'حدث خطأ غير متوقع' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
+    return NextResponse.json(
+      { success: false, message: errorMessage },
+      { status: 500 }
+    );
   }
 }

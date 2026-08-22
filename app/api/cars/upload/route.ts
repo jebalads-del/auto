@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSql } from '@/lib/db';  // استخدم الدالة الجديدة بدلاً من الاستيراد المباشر
+import supabase from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    // الحصول على اتصال قاعدة البيانات
-    const sql = getSql();
-    
     console.log('📸 [SUPABASE UPLOAD] بدء عملية رفع الصور المستقرة...');
     
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,7 +27,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('✅ Supabase URL موجود:', supabaseUrl);
-    console.log('✅ Supabase Key موجود (جزء منه):', supabaseKey.substring(0, 20) + '...');
 
     const formData = await request.formData();
     const filesFromImages = formData.getAll('images') as File[];
@@ -40,7 +36,10 @@ export async function POST(request: NextRequest) {
     const carId = formData.get('carId') as string;
 
     if (!files || files.length === 0) {
-      return NextResponse.json({ success: false, message: 'لم يتم استقبال أي صور صالحة' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: 'لم يتم استقبال أي صور صالحة' },
+        { status: 400 }
+      );
     }
 
     const uploadedUrls: string[] = [];
@@ -50,28 +49,35 @@ export async function POST(request: NextRequest) {
         const fileName = `cars/${carId}/${Date.now()}-${file.name}`;
         console.log(`📸 [SUPABASE] جاري رفع ملف: ${fileName}`);
 
-        const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/public/cars/${fileName}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': file.type,
-          },
-          body: file
-        });
+        try {
+          const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/public/cars/${fileName}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': file.type,
+            },
+            body: file
+          });
 
-        if (uploadRes.ok) {
-          const publicUrl = `${supabaseUrl}/storage/v1/object/public/cars/${fileName}`;
-          uploadedUrls.push(publicUrl);
-          console.log(`✅ [SUPABASE] تم الرفع بنجاح: ${publicUrl}`);
-        } else {
-          const errText = await uploadRes.text();
-          console.error(`❌ [SUPABASE STORAGE ERROR]:`, errText);
+          if (uploadRes.ok) {
+            const publicUrl = `${supabaseUrl}/storage/v1/object/public/cars/${fileName}`;
+            uploadedUrls.push(publicUrl);
+            console.log(`✅ [SUPABASE] تم الرفع بنجاح: ${publicUrl}`);
+          } else {
+            const errText = await uploadRes.text();
+            console.error(`❌ [SUPABASE STORAGE ERROR]:`, errText);
+          }
+        } catch (uploadError) {
+          console.error(`❌ [UPLOAD ERROR] فشل رفع الملف: ${file.name}`, uploadError);
         }
       }
     }
 
     if (uploadedUrls.length === 0) {
-      return NextResponse.json({ success: false, message: 'فشل رفع الصور إلى استوديو Supabase' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, message: 'فشل رفع الصور إلى استوديو Supabase' },
+        { status: 500 }
+      );
     }
 
     const firstImageUrl = uploadedUrls[0] || '';
@@ -79,13 +85,31 @@ export async function POST(request: NextRequest) {
 
     if (carId) {
       const targetId = parseInt(carId, 10);
-      await sql`
-        UPDATE cars 
-        SET images = ${jsonUrls}, 
-            image_url = ${firstImageUrl},
-            image = ${jsonUrls}
-        WHERE id = ${targetId}
-      `;
+      
+      if (isNaN(targetId)) {
+        return NextResponse.json(
+          { success: false, message: 'معرف السيارة غير صالح' },
+          { status: 400 }
+        );
+      }
+
+      const { error } = await supabase
+        .from('cars')
+        .update({ 
+          images: jsonUrls, 
+          image_url: firstImageUrl,
+          image: jsonUrls
+        })
+        .eq('id', targetId);
+
+      if (error) {
+        console.error('❌ [SUPABASE DB ERROR]:', error);
+        return NextResponse.json(
+          { success: false, message: 'فشل تحديث قاعدة البيانات: ' + error.message },
+          { status: 500 }
+        );
+      }
+      
       console.log(`✅ [SUPABASE DB] تم ربط الصور بالسيارة رقم ${carId} بنجاح`);
     }
 
@@ -96,8 +120,12 @@ export async function POST(request: NextRequest) {
       urls: uploadedUrls,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ [SUPABASE UPLOAD ERROR]:', error);
-    return NextResponse.json({ success: false, message: error.message || 'فشل رفع الصور' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'فشل رفع الصور';
+    return NextResponse.json(
+      { success: false, message: errorMessage },
+      { status: 500 }
+    );
   }
 }

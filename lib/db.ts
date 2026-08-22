@@ -1,26 +1,26 @@
-import postgres from 'postgres';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '@/types/supabase';
 
-let sqlInstance: any = null;
+// قراءة متغيرات البيئة
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export function getSql() {
-  if (sqlInstance) return sqlInstance;
-  
-  const connectionString = process.env.DATABASE_URL;
-  
-  if (!connectionString) {
-    throw new Error('DATABASE_URL environment variable is not set');
-  }
-  
-  console.log('✅ Connecting to Supabase...');
-  sqlInstance = postgres(connectionString, { 
-    ssl: 'require',
-    idle_timeout: 20,
-    max_lifetime: 60 * 5,
-  });
-  
-  return sqlInstance;
+// التحقق من وجود المتغيرات
+if (!supabaseUrl) {
+  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL is not set');
 }
 
-// للتوافق مع الكود القديم
-const sql = getSql();
-export default sql;
+if (!supabaseKey) {
+  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
+}
+
+// إنشاء عميل Supabase مع أنواع TypeScript
+const supabase = createClient<Database>(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseKey || 'placeholder-key'
+);
+
+export default supabase;
+
+// تصدير الدالة المساعدة
+export const getSupabase = (): SupabaseClient<Database> => supabase;
