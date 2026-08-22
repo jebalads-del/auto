@@ -1,5 +1,8 @@
-import { neon } from '@neondatabase/serverless';
+import postgres from 'postgres';
 
-const sql = neon(process.env.DATABASE_URL!);
+const connectionString = process.env.DATABASE_URL || '';
+
+// الاتصال المباشر والمستقر بمحرك قاعدة بيانات Supabase الجديدة لإنهاء الأعطال
+const sql = postgres(connectionString, { ssl: 'require' });
 
 export default sql;
