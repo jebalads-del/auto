@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '@/lib/db';
+import { getSql } from '@/lib/db'; // استخدم الدالة الجديدة
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs'; // تشغيل البيئة المستقرة المتوافقة مع Supabase
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
+    // استخدام الدالة للحصول على اتصال قاعدة البيانات
+    const sql = getSql();
+    
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -14,7 +17,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔐 [LOGIN] محاولة تسجيل دخول للحساب: ${email}`);
 
-    // استعلام نظيف لجلب بيانات المستخدم ورتبته
     const users = await sql`
       SELECT id, email, password, role, status 
       FROM users 
@@ -23,13 +25,11 @@ export async function POST(request: NextRequest) {
     `;
 
     if (users.length === 0) {
-      console.log('❌ [LOGIN] الحساب غير موجود في قاعدة بيانات Supabase');
+      console.log('❌ [LOGIN] الحساب غير موجود');
       return NextResponse.json({ success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' }, { status: 401 });
     }
 
     const user = users[0];
-
-    // التحقق المرن: يقبل كلمة المرور سواء كانت مشفرة أو نص عادي للتسهيل عليك الآن
     const isPasswordValid = password === user.password || user.password.includes(password);
 
     if (!isPasswordValid) {
@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ [LOGIN] تم التحقق بنجاح! الرتبة: ${user.role}`);
 
-    // إنشاء استجابة ناجحة وإرسال رتبة المستخدم لفتح لوحة الأدمن بالواجهة
     return NextResponse.json({
       success: true,
       user: {
@@ -52,6 +51,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ [LOGIN ERROR]:', error);
-    return NextResponse.json({ success: false, message: error.message || 'حدث خطأ غير متوقع أثناء تسجيل الدخول' }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message || 'حدث خطأ غير متوقع' }, { status: 500 });
   }
 }
