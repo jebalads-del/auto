@@ -1,19 +1,26 @@
-// حل مؤقت للتأكد من وجود المتغيرات
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://uhtjnfeohafpnwcacssk.supabase.co';
-}
-if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'sb_publishable_Js69Lv_DD1bhV1Q...';
-}
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'postgresql://postgres:398990099Asd@db.uhtjnfeohafpnwcacssk.supabase.co:5432/postgres';
-}
-
 import postgres from 'postgres';
 
-const connectionString = process.env.DATABASE_URL || '';
+let sqlInstance: any = null;
 
-// الاتصال المباشر والمستقر بمحرك قاعدة بيانات Supabase الجديدة لإنهاء الأعطال
-const sql = postgres(connectionString, { ssl: 'require' });
+export function getSql() {
+  if (sqlInstance) return sqlInstance;
+  
+  const connectionString = process.env.DATABASE_URL;
+  
+  if (!connectionString) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  
+  console.log('✅ Connecting to Supabase...');
+  sqlInstance = postgres(connectionString, { 
+    ssl: 'require',
+    idle_timeout: 20,
+    max_lifetime: 60 * 5,
+  });
+  
+  return sqlInstance;
+}
 
+// للتوافق مع الكود القديم
+const sql = getSql();
 export default sql;
