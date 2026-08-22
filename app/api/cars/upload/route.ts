@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sql from '@/lib/db';
+import { getSql } from '@/lib/db';  // استخدم الدالة الجديدة بدلاً من الاستيراد المباشر
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    // الحصول على اتصال قاعدة البيانات
+    const sql = getSql();
+    
     console.log('📸 [SUPABASE UPLOAD] بدء عملية رفع الصور المستقرة...');
     
-    // 🔴 التحقق من وجود متغيرات البيئة
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
