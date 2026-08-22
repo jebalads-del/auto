@@ -7,6 +7,29 @@ export async function POST(request: NextRequest) {
   try {
     console.log('📸 [SUPABASE UPLOAD] بدء عملية رفع الصور المستقرة...');
     
+    // 🔴 التحقق من وجود متغيرات البيئة
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl) {
+      console.error('❌ NEXT_PUBLIC_SUPABASE_URL غير معرف');
+      return NextResponse.json(
+        { success: false, message: 'خطأ في التكوين: NEXT_PUBLIC_SUPABASE_URL غير معرف' },
+        { status: 500 }
+      );
+    }
+
+    if (!supabaseKey) {
+      console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY غير معرف');
+      return NextResponse.json(
+        { success: false, message: 'خطأ في التكوين: NEXT_PUBLIC_SUPABASE_ANON_KEY غير معرف' },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Supabase URL موجود:', supabaseUrl);
+    console.log('✅ Supabase Key موجود (جزء منه):', supabaseKey.substring(0, 20) + '...');
+
     const formData = await request.formData();
     const filesFromImages = formData.getAll('images') as File[];
     const filesFromFile = formData.getAll('file') as File[];
@@ -19,8 +42,6 @@ export async function POST(request: NextRequest) {
     }
 
     const uploadedUrls: string[] = [];
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     for (const file of files) {
       if (file && file.size > 0) {
