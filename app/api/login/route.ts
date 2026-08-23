@@ -41,7 +41,12 @@ export async function POST(request: NextRequest) {
     }
 
     const user = users[0];
-    const isPasswordValid = password === user.password || user.password?.includes(password);
+    
+    // التحقق من كلمة المرور
+    console.log(`🔍 [LOGIN DEBUG] Email: ${user.email}, Password from DB: ${user.password}, Input: ${password}`);
+    
+    // التحقق الدقيق
+    const isPasswordValid = password === user.password;
 
     if (!isPasswordValid) {
       console.log('❌ [LOGIN] كلمة المرور غير مطابقة');
