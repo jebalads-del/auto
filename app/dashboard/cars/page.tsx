@@ -1,41 +1,33 @@
-'use client';
-export const dynamic = 'force-dynamic';
-import { useEffect, useState } from 'react';
+"use client";
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface Car {
-  id: number;
+  id: any;
   brand: string;
   model: string;
   year: number;
   price: number;
   status: string;
   images: any;
-  kilometers?: number;
 }
 
-export default function AdminCarsPage() {
+export default function DashboardCars() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [actionLoading, setActionLoading] = useState<any>(null);
 
-  // دالة جلب السيارات من الـ API وتأمين قراءتها
+  // تم إدراج رابط قاعدة البيانات والـ Bucket الخاص بك هنا تلقائياً
+  const SUPABASE_STORAGE_URL = "https://supabase.co";
+
   const fetchCars = async () => {
     try {
       setLoading(true);
-      // تجربة جلب البيانات من مسار الأدمن، وإذا فشل يتوجه للمسار العام تلقائياً
-      let res = await fetch('/api/admin/cars');
-      if (!res.ok) res = await fetch('/api/cars');
-      
-      const data = await res.json();
-      
-      // التعامل المرن مع كافة أشكال الردود المتوقعة من الـ API (سواء مصفوفة أو كائن)
-      if (Array.isArray(data)) {
+      const res = await fetch('/api/cars');
+      if (res.ok) {
+        const data = await res.json();
         setCars(data);
-      } else if (data && Array.isArray(data.cars)) {
-        setCars(data.cars);
-      } else if (data && data.success && Array.isArray(data.data)) {
-        setCars(data.data);
       }
     } catch (error) {
       console.error('خطأ في جلب السيارات:', error);
@@ -47,20 +39,30 @@ export default function AdminCarsPage() {
   useEffect(() => {
     fetchCars();
   }, []);
-  // دالة تحديث حالة السيارة (قبول، رفض، مباعة)
-  const handleUpdateStatus = async (id: number, currentStatus: string) => {
+
+  // دالة تحديث حالة السيارة
+  const handleUpdateStatus = async (id: any, currentStatus: string) => {
     try {
       setActionLoading(id);
       const nextStatus = currentStatus === 'pending' ? 'approved' : currentStatus === 'approved' ? 'sold' : 'approved';
-      
-      const res = await fetch('/api/cars', {
+
+      // محاولة الإرسال للمسار الديناميكي الجديد car/[id] بناءً على تغييرات الملفات في GitHub
+      const res = await fetch(`/api/car/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: nextStatus })
+        body: JSON.stringify({ status: nextStatus })
       });
 
       if (res.ok) {
-        fetchCars(); // إعادة تحديث القائمة فوراً
+        fetchCars();
+      } else {
+        // محاولة بديلة إذا كان الـ API القديم api/cars ما زال نشطاً ويستقبل الـ id بالـ body
+        const resAlt = await fetch('/api/cars', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status: nextStatus })
+        });
+        if (resAlt.ok) fetchCars();
       }
     } catch (error) {
       console.error('خطأ في تحديث الحالة:', error);
@@ -69,14 +71,21 @@ export default function AdminCarsPage() {
     }
   };
 
-  // dالة حذف السيارة نهائياً
-  const handleDeleteCar = async (id: number) => {
+  // دالة حذف السيارة
+  const handleDeleteCar = async (id: any) => {
     if (!confirm('هل أنت متأكد من حذف هذا الإعلان نهائياً؟')) return;
     try {
       setActionLoading(id);
-      const res = await fetch(`/api/cars?id=${id}`, { method: 'DELETE' });
+      
+      // إرسال الحذف للمسار الديناميكي الجديد
+      const res = await fetch(`/api/car/${id}`, { method: 'DELETE' });
+      
       if (res.ok) {
         setCars(cars.filter(car => car.id !== id));
+      } else {
+        // محاولة بديلة للمسار القديم مع الـ Query parameters
+        const resAlt = await fetch(`/api/cars?id=${id}`, { method: 'DELETE' });
+        if (resAlt.ok) setCars(cars.filter(car => car.id !== id));
       }
     } catch (error) {
       console.error('خطأ في حذف السيارة:', error);
@@ -84,32 +93,24 @@ export default function AdminCarsPage() {
       setActionLoading(null);
     }
   };
+
   return (
     <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      
-      {/* الهيدر وأزرار العودة */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e293b' }}>🚗 إدارة إعلانات السيارات</h1>
           <p style={{ color: '#64748b', fontSize: '14px' }}>إجمالي السيارات المتاحة: <span style={{ fontWeight: 'bold', color: '#2563eb' }}>{cars.length}</span></p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href="/dashboard" style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 16px', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' }}>
-            ⬅️ العودة للرئيسية
-          </Link>
-          <Link href="/dashboard/cars/new" style={{ backgroundColor: '#2563eb', color: 'white', padding: '10px 16px', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' }}>
-            ➕ إضافة سيارة
-          </Link>
+          <Link href="/dashboard" style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 16px', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' }}>⬅️ العودة للرئيسية</Link>
+          <Link href="/dashboard/cars/new" style={{ backgroundColor: '#2563eb', color: 'white', padding: '10px 16px', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' }}>➕ إضافة سيارة</Link>
         </div>
       </div>
 
-      {/* لوحة العرض وحالة التحميل */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>جاري تحميل السيارات وتحديث الأرقام...</div>
       ) : cars.length === 0 ? (
-        <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center', color: '#64748b', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          📭 لا توجد إعلانات سيارات منشورة حالياً في قاعدة البيانات.
-        </div>
+        <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center', color: '#64748b', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>📭 لا توجد إعلانات سيارات منشورة حالياً في قاعدة البيانات.</div>
       ) : (
         <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
@@ -125,15 +126,20 @@ export default function AdminCarsPage() {
             </thead>
             <tbody>
               {cars.map((car) => {
-                // استخراج الرابط الأول للصور بأمان
-                let thumb = 'data:image/svg+xml;utf8,<svg xmlns="http://w3.org" viewBox="0 0 24 24" fill="%23cbd5e1"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>';
-                if (Array.isArray(car.images) && car.images.length > 0) thumb = car.images[0];
-                else if (typeof car.images === 'string' && car.images.startsWith('http')) thumb = car.images;
+                let thumb = "";
+                const imgData = car.images;
+
+                // فحص وتركيب روابط الصور لتعمل مع Supabase Storage المباشر
+                if (Array.isArray(imgData) && imgData.length > 0) {
+                  thumb = imgData[0].startsWith('http') ? imgData[0] : `${SUPABASE_STORAGE_URL}${imgData[0]}`;
+                } else if (typeof imgData === 'string') {
+                  thumb = imgData.startsWith('http') ? imgData : `${SUPABASE_STORAGE_URL}${imgData}`;
+                }
 
                 return (
                   <tr key={car.id} style={{ borderBottom: '1px solid #edf2f7' }}>
                     <td style={{ padding: '12px 15px' }}>
-                      <img src={thumb} alt="car" style={{ width: '50px', height: '40px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
+                      <img src={thumb || "/car-placeholder.png"} alt="car" style={{ width: '50px', height: '40px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0' }} />
                     </td>
                     <td style={{ padding: '12px 15px', fontWeight: 'bold' }}>{car.brand} {car.model}</td>
                     <td style={{ padding: '12px 15px' }}>{car.year}</td>
@@ -167,4 +173,3 @@ export default function AdminCarsPage() {
     </div>
   );
 }
-
