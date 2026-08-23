@@ -48,14 +48,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('➕ [CARS] إضافة سيارة جديدة...');
 
-    const { data: car, error } = await supabase
-      .from('cars')
-      .insert([{
-        ...body,
-        created_at: new Date().toISOString()
-      }])
-      .select()
-      .maybeSingle();
+   const { data: car, error } = await supabase
+  .from('cars')
+  .insert([{
+    ...body,
+    user_id: 1,  // معرف المستخدم admin
+    created_at: new Date().toISOString()
+  }])
+  .select()
+  .maybeSingle(); 
 
     if (error) {
       console.error('❌ [CARS CREATE ERROR]:', error);
