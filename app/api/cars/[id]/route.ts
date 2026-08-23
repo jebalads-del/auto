@@ -3,54 +3,6 @@ import supabase from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const carId = parseInt(params.id);
-
-    if (isNaN(carId)) {
-      return NextResponse.json(
-        { success: false, message: 'معرف السيارة غير صالح' },
-        { status: 400 }
-      );
-    }
-
-    console.log(`🔍 [CAR ID] جلب بيانات السيارة: ${carId}`);
-
-    const { data: car, error } = await supabase
-      .from('cars')
-      .select('*')
-      .eq('id', carId)
-      .maybeSingle();
-
-    if (error) {
-      console.error('❌ [CAR ID ERROR]:', error);
-      return NextResponse.json(
-        { success: false, message: 'خطأ في جلب السيارة' },
-        { status: 500 }
-      );
-    }
-
-    if (!car) {
-      return NextResponse.json(
-        { success: false, message: 'السيارة غير موجودة' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ success: true, car });
-
-  } catch (error: unknown) {
-    console.error('❌ [CAR ID ERROR]:', error);
-    return NextResponse.json(
-      { success: false, message: 'حدث خطأ غير متوقع' },
-      { status: 500 }
-    );
-  }
-}
-
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -66,7 +18,7 @@ export async function PUT(
       );
     }
 
-    console.log(`🔄 [CAR UPDATE] تحديث السيارة: ${carId}`);
+    console.log(`🔄 [CAR UPDATE] تحديث السيارة: ${carId}`, body);
 
     const { data: car, error } = await supabase
       .from('cars')
@@ -78,7 +30,7 @@ export async function PUT(
     if (error) {
       console.error('❌ [CAR UPDATE ERROR]:', error);
       return NextResponse.json(
-        { success: false, message: 'خطأ في تحديث السيارة' },
+        { success: false, message: 'خطأ في تحديث السيارة: ' + error.message },
         { status: 500 }
       );
     }
@@ -118,7 +70,7 @@ export async function DELETE(
     if (error) {
       console.error('❌ [CAR DELETE ERROR]:', error);
       return NextResponse.json(
-        { success: false, message: 'خطأ في حذف السيارة' },
+        { success: false, message: 'خطأ في حذف السيارة: ' + error.message },
         { status: 500 }
       );
     }
