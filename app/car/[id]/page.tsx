@@ -5,8 +5,17 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Car {
-  id: number; brand: string; model: string; year: number; price: number;
-  kilometers: number; color: string; description: string; images: string; status: string; currency: string;
+  id: number; 
+  brand: string; 
+  model: string; 
+  year: number; 
+  price: number;
+  kilometers: number; 
+  color: string; 
+  description: string; 
+  images: string; 
+  status: string; 
+  currency: string;
 }
 
 export default function CarDetailPage() {
@@ -21,39 +30,48 @@ export default function CarDetailPage() {
     if (!id) return;
     const fetchCarDetail = async () => {
       try {
-        const res = await fetch(`/api/cars?id=${id}`, { cache: 'no-store' });
+        console.log(`🔍 [CAR DETAIL] جلب تفاصيل السيارة ID: ${id}`);
+        // استخدام المسار الصحيح مع المعرف
+        const res = await fetch(`/api/cars/${id}`, { cache: 'no-store' });
+        
         if (res.ok) {
           const data = await res.json();
+          console.log('✅ [CAR DETAIL] البيانات المستلمة:', data);
+          
           if (data.success && data.car) {
-            const currentCar = Array.isArray(data.car) ? data.car[0] : data.car;
-            if (currentCar) {
-              setCar(currentCar);
-              if (currentCar.images) {
-                let parsedUrls: string[] = [];
-                try {
-                  const cleanImages = String(currentCar.images).trim();
-                  if (cleanImages.startsWith('[') && cleanImages.endsWith(']')) {
-                    parsedUrls = JSON.parse(cleanImages);
-                  } else if (cleanImages.startsWith('http')) {
-                    parsedUrls = [cleanImages];
-                  } else {
-                    parsedUrls = cleanImages.split(',').map((img: string) => img.trim()).filter(Boolean);
-                  }
-                } catch (e) {
-                  console.error('Error parsing images:', e);
-                  parsedUrls = String(currentCar.images).split(',').map((img: string) => img.trim()).filter(Boolean);
+            const currentCar = data.car;
+            setCar(currentCar);
+            
+            // معالجة الصور
+            if (currentCar.images) {
+              let parsedUrls: string[] = [];
+              try {
+                const cleanImages = String(currentCar.images).trim();
+                if (cleanImages.startsWith('[') && cleanImages.endsWith(']')) {
+                  parsedUrls = JSON.parse(cleanImages);
+                } else if (cleanImages.startsWith('http')) {
+                  parsedUrls = [cleanImages];
+                } else {
+                  parsedUrls = cleanImages.split(',').map((img: string) => img.trim()).filter(Boolean);
                 }
-                
-                setImagesList(parsedUrls);
-                if (parsedUrls.length > 0) {
-                  setActiveImage(parsedUrls[0]);
-                }
+              } catch (e) {
+                console.error('Error parsing images:', e);
+                parsedUrls = String(currentCar.images).split(',').map((img: string) => img.trim()).filter(Boolean);
+              }
+              
+              setImagesList(parsedUrls);
+              if (parsedUrls.length > 0) {
+                setActiveImage(parsedUrls[0]);
               }
             }
+          } else {
+            console.error('❌ [CAR DETAIL] لم يتم العثور على السيارة');
           }
+        } else {
+          console.error('❌ [CAR DETAIL] فشل في جلب البيانات:', res.status);
         }
       } catch (error) {
-        console.error(error);
+        console.error('❌ [CAR DETAIL ERROR]:', error);
       } finally {
         setLoading(false);
       }
@@ -63,6 +81,7 @@ export default function CarDetailPage() {
 
   if (loading) return <div style={styles.loadingContainer}><div style={styles.spinner}></div></div>;
   if (!car) return <div style={styles.loadingContainer}><p>⚠️ عذراً، لم يتم العثور على السيارة المطلوبة</p></div>;
+  
   return (
     <div style={styles.container}>
       <header style={styles.header}>
@@ -116,7 +135,11 @@ export default function CarDetailPage() {
             <div style={styles.specItem}><span style={styles.specLabel}>📅 سنة الصنع:</span><span style={styles.specValue}>{car.year}</span></div>
             <div style={styles.specItem}><span style={styles.specLabel}>🎨 اللون الخارجي:</span><span style={styles.specValue}>{car.color || 'غير محدد'}</span></div>
             <div style={styles.specItem}><span style={styles.specLabel}>📟 المسافة المقطوعة:</span><span style={styles.specValue}>{car.kilometers?.toLocaleString()} كم</span></div>
-            <div style={styles.specItem}><span style={styles.specLabel}>🛡️ حالة الإعلان:</span><span style={styles.statusBadge}>🟢 موافق عليه ونشط</span></div>
+            <div style={styles.specItem}><span style={styles.specLabel}>🛡️ حالة الإعلان:</span><span style={styles.statusBadge}>
+              {car.status === 'approved' ? '🟢 موافق عليه ونشط' : 
+               car.status === 'pending' ? '🟡 قيد المراجعة' : 
+               car.status === 'rejected' ? '🔴 مرفوض' : '⚪ غير محدد'}
+            </span></div>
           </div>
 
           <hr style={{ border: 0, height: '1px', backgroundColor: '#e2e8f0', margin: '20px 0' }} />
@@ -128,6 +151,7 @@ export default function CarDetailPage() {
     </div>
   );
 }
+
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   header: { background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: '#ffffff', padding: '15px 20px' },
