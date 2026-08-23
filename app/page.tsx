@@ -13,7 +13,7 @@ interface Car {
   kilometers: number;
   color: string;
   description: string;
-  images: string[];
+  images: string | string[];
   status: string;
   currency: string;
 }
@@ -23,7 +23,7 @@ export default function HomePage() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // حالات محرك البحث المتطور الجديد
+  // حالات محرك البحث
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchBrand, setSearchBrand] = useState('');
   const [searchModel, setSearchModel] = useState('');
@@ -33,15 +33,31 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const carsRes = await fetch(`/api/cars?t=${Date.now()}`).catch(() => null);
-        const carsData = carsRes ? await carsRes.json().catch(() => null) : null;
-        if (carsData) {
-          if (Array.isArray(carsData)) setCars(carsData);
-          else if (Array.isArray(carsData.cars)) setCars(carsData.cars);
-          else if (carsData.success && Array.isArray(carsData.cars)) setCars(carsData.cars);
+        console.log('🔍 [HOME] جلب السيارات...');
+        const carsRes = await fetch(`/api/cars?t=${Date.now()}`);
+        
+        if (carsRes.ok) {
+          const data = await carsRes.json();
+          console.log('✅ [HOME] البيانات المستلمة:', data);
+          
+          let carsList: Car[] = [];
+          if (data.success && Array.isArray(data.cars)) {
+            carsList = data.cars;
+          } else if (Array.isArray(data)) {
+            carsList = data;
+          } else if (data.cars && Array.isArray(data.cars)) {
+            carsList = data.cars;
+          }
+          
+          // تصفية السيارات المقبولة فقط
+          const approvedCars = carsList.filter(car => car.status === 'approved' || car.status === 'active');
+          setCars(approvedCars);
+          console.log(`✅ [HOME] تم جلب ${approvedCars.length} سيارة مقبولة`);
+        } else {
+          console.error('❌ [HOME] فشل في جلب البيانات');
         }
       } catch (error) {
-        console.error(error);
+        console.error('❌ [HOME ERROR]:', error);
       } finally {
         setLoading(false);
       }
@@ -51,7 +67,7 @@ export default function HomePage() {
 
   const handlePostAdClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token') || localStorage.getItem('user') || document.cookie.includes('session');
+    const token = localStorage.getItem('token') || localStorage.getItem('user');
     if (!token) {
       router.push('/login');
     } else {
@@ -62,34 +78,55 @@ export default function HomePage() {
   const getCurrencySymbol = (currency: string) => {
     if (!currency) return 'د.ك';
     if (String(currency).toUpperCase() === 'SAR') return 'ر.س';
+    if (String(currency).toUpperCase() === 'KWD') return 'د.ك';
     return 'د.ك';
   };
-  // محرك الفلترة المطور: يقوم بتصفية المصفوفة بناءً على كافة المدخلات في نفس الوقت
+
+  // فلترة السيارات
   const filteredCars = Array.isArray(cars) ? cars.filter(car => {
     if (!car) return false;
     
-    // 1. فلترة الماركة
     if (searchBrand && String(car.brand).toLowerCase() !== searchBrand.toLowerCase()) return false;
-    
-    // 2. فلترة الموديل
     if (searchModel && String(car.model).toLowerCase() !== searchModel.toLowerCase()) return false;
-    
-    // 3. فلترة الحد الأقصى للسعر
     if (maxPrice && Number(car.price) > Number(maxPrice)) return false;
-    
-    // 4. فلترة سنة الصنع (من سنة فما فوق)
     if (minYear && Number(car.year) < Number(minYear)) return false;
     
     return true;
   }) : [];
 
-  // جلب الماركات الفريدة المتوفرة فعلياً في قاعدة البيانات لقائمة الخيارات
+  // جلب الماركات الفريدة
   const uniqueBrands = Array.isArray(cars) ? Array.from(new Set(cars.map(car => car?.brand).filter(Boolean))) : [];
 
-  // جلب الموديلات الفريدة التابعة للماركة المختارة حصراً لتسهيل البحث على المستخدم
+  // جلب الموديلات حسب الماركة
   const availableModels = Array.isArray(cars) && searchBrand 
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
+
+  // دالة معالجة الصور
+  const getCarImage = (car: Car): string => {
+    try {
+      if (!car.images) return '/default-car.jpg';
+      
+      let imagesArray: string[] = [];
+      if (typeof car.images === 'string') {
+        const cleanImgs = car.images.trim();
+        if (cleanImgs.startsWith('[') && cleanImgs.endsWith(']')) {
+          imagesArray = JSON.parse(cleanImgs);
+        } else if (cleanImgs.startsWith('http')) {
+          imagesArray = [cleanImgs];
+        } else {
+          imagesArray = cleanImgs.split(',').map(url => url.trim()).filter(Boolean);
+        }
+      } else if (Array.isArray(car.images)) {
+        imagesArray = car.images;
+      }
+      
+      return imagesArray.length > 0 && imagesArray[0] ? imagesArray[0] : '/default-car.jpg';
+    } catch (e) {
+      console.error('Image parsing error:', e);
+      return '/default-car.jpg';
+    }
+  };
 
   if (loading) {
     return (
@@ -126,13 +163,11 @@ export default function HomePage() {
           <button type="button" onClick={() => setIsFilterOpen(!isFilterOpen)} style={styles.actionButtonSearch}>🔍 {isFilterOpen ? 'إغلاق محرك البحث' : 'تخصيص فلاتر البحث'}</button>
         </div>
 
-        {/* نموذج محرك البحث المطور والجديد كلياً */}
         {isFilterOpen && (
           <div style={styles.searchSection}>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '15px', color: '#1e293b', fontWeight: 'bold' }}>⚙️ خيارات البحث المتقدم:</h3>
             <div style={styles.filterGrid}>
               
-              {/* اختيار الماركة */}
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>الماركة (الشركة المصنعة):</label>
                 <select value={searchBrand} onChange={(e) => { setSearchBrand(e.target.value); setSearchModel(''); }} style={styles.filterInput}>
@@ -141,7 +176,6 @@ export default function HomePage() {
                 </select>
               </div>
 
-              {/* اختيار الموديل - يتفعل فقط بعد اختيار الماركة */}
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>الموديل:</label>
                 <select value={searchModel} onChange={(e) => setSearchModel(e.target.value)} disabled={!searchBrand} style={{...styles.filterInput, opacity: searchBrand ? 1 : 0.6}}>
@@ -150,13 +184,11 @@ export default function HomePage() {
                 </select>
               </div>
 
-              {/* تحديد الحد الأقصى للسعر */}
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>السعر الأقصى (د.ك):</label>
                 <input type="number" placeholder="مثال: 5000" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={styles.filterInput} />
               </div>
 
-              {/* تحديد سنة الصنع من سنة فما فوق */}
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>سنة الصنع (من سنة):</label>
                 <input type="number" placeholder="مثال: 2018" value={minYear} onChange={(e) => setMinYear(e.target.value)} style={styles.filterInput} />
@@ -164,7 +196,6 @@ export default function HomePage() {
 
             </div>
             
-            {/* زر لإعادة تعيين الفلاتر ومسحها */}
             {(searchBrand || searchModel || maxPrice || minYear) && (
               <button type="button" onClick={() => { setSearchBrand(''); setSearchModel(''); setMaxPrice(''); setMinYear(''); }} style={styles.resetButton}>🧹 مسح كل الفلاتر وعرض الكل</button>
             )}
@@ -183,30 +214,12 @@ export default function HomePage() {
               const carYear = car.year || '----';
               const carPrice = car.price ? car.price.toLocaleString() : '0';
               const carCurrency = getCurrencySymbol(car.currency);
-              
-              let carImageSrc = "/default-car.jpg";
-              try {
-                if (car.images) {
-                  const cleanImgs = String(car.images).trim();
-                  if (cleanImgs.startsWith("[") && cleanImgs.endsWith("]")) {
-                    const parsedList = JSON.parse(cleanImgs);
-                    if (parsedList.length > 0 && parsedList[0]) carImageSrc = parsedList[0];
-                  } else if (cleanImgs.startsWith("http")) {
-                    carImageSrc = cleanImgs;
-                  } else {
-                    const urls = cleanImgs.split(",").map(url => url.trim()).filter(Boolean);
-                    if (urls.length > 0) carImageSrc = urls[0];
-                  }
-                }
-              } catch (e) { 
-                console.error('Image parsing error:', e);
-                carImageSrc = "/default-car.jpg"; 
-              }
+              const carImageSrc = getCarImage(car);
 
               return (
                 <div key={car.id || Math.random()} style={styles.card}>
                   <div style={styles.gallery}>
-                    {carImageSrc && carImageSrc.trim() !== '' ? (
+                    {carImageSrc && carImageSrc.trim() !== '' && carImageSrc !== '/default-car.jpg' ? (
                       <img 
                         src={carImageSrc} 
                         alt={carBrand} 
@@ -234,6 +247,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   heroSection: { background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)', color: 'white', paddingBottom: '25px' },
