@@ -46,17 +46,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('➕ [CARS] إضافة سيارة جديدة...');
+    console.log('➕ [CARS] إضافة سيارة جديدة...', body);
 
-   const { data: car, error } = await supabase
-  .from('cars')
-  .insert([{
-    ...body,
-    user_id: 1,  // معرف المستخدم admin
-    created_at: new Date().toISOString()
-  }])
-  .select()
-  .maybeSingle(); 
+    // إضافة user_id ثابت (1) للمستخدم admin
+    const carData = {
+      ...body,
+      user_id: 1,
+      created_at: new Date().toISOString()
+    };
+
+    const { data: car, error } = await supabase
+      .from('cars')
+      .insert([carData])
+      .select()
+      .maybeSingle();
 
     if (error) {
       console.error('❌ [CARS CREATE ERROR]:', error);
