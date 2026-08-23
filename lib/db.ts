@@ -1,5 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 // قراءة متغيرات البيئة
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,8 +13,8 @@ if (!supabaseKey) {
   console.warn('⚠️ NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
 }
 
-// إنشاء عميل Supabase مع أنواع TypeScript
-const supabase = createClient<Database>(
+// إنشاء عميل Supabase (بدون أنواع)
+const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseKey || 'placeholder-key'
 );
@@ -23,4 +22,4 @@ const supabase = createClient<Database>(
 export default supabase;
 
 // تصدير الدالة المساعدة
-export const getSupabase = (): SupabaseClient<Database> => supabase;
+export const getSupabase = () => supabase;
