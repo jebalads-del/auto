@@ -94,13 +94,13 @@ export async function POST(request: NextRequest) {
       }
 
       const { error } = await supabase
-        .from('cars')
-        .update({ 
-          images: jsonUrls, 
-          image_url: firstImageUrl,
-          image: jsonUrls
-        })
-        .eq('id', targetId);
+  .from('cars')
+  .update({ 
+    images: jsonUrls, 
+    image_url: firstImageUrl,
+    image: jsonUrls
+  } as any)
+  .eq('id', targetId);
 
       if (error) {
         console.error('❌ [SUPABASE DB ERROR]:', error);
