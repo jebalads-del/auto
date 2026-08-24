@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,14 +33,13 @@ export async function POST(request: NextRequest) {
     for (const file of files) {
       if (!file || file.size === 0) continue;
 
-      // إنشاء اسم ملف فريد
       const fileExt = file.name.split('.').pop();
-      const fileName = `${carId || 'temp'}/${Date.now()}.${fileExt}`;
+      const fileName = `cars/${carId || 'temp'}/${Date.now()}.${fileExt}`;
 
       console.log(`📤 [UPLOAD] رفع الملف: ${fileName}`);
 
       try {
-        // استخدام fetch مباشرة لرفع الملف
+        // رفع الملف باستخدام fetch مباشرة
         const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/public/cars/${fileName}`, {
           method: 'POST',
           headers: {
@@ -57,7 +55,7 @@ export async function POST(request: NextRequest) {
           console.log(`✅ [UPLOAD] تم رفع الملف بنجاح: ${publicUrl}`);
         } else {
           const errText = await uploadRes.text();
-          console.error('❌ [UPLOAD ERROR]:', errText);
+          console.error('❌ [UPLOAD ERROR] فشل رفع الملف:', errText);
         }
       } catch (err) {
         console.error('❌ [UPLOAD ERROR] استثناء:', err);
