@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     console.log('📸 [UPLOAD] بدء عملية رفع الصور...');
-    
+
     const formData = await request.formData();
     const files = formData.getAll('images') as File[];
     const carId = formData.get('carId') as string;
@@ -37,45 +37,30 @@ export async function POST(request: NextRequest) {
       // إنشاء اسم ملف فريد
       const fileExt = file.name.split('.').pop();
       const fileName = `${carId || 'temp'}/${Date.now()}.${fileExt}`;
-      
+
       console.log(`📤 [UPLOAD] رفع الملف: ${fileName}`);
 
-      // تحويل الملف إلى ArrayBuffer
-      const arrayBuffer = await file.arrayBuffer();
+      try {
+        // استخدام fetch مباشرة لرفع الملف
+        const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/public/cars/${fileName}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': file.type,
+          },
+          body: file,
+        });
 
-      // رفع الملف إلى Supabase Storage
-     // رفع الملف باستخدام fetch مباشرة (بديل أكثر استقراراً)
-const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/public/cars/${fileName}`, {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${supabaseKey}`,
-    'Content-Type': file.type,
-  },
-  body: file, // استخدم file مباشرة بدلاً من arrayBuffer
-});
-
-if (uploadRes.ok) {
-  const publicUrl = `${supabaseUrl}/storage/v1/object/public/cars/${fileName}`;
-  uploadedUrls.push(publicUrl);
-  console.log(`✅ [UPLOAD] تم رفع الملف بنجاح: ${publicUrl}`);
-} else {
-  const errText = await uploadRes.text();
-  console.error('❌ [UPLOAD ERROR]:', errText);
-}
-      if (error) {
-        console.error('❌ [UPLOAD ERROR] فشل رفع الملف:', error);
-        continue;
-      }
-
-      // الحصول على الرابط العام
-      const { data: urlData } = supabase.storage
-        .from('cars')
-        .getPublicUrl(fileName);
-
-      const publicUrl = urlData?.publicUrl;
-      if (publicUrl) {
-        uploadedUrls.push(publicUrl);
-        console.log(`✅ [UPLOAD] تم رفع الملف بنجاح: ${publicUrl}`);
+        if (uploadRes.ok) {
+          const publicUrl = `${supabaseUrl}/storage/v1/object/public/cars/${fileName}`;
+          uploadedUrls.push(publicUrl);
+          console.log(`✅ [UPLOAD] تم رفع الملف بنجاح: ${publicUrl}`);
+        } else {
+          const errText = await uploadRes.text();
+          console.error('❌ [UPLOAD ERROR]:', errText);
+        }
+      } catch (err) {
+        console.error('❌ [UPLOAD ERROR] استثناء:', err);
       }
     }
 
@@ -102,4 +87,3 @@ if (uploadRes.ok) {
     );
   }
 }
- 
