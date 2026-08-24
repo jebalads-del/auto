@@ -48,3 +48,63 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// حذف مستخدم
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: 'معرف المستخدم مطلوب' },
+        { status: 400 }
+      );
+    }
+
+    const userId = parseInt(id);
+    if (isNaN(userId)) {
+      return NextResponse.json(
+        { success: false, message: 'معرف المستخدم غير صالح' },
+        { status: 400 }
+      );
+    }
+
+    // منع حذف المدير الرئيسي
+    if (userId === 1) {
+      return NextResponse.json(
+        { success: false, message: 'لا يمكن حذف المدير الرئيسي' },
+        { status: 403 }
+      );
+    }
+
+    console.log(`🗑️ [USER DELETE] حذف المستخدم: ${userId}`);
+
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+
+    if (error) {
+      console.error('❌ [USER DELETE ERROR]:', error);
+      return NextResponse.json(
+        { success: false, message: 'خطأ في حذف المستخدم: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    console.log(`✅ [USER DELETE] تم حذف المستخدم: ${userId}`);
+    return NextResponse.json({
+      success: true,
+      message: 'تم حذف المستخدم بنجاح'
+    });
+
+  } catch (error: unknown) {
+    console.error('❌ [USER DELETE ERROR]:', error);
+    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
+    return NextResponse.json(
+      { success: false, message: errorMessage },
+      { status: 500 }
+    );
+  }
+}
