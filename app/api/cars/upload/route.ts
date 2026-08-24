@@ -44,14 +44,24 @@ export async function POST(request: NextRequest) {
       const arrayBuffer = await file.arrayBuffer();
 
       // رفع الملف إلى Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('cars')
-        .upload(fileName, arrayBuffer, {
-          contentType: file.type,
-          cacheControl: '3600',
-          upsert: false
-        });
+     // رفع الملف باستخدام fetch مباشرة (بديل أكثر استقراراً)
+const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/public/cars/${fileName}`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${supabaseKey}`,
+    'Content-Type': file.type,
+  },
+  body: file, // استخدم file مباشرة بدلاً من arrayBuffer
+});
 
+if (uploadRes.ok) {
+  const publicUrl = `${supabaseUrl}/storage/v1/object/public/cars/${fileName}`;
+  uploadedUrls.push(publicUrl);
+  console.log(`✅ [UPLOAD] تم رفع الملف بنجاح: ${publicUrl}`);
+} else {
+  const errText = await uploadRes.text();
+  console.error('❌ [UPLOAD ERROR]:', errText);
+}
       if (error) {
         console.error('❌ [UPLOAD ERROR] فشل رفع الملف:', error);
         continue;
