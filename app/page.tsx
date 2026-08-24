@@ -14,6 +14,7 @@ interface Car {
   color: string;
   description: string;
   images: string | string[];
+  image_url?: string;
   status: string;
   currency: string;
 }
@@ -102,7 +103,7 @@ export default function HomePage() {
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
 
-  // ✅ دالة معالجة الصور (محسّنة)
+  // دالة معالجة الصور
   const getCarImage = (car: Car): string => {
     try {
       // 1. استخدام image_url مباشرة إذا كان موجوداً
