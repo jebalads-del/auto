@@ -102,28 +102,41 @@ export default function HomePage() {
     ? Array.from(new Set(cars.filter(car => car && String(car.brand).toLowerCase() === searchBrand.toLowerCase()).map(car => car.model).filter(Boolean)))
     : [];
 
-  // دالة معالجة الصور
+  // ✅ دالة معالجة الصور (محسّنة)
   const getCarImage = (car: Car): string => {
     try {
-      if (!car.images) return '/default-car.jpg';
-      
-      let imagesArray: string[] = [];
-      if (typeof car.images === 'string') {
-        const cleanImgs = car.images.trim();
-        if (cleanImgs.startsWith('[') && cleanImgs.endsWith(']')) {
-          imagesArray = JSON.parse(cleanImgs);
-        } else if (cleanImgs.startsWith('http')) {
-          imagesArray = [cleanImgs];
-        } else {
-          imagesArray = cleanImgs.split(',').map(url => url.trim()).filter(Boolean);
-        }
-      } else if (Array.isArray(car.images)) {
-        imagesArray = car.images;
+      // 1. استخدام image_url مباشرة إذا كان موجوداً
+      if (car.image_url && car.image_url.startsWith('http')) {
+        console.log('✅ Using image_url:', car.image_url);
+        return car.image_url;
       }
       
-      return imagesArray.length > 0 && imagesArray[0] ? imagesArray[0] : '/default-car.jpg';
+      // 2. معالجة حقل images
+      if (car.images) {
+        let imagesArray: string[] = [];
+        if (typeof car.images === 'string') {
+          const cleanImgs = car.images.trim();
+          if (cleanImgs.startsWith('[') && cleanImgs.endsWith(']')) {
+            imagesArray = JSON.parse(cleanImgs);
+          } else if (cleanImgs.startsWith('http')) {
+            return cleanImgs;
+          } else {
+            imagesArray = cleanImgs.split(',').map(url => url.trim()).filter(Boolean);
+          }
+        } else if (Array.isArray(car.images)) {
+          imagesArray = car.images;
+        }
+        
+        if (imagesArray.length > 0 && imagesArray[0]) {
+          console.log('✅ Using images[0]:', imagesArray[0]);
+          return imagesArray[0];
+        }
+      }
+      
+      console.log('⚠️ No image found, using default');
+      return '/default-car.jpg';
     } catch (e) {
-      console.error('Image parsing error:', e);
+      console.error('❌ Image parsing error:', e);
       return '/default-car.jpg';
     }
   };
@@ -288,4 +301,3 @@ const styles = {
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '12px' },
   spinner: { width: '35px', height: '35px', border: '3px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
-// force deployment
