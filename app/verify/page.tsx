@@ -15,7 +15,7 @@ function VerifyContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [timer, setTimer] = useState(60);
+  const [timer, setTimer] = useState(120); // ✅ تم التعديل: 120 ثانية (دقيقتين)
   const [canResend, setCanResend] = useState(false);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ function VerifyContent() {
 
       if (response.ok) {
         setSuccess('✅ تم إعادة إرسال رمز التحقق');
-        setTimer(60);
+        setTimer(120); // ✅ تم التعديل: 120 ثانية (دقيقتين)
         setCanResend(false);
         setOtp(['', '', '', '', '', '']);
         document.getElementById('otp-0')?.focus();
