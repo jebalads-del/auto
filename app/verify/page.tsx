@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -9,7 +9,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function VerifyPage() {
+function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -129,5 +129,13 @@ export default function VerifyPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div style={{ textAlign: 'center', marginTop: '100px', fontSize: '18px' }}>جاري تحميل الصفحة...</div>}>
+      <VerifyForm />
+    </Suspense>
   );
 }
