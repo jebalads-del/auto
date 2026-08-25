@@ -1,51 +1,82 @@
-import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/db';
+import { NextResponse } from 'next/server';
+import sql from '../db';
 
-export const dynamic = 'force-dynamic';
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { email, otp } = body;
+    const { email, otpCode } = await request.json();
 
-    console.log(`🔐 [VERIFY OTP] محاولة التحقق: ${email}`);
+    console.log('📩 طلب التحقق:', { email, otpCode });
 
-    // ✅ تخطي التحقق مؤقتاً - قبول أي رمز
-    // هذا حل مؤقت حتى يتم إعداد خدمة البريد الإلكتروني
-    if (otp && otp.length === 6) {
-      // تحديث حالة المستخدم إلى confirmed
-      const { error } = await supabase
-        .from('users')
-        .update({ 
-          status: 'active',
-          email_confirmed_at: new Date().toISOString()
-        })
-        .eq('email', email.toLowerCase().trim());
-
-      if (error) {
-        console.error('❌ [VERIFY OTP DB ERROR]:', error);
-        return NextResponse.json(
-          { success: false, message: 'خطأ في تحديث قاعدة البيانات' },
-          { status: 500 }
-        );
-      }
-
-      console.log(`✅ [VERIFY OTP] تم التحقق بنجاح: ${email}`);
-      return NextResponse.json({ 
-        success: true, 
-        message: 'تم التحقق بنجاح' 
-      });
+    if (!email || !otpCode) {
+      return NextResponse.json(
+        { error: 'البريد الإلكتروني ورمز التحقق مطلوبان' },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(
-      { success: false, message: 'رمز التحقق غير صالح' },
-      { status: 400 }
-    );
+    // ✅ البحث عن المستخدم
+    const result = await sql`
+      SELECT id, email, otp_code, otp_expires_at, status 
+      FROM users 
+      WHERE email = ${email} AND status = 'pending'
+    `;
 
-  } catch (error: any) {
-    console.error('❌ [VERIFY OTP ERROR]:', error);
+    console.log('🔍 نتيجة البحث:', result);
+
+    if (result.length === 0) {
+      return NextResponse.json(
+        { error: 'المستخدم غير موجود أو تم التحقق منه بالفعل' },
+        { status: 404 }
+      );
+    }
+
+    const user = result[0];
+
+    console.log('🔍 OTP في قاعدة البيانات:', user.otp_code, 'type:', typeof user.otp_code);
+    console.log('🔍 OTP المدخل:', otpCode, 'type:', typeof otpCode);
+
+    // ✅ مقارنة الأرقام (تحويل إلى String للتأكد)
+    const dbOtp = String(user.otp_code).trim();
+    const inputOtp = String(otpCode).trim();
+
+    console.log('🔍 بعد التحويل:', { dbOtp, inputOtp });
+
+    if (dbOtp !== inputOtp) {
+      return NextResponse.json(
+        { error: 'رمز التحقق غير صحيح' },
+        { status: 400 }
+      );
+    }
+
+    // ✅ التحقق من صلاحية OTP
+    const now = new Date();
+    const expiry = new Date(user.otp_expires_at);
+
+    if (now > expiry) {
+      return NextResponse.json(
+        { error: 'انتهت صلاحية رمز التحقق، يرجى طلب رمز جديد' },
+        { status: 400 }
+      );
+    }
+
+    // ✅ تفعيل الحساب
+    await sql`
+      UPDATE users 
+      SET status = 'active', otp_code = NULL, otp_expires_at = NULL 
+      WHERE id = ${user.id}
+    `;
+
+    console.log('✅ تم تفعيل المستخدم:', email);
+
+    return NextResponse.json({
+      success: true,
+      message: 'تم التحقق من الحساب بنجاح',
+    });
+
+  } catch (error) {
+    console.error('❌ خطأ في التحقق من OTP:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'حدث خطأ غير متوقع' },
+      { error: 'حدث خطأ أثناء التحقق' },
       { status: 500 }
     );
   }
