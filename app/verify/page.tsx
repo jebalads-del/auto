@@ -1,319 +1,126 @@
 'use client';
 
-import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-// مكون منفصل يستخدم useSearchParams
-function VerifyContent() {
+export default function VerifyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get('email') || '';
+  const supabase = createClientComponentClient();
 
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  // جلب البيانات الممرة من صفحة التسجيل عبر الرابط
+  const email = searchParams.get('email') || '';
+  const password = searchParams.get('p') || '';
+  const name = searchParams.get('n') || '';
+
+  const [otp, setOtp] = useState(['', '', '', '', '', '']); // الخانات الستة
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [timer, setTimer] = useState(120); // ✅ تم التعديل: 120 ثانية (دقيقتين)
-  const [canResend, setCanResend] = useState(false);
 
-  useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => setTimer((t) => t - 1), 1000);
-      return () => clearInterval(interval);
-    } else {
-      setCanResend(true);
-    }
-  }, [timer]);
+  // دالة التعامل مع الكتابة داخل الخانات تلقائياً
+  const handleChange = (element: HTMLInputElement, index: number) => {
+    if (isNaN(Number(element.value))) return false;
 
-  const handleChange = (index: number, value: string) => {
-    if (value.length > 1) return;
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
+    setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
 
-    if (value && index < 5) {
-      document.getElementById(`otp-${index + 1}`)?.focus();
+    // الانتقال للخانة التالية تلقائياً عند الكتابة
+    if (element.nextSibling && element.value !== '') {
+      (element.nextSibling as HTMLInputElement).focus();
     }
   };
 
-  const handleVerify = async (e: React.FormEvent) => {
+  const handleVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const code = otp.join('');
-
-    if (code.length !== 6) {
-      setError('الرجاء إدخال الرمز المكون من 6 أرقام');
-      return;
-    }
-
-    if (!email) {
-      setError('لم يتم العثور على البريد الإلكتروني');
-      return;
-    }
-
     setLoading(true);
     setError('');
+    const fullOtp = otp.join('');
 
     try {
+      // 1. استدعاء السيرفر للتحقق من تطابق الرمز الممرر بالكوكيز المشفر
       const response = await fetch('/api/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otpCode: code }),
+        body: JSON.stringify({ email, otp: fullOtp }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (response.ok) {
-        setSuccess('✅ تم التحقق من حسابك بنجاح!');
-        setTimeout(() => {
-          router.push('/login');
-        }, 1500);
-      } else {
-        setError(data.error || 'رمز التحقق غير صحيح');
-        setOtp(['', '', '', '', '', '']);
-        document.getElementById('otp-0')?.focus();
+      if (!response.ok || !result.success) {
+        setError(result.error || 'الرمز المدخل غير صحيح، حاول مجدداً');
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      setError('فشل الاتصال بالخادم، يرجى المحاولة مرة أخرى');
+
+      // 2. إذا تطابق الرمز بنجاح، نقوم بإنشاء الحساب في سوبابيس وتفعيله فوراً
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name },
+        },
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
+
+      // ✅ نجاح العملية بالكامل وتوجيه المستخدم للموقع
+      alert('تم تفعيل حسابك بنجاح ومرحباً بك!');
+      router.push('/dashboard');
+
+    } catch (err) {
+      setError('حدث خطأ أثناء الاتصال بالسيرفر');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResend = async () => {
-    if (!canResend) return;
-
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const response = await fetch('/api/resend-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('✅ تم إعادة إرسال رمز التحقق');
-        setTimer(120); // ✅ تم التعديل: 120 ثانية (دقيقتين)
-        setCanResend(false);
-        setOtp(['', '', '', '', '', '']);
-        document.getElementById('otp-0')?.focus();
-      } else {
-        setError(data.error || 'فشل إعادة إرسال الرمز');
-      }
-    } catch (error) {
-      setError('فشل الاتصال بالخادم');
-    } finally {
-      setLoading(false);
-    }
+  // الأنماط الخاصة بالواجهة المتوافقة مع تصميمك الحالي
+  const containerStyle = {
+    maxWidth: '430px',
+    margin: '100px auto',
+    padding: '40px 30px',
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+    textAlign: 'center' as const,
+    direction: 'rtl' as const,
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      backgroundColor: '#f8fafc',
-      padding: '20px',
-      fontFamily: 'sans-serif',
-      direction: 'rtl'
-    }}>
-      <div style={{
-        maxWidth: '450px',
-        width: '100%',
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: '35px 30px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-      }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <div style={{
-            width: '60px',
-            height: '60px',
-            backgroundColor: '#dbeafe',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 15px'
-          }}>
-            <span style={{ fontSize: '28px' }}>📧</span>
-          </div>
-          <h2 style={{ fontSize: '22px', color: '#1e293b', margin: 0 }}>تحقق من حسابك</h2>
-          <p style={{ fontSize: '14px', color: '#64748b', marginTop: '8px' }}>
-            تم إرسال رمز التحقق إلى <br />
-            <strong style={{ color: '#2563eb' }}>{email}</strong>
-          </p>
+    <div style={containerStyle}>
+      <h2 style={{ fontSize: '22px', marginBottom: '10px' }}>تحقق من حسابك</h2>
+      <p style={{ color: '#666666', fontSize: '14px', marginBottom: '20px' }}>
+        تم إرسال رمز التحقق إلى <br /><strong>{email}</strong>
+      </p>
+
+      {error && <p style={{ color: '#dc2626', fontSize: '14px', marginBottom: '15px' }}>{error}</p>}
+
+      <form onSubmit={handleVerifySubmit}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', direction: 'ltr', marginBottom: '30px' }}>
+          {otp.map((data, index) => (
+            <input
+              key={index}
+              type="text"
+              maxLength={1}
+              style={{ width: '45px', height: '50px', fontSize: '20px', textAlign: 'center', borderRadius: '8px', border: '1px solid #e0e0e0', outline: 'none' }}
+              value={data}
+              onChange={(e) => handleChange(e.target, index)}
+              onFocus={(e) => e.target.select()}
+            />
+          ))}
         </div>
 
-        {/* رسائل الخطأ والنجاح */}
-        {error && (
-          <div style={{
-            backgroundColor: '#fee',
-            padding: '12px',
-            borderRadius: '10px',
-            color: '#b91c1c',
-            fontSize: '14px',
-            textAlign: 'center',
-            marginBottom: '20px'
-          }}>
-            ❌ {error}
-          </div>
-        )}
-
-        {success && (
-          <div style={{
-            backgroundColor: '#dcfce7',
-            padding: '12px',
-            borderRadius: '10px',
-            color: '#15803d',
-            fontSize: '14px',
-            textAlign: 'center',
-            marginBottom: '20px'
-          }}>
-            ✅ {success}
-          </div>
-        )}
-
-        {/* OTP Input */}
-        <form onSubmit={handleVerify}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '10px',
-            marginBottom: '25px',
-            direction: 'ltr'
-          }}>
-            {[0, 1, 2, 3, 4, 5].map((index) => (
-              <input
-                key={index}
-                id={`otp-${index}`}
-                type="text"
-                maxLength={1}
-                value={otp[index]}
-                onChange={(e) => handleChange(index, e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Backspace' && !otp[index] && index > 0) {
-                    document.getElementById(`otp-${index-1}`)?.focus();
-                  }
-                }}
-                style={{
-                  width: '48px',
-                  height: '58px',
-                  textAlign: 'center',
-                  fontSize: '24px',
-                  fontWeight: 'bold',
-                  border: '2px solid #d1d5db',
-                  borderRadius: '10px',
-                  outline: 'none',
-                  transition: 'all 0.2s',
-                  backgroundColor: '#f9fafb',
-                  color: '#1e293b'
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#2563eb';
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.2)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = '#d1d5db';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-                disabled={loading}
-                autoFocus={index === 0}
-              />
-            ))}
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || otp.some((digit) => !digit)}
-            style={{
-              width: '100%',
-              padding: '14px',
-              backgroundColor: loading || otp.some((digit) => !digit) ? '#93c5fd' : '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: loading || otp.some((digit) => !digit) ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            {loading ? 'جاري التحقق...' : 'تأكيد الرمز'}
-          </button>
-        </form>
-
-        {/* خيارات إضافية */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: '20px',
-          fontSize: '14px'
-        }}>
-          {canResend ? (
-            <button
-              onClick={handleResend}
-              disabled={loading}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#2563eb',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              إعادة إرسال الرمز
-            </button>
-          ) : (
-            <span style={{ color: '#94a3b8' }}>
-              إعادة الإرسال خلال {timer} ثانية
-            </span>
-          )}
-          
-          <Link
-            href="/register"
-            style={{
-              color: '#64748b',
-              textDecoration: 'none',
-              fontSize: '14px'
-            }}
-          >
-            ← العودة
-          </Link>
-        </div>
-
-        {/* تذكير */}
-        <div style={{
-          marginTop: '25px',
-          padding: '15px',
-          backgroundColor: '#f1f5f9',
-          borderRadius: '10px',
-          fontSize: '13px',
-          color: '#64748b',
-          textAlign: 'center'
-        }}>
-          💡 تأكد من فحص صندوق الوارد والبريد المزعج (Spam)
-        </div>
-      </div>
+        <button
+          type="submit"
+          disabled={loading}
+          style={{ width: '100%', padding: '16px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: '500', cursor: 'pointer' }}
+        >
+          {loading ? 'جاري التحقق...' : 'تأكيد الرمز'}
+        </button>
+      </form>
     </div>
-  );
-}
-
-// المكون الرئيسي مع Suspense
-export default function VerifyPage() {
-  return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>جاري التحميل...</div>}>
-      <VerifyContent />
-    </Suspense>
   );
 }
