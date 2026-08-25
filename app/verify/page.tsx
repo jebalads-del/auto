@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+//  ضع السطر البديل:
+import { createClient } from '@supabase/supabase-js';
+
+// وقم بتحديث سطر تهيئة المتغير بالداخل ليصبح:
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 export default function VerifyPage() {
   const router = useRouter();
