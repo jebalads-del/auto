@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -9,7 +9,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function VerifyPage() {
+function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -52,6 +52,7 @@ export default function VerifyPage() {
         return;
       }
 
+      // 1. إنشاء وتوثيق الحساب أمنياً في نظام Supabase
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -62,7 +63,28 @@ export default function VerifyPage() {
 
       if (signUpError) {
         setError(signUpError.message);
+        setLoading(false);
         return;
+      }
+
+      // 2. ترحيل ونسخ المستخدم تلقائياً إلى جدول قاعدة البيانات العام لظهوره في لوحة الأدمن والـ Login
+      // تنبيه: تأكد مما إذا كان اسم الجدول في لوحة تحكمك هو 'users' أو 'profiles' وقم بتبديله إذا لزم الأمر
+      if (data?.user) {
+        const { error: insertError } = await supabase
+          .from('users') 
+          .insert([
+            {
+              id: data.user.id,
+              email: email,
+              name: name,
+              role: 'user' // الصلاحية الافتراضية للمستخدم الجديد
+            }
+          ]);
+
+        if (insertError) {
+          console.error("خطأ أثناء ترحيل بيانات المستخدم للوحة التحكم:", insertError.message);
+          // نكتفي بطباعة الخطأ في الـ Console لكي لا يتعطل توجيه المستخدم إذا تم التفعيل أمنياً
+        }
       }
 
       alert('تم تفعيل حسابك بنجاح ومرحباً بك!');
@@ -129,5 +151,14 @@ export default function VerifyPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+// المكون المصدر المحمي بغلاف الـ Suspense لمنع أخطاء بناء السيرفر في Next.js
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div style={{ textAlign: 'center', marginTop: '100px', fontSize: '18px' }}>جاري تحميل الصفحة...</div>}>
+      <VerifyForm />
+    </Suspense>
   );
 }
