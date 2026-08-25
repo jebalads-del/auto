@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+//  ضع هذا السطر البديل والمتوافق:
+import { createClient } from '@supabase/supabase-js';
+
+// وتأكد من تحديث سطر التهيئة (السطر رقم 9) داخل الدالة ليصبح هكذا:
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 export default function RegisterPage() {
   const router = useRouter();
