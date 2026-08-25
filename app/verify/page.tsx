@@ -1,34 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-//  ضع السطر البديل:
 import { createClient } from '@supabase/supabase-js';
 
-// وقم بتحديث سطر تهيئة المتغير بالداخل ليصبح:
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function VerifyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
 
-  // جلب البيانات الممرة من صفحة التسجيل عبر الرابط
   const email = searchParams.get('email') || '';
   const password = searchParams.get('p') || '';
   const name = searchParams.get('n') || '';
 
-  const [otp, setOtp] = useState(['', '', '', '', '', '']); // الخانات الستة
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // دالة التعامل مع الكتابة داخل الخانات تلقائياً
   const handleChange = (element: HTMLInputElement, index: number) => {
     if (isNaN(Number(element.value))) return false;
 
     setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
 
-    // الانتقال للخانة التالية تلقائياً عند الكتابة
     if (element.nextSibling && element.value !== '') {
       (element.nextSibling as HTMLInputElement).focus();
     }
@@ -41,7 +38,6 @@ export default function VerifyPage() {
     const fullOtp = otp.join('');
 
     try {
-      // 1. استدعاء السيرفر للتحقق من تطابق الرمز الممرر بالكوكيز المشفر
       const response = await fetch('/api/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -56,7 +52,6 @@ export default function VerifyPage() {
         return;
       }
 
-      // 2. إذا تطابق الرمز بنجاح، نقوم بإنشاء الحساب في سوبابيس وتفعيله فوراً
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -70,7 +65,6 @@ export default function VerifyPage() {
         return;
       }
 
-      // ✅ نجاح العملية بالكامل وتوجيه المستخدم للموقع
       alert('تم تفعيل حسابك بنجاح ومرحباً بك!');
       router.push('/dashboard');
 
@@ -81,7 +75,6 @@ export default function VerifyPage() {
     }
   };
 
-  // الأنماط الخاصة بالواجهة المتوافقة مع تصميمك الحالي
   const containerStyle = {
     maxWidth: '430px',
     margin: '100px auto',
@@ -120,9 +113,19 @@ export default function VerifyPage() {
         <button
           type="submit"
           disabled={loading}
-          style={{ width: '100%', padding: '16px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: '500', cursor: 'pointer' }}
+          style={{
+            width: '100%',
+            padding: '16px',
+            backgroundColor: '#2563eb',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '12px',
+            fontSize: '18px',
+            fontWeight: '500',
+            cursor: 'pointer',
+          }}
         >
-          {loading ? 'جاري التحقق...' : 'تأكيد الرمز'}
+          {loading ? 'جاري التحقق...' : 'تحقق من الرمز'}
         </button>
       </form>
     </div>
