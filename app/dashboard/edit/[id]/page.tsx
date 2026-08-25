@@ -48,7 +48,7 @@ export default function EditAdPage({ params }: { params: Promise<{ id: string }>
       setSaving(false)
 
       if (result.success) {
-        alert('تم حفظ التعديلات بنجاح في قاعدة بيانات Neon الحقيقية!')
+        alert('تم حفظ التعديلات بنجاح!');
         router.push('/dashboard')
       } else {
         alert('حدث خطأ أثناء الحفظ سحابياً.')

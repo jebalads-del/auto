@@ -1,52 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/db';
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
-export const dynamic = 'force-dynamic';
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { email, otp } = body;
+    const { otp } = await request.json();
 
-    console.log(`🔐 [VERIFY OTP] محاولة التحقق: ${email}`);
-
-    // ✅ تخطي التحقق مؤقتاً - قبول أي رمز
-    // هذا حل مؤقت حتى يتم إعداد خدمة البريد الإلكتروني
-    if (otp && otp.length === 6) {
-      // تحديث حالة المستخدم إلى confirmed
-      const { error } = await supabase
-        .from('users')
-        .update({ 
-          status: 'active',
-          email_confirmed_at: new Date().toISOString()
-        })
-        .eq('email', email.toLowerCase().trim());
-
-      if (error) {
-        console.error('❌ [VERIFY OTP DB ERROR]:', error);
-        return NextResponse.json(
-          { success: false, message: 'خطأ في تحديث قاعدة البيانات' },
-          { status: 500 }
-        );
-      }
-
-      console.log(`✅ [VERIFY OTP] تم التحقق بنجاح: ${email}`);
-      return NextResponse.json({ 
-        success: true, 
-        message: 'تم التحقق بنجاح' 
-      });
+    if (!otp) {
+      return NextResponse.json({ error: 'رمز التحقق مطلوب' }, { status: 400 });
     }
 
-    return NextResponse.json(
-      { success: false, message: 'رمز التحقق غير صالح' },
-      { status: 400 }
-    );
+    // 1. جلب الرمز المتولد المشفّر المسجل في الكوكيز أثناء عملية التسجيل
+    const cookieStore = cookies();
+    const savedOtp = cookieStore.get('register_otp')?.value;
 
-  } catch (error: any) {
-    console.error('❌ [VERIFY OTP ERROR]:', error);
-    return NextResponse.json(
-      { success: false, message: error.message || 'حدث خطأ غير متوقع' },
-      { status: 500 }
-    );
+    if (!savedOtp) {
+      return NextResponse.json({ error: 'انتهت صلاحية الرمز، يرجى إعادة الإرسال من جديد' }, { status: 400 });
+    }
+
+    // 2. مقارنة الرمز الذي أدخله المستخدم بالرمز الحقيقي المخزن في السيرفر
+    if (otp !== savedOtp) {
+      return NextResponse.json({ error: 'الرمز المدخل غير صحيح' }, { status: 400 });
+    }
+
+    // 3. مسح الكوكيز بعد نجاح التحقق لإلغاء صلاحية الرمز القديم وأمان المنظومة
+    const response = NextResponse.json({ success: true });
+    response.cookies.delete('register_otp');
+    
+    return response;
+
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
