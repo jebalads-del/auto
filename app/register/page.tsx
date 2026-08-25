@@ -1,4 +1,4 @@
-use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,7 +27,6 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      // 1. استدعاء الـ API لإرسال OTP عبر Resend
       const response = await fetch('/api/resend-otp', {
         method: 'POST',
         headers: {
@@ -46,7 +45,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // ✅ التوجيه إلى صفحة التحقق مع تمرير البيانات بشكل آمن
       router.push(
         `/verify?email=${encodeURIComponent(formData.email)}&p=${encodeURIComponent(formData.password)}&n=${encodeURIComponent(formData.name)}`
       );
@@ -58,7 +56,6 @@ export default function RegisterPage() {
     }
   };
 
-  // الأنماط الثابتة
   const containerStyle = {
     maxWidth: '430px',
     margin: '100px auto',
@@ -154,10 +151,7 @@ export default function RegisterPage() {
         </button>
         <div style={linkStyle}>
           لديك حساب بالفعل؟{' '}
-          <Link
-            href="/login"
-            style={{ color: '#2563eb', textDecoration: 'none', marginRight: '5px' }}
-          >
+          <Link href="/login" style={{ color: '#2563eb', textDecoration: 'none' }}>
             تسجيل الدخول
           </Link>
         </div>
