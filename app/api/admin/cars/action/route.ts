@@ -6,46 +6,39 @@ export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
   try {
-    // استقبال الـ carId والـ action وأي متغيرات إضافية ترسلها الواجهة
     const body = await request.json();
-    const { carId, action, status } = body;
+    const { carId, action } = body;
 
-    if (!carId) {
-      return NextResponse.json({ success: false, message: 'معرف السيارة مطلوب' }, { status: 400 });
+    if (!carId || !action) {
+      return NextResponse.json({ success: false, message: 'البيانات المطلوبة ناقصة' }, { status: 400 });
     }
 
-    console.log(`⚙️ [ADMIN ACTION] إجراء قادم على السيارة ${carId}:`, body);
+    console.log(`⚙️ [ADMIN CAR ACTION] إجراء ${action} على السيارة: ${carId}`);
 
-    // 1. تحديد الحالة الجديدة ديناميكياً بناءً على الـ action أو الـ status القادم
-    let newStatus = status || 'قيد الانتظار';
-    
+    // 1. تحديد الحالة الجديدة بناءً على كبس أزرار الأدمن
+    let newStatus = 'قيد الانتظار';
     if (action === 'approve') newStatus = 'مقبول';
     if (action === 'reject') newStatus = 'مرفوض';
-    if (action === 'sell' || action === 'sold') newStatus = 'مباع';
-    
-    // إذا أرسلت الواجهة أي قيمة أخرى غير متوقعة، نعتمد على قيمة الـ action نفسه أو الـ status كحالة
-    if (!status && action !== 'approve' && action !== 'reject' && action !== 'sell' && action !== 'sold') {
-      newStatus = action; 
-    }
 
-    // 2. تحديث جدول السيارات في Supabase بالحالة الجديدة فوراً
+    // 2. تحديث جدول السيارات في سوبابيس حياً ومباشرة
+    // تم استخدام CAST والتحويل النصي لضمان مطابقة الـ ID مع نوع البيانات في قاعدة بياناتك
     const { error } = await supabase
       .from('cars')
       .update({ status: newStatus })
-      .eq('id', carId);
+      .eq('id', carId.toString()); // تحويل المعرف لنص لتجنب تعارض الأنواع أمنياً
 
     if (error) {
-      console.error('❌ [SUPABASE UPDATE ERROR]:', error.message);
-      return NextResponse.json({ success: false, message: 'خطأ في تحديث الجدول: ' + error.message }, { status: 500 });
+      console.error('❌ [SUPABASE ADMIN UPDATE ERROR]:', error.message);
+      return NextResponse.json({ success: false, message: 'خطأ في تحديث قاعدة البيانات: ' + error.message }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      message: `تم تحديث حالة السيارة بنجاح إلى: ${newStatus}`
+      message: action === 'approve' ? 'تمت الموافقة على الإعلان بنجاح ونشره للمستخدمين حياً' : 'تم رفض الإعلان بنجاح'
     });
 
   } catch (error: unknown) {
-    console.error('❌ [ADMIN ACTION CRASH]:', error);
+    console.error('❌ [ADMIN CAR ACTION CRASH]:', error);
     return NextResponse.json({ success: false, message: 'حدث خطأ داخلي في السيرفر' }, { status: 500 });
   }
 }
