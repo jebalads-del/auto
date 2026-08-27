@@ -45,8 +45,8 @@ export default function AdminDashboard() {
   const handleCarAction = async (carId: number, action: 'approve' | 'delete') => {
     if (!confirm(`هل أنت متأكد من تنفيذ هذا الإجراء على الإعلان؟`)) return;
     try {
-      const res = await fetch('/api/admin/cars/action', {
-        method: 'POST',
+      const res = await fetch('/api/cars', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ carId, action })
       });
