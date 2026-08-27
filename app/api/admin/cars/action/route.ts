@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/db';
+import supabase from '@/lib/db'; // الاتصال الموحد المستقر المعتمد بموقعك
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// 1. دالة معالجة تحديث حالة السيارة (موافقة ونشر / تحويل لمباع)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -15,17 +16,16 @@ export async function POST(request: NextRequest) {
 
     console.log(`⚙️ [ADMIN CAR ACTION] إجراء ${action} على السيارة: ${carId}`);
 
-    // 1. تحديد الحالة الجديدة بناءً على كبس أزرار الأدمن
+    // تحديد الحالة النصية المتوافقة تماماً مع شروط وعرض واجهتك الأمامية
     let newStatus = 'قيد الانتظار';
     if (action === 'approve') newStatus = 'مقبول';
-    if (action === 'reject') newStatus = 'مرفوض';
+    if (action === 'sell') newStatus = 'مباع';
 
-    // 2. تحديث جدول السيارات في سوبابيس حياً ومباشرة
-    // تم استخدام CAST والتحويل النصي لضمان مطابقة الـ ID مع نوع البيانات في قاعدة بياناتك
+    // تنفيذ التحديث المباشر بداخل جدول السيارات في سوبابيس
     const { error } = await supabase
       .from('cars')
       .update({ status: newStatus })
-      .eq('id', carId.toString()); // تحويل المعرف لنص لتجنب تعارض الأنواع أمنياً
+      .eq('id', carId.toString()); // الحماية بتحويل النوع لنص UUID المتوافق
 
     if (error) {
       console.error('❌ [SUPABASE ADMIN UPDATE ERROR]:', error.message);
@@ -34,11 +34,45 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: action === 'approve' ? 'تمت الموافقة على الإعلان بنجاح ونشره للمستخدمين حياً' : 'تم رفض الإعلان بنجاح'
+      message: action === 'approve' ? 'تمت الموافقة على الإعلان بنجاح ونشره للمستخدمين حياً' : 'تم تحويل حالة السيارة إلى مباعة بنجاح'
     });
 
   } catch (error: unknown) {
     console.error('❌ [ADMIN CAR ACTION CRASH]:', error);
     return NextResponse.json({ success: false, message: 'حدث خطأ داخلي في السيرفر' }, { status: 500 });
+  }
+}
+
+// 2. دالة حذف السيارة نهائياً للأدمن المربوطة بزر الحذف في اللوحة المحدثة
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id'); // جلب الـ id الممرر عبر الرابط تلقائياً
+
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'معرف السيارة مطلوب للحذف' }, { status: 400 });
+    }
+
+    console.log(`🗑️ [ADMIN CAR DELETE] جاري حذف السيارة نهائياً ذو المعرف: ${id}`);
+
+    // إتمام عملية الحذف من جدول السيارات في سوبابيس
+    const { error } = await supabase
+      .from('cars')
+      .delete()
+      .eq('id', id.toString());
+
+    if (error) {
+      console.error('❌ [SUPABASE ADMIN DELETE ERROR]:', error.message);
+      return NextResponse.json({ success: false, message: 'خطأ أثناء حذف السيارة: ' + error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'تم حذف الإعلان نهائياً من قاعدة البيانات بنجاح'
+    });
+
+  } catch (error: unknown) {
+    console.error('❌ [ADMIN CAR DELETE CRASH]:', error);
+    return NextResponse.json({ success: false, message: 'حدث خطأ غير متوقع في خادم الموقع' }, { status: 500 });
   }
 }
