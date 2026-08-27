@@ -15,7 +15,7 @@ if (!supabaseKey) {
 
 // إنشاء عميل Supabase (بدون أنواع)
 const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseUrl || 'https://uhtjnfeohafpnwcacssk.supabase.co',
   supabaseKey || 'placeholder-key'
 );
 

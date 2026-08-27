@@ -4,6 +4,7 @@ import supabase from '@/lib/db';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // كسر الكاش نهائياً لجلب البيانات الحية
 
+// 1. دالة جلب قائمة المستخدمين المحدثة لـ Supabase
 export async function GET(request: NextRequest) {
   try {
     console.log('📋 [ADMIN USERS] جلب قائمة المستخدمين الحية...');

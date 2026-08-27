@@ -52,6 +52,7 @@ function VerifyForm() {
         return;
       }
 
+      // 1. إنشاء وتوثيق الحساب أمنياً في نظام Supabase
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -62,7 +63,28 @@ function VerifyForm() {
 
       if (signUpError) {
         setError(signUpError.message);
+        setLoading(false);
         return;
+      }
+
+      // 2. ترحيل ونسخ المستخدم تلقائياً إلى جدول قاعدة البيانات العام لظهوره في لوحة الأدمن والـ Login
+      // تنبيه: تأكد مما إذا كان اسم الجدول في لوحة تحكمك هو 'users' أو 'profiles' وقم بتبديله إذا لزم الأمر
+      if (data?.user) {
+        const { error: insertError } = await supabase
+          .from('users') 
+          .insert([
+            {
+              id: data.user.id,
+              email: email,
+              name: name,
+              role: 'user' // الصلاحية الافتراضية للمستخدم الجديد
+            }
+          ]);
+
+        if (insertError) {
+          console.error("خطأ أثناء ترحيل بيانات المستخدم للوحة التحكم:", insertError.message);
+          // نكتفي بطباعة الخطأ في الـ Console لكي لا يتعطل توجيه المستخدم إذا تم التفعيل أمنياً
+        }
       }
 
       alert('تم تفعيل حسابك بنجاح ومرحباً بك!');
