@@ -4,47 +4,29 @@ import supabase from '@/lib/db';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// معالجة تغيير الحالة (موافقة، رفض، مباع)
+// دالة معالجة أزرار الأدمن (الموافقة أو الحذف)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { carId, id, action, status } = body;
-    const targetId = carId || id;
+    const { carId, action } = body;
 
-    if (!targetId) {
-      return NextResponse.json({ success: false, message: 'معرف السيارة مطلوب' }, { status: 400 });
+    if (!carId || !action) {
+      return NextResponse.json({ success: false, message: 'البيانات المطلوبة ناقصة' }, { status: 400 });
     }
 
-    let newStatus = status;
-    if (action === 'approve' || action === 'activate') newStatus = 'مقبول';
-    if (action === 'sell' || action === 'sold') newStatus = 'مباع';
-    if (action === 'reject') newStatus = 'مرفوض';
-    if (!newStatus) newStatus = 'مقبول';
+    let newStatus = 'قيد الانتظار';
+    if (action === 'approve') newStatus = 'مقبول';
+    if (action === 'sell') newStatus = 'مباع';
 
+    // التحديث النصي المتوافق تماماً لـ UUID
     const { error } = await supabase
       .from('cars')
       .update({ status: newStatus })
-      .eq('id', targetId.toString());
+      .eq('id', carId.toString());
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, message: 'تم تحديث حالة الإعلان بنجاح' });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-  }
-}
-
-// معالجة حذف السيارة
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ success: false, message: 'المعرف مطلوب' }, { status: 400 });
-
-    const { error } = await supabase.from('cars').delete().eq('id', id.toString());
-    if (error) throw error;
-
-    return NextResponse.json({ success: true, message: 'تم حذف الإعلان بنجاح' });
+    return NextResponse.json({ success: true, message: 'تم تحديث حالة الإعلان بنجاح في قاعدة البيانات' });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }

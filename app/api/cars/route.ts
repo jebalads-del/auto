@@ -4,48 +4,46 @@ import supabase from '@/lib/db';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// معالجة تغيير الحالة (موافقة، رفض، مباع)
-export async function POST(request: NextRequest) {
+// أ) دالة جلب السيارات بالكامل للعرض بالموقع
+export async function GET() {
   try {
-    const body = await request.json();
-    const { carId, id, action, status } = body;
-    const targetId = carId || id;
-
-    if (!targetId) {
-      return NextResponse.json({ success: false, message: 'معرف السيارة مطلوب' }, { status: 400 });
-    }
-
-    let newStatus = status;
-    if (action === 'approve' || action === 'activate') newStatus = 'مقبول';
-    if (action === 'sell' || action === 'sold') newStatus = 'مباع';
-    if (action === 'reject') newStatus = 'مرفوض';
-    if (!newStatus) newStatus = 'مقبول';
-
-    const { error } = await supabase
+    const { data: cars, error } = await supabase
       .from('cars')
-      .update({ status: newStatus })
-      .eq('id', targetId.toString());
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, message: 'تم تحديث حالة الإعلان بنجاح' });
+    return NextResponse.json({ success: true, cars: cars || [] });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
 
-// معالجة حذف السيارة
-export async function DELETE(request: NextRequest) {
+// ب) دالة إضافة إعلان سيارة جديد للمستخدمين
+export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ success: false, message: 'المعرف مطلوب' }, { status: 400 });
+    const body = await request.json();
+    
+    // إدراج السيارة مباشرة في جدول سوبابيس حياً ومباشرة مع تعيين حالة الانتظار تلقائياً
+    const { data, error } = await supabase
+      .from('cars')
+      .insert([
+        {
+          title: `${body.brand} ${body.model}`,
+          price: parseFloat(body.price),
+          year: parseInt(body.year) || null,
+          image_url: body.imageUrl || body.image_url || '',
+          status: 'قيد الانتظار', // الحالة الافتراضية للموافقة الإدارية لاحقاً
+        }
+      ])
+      .select();
 
-    const { error } = await supabase.from('cars').delete().eq('id', id.toString());
     if (error) throw error;
 
-    return NextResponse.json({ success: true, message: 'تم حذف الإعلان بنجاح' });
+    return NextResponse.json({ success: true, message: 'تم إضافة الإعلان بنجاح وهو قيد مراجعة الإدارة الآن', car: data?.[0] });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    console.error('❌ [ADD CAR ERROR]:', error.message);
+    return NextResponse.json({ success: false, message: 'خطأ أثناء حفظ الإعلان: ' + error.message }, { status: 500 });
   }
 }
