@@ -2,82 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import supabase from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-export async function GET(request: NextRequest) {
-  try {
-    console.log('🚗 [CARS] جلب قائمة السيارات...');
-
-    const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 100;
-    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
-
-    const { data: cars, error, count } = await supabase
-      .from('cars')
-      .select('*', { count: 'exact' })
-      .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('❌ [CARS ERROR]:', error);
-      return NextResponse.json(
-        { success: false, message: 'خطأ في جلب السيارات: ' + error.message },
-        { status: 500 }
-      );
-    }
-
-    console.log(`✅ [CARS] تم جلب ${cars?.length || 0} سيارة`);
-
-    return NextResponse.json({
-      success: true,
-      cars: cars || [],
-      total: count || 0
-    });
-
-  } catch (error: unknown) {
-    console.error('❌ [CARS ERROR]:', error);
-    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
-    return NextResponse.json(
-      { success: false, message: errorMessage },
-      { status: 500 }
-    );
-  }
-}
-
+// معالجة تغيير الحالة (موافقة، رفض، مباع)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('➕ [CARS] إضافة سيارة جديدة...', body);
+    const { carId, id, action, status } = body;
+    const targetId = carId || id;
 
-    // إضافة user_id ثابت (1) للمستخدم admin
-    const carData = {
-      ...body,
-      user_id: 1,
-      created_at: new Date().toISOString()
-    };
-
-    const { data: car, error } = await supabase
-      .from('cars')
-      .insert([carData])
-      .select()
-      .maybeSingle();
-
-    if (error) {
-      console.error('❌ [CARS CREATE ERROR]:', error);
-      return NextResponse.json(
-        { success: false, message: 'خطأ في إضافة السيارة: ' + error.message },
-        { status: 500 }
-      );
+    if (!targetId) {
+      return NextResponse.json({ success: false, message: 'معرف السيارة مطلوب' }, { status: 400 });
     }
 
-    console.log(`✅ [CARS] تم إضافة السيارة: ${car?.id}`);
-    return NextResponse.json({ success: true, car });
+    let newStatus = status;
+    if (action === 'approve' || action === 'activate') newStatus = 'مقبول';
+    if (action === 'sell' || action === 'sold') newStatus = 'مباع';
+    if (action === 'reject') newStatus = 'مرفوض';
+    if (!newStatus) newStatus = 'مقبول';
 
-  } catch (error: unknown) {
-    console.error('❌ [CARS CREATE ERROR]:', error);
-    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
-    return NextResponse.json(
-      { success: false, message: errorMessage },
-      { status: 500 }
-    );
+    const { error } = await supabase
+      .from('cars')
+      .update({ status: newStatus })
+      .eq('id', targetId.toString());
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, message: 'تم تحديث حالة الإعلان بنجاح' });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+}
+
+// معالجة حذف السيارة
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ success: false, message: 'المعرف مطلوب' }, { status: 400 });
+
+    const { error } = await supabase.from('cars').delete().eq('id', id.toString());
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, message: 'تم حذف الإعلان بنجاح' });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

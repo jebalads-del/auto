@@ -1,72 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/db'; // التحديث للاستيراد الصحيح لـ Supabase
+import supabase from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// 1. دالة معالجة تحديث حالة السيارة (الموافقة / تغيير الحالة)
+// معالجة تغيير الحالة (موافقة، رفض، مباع)
 export async function POST(request: NextRequest) {
   try {
-    const { carId, action, status } = await request.json();
+    const body = await request.json();
+    const { carId, id, action, status } = body;
+    const targetId = carId || id;
 
-    if (!carId) {
+    if (!targetId) {
       return NextResponse.json({ success: false, message: 'معرف السيارة مطلوب' }, { status: 400 });
     }
 
-    console.log(`⚙️ [ADMIN CAR ACTION] إجراء ${action || 'تحديث'} على السيارة: ${carId}`);
-
-    // تحديد الحالة الجديدة بناءً على الزر المضغوط
     let newStatus = status;
-    if (action === 'approve') newStatus = 'مقبول';
+    if (action === 'approve' || action === 'activate') newStatus = 'مقبول';
+    if (action === 'sell' || action === 'sold') newStatus = 'مباع';
     if (action === 'reject') newStatus = 'مرفوض';
-    if (action === 'pending') newStatus = 'قيد الانتظار';
+    if (!newStatus) newStatus = 'مقبول';
 
-    // تحديث حالة السيارة حياً ومباشرة داخل جدول السيارات بسوبابيس
     const { error } = await supabase
-      .from('cars') // تأكد من اسم جدول السيارات لديك (cars أو vehicles)
+      .from('cars')
       .update({ status: newStatus })
-      .eq('id', carId);
+      .eq('id', targetId.toString());
 
-    if (error) {
-      console.error('❌ [ADMIN CAR UPDATE ERROR]:', error);
-      return NextResponse.json(
-        { success: false, message: 'خطأ في تحديث حالة السيارة: ' + error.message },
-        { status: 500 }
-      );
-    }
+    if (error) throw error;
 
-    return NextResponse.json({
-      success: true,
-      message: `تم تحديث حالة السيارة إلى (${newStatus}) بنجاح`
-    });
-
-  } catch (error: unknown) {
-    console.error('❌ [ADMIN CAR UPDATE ERROR]:', error);
-    return NextResponse.json({ success: false, message: 'فشل معالجة الطلب في السيرفر' }, { status: 500 });
+    return NextResponse.json({ success: true, message: 'تم تحديث حالة الإعلان بنجاح' });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
 
-// 2. دالة حذف سيارة من لوحة الأدمن (احتياطية إذا كانت اللوحة تستدعي نفس المسار للحذف)
+// معالجة حذف السيارة
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ success: false, message: 'المعرف مطلوب' }, { status: 400 });
 
-    if (!id) {
-      return NextResponse.json({ success: false, message: 'معرف السيارة مطلوب' }, { status: 400 });
-    }
-
-    const { error } = await supabase
-      .from('cars')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      return NextResponse.json({ success: false, message: 'خطأ أثناء حذف السيارة: ' + error.message }, { status: 500 });
-    }
+    const { error } = await supabase.from('cars').delete().eq('id', id.toString());
+    if (error) throw error;
 
     return NextResponse.json({ success: true, message: 'تم حذف الإعلان بنجاح' });
-  } catch {
-    return NextResponse.json({ success: false, message: 'حدث خطأ غير متوقع' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
