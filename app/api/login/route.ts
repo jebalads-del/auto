@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// استخدام Service Role Key للوصول إلى Admin API
-// استخدام ANON_KEY بدلاً من SERVICE_ROLE_KEY
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -25,34 +18,13 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔐 [LOGIN] محاولة تسجيل دخول: ${email}`);
 
-    // البحث عن المستخدم في auth.users
-    const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (listError) {
-      console.error('❌ [LOGIN ERROR]:', listError);
-      return NextResponse.json(
-        { success: false, message: 'خطأ في قاعدة البيانات' },
-        { status: 500 }
-      );
-    }
-
-    // البحث عن المستخدم بالبريد الإلكتروني
-    const user = users.users.find((u: any) => u.email === email.toLowerCase().trim());
-
-    if (!user) {
-      console.log('❌ [LOGIN] المستخدم غير موجود');
-      return NextResponse.json(
-        { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
-        { status: 401 }
-      );
-    }
-
-    // محاولة تسجيل الدخول باستخدام Supabase Auth
+    // إنشاء عميل Supabase عادي
     const supabaseClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
+    // محاولة تسجيل الدخول باستخدام Supabase Auth
     const { data, error } = await supabaseClient.auth.signInWithPassword({
       email: email.toLowerCase().trim(),
       password: password,
