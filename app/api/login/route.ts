@@ -67,12 +67,18 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ [LOGIN] تم تسجيل الدخول: ${email}`);
 
+    // ✅ تحديد role بناءً على البريد الإلكتروني
+    let userRole = 'user';
+    if (email === 'admin@sayarty.store') {
+      userRole = 'admin';
+    }
+
     return NextResponse.json({
       success: true,
       user: {
         id: data.user.id,
         email: data.user.email,
-        role: 'user',
+        role: userRole,
         status: 'active'
       }
     });
