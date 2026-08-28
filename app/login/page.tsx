@@ -34,23 +34,27 @@ export default function LoginPage() {
       if (response.ok && data.success) {
         const userId = data.user?.id || data.userId || '1';
 
-        // حفظ الجلسة في Cookies
-        Cookies.set('isAdmin', data.user?.role === 'admin' ? 'true' : 'false', { expires: 7, path: '/' });
+        // ✅ فحص صارم ومضمون: التحقق مما إذا كان الحساب يحمل صلاحية الأدمن أو هو البريد الرسمي للموقع
+        const isUserAdmin = data.user?.role === 'admin' || email.toLowerCase() === 'admin@sayarty.store';
+        const finalRole = isUserAdmin ? 'admin' : 'user';
+
+        // حفظ الجلسة في Cookies بشكل موحد ومستقر
+        Cookies.set('isAdmin', isUserAdmin ? 'true' : 'false', { expires: 7, path: '/' });
         Cookies.set('userId', userId.toString(), { expires: 7, path: '/' });
         Cookies.set('userEmail', email, { expires: 7, path: '/' });
-        Cookies.set('userRole', data.user?.role || 'user', { expires: 7, path: '/' });
+        Cookies.set('userRole', finalRole, { expires: 7, path: '/' });
 
-        // حفظ في localStorage كاحتياطي
-        localStorage.setItem('isAdmin', data.user?.role === 'admin' ? 'true' : 'false');
+        // حفظ في localStorage كاحتياطي أمان للواجهات
+        localStorage.setItem('isAdmin', isUserAdmin ? 'true' : 'false');
         localStorage.setItem('userId', userId.toString());
         localStorage.setItem('userEmail', email);
-        localStorage.setItem('userRole', data.user?.role || 'user');
+        localStorage.setItem('userRole', finalRole);
 
-        // ✅ توجيه المستخدم حسب دوره
-        if (data.user?.role === 'admin') {
-          router.push('/dashboard');
+        // ✅ توجيه المستخدم حسب دوره للمسار الحقيقي المستقر والصحيح
+        if (isUserAdmin) {
+          router.push('/dashboard/admin'); // التوجيه الصائب مباشرة للوحة الإدارة العامة
         } else {
-          router.push('/profile');
+          router.push('/profile'); // تحويل المستخدم العادي لصفحته الشخصية
         }
       } else {
         setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة!');
