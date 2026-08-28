@@ -1,168 +1,173 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from 'next/link';
 
 export default function DashboardClient({ initialUsers, initialCars }: { initialUsers: any[], initialCars: any[] }) {
   const [activeTab, setActiveTab] = useState<'users' | 'ads' | 'payments' | 'settings'>('users');
-  const [usersList, setUsersList] = useState(initialUsers);
-  const [carsList, setCarsList] = useState(initialCars);
+  const [usersList, setUsersList] = useState(initialUsers || []);
+  const [carsList, setCarsList] = useState(initialCars || []);
+  const [stats, setStats] = useState({ users: 0, cars: 0, pending: 0, approved: 0 });
 
-  const [westernName, setWesternName] = useState("محمد أحمد محمود");
-  const [westernCountry, setWesternCountry] = useState("الكويت");
-  const [paypalEmail, setPaypalEmail] = useState("payment@auto-gulf.com");
-  const [isWesternActive, setIsWesternActive] = useState(true);
-  const [isPaypalActive, setIsPaypalActive] = useState(true);
+  useEffect(() => {
+    // تحديث الإحصائيات
+    const pending = carsList.filter((c: any) => c.status === 'pending');
+    const approved = carsList.filter((c: any) => c.status === 'approved' || c.status === 'active');
+    setStats({
+      users: usersList.length,
+      cars: carsList.length,
+      pending: pending.length,
+      approved: approved.length
+    });
+  }, [usersList, carsList]);
 
-  const [siteName, setSiteName] = useState("حراج السيارات الخليجي الفعلي");
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
-  const [defaultCurrency, setDefaultCurrency] = useState("KWD");
-  const [allowedCurrencies, setAllowedCurrencies] = useState({
-    KWD: true, SAR: true, AED: true, QAR: true, BHD: true, OMR: true
-  });
-
-  const handleToggleCurrency = (code: string) => {
-    if (code === defaultCurrency) return;
-    setAllowedCurrencies(prev => ({ ...prev, [code]: !prev[code as keyof typeof prev] }));
-  };
-
-  const handleToggleUserStatus = (id: any, currentStatus: string) => {
-    const nextStatus = currentStatus === "موقوف" ? "نشط" : "موقوف";
-    setUsersList(prev => prev.map(u => u.id === id ? { ...u, status: nextStatus } : u));
-  };
-
-  const handleDeleteUser = (id: any) => {
-    setUsersList(prev => prev.filter(u => u.id !== id));
-  };
   const handleApproveCar = async (id: any) => {
     try {
-      const response = await fetch('/api/cars', {
+      const response = await fetch(`/api/cars/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: 'approved' })
+        body: JSON.stringify({ status: 'approved' })
       });
       if (response.ok) {
-        setCarsList(prev => prev.map(c => c.id === id ? { ...c, status: "approved" } : c));
-        alert("تمت الموافقة ونشر السيارة حياً في الحراج الفعلي! ✅");
+        setCarsList(prev => prev.map((c: any) => c.id === id ? { ...c, status: "approved" } : c));
+        alert("✅ تمت الموافقة ونشر السيارة!");
+      } else {
+        alert("❌ فشل الموافقة");
       }
     } catch (error) {
-      alert("فشل الاتصال بالسيرفر");
+      alert("❌ فشل الاتصال بالسيرفر");
     }
   };
 
-  const handleMarkAsSold = (id: any) => {
-    setCarsList(prev => prev.map(c => c.id === id ? { ...c, ad_status: "مُباعة 🔴" } : c));
-  };
-
-  const handleDeleteCar = (id: any) => {
-    setCarsList(prev => prev.filter(c => c.id !== id));
+  const handleDeleteCar = async (id: any) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
+    try {
+      const response = await fetch(`/api/cars/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setCarsList(prev => prev.filter((c: any) => c.id !== id));
+        alert("✅ تم حذف الإعلان");
+      } else {
+        alert("❌ فشل الحذف");
+      }
+    } catch (error) {
+      alert("❌ فشل الاتصال بالسيرفر");
+    }
   };
 
   const styles = {
-    container: { fontFamily: 'sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh', padding: '12px', direction: 'rtl' as const },
-    header: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '16px', textAlign: 'center' as const, marginBottom: '16px' },
-    tabGrid: { display: 'flex', flexDirection: 'column' as const, gap: '8px', marginBottom: '20px' },
+    container: { direction: 'rtl' as const, padding: '15px', fontFamily: 'sans-serif', backgroundColor: '#f1f5f9', minHeight: '100vh' },
+    header: { backgroundColor: '#1e293b', color: 'white', padding: '20px', borderRadius: '12px', marginBottom: '20px' },
+    headerTitle: { fontSize: '20px', fontWeight: 'bold', margin: 0 },
+    headerSub: { fontSize: '14px', color: '#94a3b8', margin: '5px 0 0 0' },
+    statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '20px' },
+    statCard: { backgroundColor: 'white', padding: '15px', borderRadius: '10px', textAlign: 'center' as const, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' },
+    statNumber: { fontSize: '24px', fontWeight: 'bold', margin: 0, color: '#1e293b' },
+    statLabel: { fontSize: '12px', color: '#64748b', margin: '5px 0 0 0' },
+    tabGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '20px' },
     tabButton: (isActive: boolean) => ({
-      width: '100%', padding: '12px', borderRadius: '10px', border: 'none', fontSize: '14px', fontWeight: 'bold' as const,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      backgroundColor: isActive ? '#2563eb' : '#ffffff', color: isActive ? '#ffffff' : '#4b5563'
+      padding: '12px', borderRadius: '10px', border: 'none', fontSize: '14px', fontWeight: 'bold' as const,
+      backgroundColor: isActive ? '#2563eb' : 'white', color: isActive ? 'white' : '#475569',
+      cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
     }),
-    badge: (isActive: boolean) => ({ backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : '#f1f5f9', padding: '2px 8px', borderRadius: '20px' }),
-    card: { backgroundColor: '#ffffff', borderRadius: '14px', padding: '16px' },
-    tableWrapper: { overflowX: 'auto' as const, borderRadius: '10px', border: '1px solid #e2e8f0' },
-    table: { width: '100%', borderCollapse: 'collapse' as const, textAlign: 'right' as const, fontSize: '13px' },
-    th: { backgroundColor: '#f8fafc', padding: '10px', borderBottom: '2px solid #edf2f7' },
-    td: { padding: '10px', borderBottom: '1px solid #f1f5f9' },
-    btnAction: { padding: '6px 10px', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '11px', fontWeight: 'bold' as const, marginLeft: '4px' },
-    inputField: { width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '8px', marginTop: '4px', outline: 'none', boxSizing: 'border-box' as const }
+    card: { backgroundColor: 'white', borderRadius: '12px', padding: '15px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' },
+    tableWrapper: { overflowX: 'auto' as const },
+    table: { width: '100%', borderCollapse: 'collapse' as const, textAlign: 'right' as const, fontSize: '14px' },
+    th: { padding: '12px', borderBottom: '2px solid #e2e8f0', backgroundColor: '#f8fafc' },
+    td: { padding: '12px', borderBottom: '1px solid #f1f5f9' },
+    btnApprove: { padding: '6px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', marginLeft: '5px' },
+    btnDelete: { padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' },
+    btnLink: { display: 'inline-block', padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', textAlign: 'center' as const }
   };
+
   return (
     <div style={styles.container}>
+      {/* الهيدر */}
       <header style={styles.header}>
-        <h1 style={{ color: '#1e3a8a', fontSize: '20px', margin: '0 0 4px 0', fontWeight: 'bold' }}>📊 لوحة تحكم المدير</h1>
-        <p style={{ color: '#6b7280', fontSize: '11px', margin: 0 }}>نظام إدارة العمليات الحية الفوري</p>
+        <h1 style={styles.headerTitle}>🚗 لوحة تحكم الإدارة المطورة</h1>
+        <p style={styles.headerSub}>مرحباً بك في لوحة التحكم</p>
       </header>
 
-      <div style={styles.tabGrid}>
-        <button onClick={() => setActiveTab('users')} style={styles.tabButton(activeTab === 'users')}>
-          <span>👥 إدارة المستخدمين</span> <span style={styles.badge(activeTab === 'users')}>{usersList.length}</span>
-        </button>
-        <button onClick={() => setActiveTab('ads')} style={styles.tabButton(activeTab === 'ads')}>
-          <span>🚗 إعلانات السيارات</span> <span style={styles.badge(activeTab === 'ads')}>{carsList.length}</span>
-        </button>
-        <button onClick={() => setActiveTab('payments')} style={styles.tabButton(activeTab === 'payments')}>
-          <span>💳 خيارات الدفع والعملات</span> <span>★</span>
-        </button>
-        <button onClick={() => setActiveTab('settings')} style={styles.tabButton(activeTab === 'settings')}>
-          <span>⚙️ إعدادات الموقع العامة</span> <span>⚙️</span>
-        </button>
+      {/* الإحصائيات */}
+      <div style={styles.statsGrid}>
+        <div style={styles.statCard}>
+          <h3 style={styles.statNumber}>{stats.users}</h3>
+          <p style={styles.statLabel}>👥 المستخدمين</p>
+        </div>
+        <div style={styles.statCard}>
+          <h3 style={styles.statNumber}>{stats.cars}</h3>
+          <p style={styles.statLabel}>🚗 السيارات</p>
+        </div>
+        <div style={styles.statCard}>
+          <h3 style={styles.statNumber}>{stats.pending}</h3>
+          <p style={styles.statLabel}>⏳ قيد الانتظار</p>
+        </div>
+        <div style={styles.statCard}>
+          <h3 style={styles.statNumber}>{stats.approved}</h3>
+          <p style={styles.statLabel}>✅ مقبولة</p>
+        </div>
       </div>
 
+      {/* أزرار التبويب */}
+      <div style={styles.tabGrid}>
+        <button onClick={() => setActiveTab('users')} style={styles.tabButton(activeTab === 'users')}>👥 المستخدمين</button>
+        <button onClick={() => setActiveTab('ads')} style={styles.tabButton(activeTab === 'ads')}>🚗 الإعلانات</button>
+        <button onClick={() => setActiveTab('payments')} style={styles.tabButton(activeTab === 'payments')}>💳 الدفع</button>
+        <button onClick={() => setActiveTab('settings')} style={styles.tabButton(activeTab === 'settings')}>⚙️ الإعدادات</button>
+      </div>
+
+      {/* المحتوى */}
       <div style={styles.card}>
         {activeTab === 'users' && (
           <div>
-            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>جدول المستخدمين ({usersList.length})</h2>
+            <h2>👥 إدارة المستخدمين ({usersList.length})</h2>
+            <Link href="/dashboard/users" style={styles.btnLink}>إدارة المستخدمين →</Link>
+          </div>
+        )}
+
+        {activeTab === 'ads' && (
+          <div>
+            <h2>🚗 إدارة الإعلانات ({carsList.length})</h2>
             <div style={styles.tableWrapper}>
               <table style={styles.table}>
                 <thead>
                   <tr>
-                    <th style={styles.th}>المستعمل</th>
-                    <th style={styles.th}>الإجراء</th>
+                    <th style={styles.th}>السيارة</th>
+                    <th style={styles.th}>السعر</th>
+                    <th style={styles.th}>الحالة</th>
+                    <th style={styles.th}>الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {usersList.map((user, index) => (
-                    <tr key={user.id || index} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                  {carsList.map((car: any) => (
+                    <tr key={car.id}>
+                      <td style={styles.td}>{car.brand} {car.model}</td>
+                      <td style={styles.td}>{car.price} {car.currency || 'KWD'}</td>
+                      <td style={styles.td}>{car.status === 'approved' ? '✅ مقبول' : car.status === 'pending' ? '⏳ انتظار' : car.status}</td>
                       <td style={styles.td}>
-                        <div style={{ fontWeight: '600' }}>{user.name || user.username || "مستخدم حراج"}</div>
-                        <div style={{ color: '#64748b', fontSize: '11px' }}>{user.email}</div>
-                      </td>
-                      <td style={styles.td}>
-                        <button onClick={() => handleToggleUserStatus(user.id, user.status)} style={{ ...styles.btnAction, backgroundColor: user.status === 'موقوف' ? '#10b981' : '#f59e0b' }}>
-                          {user.status === 'موقوف' ? "تفعيل" : "إيقاف"}
-                        </button>
-                        <button onClick={() => handleDeleteUser(user.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
+                        {car.status === 'pending' && (
+                          <button onClick={() => handleApproveCar(car.id)} style={styles.btnApprove}>موافقة</button>
+                        )}
+                        <button onClick={() => handleDeleteCar(car.id)} style={styles.btnDelete}>حذف</button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            <Link href="/dashboard/cars/new" style={styles.btnLink}>➕ إضافة سيارة</Link>
           </div>
         )}
 
-        {activeTab === 'ads' && (
+        {activeTab === 'payments' && (
           <div>
-            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>إعلانات السيارات الفعالة ({carsList.length})</h2>
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>السيارة والسعر</th>
-                    <th style={styles.th}>الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {carsList.map((car, index) => {
-                    const currentStatus = car.status || "pending";
-                    return (
-                      <tr key={car.id || index}>
-                        <td style={styles.td}>
-                          <div style={{ fontWeight: '600' }}>{car.brand || car.title} {car.model}</div>
-                          <div style={{ color: '#10b981', fontWeight: 'bold' }}>{car.price} {car.currency || "KWD"}</div>
-                          <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>الحالة: {currentStatus}</div>
-                        </td>
-                        <td style={styles.td}>
-                          {currentStatus === "pending" && (
-                            <button onClick={() => handleApproveCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#10b981' }}>موافقة</button>
-                          )}
-                          <button onClick={() => handleMarkAsSold(car.id)} style={{ ...styles.btnAction, backgroundColor: '#f59e0b' }}>مباعة</button>
-                          <button onClick={() => handleDeleteCar(car.id)} style={{ ...styles.btnAction, backgroundColor: '#ef4444' }}>حذف</button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <h2>💳 خيارات الدفع</h2>
+            <p>إعدادات الدفع قيد التطوير</p>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div>
+            <h2>⚙️ إعدادات الموقع</h2>
+            <p>الإعدادات قيد التطوير</p>
           </div>
         )}
       </div>
