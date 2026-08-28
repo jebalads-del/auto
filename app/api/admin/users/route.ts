@@ -49,16 +49,11 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const userId = parseInt(id);
-    if (isNaN(userId)) {
-      return NextResponse.json(
-        { success: false, message: 'معرف المستخدم غير صالح' },
-        { status: 400 }
-      );
-    }
+    // ✅ استخدام id كنص (uuid)
+    const userId = id;
 
     // منع حذف المدير الرئيسي
-    if (userId === 1) {
+    if (userId === '1' || userId === 'admin@sayarty.store') {
       return NextResponse.json(
         { success: false, message: 'لا يمكن حذف المدير الرئيسي' },
         { status: 403 }
