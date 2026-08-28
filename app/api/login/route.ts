@@ -11,11 +11,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'الرجاء ملء جميع الحقول المطلوبة' }, { status: 400 });
     }
 
-    console.log(`🔐 [LOGIN PROCESS] محاولة تسجيل دخول للبريد: ${email}`);
+    const cleanEmail = email.toLowerCase().trim();
+    console.log(`🔐 [LOGIN PROCESS] محاولة تسجيل دخول للبريد: ${cleanEmail}`);
 
     // 1. التحقق الأمني المشفر والمباشر من البريد وكلمة السر داخل Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       password: password
     });
 
@@ -27,30 +28,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. جلب رتبة المستخدم الحقيقية والاسم من الجدول العام للتحقق من الصلاحيات
+    // 2. تعيين القيم الافتراضية
     let userRole = 'user';
     let userName = 'مستخدم جديد';
 
-    const { data: dbUser } = await supabase
-      .from('users')
-      .select('name, role')
-      .eq('id', authData.user.id)
-      .single();
-
-    if (dbUser) {
-      userRole = dbUser.role || 'user';
-      userName = dbUser.name || userName;
-    }
-
-    // تأمين إضافي للأدمن المعتمد للموقع
-    if (email.toLowerCase().trim() === 'admin@sayarty.store') {
+    // 3. تأمين صارم وقاطع للأدمن: إذا كان البريد هو بريد الأدمن، نمنحه الصلاحيات فوراً دون فحص الجدول العام لتفادي الانهيار
+    if (cleanEmail === 'admin@sayarty.store') {
       userRole = 'admin';
       userName = 'المدير العام';
+      
+      // مزامنة أوتوماتيكية سريعة لربط الـ UUID الجديد في الجدول العام صيانة للنظام
+      try {
+        await supabase.from('users').insert([{ id: authData.user.id, email: cleanEmail, name: userName, role: userRole, status: 'active' }]).onConflict('id').ignore();
+      } catch (e) {}
+
+    } else {
+      // للمستخدمين العاديين: جلب البيانات بشكل آمن ومحمي بدون كراش الـ single()
+      try {
+        const { data: dbUser } = await supabase
+          .from('users')
+          .select('name, role')
+          .eq('id', authData.user.id);
+          
+        if (dbUser && dbUser.length > 0) {
+          userRole = dbUser[0].role || 'user';
+          userName = dbUser[0].name || userName;
+        }
+      } catch (tableError) {
+        console.error('خطأ جدول المستخدمين:', tableError);
+      }
     }
 
     console.log(`✅ [LOGIN SUCCESS] تم تسجيل دخول ${userName} برتبة: ${userRole}`);
 
-    // 3. إعادة البيانات كاملة ومستقرة للواجهة الأمامية لتوجيهه فوراً
     return NextResponse.json({
       success: true,
       message: 'تم تسجيل الدخول بنجاح ومرحباً بك مجدداً',
