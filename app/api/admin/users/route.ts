@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/db';
+import { createClient } from '@supabase/supabase-js';
+
+// استخدام Service Role Key للوصول إلى Admin API
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export const dynamic = 'force-dynamic';
 
@@ -7,11 +13,8 @@ export async function GET(request: NextRequest) {
   try {
     console.log('📋 [ADMIN USERS] جلب قائمة المستخدمين من Auth...');
 
-    // جلب المستخدمين من جدول المصادقة
-    const { data: users, error } = await supabase
-      .from('auth.users')
-      .select('id, email, raw_user_meta_data, created_at, last_sign_in_at')
-      .order('created_at', { ascending: false });
+    // استخدام Admin API لجلب المستخدمين
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
       console.error('❌ [ADMIN USERS ERROR]:', error);
@@ -21,13 +24,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const users = data.users || [];
+
     // تنسيق البيانات
     const formattedUsers = users.map((user: any) => ({
       id: user.id,
       email: user.email,
-      name: user.raw_user_meta_data?.full_name || user.raw_user_meta_data?.name || user.email?.split('@')[0] || 'مستخدم',
+      name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'مستخدم',
       role: 'user',
-      status: 'active',
+      status: user.confirmed_at ? 'active' : 'pending',
       created_at: user.created_at
     }));
 
@@ -61,8 +66,9 @@ export async function DELETE(request: NextRequest) {
 
     console.log(`🗑️ [ADMIN USERS] محاولة حذف المستخدم: ${id}`);
 
-    // منع حذف المدير الرئيسي
-    if (id === 'abf1849b-1531-43e5-aae7-258e89902c49' || id === 'admin@sayarty.store') {
+    // منع حذف المدير الرئيسي (بالبريد الإلكتروني)
+    const { data: adminUser } = await supabaseAdmin.auth.admin.getUserById(id);
+    if (adminUser?.user?.email === 'admin@sayarty.store') {
       return NextResponse.json(
         { success: false, message: 'لا يمكن حذف المدير الرئيسي' },
         { status: 403 }
@@ -70,7 +76,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // حذف المستخدم من Auth
-    const { error } = await supabase.auth.admin.deleteUser(id);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
 
     if (error) {
       console.error('❌ [ADMIN USERS DELETE ERROR]:', error);
