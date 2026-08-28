@@ -5,11 +5,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('📋 [ADMIN USERS] جلب قائمة المستخدمين...');
+    console.log('📋 [ADMIN USERS] جلب قائمة المستخدمين من Auth...');
 
+    // جلب المستخدمين من جدول المصادقة
     const { data: users, error } = await supabase
-      .from('users')
-      .select('id, email, name, role, status, created_at')
+      .from('auth.users')
+      .select('id, email, raw_user_meta_data, created_at, last_sign_in_at')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -20,18 +21,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`✅ [ADMIN USERS] تم جلب ${users?.length || 0} مستخدم`);
+    // تنسيق البيانات
+    const formattedUsers = users.map((user: any) => ({
+      id: user.id,
+      email: user.email,
+      name: user.raw_user_meta_data?.full_name || user.raw_user_meta_data?.name || user.email?.split('@')[0] || 'مستخدم',
+      role: 'user',
+      status: 'active',
+      created_at: user.created_at
+    }));
+
+    console.log(`✅ [ADMIN USERS] تم جلب ${formattedUsers.length} مستخدم`);
 
     return NextResponse.json({
       success: true,
-      users: users || []
+      users: formattedUsers
     });
 
   } catch (error: unknown) {
     console.error('❌ [ADMIN USERS ERROR]:', error);
-    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return NextResponse.json(
-      { success: false, message: errorMessage },
+      { success: false, message: 'حدث خطأ أثناء معالجة البيانات' },
       { status: 500 }
     );
   }
@@ -52,17 +62,15 @@ export async function DELETE(request: NextRequest) {
     console.log(`🗑️ [ADMIN USERS] محاولة حذف المستخدم: ${id}`);
 
     // منع حذف المدير الرئيسي
-    if (id === '1' || id === 'admin@sayarty.store') {
+    if (id === 'abf1849b-1531-43e5-aae7-258e89902c49' || id === 'admin@sayarty.store') {
       return NextResponse.json(
         { success: false, message: 'لا يمكن حذف المدير الرئيسي' },
         { status: 403 }
       );
     }
 
-    const { error } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', id);
+    // حذف المستخدم من Auth
+    const { error } = await supabase.auth.admin.deleteUser(id);
 
     if (error) {
       console.error('❌ [ADMIN USERS DELETE ERROR]:', error);
@@ -80,9 +88,8 @@ export async function DELETE(request: NextRequest) {
 
   } catch (error: unknown) {
     console.error('❌ [ADMIN USERS DELETE ERROR]:', error);
-    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return NextResponse.json(
-      { success: false, message: errorMessage },
+      { success: false, message: 'حدث خطأ غير متوقع' },
       { status: 500 }
     );
   }
