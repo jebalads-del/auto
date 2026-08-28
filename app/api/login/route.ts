@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/db';
+import { createClient } from '@supabase/supabase-js';
+
+// استخدام Service Role Key للوصول إلى Admin API
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -16,63 +22,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔐 [LOGIN] محاولة تسجيل دخول للحساب: ${email}`);
+    console.log(`🔐 [LOGIN] محاولة تسجيل دخول: ${email}`);
 
-    const { data: users, error } = await supabase
-      .from('users')
-      .select('id, email, password, role, status')
-      .eq('email', email.toLowerCase().trim())
-      .limit(1);
+    // البحث عن المستخدم في auth.users
+    const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
 
-    if (error) {
-      console.error('❌ [LOGIN DB ERROR]:', error);
+    if (listError) {
+      console.error('❌ [LOGIN ERROR]:', listError);
       return NextResponse.json(
-        { success: false, message: 'خطأ في قاعدة البيانات: ' + error.message },
+        { success: false, message: 'خطأ في قاعدة البيانات' },
         { status: 500 }
       );
     }
 
-    if (!users || users.length === 0) {
-      console.log('❌ [LOGIN] الحساب غير موجود');
+    // البحث عن المستخدم بالبريد الإلكتروني
+    const user = users.users.find((u: any) => u.email === email.toLowerCase().trim());
+
+    if (!user) {
+      console.log('❌ [LOGIN] المستخدم غير موجود');
       return NextResponse.json(
         { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
         { status: 401 }
       );
     }
 
-    const user = users[0];
-    
-    // التحقق من كلمة المرور
-    console.log(`🔍 [LOGIN DEBUG] Email: ${user.email}, Password from DB: ${user.password}, Input: ${password}`);
-    
-    // التحقق الدقيق
-    const isPasswordValid = password === user.password;
+    // محاولة تسجيل الدخول باستخدام Supabase Auth
+    const supabaseClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
-    if (!isPasswordValid) {
-      console.log('❌ [LOGIN] كلمة المرور غير مطابقة');
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password: password,
+    });
+
+    if (error) {
+      console.error('❌ [LOGIN AUTH ERROR]:', error);
       return NextResponse.json(
         { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
         { status: 401 }
       );
     }
 
-    console.log(`✅ [LOGIN] تم التحقق بنجاح! الرتبة: ${user.role}`);
+    console.log(`✅ [LOGIN] تم تسجيل الدخول: ${email}`);
 
     return NextResponse.json({
       success: true,
       user: {
-        id: user.id,
-        email: user.email,
-        role: user.role || 'user',
-        status: user.status || 'active'
+        id: data.user.id,
+        email: data.user.email,
+        role: 'user',
+        status: 'active'
       }
     });
 
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('❌ [LOGIN ERROR]:', error);
-    const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع';
     return NextResponse.json(
-      { success: false, message: errorMessage },
+      { success: false, message: error.message || 'حدث خطأ غير متوقع' },
       { status: 500 }
     );
   }
