@@ -1,93 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// استخدام Service Role Key للوصول إلى Admin API
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import supabase from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, password } = body;
+    const { email, password } = await request.json();
 
     if (!email || !password) {
-      return NextResponse.json(
-        { success: false, message: 'يرجى إدخال البريد الإلكتروني وكلمة المرور' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'الرجاء ملء جميع الحقول المطلوبة' }, { status: 400 });
     }
 
-    console.log(`🔐 [LOGIN] محاولة تسجيل دخول: ${email}`);
+    console.log(`🔐 [LOGIN PROCESS] محاولة تسجيل دخول للبريد: ${email}`);
 
-    // البحث عن المستخدم في auth.users
-    const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (listError) {
-      console.error('❌ [LOGIN ERROR]:', listError);
-      return NextResponse.json(
-        { success: false, message: 'خطأ في قاعدة البيانات' },
-        { status: 500 }
-      );
-    }
-
-    // البحث عن المستخدم بالبريد الإلكتروني
-    const user = users.users.find((u: any) => u.email === email.toLowerCase().trim());
-
-    if (!user) {
-      console.log('❌ [LOGIN] المستخدم غير موجود');
-      return NextResponse.json(
-        { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
-        { status: 401 }
-      );
-    }
-
-    // محاولة تسجيل الدخول باستخدام Supabase Auth
-    const supabaseClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
+    // 1. التحقق الأمني المشفر والمباشر من البريد وكلمة السر داخل Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: email.toLowerCase().trim(),
-      password: password,
+      password: password
     });
 
-    if (error) {
-      console.error('❌ [LOGIN AUTH ERROR]:', error);
+    if (authError || !authData.user) {
+      console.error('❌ [AUTH ERROR]:', authError?.message);
       return NextResponse.json(
-        { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
+        { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة!' },
         { status: 401 }
       );
     }
 
-    console.log(`✅ [LOGIN] تم تسجيل الدخول: ${email}`);
-
-    // ✅ تحديد role بناءً على البريد الإلكتروني
+    // 2. جلب رتبة المستخدم الحقيقية والاسم من الجدول العام للتحقق من الصلاحيات
     let userRole = 'user';
-    if (email === 'admin@sayarty.store') {
-      userRole = 'admin';
+    let userName = 'مستخدم جديد';
+
+    const { data: dbUser } = await supabase
+      .from('users')
+      .select('name, role')
+      .eq('id', authData.user.id)
+      .single();
+
+    if (dbUser) {
+      userRole = dbUser.role || 'user';
+      userName = dbUser.name || userName;
     }
 
+    // تأمين إضافي للأدمن المعتمد للموقع
+    if (email.toLowerCase().trim() === 'admin@sayarty.store') {
+      userRole = 'admin';
+      userName = 'المدير العام';
+    }
+
+    console.log(`✅ [LOGIN SUCCESS] تم تسجيل دخول ${userName} برتبة: ${userRole}`);
+
+    // 3. إعادة البيانات كاملة ومستقرة للواجهة الأمامية لتوجيهه فوراً
     return NextResponse.json({
       success: true,
+      message: 'تم تسجيل الدخول بنجاح ومرحباً بك مجدداً',
+      userId: authData.user.id,
       user: {
-        id: data.user.id,
-        email: data.user.email,
-        role: userRole,
-        status: 'active'
+        id: authData.user.id,
+        email: authData.user.email,
+        name: userName,
+        role: userRole
       }
     });
 
-  } catch (error: any) {
-    console.error('❌ [LOGIN ERROR]:', error);
-    return NextResponse.json(
-      { success: false, message: error.message || 'حدث خطأ غير متوقع' },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    console.error('❌ [LOGIN CRASH]:', error);
+    return NextResponse.json({ success: false, message: 'حدث خطأ داخلي غير متوقع في خادم الموقع' }, { status: 500 });
   }
 }
