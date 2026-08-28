@@ -17,13 +17,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // جلب بيانات المستخدم
     const role = localStorage.getItem('userRole') || 'user';
     const name = localStorage.getItem('userName') || 'المدير';
     setUserRole(role);
     setUserName(name);
 
-    // جلب الإحصائيات
     const fetchStats = async () => {
       try {
         const res = await fetch('/api/cars');
@@ -33,7 +31,7 @@ export default function DashboardPage() {
           const pending = cars.filter((c: any) => c.status === 'pending');
           const approved = cars.filter((c: any) => c.status === 'approved');
           setStats({
-            users: 0, // سيتم جلبها من API المستخدمين
+            users: 0,
             cars: cars.length,
             pending: pending.length,
             approved: approved.length
@@ -48,7 +46,6 @@ export default function DashboardPage() {
 
     fetchStats();
 
-    // جلب عدد المستخدمين
     const fetchUsers = async () => {
       try {
         const res = await fetch('/api/admin/users');
@@ -85,7 +82,6 @@ export default function DashboardPage() {
 
   return (
     <div style={styles.container}>
-      {/* الهيدر */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <div>
@@ -98,7 +94,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* الإحصائيات السريعة */}
       <div style={styles.statsGrid}>
         <div style={styles.statCard}>
           <span style={styles.statIcon}>👥</span>
@@ -130,7 +125,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* الأزرار الرئيسية */}
       <div style={styles.actionsGrid}>
         <Link href="/dashboard/cars" style={styles.actionCard}>
           <span style={styles.actionIcon}>🚗</span>
@@ -165,7 +159,6 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* الإعلانات المعلقة */}
       {stats.pending > 0 && (
         <div style={styles.pendingSection}>
           <h2 style={styles.pendingTitle}>📋 الإعلانات المعلقة بانتظار الموافقة</h2>
