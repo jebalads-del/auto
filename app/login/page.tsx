@@ -33,21 +33,25 @@ export default function LoginPage() {
 
       if (response.ok && data.success) {
         const userId = data.user?.id || data.userId || '1';
-        
+
         // حفظ الجلسة في Cookies
-        Cookies.set('isAdmin', 'true', { expires: 7, path: '/' });
+        Cookies.set('isAdmin', data.user?.role === 'admin' ? 'true' : 'false', { expires: 7, path: '/' });
         Cookies.set('userId', userId.toString(), { expires: 7, path: '/' });
         Cookies.set('userEmail', email, { expires: 7, path: '/' });
         Cookies.set('userRole', data.user?.role || 'user', { expires: 7, path: '/' });
 
         // حفظ في localStorage كاحتياطي
-        localStorage.setItem('isAdmin', 'true');
+        localStorage.setItem('isAdmin', data.user?.role === 'admin' ? 'true' : 'false');
         localStorage.setItem('userId', userId.toString());
         localStorage.setItem('userEmail', email);
         localStorage.setItem('userRole', data.user?.role || 'user');
 
-        const redirectPath = data.redirect || '/dashboard';
-        router.push(redirectPath);
+        // ✅ توجيه المستخدم حسب دوره
+        if (data.user?.role === 'admin') {
+          router.push('/dashboard');
+        } else {
+          router.push('/profile');
+        }
       } else {
         setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة!');
       }
@@ -59,24 +63,24 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ 
-      padding: '20px', 
-      direction: 'rtl', 
-      fontFamily: 'sans-serif', 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      backgroundColor: '#f8fafc' 
+    <div style={{
+      padding: '20px',
+      direction: 'rtl',
+      fontFamily: 'sans-serif',
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#f8fafc'
     }}>
-      <div style={{ 
-        maxWidth: '400px', 
+      <div style={{
+        maxWidth: '400px',
         width: '100%',
-        padding: '30px', 
-        border: '1px solid #ddd', 
-        borderRadius: '12px', 
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)', 
-        backgroundColor: '#fff' 
+        padding: '30px',
+        border: '1px solid #ddd',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+        backgroundColor: '#fff'
       }}>
         <h1 style={{ textAlign: 'center', marginBottom: '10px', color: '#333', fontSize: '24px' }}>🔐 تسجيل الدخول</h1>
         <p style={{ textAlign: 'center', marginBottom: '30px', color: '#666', fontSize: '14px' }}>
@@ -84,15 +88,15 @@ export default function LoginPage() {
         </p>
 
         {error && (
-          <div style={{ 
-            backgroundColor: '#fee', 
-            padding: '12px', 
-            borderRadius: '8px', 
-            color: '#c33', 
-            marginBottom: '20px', 
-            textAlign: 'center', 
-            fontWeight: 'bold', 
-            fontSize: '14px' 
+          <div style={{
+            backgroundColor: '#fee',
+            padding: '12px',
+            borderRadius: '8px',
+            color: '#c33',
+            marginBottom: '20px',
+            textAlign: 'center',
+            fontWeight: 'bold',
+            fontSize: '14px'
           }}>
             ❌ {error}
           </div>
@@ -107,11 +111,11 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{ 
-                width: '100%', 
-                padding: '12px', 
-                border: '1px solid #ccc', 
-                borderRadius: '8px', 
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
                 boxSizing: 'border-box',
                 fontSize: '16px'
               }}
@@ -128,11 +132,11 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ 
-                width: '100%', 
-                padding: '12px', 
-                border: '1px solid #ccc', 
-                borderRadius: '8px', 
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
                 boxSizing: 'border-box',
                 fontSize: '16px'
               }}
@@ -160,16 +164,16 @@ export default function LoginPage() {
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
           >
-            {loading ? 'جاري التحقق...' : '🚪 دخول'}
+            {loading ? 'جاري التحقق...' : ' 🚪 دخول'}
           </button>
         </form>
 
         <div style={{ marginTop: '25px', textAlign: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
           <div>
-            <a 
-              href="/register" 
-              style={{ 
-                color: '#2563eb', 
+            <a
+              href="/register"
+              style={{
+                color: '#2563eb',
                 textDecoration: 'none',
                 fontWeight: 'bold',
                 fontSize: '14px',
@@ -180,10 +184,10 @@ export default function LoginPage() {
             </a>
           </div>
           <div style={{ marginTop: '10px' }}>
-            <a 
-              href="/forgot-password" 
-              style={{ 
-                color: '#64748b', 
+            <a
+              href="/forgot-password"
+              style={{
+                color: '#64748b',
                 textDecoration: 'none',
                 fontSize: '13px',
                 display: 'inline-block'
@@ -193,10 +197,10 @@ export default function LoginPage() {
             </a>
           </div>
           <div style={{ marginTop: '10px' }}>
-            <a 
-              href="/" 
-              style={{ 
-                color: '#94a3b8', 
+            <a
+              href="/"
+              style={{
+                color: '#94a3b8',
                 textDecoration: 'none',
                 fontSize: '13px'
               }}
