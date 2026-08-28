@@ -37,13 +37,21 @@ export async function POST(request: NextRequest) {
       userRole = 'admin';
       userName = 'المدير العام';
       
-      // مزامنة أوتوماتيكية سريعة لربط الـ UUID الجديد في الجدول العام صيانة للنظام
+      // ✅ استخدام دالة upsert الرسمية والمضمونة لمنع تعارض المعرفات وأخطاء البناء
       try {
-        await supabase.from('users').insert([{ id: authData.user.id, email: cleanEmail, name: userName, role: userRole, status: 'active' }]).onConflict('id').ignore();
-      } catch (e) {}
+        await supabase.from('users').upsert({ 
+          id: authData.user.id, 
+          email: cleanEmail, 
+          name: userName, 
+          role: userRole, 
+          status: 'active' 
+        });
+      } catch (e) {
+        console.error('خطأ مزامنة الأدمن:', e);
+      }
 
     } else {
-      // للمستخدمين العاديين: جلب البيانات بشكل آمن ومحمي بدون كراش الـ single()
+      // للمستخدمين العاديين: جلب البيانات بشكل آمن ومحمي وبدون كراش
       try {
         const { data: dbUser } = await supabase
           .from('users')
