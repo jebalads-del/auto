@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔐 [LOGIN] محاولة تسجيل دخول: ${email}`);
+    const currentEmail = email.toLowerCase().trim();
 
     // إنشاء عميل Supabase عادي
     const supabaseClient = createClient(
@@ -24,25 +24,22 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // محاولة تسجيل الدخول باستخدام Supabase Auth
+    // محاولة تسجيل الدخول
     const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email: email.toLowerCase().trim(),
+      email: currentEmail,
       password: password,
     });
 
     if (error) {
-      console.error('❌ [LOGIN AUTH ERROR]:', error);
       return NextResponse.json(
         { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' },
         { status: 401 }
       );
     }
 
-    console.log(`✅ [LOGIN] تم تسجيل الدخول: ${email}`);
-
-    // ✅ تحديد role بناءً على البريد الإلكتروني
+    // قبول الحساب القديم أو الجديد كأدمن مباشرة
     let userRole = 'user';
-    if (email === 'admin@sayarty.store') {
+    if (currentEmail === 'admin@sayarty.store' || currentEmail === 'mara7b@gmail.com') {
       userRole = 'admin';
     }
 
@@ -57,7 +54,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ [LOGIN ERROR]:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'حدث خطأ غير متوقع' },
       { status: 500 }
