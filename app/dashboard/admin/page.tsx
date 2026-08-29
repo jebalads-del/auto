@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
-import supabase from '@/lib/db'; // ✅ الاتصال المباشر والآمن بالمحرك الموحد لموقعك
+import supabase from '@/lib/db'; // ✅ الاتصال المباشر والآمن بقاعدة البيانات
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +35,7 @@ function AdminDashboardForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
-  // 1. جلب السيارات مباشرة وبأمان من قلب قاعدة البيانات حياً
+  // 1. جلب السيارات مباشرة من Supabase حياً وتخطي الـ API المكسور
   const fetchCars = async () => {
     try {
       setCarsLoading(true);
@@ -46,17 +46,15 @@ function AdminDashboardForm() {
 
       if (!error && data) {
         setCars(data);
-      } else {
-        console.error("خطأ جلب السيارات:", error?.message);
       }
     } catch (err) {
       console.error(err);
-    } finally {  
+    } finally {
       setCarsLoading(false);
     }
   };
 
-  // 2. جلب قائمة المشتركين والمستخدمين مباشرة من قاعدة البيانات
+  // 2. جلب المستخدمين مباشرة من Supabase حياً وتخطي الـ API المكسور
   const fetchUsers = async () => {
     try {
       setUsersLoading(true);
@@ -67,8 +65,6 @@ function AdminDashboardForm() {
 
       if (!error && data) {
         setUsers(data);
-      } else {
-        console.error("خطأ جلب المستخدمين:", error?.message);
       }
     } catch (err) {
       console.error(err);
@@ -122,8 +118,6 @@ function AdminDashboardForm() {
       if (!error) {
         showMessage('تم حذف الإعلان بنجاح نهائياً', 'success');
         setCars(prev => prev.filter(c => c.id !== carId));
-      } else {
-        showMessage('فشل الحذف: ' + error.message, 'error');
       }
     } catch {
       showMessage('خطأ في شبكة الاتصال', 'error');
