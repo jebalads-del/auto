@@ -52,7 +52,7 @@ export default function LoginPage() {
 
         // ✅ توجيه المستخدم حسب دوره للمسار الحقيقي المستقر والصحيح
         if (isUserAdmin) {
-          router.push('/dashboard/admin'); // التوجيه الصائب مباشرة للوحة الإدارة العامة
+          router.push('/admin'); // التوجيه الصائب مباشرة للوحة الإدارة العامة
         } else {
           router.push('/profile'); // تحويل المستخدم العادي لصفحته الشخصية
         }
