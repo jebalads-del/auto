@@ -1,25 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-// قراءة متغيرات البيئة
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// حقن مباشر وصارم لأقوى مفاتيح مشروعك لتجاوز مشاكل ومتاهات خوادم Vercel
+const supabaseUrl = 'https://supabase.co'; // الرابط الحقيقي المستخرج من شاشتك الحية
+const supabaseAnonKey = 'ضع_هنا_مفتاح_ال_Anon_Key_الرسمي_الخاص_بمشروعك_من_سوبابيس'; // ⚠️ ضع المفتاح الحقيقي الطويل هنا
 
-// التحقق من وجود المتغيرات
-if (!supabaseUrl) {
-  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL is not set');
-}
-
-if (!supabaseKey) {
-  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
-}
-
-// إنشاء عميل Supabase (بدون أنواع)
-const supabase = createClient(
-  supabaseUrl || 'https://uhtjnfeohafpnwcacssk.supabase.co',
-  supabaseKey || 'placeholder-key'
-);
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 export default supabase;
 
-// تصدير الدالة المساعدة
 export const getSupabase = () => supabase;
