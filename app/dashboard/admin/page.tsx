@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
+import supabase from '@/lib/db'; // ✅ الاتصال المباشر والآمن بالمحرك الموحد لموقعك
 
 export const dynamic = 'force-dynamic';
 
@@ -34,37 +35,43 @@ function AdminDashboardForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
-  // 1. جلب السيارات حياً من السيرفر بشكل آمن ومحمي من الكراش
+  // 1. جلب السيارات مباشرة وبأمان من قلب قاعدة البيانات حياً
   const fetchCars = async () => {
     try {
       setCarsLoading(true);
-      const res = await fetch('/api/cars?_=' + Date.now(), { cache: 'no-store' });
-      const data = await res.json();
-      if (data.success) {
-        setCars(data.cars || []);
+      const { data, error } = await supabase
+        .from('cars')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setCars(data);
       } else {
-        console.error("فشل جلب السيارات:", data.message);
+        console.error("خطأ جلب السيارات:", error?.message);
       }
     } catch (err) {
-      console.error("خطأ في شبكة السيارات:", err);
-    } finally {
+      console.error(err);
+    } military {
       setCarsLoading(false);
     }
   };
 
-  // 2. جلب المستخدمين حياً من السيرفر بشكل آمن
+  // 2. جلب قائمة المشتركين والمستخدمين مباشرة من قاعدة البيانات
   const fetchUsers = async () => {
     try {
       setUsersLoading(true);
-      const res = await fetch('/api/admin/users?_=' + Date.now(), { cache: 'no-store' });
-      const data = await res.json();
-      if (data.success) {
-        setUsers(data.users || []);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setUsers(data);
       } else {
-        console.error("فشل جلب المستخدمين:", data.message);
+        console.error("خطأ جلب المستخدمين:", error?.message);
       }
     } catch (err) {
-      console.error("خطأ في شبكة المستخدمين:", err);
+      console.error(err);
     } finally {
       setUsersLoading(false);
     }
@@ -75,44 +82,48 @@ function AdminDashboardForm() {
     fetchUsers();
   }, []);
 
-  // 3. معالجة أزرار السيارات الحركية (الموافقة / تغيير الحالة لمباع)
+  // 3. معالجة أزرار التفعيل والموافقة وتحديث الحالة حياً لمباع
   const handleCarAction = async (carId: string, action: 'approve' | 'sell') => {
     const confirmMsg = action === 'approve' ? 'هل أنت متأكد من الموافقة على الإعلان؟' : 'هل تريد تحويل السيارة إلى مباعة؟';
     if (!confirm(confirmMsg)) return;
     
     try {
       setCarsLoading(true);
-      const res = await fetch('/api/cars', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ carId, action })
-      });
-      const data = await res.json();
-      if (data.success) {
-        showMessage(data.message || 'تم تحديث حالة الإعلان بنجاح', 'success');
+      let newStatus = action === 'approve' ? 'مقبول' : 'مباع';
+
+      const { error } = await supabase
+        .from('cars')
+        .update({ status: newStatus })
+        .eq('id', carId);
+
+      if (!error) {
+        showMessage('تم تحديث حالة الإعلان بنجاح واكتمل التفعيل حياً', 'success');
         fetchCars();
       } else {
-        showMessage('حدث خطأ: ' + data.message, 'error');
+        showMessage('حدث خطأ أثناء التحديث: ' + error.message, 'error');
       }
     } catch (err) {
-      showMessage('خطأ في الاتصال بالسيرفر الخلفي', 'error');
+      showMessage('خطأ في الاتصال بقاعدة البيانات', 'error');
     } finally {
       setCarsLoading(false);
     }
   };
 
-  // 4. دالة حذف السيارات للأدمن
+  // 4. دالة حذف السيارات للأدمن حياً مباشرة
   const handleCarDelete = async (carId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا الإعلان نهائياً؟')) return;
     try {
       setCarsLoading(true);
-      const res = await fetch(`/api/cars?id=${carId}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        showMessage('تم حذف الإعلان بنجاح', 'success');
+      const { error } = await supabase
+        .from('cars')
+        .delete()
+        .eq('id', carId);
+
+      if (!error) {
+        showMessage('تم حذف الإعلان بنجاح نهائياً', 'success');
         setCars(prev => prev.filter(c => c.id !== carId));
       } else {
-        showMessage('فشل الحذف: ' + data.message, 'error');
+        showMessage('فشل الحذف: ' + error.message, 'error');
       }
     } catch {
       showMessage('خطأ في شبكة الاتصال', 'error');
@@ -138,7 +149,7 @@ function AdminDashboardForm() {
 
       {activeTab === 'cars' ? (
         <div style={{ overflowX: 'auto', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-          {carsLoading ? <p style={{ padding: '20px', color: '#64748b' }}>جاري جلب إعلانات السيارات...</p> : cars.length === 0 ? <p style={{ padding: '20px', color: '#64748b' }}>لا توجد إعلانات سيارات متوفرة حالياً.</p> : (
+          {carsLoading ? <p style={{ padding: '20px', color: '#64748b' }}>جاري جلب إعلانات السيارات من سوبابيس...</p> : cars.length === 0 ? <p style={{ padding: '20px', color: '#64748b' }}>لا توجد إعلانات سيارات متوفرة حالياً.</p> : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: '#1e293b', color: 'white' }}>
