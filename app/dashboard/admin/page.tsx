@@ -51,7 +51,7 @@ function AdminDashboardForm() {
       }
     } catch (err) {
       console.error(err);
-    } military {
+    } finally {  
       setCarsLoading(false);
     }
   };
