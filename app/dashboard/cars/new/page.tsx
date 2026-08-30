@@ -24,7 +24,7 @@ function AddCarForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!e.target.files || e.target.files.length === 0) return;
       
@@ -32,13 +32,13 @@ function AddCarForm() {
       const files = Array.from(e.target.files);
 
       for (const file of files) {
-        // توليد اسم إنجليزي رقمي نقي ومضمون لخزان سوبابيس
-        const cleanFileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`;
+        const fileExt = file.name.split('.').pop() || 'jpg';
+        const cleanFileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
         const filePath = `cars/${cleanFileName}`;
 
-        // 🧠 التعديل السحري: رفع ملف الـ Blob الخام مباشرة متجاوزاً تعقيدات الـ arrayBuffer والاستوديو
+        // 🧠 التطهير الحاسم: الرفع مباشرة داخل خزانك الحقيقي المكتشف 'cars'
         const { error: uploadError } = await supabase.storage
-          .from('car-images')
+          .from('cars')
           .upload(filePath, file, {
             contentType: file.type || 'image/jpeg',
             upsert: true
@@ -46,7 +46,7 @@ function AddCarForm() {
 
         if (uploadError) throw uploadError;
 
-        const { data } = supabase.storage.from('car-images').getPublicUrl(filePath);
+        const { data } = supabase.storage.from('cars').getPublicUrl(filePath);
         if (data?.publicUrl) {
           setImages(prev => [...prev, data.publicUrl]);
         }
@@ -54,15 +54,13 @@ function AddCarForm() {
       
       showMessage('تم رفع وتأمين الصور بنجاح حياً!', 'success');
     } catch (err: any) {
-      showMessage('فشل رفع الصور: يرجى تجربة صورة أخرى أو تصوير لقطة شاشة للصورة ورفعها', 'error');
+      showMessage('فشل رفع الصور: يرجى تجربة لقطة شاشة خفيفة للصورة', 'error');
       console.error(err);
     } finally {
       setUploading(false);
     }
   };
 
-
-  // 🚀 دالة النشر المضمونة والمطهرة لتمرير النصوص العربية في الـ Body
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!brand || !model || !price) {
@@ -72,7 +70,6 @@ function AddCarForm() {
     setLoading(true);
 
     try {
-      // إرسال البيانات المباشرة بدون أي وسائط تسبب كراش الهيدرز
       const { error } = await supabase.from('cars').insert([
         {
           brand: brand.trim(),
