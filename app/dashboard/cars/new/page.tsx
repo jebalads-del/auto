@@ -24,8 +24,7 @@ function AddCarForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
-  // 📸 دالة رفع الصور المحدثة والمطهرة من الحروف العربية تماماً
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!e.target.files || e.target.files.length === 0) return;
       
@@ -33,19 +32,15 @@ function AddCarForm() {
       const files = Array.from(e.target.files);
 
       for (const file of files) {
-        const fileExt = file.name.split('.').pop() || 'jpg';
-        // توليد اسم إنجليزي رقمي نقي تماماً لخداع فحص الهيدرز ومنع كراش الـ ISO
-        const cleanFileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
+        // توليد اسم إنجليزي رقمي نقي ومضمون لخزان سوبابيس
+        const cleanFileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`;
         const filePath = `cars/${cleanFileName}`;
 
-        const fileBuffer = await file.arrayBuffer();
-        // إنشاء كائن نقي مع تنظيف الميتا داتا والاسم من الرموز العربية
-        const sanitizedFile = new File([fileBuffer], cleanFileName, { type: file.type });
-
+        // 🧠 التعديل السحري: رفع ملف الـ Blob الخام مباشرة متجاوزاً تعقيدات الـ arrayBuffer والاستوديو
         const { error: uploadError } = await supabase.storage
           .from('car-images')
-          .upload(filePath, sanitizedFile, {
-            contentType: file.type,
+          .upload(filePath, file, {
+            contentType: file.type || 'image/jpeg',
             upsert: true
           });
 
@@ -59,12 +54,13 @@ function AddCarForm() {
       
       showMessage('تم رفع وتأمين الصور بنجاح حياً!', 'success');
     } catch (err: any) {
-      showMessage('فشل رفع الصور: تأكد من إعدادات الاستوديو لديك', 'error');
+      showMessage('فشل رفع الصور: يرجى تجربة صورة أخرى أو تصوير لقطة شاشة للصورة ورفعها', 'error');
       console.error(err);
     } finally {
       setUploading(false);
     }
   };
+
 
   // 🚀 دالة النشر المضمونة والمطهرة لتمرير النصوص العربية في الـ Body
   const handleSubmit = async (e: React.FormEvent) => {
