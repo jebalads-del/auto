@@ -24,36 +24,40 @@ function AddCarForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
+  // دالة الرفع المتعددة المصححة والمضمونة لقاعدة البيانات
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      setUploading(true);
       if (!e.target.files || e.target.files.length === 0) return;
       
-      const originalFile = e.target.files[0];
-      const fileExt = originalFile.name.split('.').pop() || 'jpg';
-      
-      const cleanFileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
-      const filePath = `cars/${cleanFileName}`;
+      setUploading(true);
+      const files = Array.from(e.target.files);
 
-      const fileBuffer = await originalFile.arrayBuffer();
-      const sanitizedFile = new File([fileBuffer], cleanFileName, { type: originalFile.type });
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop() || 'jpg';
+        const cleanFileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
+        const filePath = `cars/${cleanFileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('car-images')
-        .upload(filePath, sanitizedFile, {
-          contentType: originalFile.type,
-          upsert: true
-        });
+        const fileBuffer = await file.arrayBuffer();
+        const sanitizedFile = new File([fileBuffer], cleanFileName, { type: file.type });
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from('car-images')
+          .upload(filePath, sanitizedFile, {
+            contentType: file.type,
+            upsert: true
+          });
 
-      const { data } = supabase.storage.from('car-images').getPublicUrl(filePath);
-      if (data?.publicUrl) {
-        setImages(prev => [...prev, data.publicUrl]);
-        showMessage('تم رفع الصورة وتأمينها بنجاح', 'success');
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('car-images').getPublicUrl(filePath);
+        if (data?.publicUrl) {
+          setImages(prev => [...prev, data.publicUrl]);
+        }
       }
+      
+      showMessage('تم رفع وتأمين الصور بنجاح حياً!', 'success');
     } catch (err: any) {
-      showMessage('فشل رفع الصورة: ' + (err.message || 'خطأ في هيدرز الملف'), 'error');
+      showMessage('فشل رفع الصور: ' + (err.message || 'خطأ في حجم أو صيغة الملف'), 'error');
     } finally {
       setUploading(false);
     }
@@ -68,6 +72,7 @@ function AddCarForm() {
     setLoading(true);
 
     try {
+      // إرسال البيانات بشكل متوافق تماماً مع بنية الجداول المحدثة
       const { error } = await supabase.from('cars').insert([
         {
           brand,
@@ -76,7 +81,7 @@ function AddCarForm() {
           year: year ? parseInt(year) : null,
           condition,
           description,
-          images,
+          images: images.length > 0 ? images : null, // مصفوفة الروابط الصافية
           status: 'مقبول',
           created_at: new Date().toISOString()
         }
@@ -151,8 +156,8 @@ function AddCarForm() {
 
           <div style={{ border: '2px dashed #cbd5e1', padding: '15px', borderRadius: '8px', textAlign: 'center', backgroundColor: '#f8fafc' }}>
             <label style={{ cursor: 'pointer', display: 'block', fontWeight: '600', color: '#2563eb', fontSize: '14px' }}>
-              {uploading ? 'جاري الرفع للحاسوب السحابي...' : '📸 اضغط هنا لإضافة صورة للسيارة'}
-              <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} style={{ display: 'none' }} />
+              {uploading ? 'جاري الرفع للحاسوب السحابي...' : '📸 اضغط هنا لإضافة صور للسيارة (يمكنك اختيار عدة صور)'}
+              <input type="file" accept="image/*" multiple onChange={handleImageUpload} disabled={uploading} style={{ display: 'none' }} />
             </label>
             
             {images.length > 0 && (
