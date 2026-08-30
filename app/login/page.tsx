@@ -1,15 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import Link from 'next/link';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,157 +17,65 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      if (!email || !password) {
-        setError('الرجاء ملء جميع الحقول');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch('/api/login', {
+      const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok && data.success) {
-        const userId = data.user?.id || data.userId || '1';
-
-        // الحسابين يعتبران أدمن بشكل قاطع لتخطي فحص الواجهات
-        const currentEmail = email.toLowerCase().trim();
-        const isUserAdmin = currentEmail === 'admin@sayarty.store' || currentEmail === 'mara7b@gmail.com';
-        const finalRole = 'admin';
-
-        // حظر الطرد بحقن كافة المتغيرات الممكنة في الكوكيز
-        Cookies.set('isAdmin', 'true', { expires: 7, path: '/' });
-        Cookies.set('userId', userId.toString(), { expires: 7, path: '/' });
-        Cookies.set('userEmail', currentEmail, { expires: 7, path: '/' });
-        Cookies.set('userRole', 'admin', { expires: 7, path: '/' });
-        Cookies.set('role', 'admin', { expires: 7, path: '/' });
-
-        // حقن الاحتياطي في الـ LocalStorage لحماية المتصفح من الطرد
-        localStorage.setItem('isAdmin', 'true');
-        localStorage.setItem('userId', userId.toString());
-        localStorage.setItem('userEmail', currentEmail);
-        localStorage.setItem('userRole', 'admin');
-        localStorage.setItem('role', 'admin');
-
-        // التوجيه المباشر إلى اللوحة الأصلية السليمة
-        router.push('/admin');
+      if (data.success) {
+        // توجيه تلقائي ذكي ومستقر ومباشر بناءً على الرتبة المستلمة من السيرفر النظيف
+        if (data.user?.role === 'admin') {
+          router.push('/dashboard/admin');
+        } else {
+          router.push('/profile');
+        }
       } else {
-        setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة!');
+        setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
       }
     } catch (err) {
-      setError('حدث خطأ غير متوقع أثناء تسجيل الدخول');
+      setError('حدث خطأ أثناء الاتصال بالخادم، يرجى المحاولة لاحقاً');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{
-      padding: '20px',
-      direction: 'rtl',
-      fontFamily: 'sans-serif',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f8fafc'
-    }}>
-      <div style={{
-        maxWidth: '400px',
-        width: '100%',
-        padding: '30px',
-        border: '1px solid #ddd',
-        borderRadius: '12px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-        backgroundColor: '#fff'
-      }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '10px', color: '#333', fontSize: '24px' }}>🔐 تسجيل الدخول</h1>
-        <p style={{ textAlign: 'center', marginBottom: '30px', color: '#666', fontSize: '14px' }}>
-          مرحباً بك في لوحة التحكم
-        </p>
+    <div style={{ direction: 'rtl', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '20px', fontFamily: 'sans-serif' }}>
+      <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%', maxWidth: '420px' }}>
+        <h2 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', color: '#1e293b' }}>مرحباً بك مجدداً</h2>
+        <p style={{ textAlign: 'center', color: '#64748b', fontSize: '14px', marginBottom: '30px' }}>سجل دخولك لإدارة حسابك وإعلاناتك</p>
 
         {error && (
-          <div style={{
-            backgroundColor: '#fee',
-            padding: '12px',
-            borderRadius: '8px',
-            color: '#c33',
-            marginBottom: '20px',
-            textAlign: 'center',
-            fontWeight: 'bold',
-            fontSize: '14px'
-          }}>
-            ❌ {error}
+          <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500', textAlign: 'center' }}>
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>
-              البريد الإلكتروني
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #ccc',
-                borderRadius: '8px',
-                boxSizing: 'border-box',
-                fontSize: '16px'
-              }}
-              placeholder="example@email.com"
-              required
-            />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>البريد الإلكتروني</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} placeholder="example@domain.com" />
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>
-              كلمة المرور
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #ccc',
-                borderRadius: '8px',
-                boxSizing: 'border-box',
-                fontSize: '16px'
-              }}
-              placeholder="••••••••"
-              required
-            />
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>كلمة المرور</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} placeholder="••••••••" />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              backgroundColor: '#2563eb',
-              color: 'white',
-              fontWeight: 'bold',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              opacity: loading ? 0.7 : 1,
-              transition: 'background-color 0.2s'
-            }}
-          >
-            {loading ? 'جاري التحقق...' : ' 🚪 دخول'}
+          <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: '0.2s' }}>
+            {loading ? 'جاري تسجيل الدخول...' : '🚪 دخول'}
           </button>
         </form>
+
+        {/* ✅ إعادة إحياء الروابط الأصلية والمفقودة التي تم مسحها بالخطأ */}
+        <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginTop: '25px', fontSize: '14px', borderTop: '1px solid #f1f5f9', paddingTop: '20px', gap: '15px' }}>
+          <Link href="/register" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '500' }}>تسجيل حساب جديد</Link>
+          <span style={{ color: '#cbd5e1' }}>|</span>
+          <Link href="/forgot-password" style={{ color: '#64748b', textDecoration: 'none' }}>نسيت كلمة السر؟</Link>
+        </div>
       </div>
     </div>
   );
