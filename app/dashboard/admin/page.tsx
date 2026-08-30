@@ -153,7 +153,7 @@ function AdminDashboardForm() {
         <button onClick={() => setActiveTab('settings')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'settings' ? '#2563eb' : 'white', color: activeTab === 'settings' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>⚙️ إعدادات الموقع</button>
         <button onClick={() => setActiveTab('payments')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'payments' ? '#2563eb' : 'white', color: activeTab === 'payments' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>💰 طرق الدفع</button>
         {/* زر إضافة إعلان جديد المطور والممتد على كامل العرض بامتياز أسفل الشبكة */}
-        <button onClick={() => router.push('/add-car?redirect=admin')} style={{ gridColumn: 'span 2', padding: '14px 10px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', boxShadow: '0 2px 6px rgba(16,185,129,0.2)' }}>➕ إضافة إعلان جديد</button>
+        <button onClick={() => router.push('/dashboard/cars/new?redirect=admin')} style={{ gridColumn: 'span 2', padding: '14px 10px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', boxShadow: '0 2px 6px rgba(16,185,129,0.2)' }}>➕ إضافة إعلان جديد</button>
       </div>
       {activeTab === 'cars' && (
         <div style={{ overflowX: 'auto', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', padding: '12px' }}>
