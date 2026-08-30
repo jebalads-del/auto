@@ -54,6 +54,9 @@ const MODELS: Record<string, string[]> = {
 
 const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'];
 
+// الـ User ID الخاص بالادمن (من Supabase Authentication)
+const MY_USER_ID = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
+
 export default function NewCarPage() {
   const router = useRouter();
   const supabase = createBrowserClient(
@@ -82,49 +85,30 @@ export default function NewCarPage() {
   useEffect(() => {
     const getUser = async () => {
       try {
-        // محاولة جلب الجلسة من Supabase
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
           setUserId(session.user.id);
           localStorage.setItem('userId', session.user.id);
-          console.log('✅ Session found:', session.user.id);
         } else {
-          // محاولة جلب userId من localStorage
           const savedUserId = localStorage.getItem('userId');
           if (savedUserId) {
             setUserId(savedUserId);
-            console.log('✅ Using saved userId:', savedUserId);
           } else {
-            console.log('❌ No userId found');
+            setUserId(MY_USER_ID);
+            localStorage.setItem('userId', MY_USER_ID);
           }
         }
       } catch (err) {
         console.error('Error getting user:', err);
-        // محاولة جلب userId من localStorage في حالة الخطأ
-        const savedUserId = localStorage.getItem('userId');
-        if (savedUserId) {
-          setUserId(savedUserId);
-          console.log('✅ Using saved userId (fallback):', savedUserId);
-        }
+        setUserId(MY_USER_ID);
+        localStorage.setItem('userId', MY_USER_ID);
       } finally {
         setIsCheckingAuth(false);
       }
     };
 
     getUser();
-
-    // الاستماع لتغيرات حالة المصادقة
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-        localStorage.setItem('userId', session.user.id);
-      } else {
-        setUserId(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,21 +142,18 @@ export default function NewCarPage() {
     setSuccess('');
 
     try {
-      // التحقق من وجود userId
       if (!userId) {
         setError('يجب تسجيل الدخول أولاً');
         setLoading(false);
         return;
       }
 
-      // التحقق من الحقول المطلوبة
       if (!formData.brand || !formData.model || !formData.price) {
         setError('الماركة، الموديل، والسعر مطلوبة');
         setLoading(false);
         return;
       }
 
-      // 1. إنشاء الإعلان
       const payload = {
         brand: formData.brand,
         model: formData.model,
@@ -203,7 +184,6 @@ export default function NewCarPage() {
 
       const carId = data.data?.[0]?.id || data.id;
 
-      // 2. رفع الصور إلى Vercel Blob
       if (images.length > 0 && carId) {
         try {
           const formData = new FormData();
@@ -218,21 +198,17 @@ export default function NewCarPage() {
           const uploadData = await uploadRes.json();
 
           if (uploadRes.ok && uploadData.success) {
-            console.log('✅ تم رفع الصور بنجاح:', uploadData.urls);
             setSuccess('✅ تم نشر الإعلان مع الصور بنجاح!');
           } else {
-            console.error('❌ فشل رفع الصور:', uploadData);
             setSuccess('⚠️ تم نشر الإعلان لكن فشل رفع الصور');
           }
         } catch (error) {
-          console.error('❌ خطأ في رفع الصور:', error);
           setSuccess('⚠️ تم نشر الإعلان لكن حدث خطأ في رفع الصور');
         }
       } else {
         setSuccess('✅ تم نشر الإعلان بنجاح!');
       }
 
-      // إعادة تعيين النموذج
       setFormData({
         brand: '',
         model: '',
@@ -265,7 +241,6 @@ export default function NewCarPage() {
     boxSizing: 'border-box' as const,
   };
 
-  // إذا كان التحميل جارياً
   if (isCheckingAuth) {
     return (
       <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
@@ -274,7 +249,6 @@ export default function NewCarPage() {
     );
   }
 
-  // إذا لم يكن هناك userId (غير مسجل الدخول)
   if (!userId) {
     return (
       <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
