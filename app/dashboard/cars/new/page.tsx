@@ -1,17 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
-import supabase from '@/lib/db';
-
-export const dynamic = 'force-dynamic';
-
 function AddCarForm() {
-  const router = useRouter();
-  const [brand, setBrand] = useState('');
-  const [model, setModel] = useState('');
-  const [price, setPrice] = useState('');
-  const [year, setYear] = useState('');
   const [condition, setCondition] = useState('ممتازة');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
