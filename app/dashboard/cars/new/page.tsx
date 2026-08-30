@@ -24,7 +24,7 @@ function AddCarForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
- const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
       if (!e.target.files || e.target.files.length === 0) return;
@@ -54,12 +54,6 @@ function AddCarForm() {
       }
     } catch (err: any) {
       showMessage('فشل رفع الصورة: ' + (err.message || 'خطأ في هيدرز الملف'), 'error');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-      showMessage('فشل رفع الصورة: ' + (err.message || 'خطأ في الملف'), 'error');
     } finally {
       setUploading(false);
     }
