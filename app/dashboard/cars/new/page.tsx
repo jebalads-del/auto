@@ -1,7 +1,17 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import supabase from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+
 function AddCarForm() {
+  const router = useRouter();
+  const [brand, setBrand] = useState('');
+  const [model, setModel] = useState('');
+  const [price, setPrice] = useState('');
+  const [year, setYear] = useState('');
   const [condition, setCondition] = useState('ممتازة');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
@@ -14,7 +24,6 @@ function AddCarForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
-  // دالة معالجة وتحميل الصور المتقدمة الأصلية للموقع
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
@@ -22,26 +31,32 @@ function AddCarForm() {
       
       const file = e.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
       const filePath = `cars/${fileName}`;
+
+      const fileBuffer = await file.arrayBuffer();
 
       const { error: uploadError } = await supabase.storage
         .from('car-images')
-        .upload(filePath, file);
+        .upload(filePath, fileBuffer, {
+          contentType: file.type,
+          upsert: true
+        });
 
       if (uploadError) throw uploadError;
 
       const { data } = supabase.storage.from('car-images').getPublicUrl(filePath);
       if (data?.publicUrl) {
         setImages(prev => [...prev, data.publicUrl]);
-        showMessage('تم رفع الصورة بنجاح وتأمينها', 'success');
+        showMessage('تم رفع الصورة وتأمينها بنجاح', 'success');
       }
     } catch (err: any) {
-      showMessage('فشل رفع الصورة: ' + err.message, 'error');
+      showMessage('فشل رفع الصورة: ' + (err.message || 'خطأ في الملف'), 'error');
     } finally {
       setUploading(false);
     }
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!brand || !model || !price) {
@@ -51,7 +66,6 @@ function AddCarForm() {
     setLoading(true);
 
     try {
-      // زرع الإعلان حياً في سوبابيس بوضع مقبول تلقائياً للمدير العام
       const { error } = await supabase.from('cars').insert([
         {
           brand,
@@ -111,6 +125,7 @@ function AddCarForm() {
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '5px' }}>الموديل *</label>
             <input type="text" value={model} onChange={(e) => setModel(e.target.value)} required placeholder="مثال: كامري، ألتيما" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
           </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '5px' }}>السعر (د.ك) *</label>
@@ -118,7 +133,7 @@ function AddCarForm() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '5px' }}>سنة الصنع</label>
-              <input type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="مثال: 2024" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
+              <input type="number" value={year} onChange={(e) => setYear(e.target.value)} placeholder="مثال: 2026" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }} />
             </div>
           </div>
 
@@ -132,7 +147,6 @@ function AddCarForm() {
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="اكتب تفاصيل ومواصفات السيارة هنا..." style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', fontFamily: 'sans-serif' }} />
           </div>
 
-          {/* 📸 صندوق تحميل الصور الاحترافي المتقدم للموقع الأصلي */}
           <div style={{ border: '2px dashed #cbd5e1', padding: '15px', borderRadius: '8px', textAlign: 'center', backgroundColor: '#f8fafc' }}>
             <label style={{ cursor: 'pointer', display: 'block', fontWeight: '600', color: '#2563eb', fontSize: '14px' }}>
               {uploading ? 'جاري الرفع للحاسوب السحابي...' : '📸 اضغط هنا لإضافة صورة للسيارة'}
