@@ -24,22 +24,24 @@ function AddCarForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
       if (!e.target.files || e.target.files.length === 0) return;
       
-      const file = e.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
-      const filePath = `cars/${fileName}`;
+      const originalFile = e.target.files[0];
+      const fileExt = originalFile.name.split('.').pop() || 'jpg';
+      
+      const cleanFileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
+      const filePath = `cars/${cleanFileName}`;
 
-      const fileBuffer = await file.arrayBuffer();
+      const fileBuffer = await originalFile.arrayBuffer();
+      const sanitizedFile = new File([fileBuffer], cleanFileName, { type: originalFile.type });
 
       const { error: uploadError } = await supabase.storage
         .from('car-images')
-        .upload(filePath, fileBuffer, {
-          contentType: file.type,
+        .upload(filePath, sanitizedFile, {
+          contentType: originalFile.type,
           upsert: true
         });
 
@@ -51,6 +53,12 @@ function AddCarForm() {
         showMessage('تم رفع الصورة وتأمينها بنجاح', 'success');
       }
     } catch (err: any) {
+      showMessage('فشل رفع الصورة: ' + (err.message || 'خطأ في هيدرز الملف'), 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
       showMessage('فشل رفع الصورة: ' + (err.message || 'خطأ في الملف'), 'error');
     } finally {
       setUploading(false);
