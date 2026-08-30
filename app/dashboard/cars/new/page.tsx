@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 
 const currencies = [
   { code: 'KWD', symbol: 'د.ك', name: 'دينار كويتي' },
@@ -56,7 +56,10 @@ const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', '�
 
 export default function NewCarPage() {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -76,19 +79,12 @@ export default function NewCarPage() {
     currency: 'KWD',
   });
 
-  // جلب userId من Supabase session
   useEffect(() => {
     const getUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUserId(session.user.id);
-        } else {
-          // محاولة تحديث الجلسة
-          const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-          if (refreshedSession?.user) {
-            setUserId(refreshedSession.user.id);
-          }
         }
       } catch (err) {
         console.error('Error getting user:', err);
@@ -100,7 +96,6 @@ export default function NewCarPage() {
 
     getUser();
 
-    // الاستماع لتغيرات حالة المصادقة
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUserId(session.user.id);
@@ -143,21 +138,18 @@ export default function NewCarPage() {
     setSuccess('');
 
     try {
-      // التحقق من وجود userId
       if (!userId) {
         setError('يجب تسجيل الدخول أولاً');
         setLoading(false);
         return;
       }
 
-      // التحقق من الحقول المطلوبة
       if (!formData.brand || !formData.model || !formData.price) {
         setError('الماركة، الموديل، والسعر مطلوبة');
         setLoading(false);
         return;
       }
 
-      // 1. إنشاء الإعلان
       const payload = {
         brand: formData.brand,
         model: formData.model,
@@ -188,7 +180,6 @@ export default function NewCarPage() {
 
       const carId = data.data?.[0]?.id || data.id;
 
-      // 2. رفع الصور إلى Vercel Blob
       if (images.length > 0 && carId) {
         try {
           const formData = new FormData();
@@ -217,7 +208,6 @@ export default function NewCarPage() {
         setSuccess('✅ تم نشر الإعلان بنجاح!');
       }
 
-      // إعادة تعيين النموذج
       setFormData({
         brand: '',
         model: '',
@@ -250,7 +240,6 @@ export default function NewCarPage() {
     boxSizing: 'border-box' as const,
   };
 
-  // إذا كان التحميل جارياً
   if (isCheckingAuth) {
     return (
       <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
@@ -259,7 +248,6 @@ export default function NewCarPage() {
     );
   }
 
-  // إذا لم يكن هناك userId (غير مسجل الدخول)
   if (!userId) {
     return (
       <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
@@ -267,7 +255,7 @@ export default function NewCarPage() {
           <h2>⚠️ يجب تسجيل الدخول أولاً</h2>
           <p style={{ marginTop: '10px' }}>للوصول إلى هذه الصفحة، يرجى تسجيل الدخول.</p>
           <button 
-            onClick={() => router.push('/auth/login')}
+            onClick={() => router.push('/login')}
             style={{ marginTop: '15px', padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
           >
             تسجيل الدخول

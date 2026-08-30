@@ -1,36 +1,76 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  // إنشاء استجابة
-  const res = NextResponse.next();
-  
-  // إنشاء عميل Supabase للـ middleware
-  const supabase = createMiddlewareClient({ req: request, res });
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  // تحديث الجلسة
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: any) {
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
+    }
+  );
 
-  // ✅ استثناء جميع مسارات API
+  const { data: { session } } = await supabase.auth.getSession();
+
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    return res;
+    return response;
   }
 
-  // استثناء صفحات auth (تسجيل الدخول والتسجيل)
   if (
     request.nextUrl.pathname.startsWith('/login') ||
     request.nextUrl.pathname.startsWith('/auth/') ||
     request.nextUrl.pathname === '/'
   ) {
-    return res;
+    return response;
   }
 
   const path = request.nextUrl.pathname;
 
-  // ✅ التحقق من تسجيل الدخول باستخدام Supabase session
   if (path.startsWith('/dashboard') && !session) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
@@ -39,15 +79,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // إذا كان المستخدم مسجل دخول ويحاول الوصول إلى login، إعادة توجيه إلى dashboard
   if (path === '/login' && session) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  return res;
+  return response;
 }
 
-// تحديد المسارات التي سيتم تطبيق middleware عليها
 export const config = {
   matcher: [
     '/dashboard/:path*',
