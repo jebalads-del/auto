@@ -2,9 +2,9 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const currencies = [
   { code: 'KWD', symbol: 'د.ك', name: 'دينار كويتي' },
@@ -56,11 +56,14 @@ const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', '�
 
 export default function NewCarPage() {
   const router = useRouter();
+  const supabase = createClientComponentClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const [formData, setFormData] = useState({
     brand: '',
@@ -72,6 +75,42 @@ export default function NewCarPage() {
     description: '',
     currency: 'KWD',
   });
+
+  // جلب userId من Supabase session
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUserId(session.user.id);
+        } else {
+          // محاولة تحديث الجلسة
+          const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+          if (refreshedSession?.user) {
+            setUserId(refreshedSession.user.id);
+          }
+        }
+      } catch (err) {
+        console.error('Error getting user:', err);
+        setError('حدث خطأ في التحقق من الجلسة');
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    getUser();
+
+    // الاستماع لتغيرات حالة المصادقة
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -104,22 +143,16 @@ export default function NewCarPage() {
     setSuccess('');
 
     try {
-      if (!formData.brand || !formData.model || !formData.price) {
-        setError('الماركة، الموديل، والسعر مطلوبة');
-        setLoading(false);
-        return;
-      }
-
-      const userId = Cookies.get('userId') || localStorage.getItem('userId');
+      // التحقق من وجود userId
       if (!userId) {
         setError('يجب تسجيل الدخول أولاً');
         setLoading(false);
         return;
       }
 
-      const userIdNumber = parseInt(userId);
-      if (isNaN(userIdNumber)) {
-        setError('معرف المستخدم غير صحيح');
+      // التحقق من الحقول المطلوبة
+      if (!formData.brand || !formData.model || !formData.price) {
+        setError('الماركة، الموديل، والسعر مطلوبة');
         setLoading(false);
         return;
       }
@@ -134,7 +167,7 @@ export default function NewCarPage() {
         color: formData.color || null,
         description: formData.description || null,
         images: [],
-        user_id: userIdNumber,
+        user_id: userId,
         currency: formData.currency || 'KWD',
         status: 'pending',
       };
@@ -147,7 +180,7 @@ export default function NewCarPage() {
 
       const data = await response.json();
 
-      if (!data.success) {
+      if (!response.ok) {
         setError(data.message || 'فشل نشر الإعلان');
         setLoading(false);
         return;
@@ -155,7 +188,7 @@ export default function NewCarPage() {
 
       const carId = data.data?.[0]?.id || data.id;
 
-      // ✅ 2. رفع الصور إلى Vercel Blob
+      // 2. رفع الصور إلى Vercel Blob
       if (images.length > 0 && carId) {
         try {
           const formData = new FormData();
@@ -184,6 +217,7 @@ export default function NewCarPage() {
         setSuccess('✅ تم نشر الإعلان بنجاح!');
       }
 
+      // إعادة تعيين النموذج
       setFormData({
         brand: '',
         model: '',
@@ -215,6 +249,33 @@ export default function NewCarPage() {
     marginTop: '5px',
     boxSizing: 'border-box' as const,
   };
+
+  // إذا كان التحميل جارياً
+  if (isCheckingAuth) {
+    return (
+      <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+        <p>⏳ جاري التحقق من الجلسة...</p>
+      </div>
+    );
+  }
+
+  // إذا لم يكن هناك userId (غير مسجل الدخول)
+  if (!userId) {
+    return (
+      <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
+          <h2>⚠️ يجب تسجيل الدخول أولاً</h2>
+          <p style={{ marginTop: '10px' }}>للوصول إلى هذه الصفحة، يرجى تسجيل الدخول.</p>
+          <button 
+            onClick={() => router.push('/auth/login')}
+            style={{ marginTop: '15px', padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+          >
+            تسجيل الدخول
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
