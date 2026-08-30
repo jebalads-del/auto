@@ -15,6 +15,12 @@ interface Car {
   status: string;
   created_at: string;
   user_id?: string;
+  year?: number;
+  kilometers?: number;
+  color?: string;
+  description?: string;
+  images?: string[];
+  currency?: string;
 }
 
 interface User {
@@ -49,53 +55,49 @@ function AdminDashboardForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
+  // جلب الإعلانات
   const fetchCars = async () => {
     try {
       setCarsLoading(true);
+      console.log('🔄 جاري جلب الإعلانات...');
+      
       const { data, error } = await supabase
         .from('cars')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (!error && data) {
-        setCars(data);
+      if (error) {
+        console.error('❌ خطأ في جلب الإعلانات:', error);
       } else {
-        console.error('Error fetching cars:', error);
+        console.log('✅ تم جلب الإعلانات:', data?.length || 0, 'إعلان');
+        setCars(data || []);
       }
     } catch (err) {
-      console.error('Error:', err);
+      console.error('❌ خطأ:', err);
     } finally {
       setCarsLoading(false);
     }
   };
 
+  // جلب المستخدمين
   const fetchUsers = async () => {
     try {
       setUsersLoading(true);
-      // محاولة جلب المستخدمين من جدول users (إذا كان موجوداً)
+      console.log('🔄 جاري جلب المستخدمين...');
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (!error && data) {
-        setUsers(data);
+      if (error) {
+        console.error('❌ خطأ في جلب المستخدمين:', error);
       } else {
-        // إذا لم يكن جدول users موجوداً، استخدم auth.users
-        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-        if (!authError && authUsers) {
-          const formattedUsers = authUsers.users.map((user: any) => ({
-            id: user.id,
-            email: user.email,
-            name: user.user_metadata?.name || user.email,
-            role: user.user_metadata?.role || 'user',
-            status: 'active'
-          }));
-          setUsers(formattedUsers);
-        }
+        console.log('✅ تم جلب المستخدمين:', data?.length || 0, 'مستخدم');
+        setUsers(data || []);
       }
     } catch (err) {
-      console.error('Error fetching users:', err);
+      console.error('❌ خطأ:', err);
     } finally {
       setUsersLoading(false);
     }
@@ -115,7 +117,7 @@ function AdminDashboardForm() {
         .eq('id', carId);
       
       if (!error) {
-        showMessage('✅ تم الموافقة على الإعلان بنجاح', 'success');
+        showMessage('✅ تم الموافقة على الإعلان', 'success');
         fetchCars();
       } else {
         showMessage('❌ فشل الموافقة: ' + error.message, 'error');
@@ -125,7 +127,7 @@ function AdminDashboardForm() {
     }
   };
 
-  // رفض الإعلان
+  // رفض/حذف الإعلان
   const handleReject = async (carId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
     
@@ -136,7 +138,7 @@ function AdminDashboardForm() {
         .eq('id', carId);
       
       if (!error) {
-        showMessage('🗑️ تم حذف الإعلان بنجاح', 'success');
+        showMessage('🗑️ تم حذف الإعلان', 'success');
         fetchCars();
       } else {
         showMessage('❌ فشل الحذف: ' + error.message, 'error');
@@ -146,25 +148,26 @@ function AdminDashboardForm() {
     }
   };
 
-  // تغيير حالة الإعلان (للبيع/مباع)
-  const handleStatusChange = async (carId: string, newStatus: string) => {
+  // تغيير حالة الإعلان إلى مباع
+  const handleSell = async (carId: string) => {
     try {
       const { error } = await supabase
         .from('cars')
-        .update({ status: newStatus })
+        .update({ status: 'sold' })
         .eq('id', carId);
       
       if (!error) {
-        showMessage(`✅ تم تغيير الحالة إلى ${newStatus}`, 'success');
+        showMessage('💰 تم تحديد الإعلان كمباع', 'success');
         fetchCars();
       } else {
-        showMessage('❌ فشل تغيير الحالة', 'error');
+        showMessage('❌ فشل التحديث', 'error');
       }
     } catch (err) {
       showMessage('❌ خطأ في الاتصال', 'error');
     }
   };
 
+  // تغيير صلاحية المستخدم
   const handleUserToggleRole = async (userId: string, currentRole: string) => {
     try {
       let newRole = currentRole === 'admin' ? 'user' : 'admin';
@@ -184,6 +187,7 @@ function AdminDashboardForm() {
     }
   };
 
+  // حذف المستخدم
   const handleUserDelete = async (userId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
     
@@ -271,7 +275,7 @@ function AdminDashboardForm() {
                       {car.title || `${car.brand || ''} ${car.model || ''}`}
                     </td>
                     <td style={{ padding: '10px', color: '#16a34a', fontWeight: '600' }}>
-                      {car.price} د.ك
+                      {car.price} {car.currency || 'د.ك'}
                     </td>
                     <td style={{ padding: '10px', textAlign: 'center' }}>
                       <span style={{
@@ -279,15 +283,15 @@ function AdminDashboardForm() {
                         borderRadius: '4px',
                         fontSize: '12px',
                         fontWeight: 'bold',
-                        backgroundColor: car.status === 'approved' ? '#d1fae5' : car.status === 'pending' ? '#fef3c7' : '#fee2e2',
-                        color: car.status === 'approved' ? '#065f46' : car.status === 'pending' ? '#92400e' : '#991b1b'
+                        backgroundColor: car.status === 'approved' ? '#d1fae5' : car.status === 'pending' ? '#fef3c7' : car.status === 'sold' ? '#fee2e2' : '#f3f4f6',
+                        color: car.status === 'approved' ? '#065f46' : car.status === 'pending' ? '#92400e' : car.status === 'sold' ? '#991b1b' : '#4b5563'
                       }}>
-                        {car.status === 'approved' ? '✅ مقبول' : car.status === 'pending' ? '⏳ قيد المراجعة' : '❌ مرفوض'}
+                        {car.status === 'approved' ? '✅ مقبول' : car.status === 'pending' ? '⏳ قيد المراجعة' : car.status === 'sold' ? '💰 مباع' : car.status}
                       </span>
                     </td>
                     <td style={{ padding: '10px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        {car.status !== 'approved' && (
+                        {car.status !== 'approved' && car.status !== 'sold' && (
                           <button 
                             onClick={() => handleApprove(car.id)} 
                             style={{ padding: '4px 8px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
@@ -297,7 +301,7 @@ function AdminDashboardForm() {
                         )}
                         {car.status === 'approved' && (
                           <button 
-                            onClick={() => handleStatusChange(car.id, 'sold')} 
+                            onClick={() => handleSell(car.id)} 
                             style={{ padding: '4px 8px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                           >
                             💰 مباع
