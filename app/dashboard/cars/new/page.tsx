@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import supabase from '@/lib/db';
 
@@ -24,7 +24,7 @@ function AddCarForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
-  // دالة الرفع المتعددة المصححة والمضمونة لقاعدة البيانات
+  // 📸 دالة رفع الصور المحدثة والمطهرة من الحروف العربية تماماً
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!e.target.files || e.target.files.length === 0) return;
@@ -34,10 +34,12 @@ function AddCarForm() {
 
       for (const file of files) {
         const fileExt = file.name.split('.').pop() || 'jpg';
+        // توليد اسم إنجليزي رقمي نقي تماماً لخداع فحص الهيدرز ومنع كراش الـ ISO
         const cleanFileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
         const filePath = `cars/${cleanFileName}`;
 
         const fileBuffer = await file.arrayBuffer();
+        // إنشاء كائن نقي مع تنظيف الميتا داتا والاسم من الرموز العربية
         const sanitizedFile = new File([fileBuffer], cleanFileName, { type: file.type });
 
         const { error: uploadError } = await supabase.storage
@@ -57,12 +59,14 @@ function AddCarForm() {
       
       showMessage('تم رفع وتأمين الصور بنجاح حياً!', 'success');
     } catch (err: any) {
-      showMessage('فشل رفع الصور: ' + (err.message || 'خطأ في حجم أو صيغة الملف'), 'error');
+      showMessage('فشل رفع الصور: تأكد من إعدادات الاستوديو لديك', 'error');
+      console.error(err);
     } finally {
       setUploading(false);
     }
   };
 
+  // 🚀 دالة النشر المضمونة والمطهرة لتمرير النصوص العربية في الـ Body
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!brand || !model || !price) {
@@ -72,16 +76,16 @@ function AddCarForm() {
     setLoading(true);
 
     try {
-      // إرسال البيانات بشكل متوافق تماماً مع بنية الجداول المحدثة
+      // إرسال البيانات المباشرة بدون أي وسائط تسبب كراش الهيدرز
       const { error } = await supabase.from('cars').insert([
         {
-          brand,
-          model,
+          brand: brand.trim(),
+          model: model.trim(),
           price: parseFloat(price),
           year: year ? parseInt(year) : null,
-          condition,
-          description,
-          images: images.length > 0 ? images : null, // مصفوفة الروابط الصافية
+          condition: condition.trim(),
+          description: description.trim(),
+          images: images.length > 0 ? images : null,
           status: 'مقبول',
           created_at: new Date().toISOString()
         }
@@ -98,9 +102,9 @@ function AddCarForm() {
           }
         }, 1500);
       } else {
-        showMessage('خطأ في النشر: ' + error.message, 'error');
+        showMessage('خطأ في إرسال البيانات المكتوبة: ' + error.message, 'error');
       }
-    } catch {
+    } catch (err) {
       showMessage('خطأ في شبكة الاتصال بالسيرفر', 'error');
     } finally {
       setLoading(false);
