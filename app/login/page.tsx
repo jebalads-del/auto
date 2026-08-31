@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
@@ -23,47 +23,59 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      console.log('🔐 محاولة تسجيل الدخول:', email);
+
       // 1. تسجيل الدخول عبر Supabase Auth
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
       });
 
-      if (signInError) {
-        console.error('❌ Login error:', signInError);
+      if (error) {
+        console.error('❌ خطأ في تسجيل الدخول:', error);
         setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
         setLoading(false);
         return;
       }
 
-      if (data.user) {
-        // حفظ userId في localStorage
-        localStorage.setItem('userId', data.user.id);
-
-        // 2. التحقق من دور المستخدم من جدول users
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('role, status')
-          .eq('id', data.user.id)
-          .single();
-
-        // 3. التحقق من حالة المستخدم
-        if (userData?.status === 'inactive') {
-          setError('حسابك معطل، يرجى التواصل مع الإدارة');
-          setLoading(false);
-          return;
-        }
-
-        // 4. توجيه المستخدم حسب الصلاحية
-        if (userData?.role === 'admin') {
-          router.push('/dashboard/admin');
-        } else {
-          router.push('/');
-        }
+      if (!data.user) {
+        setError('حدث خطأ غير متوقع');
+        setLoading(false);
+        return;
       }
+
+      console.log('✅ تم تسجيل الدخول بنجاح:', data.user.email);
+
+      // حفظ userId
+      localStorage.setItem('userId', data.user.id);
+
+      // التحقق من دور المستخدم
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('email', data.user.email)
+        .single();
+
+      if (userError) {
+        console.error('❌ خطأ في جلب دور المستخدم:', userError);
+        // توجيه افتراضي
+        router.push('/');
+        setLoading(false);
+        return;
+      }
+
+      console.log('👤 دور المستخدم:', userData?.role);
+
+      // توجيه حسب الدور
+      if (userData?.role === 'admin') {
+        router.push('/dashboard/admin');
+      } else {
+        router.push('/');
+      }
+
     } catch (err: any) {
+      console.error('❌ خطأ غير متوقع:', err);
       setError('حدث خطأ غير متوقع');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -77,7 +89,7 @@ export default function LoginPage() {
 
         {error && (
           <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500', textAlign: 'center' }}>
-            {error}
+            ❌ {error}
           </div>
         )}
 
