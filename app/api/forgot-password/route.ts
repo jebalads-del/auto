@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
@@ -18,40 +18,53 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔐 [FORGOT PASSWORD] طلب استعادة كلمة السر لـ: ${email}`);
 
-    // إنشاء عميل Supabase
-    const supabase = createRouteHandlerClient({ cookies });
-
-    // التحقق من وجود المستخدم في auth.users
-    const { data: user, error } = await supabase.auth.admin.getUserByEmail(email.toLowerCase().trim());
-
-    if (error) {
-      console.error('❌ [FORGOT PASSWORD DB ERROR]:', error);
-      
-      // إذا كان الخطأ بسبب عدم وجود المستخدم
-      if (error.message.includes('User not found')) {
-        return NextResponse.json(
-          { success: false, message: 'البريد الإلكتروني غير مسجل' },
-          { status: 404 }
-        );
+    // إنشاء عميل Supabase باستخدام @supabase/ssr
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options });
+          },
+        },
       }
-      
-      return NextResponse.json(
-        { success: false, message: 'خطأ في قاعدة البيانات' },
-        { status: 500 }
-      );
-    }
+    );
 
-    if (!user) {
+    // التحقق من وجود المستخدم (محاولة تسجيل الدخول للتحقق)
+    // ملاحظة: هذه طريقة بديلة لأن admin.getUserByEmail قد لا يكون متاحاً
+    const { data: user, error: userError } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password: 'temporary_password_123', // كلمة مؤقتة للتحقق فقط
+    });
+
+    // إذا كان الخطأ بسبب كلمة المرور (مستخدم موجود)، نعتبره نجاح
+    // إذا كان الخطأ بسبب عدم وجود المستخدم، نرفض
+    if (userError && userError.message.includes('Invalid login credentials')) {
+      // المستخدم موجود ولكن كلمة المرور خاطئة (هذا طبيعي)
+      console.log(`✅ [FORGOT PASSWORD] المستخدم موجود: ${email}`);
+    } else if (userError) {
+      console.error('❌ [FORGOT PASSWORD] خطأ:', userError);
       return NextResponse.json(
-        { success: false, message: 'البريد الإلكتروني غير مسجل' },
+        { success: false, message: 'البريد الإلكتروني غير مسجل أو حدث خطأ' },
         { status: 404 }
       );
     }
 
-    // ✅ إرسال رابط إعادة تعيين كلمة المرور عبر Supabase
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/reset-password`,
-    });
+    // إرسال رابط إعادة تعيين كلمة المرور عبر Supabase
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      email.toLowerCase().trim(),
+      {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/reset-password`,
+      }
+    );
 
     if (resetError) {
       console.error('❌ [RESET PASSWORD ERROR]:', resetError);
