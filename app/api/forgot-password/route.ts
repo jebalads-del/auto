@@ -6,8 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email } = body;
+    const { email } = await request.json();
 
     if (!email) {
       return NextResponse.json(
@@ -16,9 +15,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔐 [FORGOT PASSWORD] طلب استعادة كلمة السر لـ: ${email}`);
-
-    // إنشاء عميل Supabase باستخدام @supabase/ssr
     const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,53 +34,28 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // التحقق من وجود المستخدم (محاولة تسجيل الدخول للتحقق)
-    // ملاحظة: هذه طريقة بديلة لأن admin.getUserByEmail قد لا يكون متاحاً
-    const { data: user, error: userError } = await supabase.auth.signInWithPassword({
-      email: email.toLowerCase().trim(),
-      password: 'temporary_password_123', // كلمة مؤقتة للتحقق فقط
+    // إرسال رابط إعادة التعيين
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/reset-password`,
     });
 
-    // إذا كان الخطأ بسبب كلمة المرور (مستخدم موجود)، نعتبره نجاح
-    // إذا كان الخطأ بسبب عدم وجود المستخدم، نرفض
-    if (userError && userError.message.includes('Invalid login credentials')) {
-      // المستخدم موجود ولكن كلمة المرور خاطئة (هذا طبيعي)
-      console.log(`✅ [FORGOT PASSWORD] المستخدم موجود: ${email}`);
-    } else if (userError) {
-      console.error('❌ [FORGOT PASSWORD] خطأ:', userError);
+    if (error) {
+      console.error('❌ Error:', error);
       return NextResponse.json(
-        { success: false, message: 'البريد الإلكتروني غير مسجل أو حدث خطأ' },
-        { status: 404 }
+        { success: false, message: error.message },
+        { status: error.message.includes('User not found') ? 404 : 500 }
       );
     }
-
-    // إرسال رابط إعادة تعيين كلمة المرور عبر Supabase
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email.toLowerCase().trim(),
-      {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/reset-password`,
-      }
-    );
-
-    if (resetError) {
-      console.error('❌ [RESET PASSWORD ERROR]:', resetError);
-      return NextResponse.json(
-        { success: false, message: resetError.message || 'حدث خطأ في إرسال رابط إعادة التعيين' },
-        { status: 500 }
-      );
-    }
-
-    console.log(`✅ [FORGOT PASSWORD] تم إرسال رابط إعادة التعيين لـ: ${email}`);
 
     return NextResponse.json({
       success: true,
-      message: 'تم إرسال رابط إعادة تعيين كلمة السر إلى بريدك الإلكتروني',
+      message: '✅ تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني',
     });
 
   } catch (error: any) {
-    console.error('❌ [FORGOT PASSWORD ERROR]:', error);
+    console.error('❌ Error:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'حدث خطأ غير متوقع' },
+      { success: false, message: error.message || 'حدث خطأ' },
       { status: 500 }
     );
   }
