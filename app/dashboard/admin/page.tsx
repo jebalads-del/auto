@@ -149,20 +149,20 @@ function AdminDashboardForm() {
     }
   };
 
-  // تغيير صلاحية المستخدم
-  const handleUserToggleRole = async (userId: string, currentRole: string) => {
+  // تغيير حالة المستخدم (تفعيل/تعطيل)
+  const handleUserToggleStatus = async (userId: string, currentStatus: string) => {
     try {
-      let newRole = currentRole === 'admin' ? 'user' : 'admin';
+      let newStatus = currentStatus === 'active' ? 'inactive' : 'active';
       const { error } = await supabase
         .from('users')
-        .update({ role: newRole })
+        .update({ status: newStatus })
         .eq('id', userId);
       
       if (!error) {
-        showMessage('✅ تم تغيير صلاحية المستخدم', 'success');
+        showMessage(`✅ تم ${newStatus === 'active' ? 'تفعيل' : 'تعطيل'} المستخدم`, 'success');
         fetchUsers();
       } else {
-        showMessage('❌ فشل تحديث الصلاحية', 'error');
+        showMessage('❌ فشل تحديث الحالة', 'error');
       }
     } catch {
       showMessage('❌ خطأ في الاتصال', 'error');
@@ -292,7 +292,7 @@ function AdminDashboardForm() {
         </div>
       )}
 
-      {/* تبويب المستخدمين */}
+      {/* تبويب المستخدمين - النسخة المعدلة */}
       {activeTab === 'users' && (
         <div style={{ overflowX: 'auto', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', padding: '12px' }}>
           {usersLoading ? (
@@ -304,41 +304,79 @@ function AdminDashboardForm() {
               <thead>
                 <tr style={{ backgroundColor: '#1e293b', color: 'white' }}>
                   <th style={{ padding: '10px', textAlign: 'right' }}>المستخدم</th>
-                  <th style={{ padding: '10px', textAlign: 'center' }}>الصلاحية</th>
+                  <th style={{ padding: '10px', textAlign: 'center' }}>الحالة</th>
                   <th style={{ padding: '10px', textAlign: 'center' }}>التحكم</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '10px' }}>
-                      <div style={{ fontWeight: '500' }}>{user.name || 'مستخدم جديد'}</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>{user.email}</div>
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        backgroundColor: user.role === 'admin' ? '#dbeafe' : '#f3f4f6',
-                        color: user.role === 'admin' ? '#1e40af' : '#4b5563'
-                      }}>
-                        {user.role === 'admin' ? '👑 أدمن' : '👤 مستخدم'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                        <button onClick={() => handleUserToggleRole(user.id, user.role || 'user')} style={{ padding: '4px 8px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                          {user.role === 'admin' ? '⬇️ تنزيل' : '⬆️ ترقية'}
-                        </button>
-                        <button onClick={() => handleUserDelete(user.id)} style={{ padding: '4px 8px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                          🗑️ حذف
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {users.map((user) => {
+                  // تحديد إذا كان هذا هو الأدمن الرئيسي
+                  const isMainAdmin = user.email === 'admin@sayarty.store';
+                  
+                  return (
+                    <tr key={user.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '10px' }}>
+                        <div style={{ fontWeight: '500' }}>{user.name || 'مستخدم جديد'}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>{user.email}</div>
+                        {isMainAdmin && (
+                          <span style={{ fontSize: '10px', backgroundColor: '#dbeafe', color: '#1e40af', padding: '2px 6px', borderRadius: '4px', display: 'inline-block', marginTop: '3px' }}>
+                            👑 المدير الرئيسي
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center' }}>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          backgroundColor: user.status === 'active' ? '#d1fae5' : '#fee2e2',
+                          color: user.status === 'active' ? '#065f46' : '#991b1b'
+                        }}>
+                          {user.status === 'active' ? '✅ مفعل' : '⛔ معطل'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          {/* زر تفعيل/تعطيل - يظهر لكل المستخدمين ما عدا الأدمن الرئيسي */}
+                          {!isMainAdmin && (
+                            <button 
+                              onClick={() => handleUserToggleStatus(user.id, user.status || 'active')} 
+                              style={{ 
+                                padding: '4px 8px', 
+                                backgroundColor: user.status === 'active' ? '#f59e0b' : '#10b981', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: '4px', 
+                                cursor: 'pointer', 
+                                fontSize: '12px' 
+                              }}
+                            >
+                              {user.status === 'active' ? '⛔ تعطيل' : '✅ تفعيل'}
+                            </button>
+                          )}
+                          
+                          {/* زر حذف - يظهر لكل المستخدمين ما عدا الأدمن الرئيسي */}
+                          {!isMainAdmin && (
+                            <button 
+                              onClick={() => handleUserDelete(user.id)} 
+                              style={{ padding: '4px 8px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                            >
+                              🗑️ حذف
+                            </button>
+                          )}
+                          
+                          {/* إذا كان الأدمن الرئيسي، نعرض رسالة بدلاً من الأزرار */}
+                          {isMainAdmin && (
+                            <span style={{ fontSize: '12px', color: '#64748b', padding: '4px 8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
+                              🔒 محمي
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
