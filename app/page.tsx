@@ -43,7 +43,6 @@ export default function HomePage() {
           console.error('❌ خطأ:', error);
         } else {
           console.log('✅ تم جلب الإعلانات:', data?.length || 0);
-          console.log('📸 أول إعلان:', data?.[0]);
           setCars(data || []);
         }
       } catch (err) {
@@ -87,17 +86,15 @@ export default function HomePage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
               {cars.map((car) => {
-                // Debug: طباعة الصور لكل سيارة
-                console.log(`🖼️ ${car.brand} ${car.model}:`, car.images);
+                const firstImage = car.images && car.images.length > 0 ? car.images[0] : null;
                 
                 return (
                   <div key={car.id} style={{ backgroundColor: 'white', borderRadius: '12px', padding: '15px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                     
-                    {/* عرض الصورة */}
-                    {car.images && car.images.length > 0 ? (
+                    {firstImage ? (
                       <div style={{ marginBottom: '12px' }}>
                         <img 
-                          src={car.images[0]} 
+                          src={firstImage} 
                           alt={`${car.brand} ${car.model}`}
                           style={{ 
                             width: '100%', 
@@ -107,10 +104,9 @@ export default function HomePage() {
                             backgroundColor: '#f1f5f9'
                           }}
                           onError={(e) => {
-                            console.error('❌ خطأ في تحميل الصورة:', car.images[0]);
+                            console.error('❌ خطأ في تحميل الصورة:', firstImage);
                             (e.target as HTMLImageElement).style.display = 'none';
                           }}
-                          onLoad={() => console.log('✅ تم تحميل الصورة:', car.images?.[0])}
                         />
                       </div>
                     ) : (
