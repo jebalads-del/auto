@@ -54,7 +54,7 @@ const MODELS: Record<string, string[]> = {
 
 const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'];
 
-// الـ User ID الخاص بالادمن
+// الـ User ID الثابت - تأكد من صحة هذا الرقم
 const MY_USER_ID = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
 
 export default function NewCarPage() {
@@ -85,24 +85,49 @@ export default function NewCarPage() {
   useEffect(() => {
     const getUser = async () => {
       try {
+        // 1. محاولة جلب الجلسة من Supabase
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          setUserId(session.user.id);
-          localStorage.setItem('userId', session.user.id);
-        } else {
-          const savedUserId = localStorage.getItem('userId');
-          if (savedUserId) {
-            setUserId(savedUserId);
-          } else {
-            setUserId(MY_USER_ID);
-            localStorage.setItem('userId', MY_USER_ID);
+          const id = session.user.id;
+          // التأكد من أن الـ ID بصيغة UUID صحيحة
+          if (id && id.length > 10 && id.includes('-')) {
+            setUserId(id);
+            localStorage.setItem('userId', id);
+            console.log('✅ Session user ID:', id);
+            setIsCheckingAuth(false);
+            return;
           }
         }
+
+        // 2. محاولة جلب userId من localStorage
+        const savedUserId = localStorage.getItem('userId');
+        if (savedUserId && savedUserId.length > 10 && savedUserId.includes('-')) {
+          setUserId(savedUserId);
+          console.log('✅ Using saved userId:', savedUserId);
+          setIsCheckingAuth(false);
+          return;
+        }
+
+        // 3. استخدام الـ ID الثابت
+        const fixedId = MY_USER_ID;
+        if (fixedId && fixedId.length > 10 && fixedId.includes('-')) {
+          setUserId(fixedId);
+          localStorage.setItem('userId', fixedId);
+          console.log('✅ Using fixed userId:', fixedId);
+        } else {
+          // إذا كان الـ ID الثابت غير صحيح، استخدم الـ ID الصحيح
+          const fallbackId = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
+          setUserId(fallbackId);
+          localStorage.setItem('userId', fallbackId);
+          console.log('⚠️ Using fallback userId:', fallbackId);
+        }
+
       } catch (err) {
-        console.error('Error getting user:', err);
-        setUserId(MY_USER_ID);
-        localStorage.setItem('userId', MY_USER_ID);
+        console.error('❌ Error getting user:', err);
+        const fallbackId = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
+        setUserId(fallbackId);
+        localStorage.setItem('userId', fallbackId);
       } finally {
         setIsCheckingAuth(false);
       }
@@ -142,8 +167,16 @@ export default function NewCarPage() {
     setSuccess('');
 
     try {
+      // التحقق من وجود userId
       if (!userId) {
         setError('يجب تسجيل الدخول أولاً');
+        setLoading(false);
+        return;
+      }
+
+      // التحقق من صحة userId (UUID)
+      if (!userId.includes('-') || userId.length < 10) {
+        setError('معرف المستخدم غير صحيح');
         setLoading(false);
         return;
       }
@@ -153,6 +186,8 @@ export default function NewCarPage() {
         setLoading(false);
         return;
       }
+
+      console.log('📤 Publishing car with userId:', userId);
 
       // 1. إنشاء الإعلان
       const payload = {
@@ -169,6 +204,8 @@ export default function NewCarPage() {
         status: 'pending',
       };
 
+      console.log('📦 Payload:', payload);
+
       const response = await fetch('/api/cars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -184,6 +221,7 @@ export default function NewCarPage() {
       }
 
       const carId = data.data?.[0]?.id || data.id;
+      console.log('✅ Car created with ID:', carId);
 
       // 2. رفع الصور إلى Supabase Storage
       if (images.length > 0 && carId) {
@@ -191,14 +229,12 @@ export default function NewCarPage() {
           const uploadedUrls = [];
 
           for (const file of images) {
-            // إنشاء اسم فريد للصورة
             const fileExt = file.name.split('.').pop();
             const fileName = `${carId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
             const filePath = `cars/${fileName}`;
 
             console.log('📤 جاري رفع الصورة:', fileName);
 
-            // رفع الصورة إلى Supabase Storage
             const { data: uploadData, error: uploadError } = await supabase.storage
               .from('car-images')
               .upload(filePath, file, {
@@ -214,7 +250,6 @@ export default function NewCarPage() {
 
             console.log('✅ تم رفع الصورة:', uploadData);
 
-            // الحصول على الرابط العام للصورة
             const { data: urlData } = supabase.storage
               .from('car-images')
               .getPublicUrl(filePath);
@@ -236,7 +271,7 @@ export default function NewCarPage() {
               console.error('❌ فشل تحديث الصور:', updateError);
               setSuccess('⚠️ تم نشر الإعلان لكن فشل حفظ الصور');
             } else {
-              setSuccess('✅ تم نشر الإعلان مع الصور بنجاح!');
+              setSuccess(`✅ تم نشر الإعلان مع ${uploadedUrls.length} صور!`);
             }
           } else {
             setSuccess('⚠️ تم نشر الإعلان لكن فشل رفع الصور');
@@ -267,7 +302,7 @@ export default function NewCarPage() {
 
     } catch (err: any) {
       setError('حدث خطأ غير متوقع');
-      console.error(err);
+      console.error('❌ Error:', err);
     } finally {
       setLoading(false);
     }
