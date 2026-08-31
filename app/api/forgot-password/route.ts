@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/db';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,15 +18,23 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔐 [FORGOT PASSWORD] طلب استعادة كلمة السر لـ: ${email}`);
 
-    // التحقق من وجود المستخدم
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, email')
-      .eq('email', email.toLowerCase().trim())
-      .maybeSingle();
+    // إنشاء عميل Supabase
+    const supabase = createRouteHandlerClient({ cookies });
+
+    // التحقق من وجود المستخدم في auth.users
+    const { data: user, error } = await supabase.auth.admin.getUserByEmail(email.toLowerCase().trim());
 
     if (error) {
       console.error('❌ [FORGOT PASSWORD DB ERROR]:', error);
+      
+      // إذا كان الخطأ بسبب عدم وجود المستخدم
+      if (error.message.includes('User not found')) {
+        return NextResponse.json(
+          { success: false, message: 'البريد الإلكتروني غير مسجل' },
+          { status: 404 }
+        );
+      }
+      
       return NextResponse.json(
         { success: false, message: 'خطأ في قاعدة البيانات' },
         { status: 500 }
@@ -39,16 +48,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ إنشاء رمز إعادة تعيين (OTP)
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    console.log(`🔑 [FORGOT PASSWORD] رمز إعادة التعيين: ${resetCode}`);
+    // ✅ إرسال رابط إعادة تعيين كلمة المرور عبر Supabase
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/reset-password`,
+    });
 
-    // ✅ مؤقتاً: نعيد الرمز في الرد (سيتم إزالته بعد تفعيل البريد)
+    if (resetError) {
+      console.error('❌ [RESET PASSWORD ERROR]:', resetError);
+      return NextResponse.json(
+        { success: false, message: resetError.message || 'حدث خطأ في إرسال رابط إعادة التعيين' },
+        { status: 500 }
+      );
+    }
+
+    console.log(`✅ [FORGOT PASSWORD] تم إرسال رابط إعادة التعيين لـ: ${email}`);
+
     return NextResponse.json({
       success: true,
-      message: 'تم إرسال رمز إعادة تعيين كلمة السر إلى بريدك الإلكتروني',
-      resetCode: resetCode // مؤقتاً
+      message: 'تم إرسال رابط إعادة تعيين كلمة السر إلى بريدك الإلكتروني',
     });
 
   } catch (error: any) {
