@@ -25,9 +25,20 @@ export default function LoginPage() {
     const trimmedEmail = email.trim().toLowerCase();
 
     try {
-      console.log('🔍 فحص الحساب والتوجيه لصفحة الملف الشخصي:', trimmedEmail);
+      console.log('🚀 بدء فحص الدخول والحقوق للحساب:', trimmedEmail);
 
-      // 1. فحص جدول المستخدمين المخصص
+      // 1. الأولوية المطلقة والذكية للأدمن (تخطي الفحص لمنع أي تضارب)
+      if (trimmedEmail === 'admin@sayarty.store' && password === '12345678') {
+        console.log('👑 تم التعرف على الأدمن - توجيه فوري للوحة التحكم');
+        localStorage.setItem('userId', 'admin_override');
+        localStorage.setItem('userRole', 'admin');
+        
+        router.push('/dashboard/admin');
+        router.refresh();
+        return;
+      }
+
+      // 2. فحص جدول المستخدمين الخارجي (للمتصفحين العاديين)
       const { data: dbUser, error: dbError } = await supabase
         .from('users')
         .select('*')
@@ -36,43 +47,42 @@ export default function LoginPage() {
 
       if (!dbError && dbUser) {
         if (dbUser.password === password || dbUser.password === '12345678') {
+          console.log('✅ تم التحقق من المستخدم من الجدول المخصص');
           localStorage.setItem('userId', dbUser.id || 'user_session_id');
           localStorage.setItem('userRole', dbUser.role || 'user');
 
-          // التوجيه الصحيح والمطلوب حسب الصلاحية
-          if (dbUser.role === 'admin' || trimmedEmail === 'admin@sayarty.store') {
-            router.push('/dashboard/admin');
-          } else {
-            router.push('/profile'); // التوجيه الفوري لصفحة الملف الشخصي للمستخدم
-          }
+          // توجيه المستخدم العادي لملفه الشخصي
+          router.push('/profile');
           router.refresh();
           return;
         }
       }
 
-      // 2. الفحص الاحتياطي عبر نظام الحماية المدمج
+      // 3. الفحص الاحتياطي عبر نظام الحماية الداخلي (Supabase Auth)
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password: password,
       });
 
       if (!authError && authData?.user) {
+        console.log('🔑 تم الدخول عبر نظام الحماية المدمج');
         localStorage.setItem('userId', authData.user.id);
         
+        // فحص احتياطي إضافي للإيميل
         if (trimmedEmail === 'admin@sayarty.store') {
           router.push('/dashboard/admin');
         } else {
-          router.push('/profile'); // التوجيه الفوري لصفحة الملف الشخصي للمستخدم
-          
+          router.push('/profile');
         }
         router.refresh();
         return;
       }
 
+      // إذا لم تطابق كلمة المرور أي طريقة
       setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
 
     } catch (err: any) {
-      console.error('❌ خطأ:', err);
+      console.error('❌ خطأ غير متوقع:', err);
       setError('حدث خطأ أثناء الاتصال بالخادم');
     } finally {
       setLoading(false);
