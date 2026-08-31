@@ -54,7 +54,7 @@ const MODELS: Record<string, string[]> = {
 
 const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'];
 
-// الـ User ID الخاص بالادمن (من Supabase Authentication)
+// الـ User ID الخاص بالادمن
 const MY_USER_ID = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
 
 export default function NewCarPage() {
@@ -154,6 +154,7 @@ export default function NewCarPage() {
         return;
       }
 
+      // 1. إنشاء الإعلان
       const payload = {
         brand: formData.brand,
         model: formData.model,
@@ -184,31 +185,71 @@ export default function NewCarPage() {
 
       const carId = data.data?.[0]?.id || data.id;
 
+      // 2. رفع الصور إلى Supabase Storage
       if (images.length > 0 && carId) {
         try {
-          const formData = new FormData();
-          images.forEach(file => formData.append('images', file));
-          formData.append('carId', carId.toString());
+          const uploadedUrls = [];
 
-          const uploadRes = await fetch('/api/cars/upload', {
-            method: 'POST',
-            body: formData,
-          });
+          for (const file of images) {
+            // إنشاء اسم فريد للصورة
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${carId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = `cars/${fileName}`;
 
-          const uploadData = await uploadRes.json();
+            console.log('📤 جاري رفع الصورة:', fileName);
 
-          if (uploadRes.ok && uploadData.success) {
-            setSuccess('✅ تم نشر الإعلان مع الصور بنجاح!');
+            // رفع الصورة إلى Supabase Storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('car-images')
+              .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: file.type,
+              });
+
+            if (uploadError) {
+              console.error('❌ فشل رفع الصورة:', uploadError);
+              continue;
+            }
+
+            console.log('✅ تم رفع الصورة:', uploadData);
+
+            // الحصول على الرابط العام للصورة
+            const { data: urlData } = supabase.storage
+              .from('car-images')
+              .getPublicUrl(filePath);
+
+            if (urlData?.publicUrl) {
+              uploadedUrls.push(urlData.publicUrl);
+              console.log('🔗 رابط الصورة:', urlData.publicUrl);
+            }
+          }
+
+          // 3. تحديث الإعلان بروابط الصور
+          if (uploadedUrls.length > 0) {
+            const { error: updateError } = await supabase
+              .from('cars')
+              .update({ images: uploadedUrls })
+              .eq('id', carId);
+
+            if (updateError) {
+              console.error('❌ فشل تحديث الصور:', updateError);
+              setSuccess('⚠️ تم نشر الإعلان لكن فشل حفظ الصور');
+            } else {
+              setSuccess('✅ تم نشر الإعلان مع الصور بنجاح!');
+            }
           } else {
             setSuccess('⚠️ تم نشر الإعلان لكن فشل رفع الصور');
           }
         } catch (error) {
+          console.error('❌ خطأ في رفع الصور:', error);
           setSuccess('⚠️ تم نشر الإعلان لكن حدث خطأ في رفع الصور');
         }
       } else {
         setSuccess('✅ تم نشر الإعلان بنجاح!');
       }
 
+      // إعادة تعيين النموذج
       setFormData({
         brand: '',
         model: '',
