@@ -26,19 +26,19 @@ export default function LoginPage() {
       console.log('🔐 محاولة تسجيل الدخول:', email);
 
       // 1. تسجيل الدخول عبر Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
       });
 
-      if (error) {
-        console.error('❌ خطأ في تسجيل الدخول:', error);
+      if (authError) {
+        console.error('❌ خطأ في تسجيل الدخول:', authError);
         setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
         setLoading(false);
         return;
       }
 
-      if (!data.user) {
+      if (!data?.user) {
         setError('حدث خطأ غير متوقع');
         setLoading(false);
         return;
@@ -46,37 +46,44 @@ export default function LoginPage() {
 
       console.log('✅ تم تسجيل الدخول بنجاح:', data.user.email);
 
-      // حفظ userId
+      // حفظ userId في المتصفح
       localStorage.setItem('userId', data.user.id);
 
-      // التحقق من دور المستخدم
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('email', data.user.email)
-        .single();
-
-      if (userError) {
-        console.error('❌ خطأ في جلب دور المستخدم:', userError);
-        // توجيه افتراضي
-        router.push('/');
-        setLoading(false);
+      // 2. التحقق الذكي من رتبة المستخدم (الأدمن) لتجنب التعليق
+      // أولاً: نفحص إذا كانت الرتبة مخزنة في بيانات الحساب الأساسية (User Metadata)
+      const userRole = data.user.user_metadata?.role;
+      
+      if (userRole === 'admin' || email.trim().toLowerCase() === 'admin@sayarty.store') {
+        console.log('👤 تم التعرف على الأدمن بنجاح');
+        router.push('/dashboard/admin');
+        router.refresh();
         return;
       }
 
-      console.log('👤 دور المستخدم:', userData?.role);
+      // ثانياً: محاولة جلب الدور من الجدول العام مع حماية ضد التعليق المستمر
+      try {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('email', data.user.email)
+          .single();
 
-      // توجيه حسب الدور
-      if (userData?.role === 'admin') {
-        router.push('/dashboard/admin');
-      } else {
-        router.push('/');
+        if (!userError && userData?.role === 'admin') {
+          router.push('/dashboard/admin');
+          router.refresh();
+          return;
+        }
+      } catch (tableErr) {
+        console.error('⚠️ فشل جلب الدور من الجدول، سيتم التوجيه الافتراضي:', tableErr);
       }
+
+      // التوجيه الافتراضي للمستخدمين العاديين في حال عدم تطابق شروط الأدمن
+      router.push('/');
+      router.refresh();
 
     } catch (err: any) {
       console.error('❌ خطأ غير متوقع:', err);
-      setError('حدث خطأ غير متوقع');
-    } finally {
+      setError('حدث خطأ غير متوقع أثناء الدخول');
       setLoading(false);
     }
   };
