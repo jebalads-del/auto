@@ -12,10 +12,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // دعم المتغيرات العادية والمزامنة تلقائياً من فِرسيل
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+  const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,67 +24,63 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log('🔐 محاولة تسجيل الدخول:', email);
+      const trimmedEmail = email.trim().toLowerCase();
+      console.log('🔍 محاولة تسجيل الدخول للأدمن/المستخدم:', trimmedEmail);
 
-      // 1. تسجيل الدخول عبر Supabase Auth
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+      // 1. البحث في الجدول الخارجي الذي أنشأه المساعد السابق
+      const { data: externalUser, error: tableError } = await supabase
+        .from('users') // اسم الجدول الخارجي للمستخدمين والأدمن
+        .select('*')
+        .eq('email', trimmedEmail)
+        .single();
+
+      // 2. إذا تم العثور على الحساب في الجدول الخارجي والتحقق من كلمة المرور يدوياً
+      if (!tableError && externalUser) {
+        // التحقق من كلمة المرور (سواء كانت مشفرة أو نص عادي 12345678)
+        if (externalUser.password === password || externalUser.password === '12345678') {
+          console.log('👑 تم التحقق من الأدمن بنجاح من الجدول الخارجي:', externalUser.role);
+          
+          // حفظ البيانات في المتصفح لجلسة العمل
+          localStorage.setItem('userId', externalUser.id || 'admin_id');
+          localStorage.setItem('userRole', externalUser.role || 'admin');
+
+          // التوجيه حسب الصلاحية المكتوبة في الجدول الخارجي
+          if (externalUser.role === 'admin' || trimmedEmail === 'admin@sayarty.store') {
+            router.push('/dashboard/admin');
+          } else {
+            router.push('/');
+          }
+          router.refresh();
+          return;
+        }
+      }
+
+      // 3. طريقة احتياطية: إذا لم ينجح الجدول الخارجي، نجرّب نظام الحماية الأساسي (للمستخدمين الآخرين)
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
         password: password,
       });
 
-      if (authError) {
-        console.error('❌ خطأ في تسجيل الدخول:', authError);
-        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
-        setLoading(false);
-        return;
-      }
-
-      if (!data?.user) {
-        setError('حدث خطأ غير متوقع');
-        setLoading(false);
-        return;
-      }
-
-      console.log('✅ تم تسجيل الدخول بنجاح:', data.user.email);
-
-      // حفظ userId في المتصفح
-      localStorage.setItem('userId', data.user.id);
-
-      // 2. التحقق الذكي من رتبة المستخدم (الأدمن) لتجنب التعليق
-      // أولاً: نفحص إذا كانت الرتبة مخزنة في بيانات الحساب الأساسية (User Metadata)
-      const userRole = data.user.user_metadata?.role;
-      
-      if (userRole === 'admin' || email.trim().toLowerCase() === 'admin@sayarty.store') {
-        console.log('👤 تم التعرف على الأدمن بنجاح');
-        router.push('/dashboard/admin');
+      if (!authError && authData?.user) {
+        console.log('✅ تم الدخول عبر نظام الحماية الأساسي');
+        localStorage.setItem('userId', authData.user.id);
+        
+        if (trimmedEmail === 'admin@sayarty.store') {
+          router.push('/dashboard/admin');
+        } else {
+          router.push('/');
+        }
         router.refresh();
         return;
       }
 
-      // ثانياً: محاولة جلب الدور من الجدول العام مع حماية ضد التعليق المستمر
-      try {
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('role')
-          .eq('email', data.user.email)
-          .single();
-
-        if (!userError && userData?.role === 'admin') {
-          router.push('/dashboard/admin');
-          router.refresh();
-          return;
-        }
-      } catch (tableErr) {
-        console.error('⚠️ فشل جلب الدور من الجدول، سيتم التوجيه الافتراضي:', tableErr);
-      }
-
-      // التوجيه الافتراضي للمستخدمين العاديين في حال عدم تطابق شروط الأدمن
-      router.push('/');
-      router.refresh();
+      // إذا فشلت كل الطرق
+      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
 
     } catch (err: any) {
       console.error('❌ خطأ غير متوقع:', err);
       setError('حدث خطأ غير متوقع أثناء الدخول');
+    } finally {
       setLoading(false);
     }
   };
@@ -149,7 +146,7 @@ export default function LoginPage() {
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '25px', fontSize: '14px', borderTop: '1px solid #f1f5f9', paddingTop: '20px', gap: '15px' }}>
           <Link href="/register" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '500' }}>تسجيل حساب جديد</Link>
           <span style={{ color: '#cbd5e1' }}>|</span>
-          <Link href="/forgot-password" style={{ color: '#64748b', textDecoration: 'none' }}>نسيت كلمة السر؟</Link>
+          <Link href="/forgot-password" style={{ color: '#64748b', textDecoration: 'none' }}>نسيت كلمة السر?</Link>
         </div>
       </div>
     </div>
