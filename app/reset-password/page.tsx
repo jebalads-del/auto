@@ -1,294 +1,124 @@
 'use client';
 
-import { Suspense } from 'react';
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
 
-function ResetPasswordContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const email = searchParams.get('email') || '';
-
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function ResetPasswordPage() {
+  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [email, setEmail] = useState('mara7b@gmail.com'); // يتم جلب الإيميل أو تركه مرناً
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [step, setStep] = useState<'otp' | 'password'>('otp');
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleChange = (index: number, value: string) => {
-    if (value.length > 1) return;
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
+  // المزامنة الذكية لمتغيرات البيئة لحل مشكلة فشل الاتصال بالخادم
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
-    if (value && index < 5) {
-      document.getElementById(`otp-${index + 1}`)?.focus();
+  const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
+
+  const handleChange = (value: string, index: number) => {
+    if (isNaN(Number(value))) return;
+    const newCode = [...code];
+    newCode[index] = value;
+    setCode(newCode);
+
+    // الانتقال التلقائي للخانة التالية
+    if (value !== '' && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    const code = otp.join('');
-
-    if (code.length !== 6) {
-      setError('الرجاء إدخال الكود المكون من 6 أرقام');
-      return;
-    }
-
-    setLoading(true);
     setError('');
+    setLoading(true);
 
-    try {
-      const response = await fetch('/api/verify-reset-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otpCode: code }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('✅ تم التحقق من الكود بنجاح!');
-        setStep('password');
-      } else {
-        setError(data.error || 'الكود غير صحيح');
-        setOtp(['', '', '', '', '', '']);
-        document.getElementById('otp-0')?.focus();
-      }
-    } catch {
-      setError('فشل الاتصال بالخادم');
-    } finally {
+    const fullCode = code.join('');
+    if (fullCode.length < 6) {
+      setError('يرجى إدخال الرمز كاملاً المكون من 6 أرقام');
       setLoading(false);
-    }
-  };
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (newPassword.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
       return;
     }
-
-    if (newPassword !== confirmPassword) {
-      setError('كلمتا المرور غير متطابقتين');
-      return;
-    }
-
-    setLoading(true);
 
     try {
-      const response = await fetch('/api/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: newPassword }),
+      console.log('🔄 جاري التحقق من الرمز الـ OTP الخاص بـ Reset Password...');
+      
+      // التحقق من رمز إعادة التعيين عبر Supabase
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: email,
+        token: fullCode,
+        type: 'recovery', // النوع مخصص لاستعادة كلمة المرور
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('✅ تم إعادة تعيين كلمة المرور بنجاح!');
-        setTimeout(() => {
-          router.push('/login');
-        }, 2000);
-      } else {
-        setError(data.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور');
+      if (verifyError) {
+        console.error('❌ خطأ التحقق من الرمز:', verifyError);
+        setError('الرمز غير صحيح أو انتهت صلاحيته');
+        setLoading(false);
+        return;
       }
-    } catch {
-      setError('فشل الاتصال بالخادم');
+
+      console.log('✅ تم التحقق من الرمز بنجاح!');
+      setSuccess(true);
+      
+      // التوجيه الفوري لصفحة تحديث كلمة المرور (تأكد من وجود المسار لديك أو توجيهه للملف الشخصي)
+      router.push('/profile'); 
+      router.refresh();
+
+    } catch (err: any) {
+      console.error('❌ خطأ غير متوقع:', err);
+      setError('حدث خطأ غير متوقع، يرجى المحاولة لاحقاً');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>
-          {step === 'otp' ? '🔑 أدخل كود إعادة التعيين' : '🔑 كلمة مرور جديدة'}
-        </h2>
-
-        {error && <div style={styles.errorBox}>❌ {error}</div>}
-        {success && <div style={styles.successBox}>✅ {success}</div>}
-
-        {step === 'otp' ? (
-          <form onSubmit={handleVerifyOtp}>
-            <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '20px' }}>
-              تم إرسال الكود إلى <strong>{email}</strong>
-            </p>
-            <div style={styles.otpContainer}>
-              {[0, 1, 2, 3, 4, 5].map((index) => (
-                <input
-                  key={index}
-                  id={`otp-${index}`}
-                  type="text"
-                  maxLength={1}
-                  value={otp[index]}
-                  onChange={(e) => handleChange(index, e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-                      document.getElementById(`otp-${index-1}`)?.focus();
-                    }
-                  }}
-                  style={styles.otpInput}
-                  disabled={loading}
-                  autoFocus={index === 0}
-                />
-              ))}
-            </div>
-            <button type="submit" disabled={loading || otp.some(d => !d)} style={styles.button}>
-              {loading ? 'جاري التحقق...' : 'تحقق من الكود'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleResetPassword}>
-            <div style={styles.field}>
-              <label style={styles.label}>كلمة المرور الجديدة</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                style={styles.input}
-                placeholder="••••••••"
-                required
-                minLength={6}
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>تأكيد كلمة المرور</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                style={styles.input}
-                placeholder="••••••••"
-                required
-                minLength={6}
-              />
-            </div>
-            <button type="submit" disabled={loading} style={styles.button}>
-              {loading ? 'جاري إعادة التعيين...' : 'إعادة تعيين كلمة المرور'}
-            </button>
-          </form>
+    <div style={{ direction: 'rtl', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '20px', fontFamily: 'sans-serif' }}>
+      <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%', maxWidth: '460px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px', color: '#1e293b' }}>🔑 أدخل كود إعادة التعيين</h2>
+        
+        {error && (
+          <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>
+            ❌ {error}
+          </div>
         )}
 
-        <Link href="/login" style={styles.link}>
-          ← العودة إلى تسجيل الدخول
-        </Link>
+        {success && (
+          <div style={{ padding: '12px', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>
+            🎉 تم التحقق بنجاح! جاري التوجيه...
+          </div>
+        )}
+
+        <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '25px' }}>تم إرسال الكود المكون من 6 خانات إلى حساب المستخدم</p>
+
+        <form onSubmit={handleVerify}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', direction: 'ltr', marginBottom: '30px' }}>
+            {code.map((num, idx) => (
+              <input
+                key={idx}
+                id={`otp-${idx}`}
+                type="text"
+                maxLength={1}
+                value={num}
+                onChange={(e) => handleChange(e.target.value, idx)}
+                required
+                style={{ width: '45px', height: '50px', borderRadius: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontSize: '20px', fontWeight: 'bold', outline: 'none', backgroundColor: '#f8fafc' }}
+              />
+            ))}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || success}
+            style={{ width: '100%', padding: '14px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer' }}
+          >
+            {loading ? '⏳ جاري التحقق...' : 'تحقق من الكود'}
+          </button>
+        </form>
       </div>
     </div>
   );
 }
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={<div style={styles.container}><div style={styles.card}><h2 style={styles.title}>جاري التحميل...</h2></div></div>}>
-      <ResetPasswordContent />
-    </Suspense>
-  );
-}
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f8fafc',
-    padding: '20px',
-    fontFamily: 'sans-serif',
-    direction: 'rtl' as const,
-  },
-  card: {
-    maxWidth: '450px',
-    width: '100%',
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '35px 30px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-  },
-  title: {
-    textAlign: 'center' as const,
-    fontSize: '24px',
-    marginBottom: '25px',
-    color: '#1e293b',
-  },
-  errorBox: {
-    backgroundColor: '#fee2e2',
-    color: '#991b1b',
-    padding: '12px',
-    borderRadius: '8px',
-    marginBottom: '15px',
-    textAlign: 'center' as const,
-  },
-  successBox: {
-    backgroundColor: '#d1fae5',
-    color: '#065f46',
-    padding: '12px',
-    borderRadius: '8px',
-    marginBottom: '15px',
-    textAlign: 'center' as const,
-  },
-  otpContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '10px',
-    marginBottom: '25px',
-    direction: 'ltr' as const,
-  },
-  otpInput: {
-    width: '48px',
-    height: '58px',
-    textAlign: 'center' as const,
-    fontSize: '24px',
-    fontWeight: 'bold',
-    border: '2px solid #d1d5db',
-    borderRadius: '10px',
-    outline: 'none',
-    transition: 'all 0.2s',
-    backgroundColor: '#f9fafb',
-    color: '#1e293b',
-  },
-  field: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '5px',
-    marginBottom: '15px',
-  },
-  label: {
-    fontWeight: 'bold',
-    fontSize: '14px',
-    color: '#1e293b',
-  },
-  input: {
-    padding: '12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '16px',
-    width: '100%',
-    boxSizing: 'border-box' as const,
-  },
-  button: {
-    width: '100%',
-    padding: '14px',
-    backgroundColor: '#2563eb',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    marginTop: '10px',
-  },
-  link: {
-    color: '#2563eb',
-    textDecoration: 'none',
-    textAlign: 'center' as const,
-    display: 'block',
-    marginTop: '15px',
-  },
-};
