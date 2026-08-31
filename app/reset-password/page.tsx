@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
       setSuccess(true);
       
       // التوجيه الفوري لصفحة تحديث كلمة المرور (تأكد من وجود المسار لديك أو توجيهه للملف الشخصي)
-      router.push('/profile'); 
+      router.push('/reset-password/new'); 
       router.refresh();
 
     } catch (err: any) {
