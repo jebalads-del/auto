@@ -12,7 +12,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
-  const cookieStore = {}; // إنشاء مخزن كوكيز مبسط للـ API
+  const cookieStore: Record<string, string> = {};
+ // إنشاء مخزن كوكيز مبسط للـ API
 
   const supabase = createServerClient(supabaseUrl!, supabaseAnonKey!, {
     cookies: {
