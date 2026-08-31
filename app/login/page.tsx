@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -11,32 +12,58 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      // 1. تسجيل الدخول عبر Supabase Auth
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
       });
 
-      const data = await res.json();
+      if (signInError) {
+        console.error('❌ Login error:', signInError);
+        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        setLoading(false);
+        return;
+      }
 
-      if (data.success) {
-        // توجيه تلقائي ذكي ومستقر ومباشر بناءً على الرتبة المستلمة من السيرفر النظيف
-        if (data.user?.role === 'admin') {
+      if (data.user) {
+        // حفظ userId في localStorage
+        localStorage.setItem('userId', data.user.id);
+
+        // 2. التحقق من دور المستخدم من جدول users
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('role, status')
+          .eq('id', data.user.id)
+          .single();
+
+        // 3. التحقق من حالة المستخدم
+        if (userData?.status === 'inactive') {
+          setError('حسابك معطل، يرجى التواصل مع الإدارة');
+          setLoading(false);
+          return;
+        }
+
+        // 4. توجيه المستخدم حسب الصلاحية
+        if (userData?.role === 'admin') {
           router.push('/dashboard/admin');
         } else {
-          router.push('/profile');
+          router.push('/');
         }
-      } else {
-        setError(data.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
       }
-    } catch (err) {
-      setError('حدث خطأ أثناء الاتصال بالخادم، يرجى المحاولة لاحقاً');
+    } catch (err: any) {
+      setError('حدث خطأ غير متوقع');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -57,21 +84,50 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>البريد الإلكتروني</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} placeholder="example@domain.com" />
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+              style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} 
+              placeholder="example@domain.com" 
+            />
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>كلمة المرور</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} placeholder="••••••••" />
+            <input 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+              style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} 
+              placeholder="••••••••" 
+            />
           </div>
 
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: '0.2s' }}>
-            {loading ? 'جاري تسجيل الدخول...' : '🚪 دخول'}
+          <button 
+            type="submit" 
+            disabled={loading} 
+            style={{ 
+              width: '100%', 
+              padding: '14px', 
+              backgroundColor: loading ? '#93c5fd' : '#2563eb', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '8px', 
+              fontSize: '16px', 
+              fontWeight: '600', 
+              cursor: loading ? 'not-allowed' : 'pointer', 
+              opacity: loading ? 0.7 : 1, 
+              transition: '0.2s' 
+            }}
+          >
+            {loading ? '⏳ جاري تسجيل الدخول...' : '🚪 دخول'}
           </button>
         </form>
 
-        {/* ✅ إعادة إحياء الروابط الأصلية والمفقودة التي تم مسحها بالخطأ */}
-        <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginTop: '25px', fontSize: '14px', borderTop: '1px solid #f1f5f9', paddingTop: '20px', gap: '15px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '25px', fontSize: '14px', borderTop: '1px solid #f1f5f9', paddingTop: '20px', gap: '15px' }}>
           <Link href="/register" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '500' }}>تسجيل حساب جديد</Link>
           <span style={{ color: '#cbd5e1' }}>|</span>
           <Link href="/forgot-password" style={{ color: '#64748b', textDecoration: 'none' }}>نسيت كلمة السر؟</Link>
