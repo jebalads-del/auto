@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(`🔐 [FORGOT PASSWORD] طلب استعادة كلمة السر لـ: ${email}`);
+
     const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,6 +48,8 @@ export async function POST(request: NextRequest) {
         { status: error.message.includes('User not found') ? 404 : 500 }
       );
     }
+
+    console.log(`✅ [FORGOT PASSWORD] تم إرسال رابط إعادة التعيين لـ: ${email}`);
 
     return NextResponse.json({
       success: true,
