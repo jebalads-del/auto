@@ -7,14 +7,13 @@ import { createBrowserClient } from '@supabase/ssr';
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [otp, setOtp] = useState(['', '', '', '', '', '', '', '']); // 8 خانات
+  const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6 خانات
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [email, setEmail] = useState('');
-  const [sessionValid, setSessionValid] = useState(false);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,7 +21,6 @@ function ResetPasswordForm() {
   );
 
   useEffect(() => {
-    // جلب البريد الإلكتروني من URL
     const emailParam = searchParams.get('email');
     if (emailParam) {
       setEmail(emailParam);
@@ -33,16 +31,7 @@ function ResetPasswordForm() {
         setEmail(storedEmail);
       }
     }
-
-    // التحقق من وجود جلسة نشطة
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setSessionValid(true);
-      }
-    };
-    checkSession();
-  }, [searchParams, supabase.auth]);
+  }, [searchParams]);
 
   const handleOtpChange = (element: HTMLInputElement, index: number) => {
     if (isNaN(Number(element.value))) return;
@@ -63,7 +52,7 @@ function ResetPasswordForm() {
     const fullOtp = otp.join('');
 
     if (fullOtp.length < 6) {
-      setError('يرجى إدخال رمز التحقق بالكامل');
+      setError('يرجى إدخال رمز التحقق بالكامل (6 أرقام)');
       setLoading(false);
       return;
     }
@@ -144,10 +133,10 @@ function ResetPasswordForm() {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* OTP input */}
+        {/* OTP input - 6 خانات */}
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '10px', fontWeight: '500' }}>🔢 رمز التحقق (من البريد الإلكتروني)</label>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', direction: 'ltr', flexWrap: 'wrap' }}>
+          <label style={{ display: 'block', marginBottom: '10px', fontWeight: '500' }}>🔢 رمز التحقق (6 أرقام من البريد الإلكتروني)</label>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', direction: 'ltr' }}>
             {otp.map((data, index) => (
               <input
                 key={index}
@@ -155,9 +144,9 @@ function ResetPasswordForm() {
                 maxLength={1}
                 inputMode="numeric"
                 style={{ 
-                  width: '38px', 
-                  height: '45px', 
-                  fontSize: '18px', 
+                  width: '45px', 
+                  height: '50px', 
+                  fontSize: '20px', 
                   textAlign: 'center', 
                   borderRadius: '8px', 
                   border: '1px solid #e0e0e0', 
@@ -173,7 +162,6 @@ function ResetPasswordForm() {
           </div>
         </div>
 
-        {/* كلمة المرور الجديدة */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>كلمة المرور الجديدة</label>
           <input
