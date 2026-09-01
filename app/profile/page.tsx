@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { createBrowserClient } from '@supabase/ssr';
 
 interface Car {
   id?: number; ID?: number; brand?: string; BRAND?: string;
@@ -23,6 +24,11 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
+  // إنشاء اتصال Supabase مدمج ومباشر لحل المشكلة فوراً وعبر الواجهة
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
+
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       setLoading(false);
@@ -30,23 +36,28 @@ export default function ProfilePage() {
 
     const loadLocalUserData = async () => {
       try {
-        // قراءة المتغيرات الذهبية الحقيقية المخزنة فور تسجيل دخولك الناجح في الموقع
+        // قراءة المتغيرات المحلية المخزنة
         const savedId = localStorage.getItem('userId') || '';
         const savedName = localStorage.getItem('userName') || 'مستعمل سيارتي';
         let savedEmail = localStorage.getItem('userEmail') || '';
-
         let dbPhone = '';
 
-        // جلب الهاتف والبريد الإلكتروني من قاعدة البيانات لضمان الظهور حتى لو كان المتصفح فارغاً
+        // الحل السحري الصارم: جلب الإيميل الحقيقي والآمن مباشرة من جلسة Supabase لكسر التعليق
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.email) {
+          savedEmail = user.email;
+          localStorage.setItem('userEmail', savedEmail);
+        }
+
+        // جلب الهاتف من قاعدة البيانات المحلية الخاصة بك باستخدام المعرف الرقمي
         if (savedId) {
           const userRes = await fetch(`/api/user/${savedId}`, { cache: 'no-store' });
           if (userRes.ok) {
             const userData = await userRes.json();
             if (userData && userData.success && userData.user) {
               dbPhone = userData.user.phone || '';
-              
-              // الحل السحري: إذا كان الإيميل فارغاً محلياً، نسحبه مباشرة من قاعدة البيانات ونحفظه
-              if (userData.user.email) {
+              // حماية إضافية في حال عدم توفر الإيميل في الجلسة نأخذه من الـ API
+              if (!savedEmail && userData.user.email) {
                 savedEmail = userData.user.email;
                 localStorage.setItem('userEmail', savedEmail);
               }
@@ -59,7 +70,7 @@ export default function ProfilePage() {
         setNewName(savedName);
         setNewPhone(dbPhone);
 
-        // جلب السيارات وتصفيتها بناءً على بريدك الإلكتروني الفعلي والملتقط بنجاح
+        // جلب السيارات وتصفيتها بناءً على البريد الإلكتروني
         if (savedEmail) {
           const carsRes = await fetch('/api/cars', { cache: 'no-store' });
           if (carsRes.ok) {
@@ -86,7 +97,6 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    // جدار حماية لمنع إرسال طلبات فارغة في حال عدم التقاط الـ ID
     if (!userInfo.id) {
       alert('خطأ: لم يتم العثور على معرف المستخدم الرقمي المخزن محلياً، الرجاء إعادة تسجيل الدخول لتحديث البيانات');
       return;
@@ -96,7 +106,7 @@ export default function ProfilePage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          id: userInfo.id, // تمرير المعرف الرقمي الحقيقي المستخرج من الـ localStorage للـ SQL
+          id: userInfo.id, 
           name: newName, 
           phone: newPhone 
         })
@@ -104,7 +114,7 @@ export default function ProfilePage() {
       const data = await res.json();
       if (res.ok && data.success) {
         alert('تم تحديث بياناتك الشخصية بنجاح واكتمل الحفظ! ✅');
-        localStorage.setItem('userName', newName); // تحديث الاسم محلياً في ذاكرة المتصفح فوراً
+        localStorage.setItem('userName', newName);
         setUserInfo(prev => ({ ...prev, name: newName, phone: newPhone }));
       } else {
         alert(data.message || 'فشل السيرفر في معالجة طلب الحفظ');
