@@ -7,12 +7,14 @@ import { createBrowserClient } from '@supabase/ssr';
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [otp, setOtp] = useState(['', '', '', '', '', '', '', '']); // 8 خانات
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [email, setEmail] = useState('');
+  const [sessionValid, setSessionValid] = useState(false);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,23 +26,47 @@ function ResetPasswordForm() {
     const emailParam = searchParams.get('email');
     if (emailParam) {
       setEmail(emailParam);
+      localStorage.setItem('resetEmail', emailParam);
+    } else {
+      const storedEmail = localStorage.getItem('resetEmail');
+      if (storedEmail) {
+        setEmail(storedEmail);
+      }
     }
 
     // التحقق من وجود جلسة نشطة
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError('انتهت صلاحية الجلسة، يرجى طلب رابط جديد');
+      if (session) {
+        setSessionValid(true);
       }
     };
     checkSession();
   }, [searchParams, supabase.auth]);
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleOtpChange = (element: HTMLInputElement, index: number) => {
+    if (isNaN(Number(element.value))) return;
+
+    setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
+
+    if (element.value !== '' && element.nextSibling) {
+      (element.nextSibling as HTMLInputElement).focus();
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
+
+    const fullOtp = otp.join('');
+
+    if (fullOtp.length < 6) {
+      setError('يرجى إدخال رمز التحقق بالكامل');
+      setLoading(false);
+      return;
+    }
 
     if (password.length < 6) {
       setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
@@ -55,27 +81,38 @@ function ResetPasswordForm() {
     }
 
     try {
-      // التحقق من الجلسة قبل التحديث
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setError('انتهت صلاحية الجلسة. يرجى طلب رابط جديد لإعادة تعيين كلمة المرور');
+      // 1. التحقق من OTP
+      const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+        email: email,
+        token: fullOtp,
+        type: 'email',
+      });
+
+      if (verifyError) {
+        setError('رمز التحقق غير صحيح أو منتهي الصلاحية');
         setLoading(false);
         return;
       }
 
-      // تحديث كلمة المرور
-      const { error } = await supabase.auth.updateUser({
+      if (!verifyData.user) {
+        setError('فشل التحقق من الرمز');
+        setLoading(false);
+        return;
+      }
+
+      // 2. تحديث كلمة المرور
+      const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
 
-      if (error) {
-        setError(error.message);
+      if (updateError) {
+        setError(updateError.message);
         setLoading(false);
         return;
       }
 
       setSuccess('✅ تم تغيير كلمة المرور بنجاح!');
+      localStorage.removeItem('resetEmail');
       setTimeout(() => {
         router.push('/login');
       }, 2000);
@@ -88,10 +125,10 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div style={{ direction: 'rtl', maxWidth: '400px', margin: '100px auto', padding: '30px', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+    <div style={{ direction: 'rtl', maxWidth: '430px', margin: '100px auto', padding: '30px', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
       <h2 style={{ fontSize: '22px', marginBottom: '10px', textAlign: 'center' }}>🔑 إعادة تعيين كلمة المرور</h2>
       <p style={{ color: '#666', fontSize: '14px', textAlign: 'center', marginBottom: '20px' }}>
-        {email ? `تغيير كلمة المرور لـ ${email}` : 'أدخل كلمة المرور الجديدة'}
+        {email ? `تم إرسال رمز التحقق إلى ${email}` : 'أدخل رمز التحقق وكلمة المرور الجديدة'}
       </p>
 
       {error && (
@@ -106,7 +143,37 @@ function ResetPasswordForm() {
         </div>
       )}
 
-      <form onSubmit={handleResetPassword}>
+      <form onSubmit={handleSubmit}>
+        {/* OTP input */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '10px', fontWeight: '500' }}>🔢 رمز التحقق (من البريد الإلكتروني)</label>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', direction: 'ltr', flexWrap: 'wrap' }}>
+            {otp.map((data, index) => (
+              <input
+                key={index}
+                type="text"
+                maxLength={1}
+                inputMode="numeric"
+                style={{ 
+                  width: '38px', 
+                  height: '45px', 
+                  fontSize: '18px', 
+                  textAlign: 'center', 
+                  borderRadius: '8px', 
+                  border: '1px solid #e0e0e0', 
+                  outline: 'none',
+                  backgroundColor: data ? '#f0f7ff' : '#ffffff',
+                  borderColor: data ? '#2563eb' : '#e0e0e0'
+                }}
+                value={data}
+                onChange={(e) => handleOtpChange(e.target, index)}
+                onFocus={(e) => e.target.select()}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* كلمة المرور الجديدة */}
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>كلمة المرور الجديدة</label>
           <input
