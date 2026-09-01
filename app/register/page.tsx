@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 
 export default function RegisterPage() {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [step, setStep] = useState<'register' | 'otp'>('register');
@@ -19,43 +18,35 @@ export default function RegisterPage() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
-  // 1. دالة إرسال طلب تسجيل الحساب (مبسطة ومطابقة للكود القديم المضمون)
+  // 1. دالة إرسال طلب تسجيل الحساب الأولية
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const trimmedEmail = email.trim().toLowerCase();
-
     try {
-      console.log('🔄 جاري إنشاء الحساب للبريد:', trimmedEmail);
-      
-      // حفظ الاسم في المتصفح مؤقتاً لاستخدامه لاحقاً عند نجاح التفعيل
-      localStorage.setItem('temp_user_name', name.trim());
-
-      // الطريقة الافتراضية المضمونة لإنشاء الحساب وإرسال البريد فوراً
+      console.log('🔄 جاري إنشاء الحساب للبريد:', email);
       const { error: signUpError } = await supabase.auth.signUp({
-        email: trimmedEmail,
+        email: email.trim().toLowerCase(),
         password: password,
       });
 
       if (signUpError) {
-        console.error('❌ خطأ التسجيل الأساسي:', signUpError);
         setError(signUpError.message);
         setLoading(false);
         return;
       }
 
-      console.log('✅ تم إرسال الرمز بنجاح، الانتقال لخطوة الـ OTP');
+      // الانتقال لخطوة إدخال الرمز الرقمي
       setStep('otp');
     } catch (err) {
-      setError('حدث خطأ أثناء الاتصال بالخادم، يرجى المحاولة لاحقاً');
+      setError('حدث خطأ أثناء الاتصال بالخادم');
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. دالة التحقق من الرمز الرقمي وتفعيل الحساب
+  // 2. دالة التحقق من الرمز الرقمي وتفعيل الحساب (الإصلاح الحاسم)
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -68,16 +59,14 @@ export default function RegisterPage() {
       return;
     }
 
-    const trimmedEmail = email.trim().toLowerCase();
-    const savedName = localStorage.getItem('temp_user_name') || 'مستخدم جديد';
-
     try {
       console.log('📡 جاري تفعيل الحساب بالرمز الرقمي المكتوب...');
       
+      // تغيير النوع هنا إلى 'signup' لضمان قبول الرمز وتوثيق الحساب
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        email: trimmedEmail,
+        email: email.trim().toLowerCase(),
         token: fullCode,
-        type: 'signup', // الحفاظ على التفعيل الصحيح والمستقر
+        type: 'signup', 
       });
 
       if (verifyError) {
@@ -86,25 +75,13 @@ export default function RegisterPage() {
         return;
       }
 
-      console.log('✅ تم تفعيل الحساب بنجاح!');
+      console.log('✅ تم تفعيل الحساب وإدخال المستخدم بنجاح!');
       
-      // مزامنة يدوية لحفظ الاسم في الجدول الخارجي (users) إن وجد لضمان عدم ضياعه
+      // التحديث والمزامنة لحفظ الجلسة في المتصفح والتوجيه للملف الشخصي
       if (data?.user) {
         localStorage.setItem('userId', data.user.id);
-        localStorage.setItem('userName', savedName);
-        
-        try {
-          await supabase
-            .from('users')
-            .insert([
-              { id: data.user.id, email: trimmedEmail, name: savedName, role: 'user' }
-            ]);
-        } catch (tableErr) {
-          console.log('⚠️ ملاحظة: الحساب مفعل وجاري التوجيه (تحديث الجدول خارجي)');
-        }
       }
       
-      localStorage.removeItem('temp_user_name'); // تنظيف الذاكرة المؤقتة
       router.push('/profile');
       router.refresh();
 
@@ -138,15 +115,11 @@ export default function RegisterPage() {
         )}
 
         {step === 'register' ? (
+          /* واجهة تسجيل البيانات الأساسية */
           <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h2 style={{ textAlign: 'center', fontSize: '22px', fontWeight: 'bold', color: '#1e293b', marginBottom: '5px' }}>📝 إنشاء حساب جديد</h2>
             <p style={{ textAlign: 'center', color: '#64748b', fontSize: '13px', marginBottom: '10px' }}>سجل بياناتك لتتمكن من نشر إعلاناتك وإدارتها</p>
             
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>الاسم الكامل</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} placeholder="أدخل اسمك الكريم" />
-            </div>
-
             <div>
               <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>البريد الإلكتروني</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} placeholder="example@domain.com" />
@@ -157,14 +130,15 @@ export default function RegisterPage() {
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} placeholder="••••••••" />
             </div>
 
-            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 10px rgba(37,99,235,0.15)' }}>
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer' }}>
               {loading ? '⏳ جاري إرسال الرمز...' : '✉️ تسجيل الحساب وإرسال الكود'}
             </button>
           </form>
         ) : (
+          /* واجهة إدخال الرمز الرقمي OTP المطورة */
           <form onSubmit={handleVerifyOtp} style={{ textAlign: 'center' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px', color: '#1e293b' }}>🔐 تحقق من حسابك</h2>
-            <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '25px' }}>مرحباً بك يا <b>{name}</b>، تم إرسال رمز التفعيل المكون من 6 أرقام إلى بريدك بنجاح</p>
+            <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '25px' }}>تم إرسال رمز التفعيل المكون من 6 أرقام إلى بريدك بنجاح</p>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', direction: 'ltr', marginBottom: '30px' }}>
               {code.map((num, idx) => (
