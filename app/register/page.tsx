@@ -19,18 +19,21 @@ export default function RegisterPage() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
-  // 1. إرسال طلب إنشاء الحساب وإرسال رمز الـ OTP
+  // 1. إرسال طلب إنشاء الحساب وإرسال رمز الـ OTP الرقمي (6 خانات)
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      // تم استخدام signInWithOtp لضمان توليد وإرسال رمز 6 أرقام من خلال السيرفر
+      const { error: signUpError } = await supabase.auth.signInWithOtp({
         email: email.trim().toLowerCase(),
-        password: password,
         options: {
-          data: { full_name: name.trim() }
+          shouldCreateUser: true, // يضمن إنشاء حساب جديد تلقائياً في السيرفر للمستخدم الجديد
+          data: { 
+            full_name: name.trim()
+          }
         }
       });
 
@@ -40,7 +43,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // الانتقال الإجباري لخطوة الـ OTP
+      // الانتقال الإجباري لخطوة الـ OTP في الواجهة
       setStep('otp');
     } catch (err) {
       setError('حدث خطأ في الاتصال بالسيرفر');
@@ -49,7 +52,7 @@ export default function RegisterPage() {
     }
   };
 
-  // 2. التحقق من كود الـ OTP المكون من 6 خانات ومزامنته مع الأدمن
+  // 2. التحقق من كود الـ OTP ومزامنته مع الأدمن الجدول الخارجي
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -60,7 +63,7 @@ export default function RegisterPage() {
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
         email: email.trim().toLowerCase(),
         token: fullCode,
-        type: 'signup', // نوع التحقق الصحيح والمطلوب للحسابات الجديدة
+        type: 'email', // تم تعديلها إلى email لتتوافق مع دالة إرسال الـ OTP الرقمي
       });
 
       if (verifyError) {
@@ -69,12 +72,18 @@ export default function RegisterPage() {
         return;
       }
 
-      // مزامنة الاسم تلقائياً في جدول الأدمن الخارجي ليظهر في القائمة فوراً
+      // مزامنة الاسم والبيانات تلقائياً في جدول الأدمن الخارجي ليظهر في القائمة فوراً
       if (data?.user) {
         localStorage.setItem('userId', data.user.id);
         await supabase
           .from('users')
-          .insert([{ id: data.user.id, email: email.trim().toLowerCase(), name: name.trim(), role: 'user', password: password }]);
+          .insert([{ 
+            id: data.user.id, 
+            email: email.trim().toLowerCase(), 
+            name: name.trim(), 
+            role: 'user', 
+            password: password // سيتم حفظ كلمة المرور في جدولك المخصص
+          }]);
       }
 
       router.push('/profile');
