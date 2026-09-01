@@ -5,119 +5,202 @@ import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 
 export default function ResetPasswordPage() {
+  const [step, setStep] = useState<'otp' | 'new_password'>('otp'); // تتبع الخطوات في نفس الصفحة
   const [code, setCode] = useState(['', '', '', '', '', '']);
-  const [email, setEmail] = useState('mara7b@gmail.com'); // يتم جلب الإيميل أو تركه مرناً
+  const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // المزامنة الذكية لمتغيرات البيئة لحل مشكلة فشل الاتصال بالخادم
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
-  const handleChange = (value: string, index: number) => {
-    if (isNaN(Number(value))) return;
-    const newCode = [...code];
-    newCode[index] = value;
-    setCode(newCode);
+  // 1. طلب إرسال الرمز أولاً إلى الإيميل
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-    // الانتقال التلقائي للخانة التالية
-    if (value !== '' && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (resetError) {
+        setError(resetError.message);
+        setLoading(false);
+        return;
+      }
+      alert('🎉 تم إرسال الرمز الرقمي بنجاح إلى بريدك الإلكتروني');
+    } catch (err) {
+      setError('حدث خطأ أثناء طلب الرمز');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleVerify = async (e: React.FormEvent) => {
+  // 2. التحقق من الرمز والانتقال الفوري في نفس الصفحة لمنع فقدان الجلسة
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     const fullCode = code.join('');
     if (fullCode.length < 6) {
-      setError('يرجى إدخال الرمز كاملاً المكون من 6 أرقام');
+      setError('يرجى إدخال الرمز المكون من 6 أرقام كاملاً');
       setLoading(false);
       return;
     }
 
     try {
-      console.log('🔄 جاري التحقق من الرمز الـ OTP الخاص بـ Reset Password...');
-      
-      // التحقق من رمز إعادة التعيين عبر Supabase
       const { error: verifyError } = await supabase.auth.verifyOtp({
-        email: email,
+        email: email.trim().toLowerCase(),
         token: fullCode,
-        type: 'recovery', // النوع مخصص لاستعادة كلمة المرور
+        type: 'recovery',
       });
 
       if (verifyError) {
-        console.error('❌ خطأ التحقق من الرمز:', verifyError);
-        setError('الرمز غير صحيح أو انتهت صلاحيته');
+        setError('الرمز غير صحيح أو انتهت صلاحيته ❌');
         setLoading(false);
         return;
       }
 
-      console.log('✅ تم التحقق من الرمز بنجاح!');
-      setSuccess(true);
-      
-      // التوجيه الفوري لصفحة تحديث كلمة المرور (تأكد من وجود المسار لديك أو توجيهه للملف الشخصي)
-      router.push('/reset-password/new'); 
-      router.refresh();
-
-    } catch (err: any) {
-      console.error('❌ خطأ غير متوقع:', err);
-      setError('حدث خطأ غير متوقع، يرجى المحاولة لاحقاً');
+      // النجاح: الانتقال للخطوة التالية في نفس الصفحة لحفظ الأمان والكوكيز
+      setStep('new_password');
+    } catch (err) {
+      setError('حدث خطأ أثناء التحقق من الرمز');
     } finally {
       setLoading(false);
     }
   };
 
+  // 3. تحديث كلمة المرور وحفظها في قاعدة البيانات فورا
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (newPassword.length < 6) {
+      setError('يجب أن تكون كلمة المرور 6 خانات على الأقل');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('كلمتا المرور غير متطابقتين ❌');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // التحديث في نظام الحماية المدمج للـ Auth
+      const { data: authData, error: authError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (authError) {
+        setError('انتهت صلاحية الجلسة الأمنية، يرجى المحاولة مجدداً');
+        setLoading(false);
+        return;
+      }
+
+      // تحديث الجدول الخارجي لضمان المزامنة التامة
+      if (authData?.user?.email) {
+        await supabase
+          .from('users')
+          .update({ password: newPassword })
+          .eq('email', authData.user.email);
+      }
+
+      setSuccess(true);
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
+
+    } catch (err) {
+      setError('حدث خطأ غير متوقع أثناء الحفظ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpChange = (value: string, index: number) => {
+    if (isNaN(Number(value))) return;
+    const newCode = [...code];
+    newCode[index] = value;
+    setCode(newCode);
+
+    if (value !== '' && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
   return (
     <div style={{ direction: 'rtl', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '20px', fontFamily: 'sans-serif' }}>
-      <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%', maxWidth: '460px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px', color: '#1e293b' }}>🔑 أدخل كود إعادة التعيين</h2>
+      <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%', maxWidth: '420px' }}>
         
         {error && (
-          <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>
+          <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', textAlign: 'center', fontWeight: '500' }}>
             ❌ {error}
           </div>
         )}
 
         {success && (
-          <div style={{ padding: '12px', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>
-            🎉 تم التحقق بنجاح! جاري التوجيه...
+          <div style={{ padding: '12px', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', textAlign: 'center', fontWeight: '500' }}>
+            🎉 تم تغيير كلمة المرور بنجاح! جاري توجيهك لصفحة الدخول...
           </div>
         )}
 
-        <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '25px' }}>تم إرسال الكود المكون من 6 خانات إلى حساب المستخدم</p>
+        {step === 'otp' ? (
+          /* واجهة طلب البريد وإدخال الرمز */
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '22px', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>🔑 استعادة كلمة السر</h2>
+            <p style={{ textAlign: 'center', color: '#64748b', fontSize: '13px', marginBottom: '25px' }}>أدخل بريدك الإلكتروني لاستلام رمز الـ OTP المكون من 6 خانات</p>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#334155', marginBottom: '6px' }}>البريد الإلكتروني المعتمد</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ flexGrow: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} placeholder="example@domain.com" />
+                <button type="button" onClick={handleRequestOtp} disabled={loading || !email} style={{ padding: '10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>أرسل الرمز</button>
+              </div>
+            </div>
 
-        <form onSubmit={handleVerify}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', direction: 'ltr', marginBottom: '30px' }}>
-            {code.map((num, idx) => (
-              <input
-                key={idx}
-                id={`otp-${idx}`}
-                type="text"
-                maxLength={1}
-                value={num}
-                onChange={(e) => handleChange(e.target.value, idx)}
-                required
-                style={{ width: '45px', height: '50px', borderRadius: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontSize: '20px', fontWeight: 'bold', outline: 'none', backgroundColor: '#f8fafc' }}
-              />
-            ))}
+            <form onSubmit={handleVerifyOtp} style={{ textAlign: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
+              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '15px' }}>أدخل رمز الـ OTP المستلم المكون من 6 خانات بالأسفل:</p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', direction: 'ltr', marginBottom: '25px' }}>
+                {code.map((num, idx) => (
+                  <input key={idx} id={`otp-${idx}`} type="text" maxLength={1} value={num} onChange={(e) => handleOtpChange(e.target.value, idx)} style={{ width: '42px', height: '46px', borderRadius: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontSize: '18px', fontWeight: 'bold', outline: 'none' }} />
+                ))}
+              </div>
+              <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>
+                {loading ? '⏳ جاري التحقق...' : 'التحقق من الرمز المستلم'}
+              </button>
+            </form>
           </div>
+        ) : (
+          /* واجهة إدخال كلمة السر الجديدة (تفتح في نفس الصفحة بدون تنقل) */
+          <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <h2 style={{ textAlign: 'center', fontSize: '22px', fontWeight: 'bold', color: '#1e293b' }}>🔒 تعيين كلمة سر جديدة</h2>
+            
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>كلمة المرور الجديدة</label>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} placeholder="••••••••" />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading || success}
-            style={{ width: '100%', padding: '14px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer' }}
-          >
-            {loading ? '⏳ جاري التحقق...' : 'تحقق من الكود'}
-          </button>
-        </form>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>تأكيد كلمة المرور</label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} placeholder="••••••••" />
+            </div>
+
+            <button type="submit" disabled={loading || success} style={{ width: '100%', padding: '14px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
+              {loading ? '⏳ جاري الحفظ والتأمين...' : 'تحديث كلمة السر بأمان ✅'}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
