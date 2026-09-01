@@ -3,159 +3,168 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function RegisterPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [step, setStep] = useState<'register' | 'otp'>('register');
+  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 1. دالة إرسال طلب تسجيل الحساب الأولية
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/resend-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-        }),
+      console.log('🔄 جاري إنشاء الحساب للبريد:', email);
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password: password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'حدث خطأ أثناء إرسال رمز التحقق');
+      if (signUpError) {
+        setError(signUpError.message);
         setLoading(false);
         return;
       }
 
-      router.push(
-        `/verify?email=${encodeURIComponent(formData.email)}&p=${encodeURIComponent(formData.password)}&n=${encodeURIComponent(formData.name)}`
-      );
-
-    } catch (error) {
-      setError('فشل الاتصال بالسيرفر، يرجى المحاولة لاحقاً');
+      // الانتقال لخطوة إدخال الرمز الرقمي
+      setStep('otp');
+    } catch (err) {
+      setError('حدث خطأ أثناء الاتصال بالخادم');
     } finally {
       setLoading(false);
     }
   };
 
-  const containerStyle = {
-    maxWidth: '430px',
-    margin: '100px auto',
-    padding: '40px 30px',
-    backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-    textAlign: 'center' as const,
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    direction: 'rtl' as const,
+  // 2. دالة التحقق من الرمز الرقمي وتفعيل الحساب (الإصلاح الحاسم)
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const fullCode = code.join('');
+    if (fullCode.length < 6) {
+      setError('يرجى إدخال الرمز كاملاً المكون من 6 أرقام');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log('📡 جاري تفعيل الحساب بالرمز الرقمي المكتوب...');
+      
+      // تغيير النوع هنا إلى 'signup' لضمان قبول الرمز وتوثيق الحساب
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: fullCode,
+        type: 'signup', 
+      });
+
+      if (verifyError) {
+        setError('الرمز غير صحيح أو انتهت صلاحيته ❌');
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ تم تفعيل الحساب وإدخال المستخدم بنجاح!');
+      
+      // التحديث والمزامنة لحفظ الجلسة في المتصفح والتوجيه للملف الشخصي
+      if (data?.user) {
+        localStorage.setItem('userId', data.user.id);
+      }
+      
+      router.push('/profile');
+      router.refresh();
+
+    } catch (err) {
+      setError('حدث خطأ غير متوقع أثناء تفعيل الحساب');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const titleStyle = {
-    fontSize: '22px',
-    color: '#333333',
-    marginBottom: '30px',
-    fontWeight: '500',
-  };
+  const handleOtpChange = (value: string, index: number) => {
+    if (isNaN(Number(value))) return;
+    const newCode = [...code];
+    newCode[index] = value;
+    setCode(newCode);
 
-  const inputStyle = {
-    width: '100%',
-    padding: '16px 20px',
-    marginBottom: '20px',
-    border: '1px solid #e0e0e0',
-    borderRadius: '12px',
-    fontSize: '16px',
-    outline: 'none',
-    color: '#666666',
-    backgroundColor: '#ffffff',
-    boxSizing: 'border-box' as const,
-  };
-
-  const buttonStyle = {
-    width: '100%',
-    padding: '16px',
-    backgroundColor: '#2563eb',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '18px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    marginTop: '10px',
-    transition: 'background-color 0.2s',
-  };
-
-  const linkStyle = {
-    marginTop: '25px',
-    fontSize: '15px',
-    color: '#666666',
+    if (value !== '' && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+    }
   };
 
   return (
-    <div style={containerStyle}>
-      <h2 style={titleStyle}>إنشاء حساب جديد</h2>
-      {error && (
-        <p style={{ color: '#dc2626', fontSize: '14px', marginBottom: '15px' }}>
-          {error}
-        </p>
-      )}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="الاسم الكامل"
-          required
-          style={inputStyle}
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        />
-        <input
-          type="email"
-          placeholder="البريد الإلكتروني"
-          required
-          style={inputStyle}
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-        />
-        <input
-          type="password"
-          placeholder="كلمة السر"
-          required
-          minLength={6}
-          style={inputStyle}
-          value={formData.password}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          style={buttonStyle}
-        >
-          {loading ? 'جاري إرسال الرمز...' : 'تسجيل الحساب'}
-        </button>
-        <div style={linkStyle}>
-          لديك حساب بالفعل؟{' '}
-          <Link href="/login" style={{ color: '#2563eb', textDecoration: 'none' }}>
-            تسجيل الدخول
-          </Link>
+    <div style={{ direction: 'rtl', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '20px', fontFamily: 'sans-serif' }}>
+      <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%', maxWidth: '420px' }}>
+        
+        {error && (
+          <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', textAlign: 'center', fontWeight: '500' }}>
+            ❌ {error}
+          </div>
+        )}
+
+        {step === 'register' ? (
+          /* واجهة تسجيل البيانات الأساسية */
+          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <h2 style={{ textAlign: 'center', fontSize: '22px', fontWeight: 'bold', color: '#1e293b', marginBottom: '5px' }}>📝 إنشاء حساب جديد</h2>
+            <p style={{ textAlign: 'center', color: '#64748b', fontSize: '13px', marginBottom: '10px' }}>سجل بياناتك لتتمكن من نشر إعلاناتك وإدارتها</p>
+            
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>البريد الإلكتروني</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} placeholder="example@domain.com" />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>كلمة المرور</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} placeholder="••••••••" />
+            </div>
+
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer' }}>
+              {loading ? '⏳ جاري إرسال الرمز...' : '✉️ تسجيل الحساب وإرسال الكود'}
+            </button>
+          </form>
+        ) : (
+          /* واجهة إدخال الرمز الرقمي OTP المطورة */
+          <form onSubmit={handleVerifyOtp} style={{ textAlign: 'center' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px', color: '#1e293b' }}>🔐 تحقق من حسابك</h2>
+            <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '25px' }}>تم إرسال رمز التفعيل المكون من 6 أرقام إلى بريدك بنجاح</p>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', direction: 'ltr', marginBottom: '30px' }}>
+              {code.map((num, idx) => (
+                <input
+                  key={idx}
+                  id={`otp-${idx}`}
+                  type="text"
+                  maxLength={1}
+                  value={num}
+                  onChange={(e) => handleOtpChange(e.target.value, idx)}
+                  required
+                  style={{ width: '42px', height: '48px', borderRadius: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontSize: '18px', fontWeight: 'bold', outline: 'none', backgroundColor: '#f8fafc' }}
+                />
+              ))}
+            </div>
+
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer' }}>
+              {loading ? '⏳ جاري التحقق والتفعيل...' : 'تحقق من الرمز وتفعيل الحساب ✅'}
+            </button>
+          </form>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '25px', fontSize: '14px', borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
+          <Link href="/login" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '500' }}>لديك حساب بالفعل؟ سجل دخولك</Link>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
