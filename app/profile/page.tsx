@@ -17,7 +17,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   
   // تهيئة الحقول لتستقبل البيانات الحقيقية من المتصفح مباشرة
-  const [userInfo, setUserInfo] = useState({ id: '', name: 'مستعمل سيارتي', email: 'user@auto.com', phone: '' });
+  const [userInfo, setUserInfo] = useState({ id: '', name: 'مستعمل سيارتي', email: '', phone: '' });
   const [newName, setNewName] = useState('مستعمل سيارتي');
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -31,19 +31,25 @@ export default function ProfilePage() {
     const loadLocalUserData = async () => {
       try {
         // قراءة المتغيرات الذهبية الحقيقية المخزنة فور تسجيل دخولك الناجح في الموقع
-        const savedEmail = localStorage.getItem('userEmail') || '';
-        const savedName = localStorage.getItem('userName') || 'مستعمل سيارتي';
         const savedId = localStorage.getItem('userId') || '';
+        const savedName = localStorage.getItem('userName') || 'مستعمل سيارتي';
+        let savedEmail = localStorage.getItem('userEmail') || '';
 
         let dbPhone = '';
 
-        // جلب رقم الهاتف فقط من قاعدة البيانات باستخدام الـ id الحقيقي والملتقط بنجاح
+        // جلب الهاتف والبريد الإلكتروني من قاعدة البيانات لضمان الظهور حتى لو كان المتصفح فارغاً
         if (savedId) {
           const userRes = await fetch(`/api/user/${savedId}`, { cache: 'no-store' });
           if (userRes.ok) {
             const userData = await userRes.json();
             if (userData && userData.success && userData.user) {
               dbPhone = userData.user.phone || '';
+              
+              // الحل السحري: إذا كان الإيميل فارغاً محلياً، نسحبه مباشرة من قاعدة البيانات ونحفظه
+              if (userData.user.email) {
+                savedEmail = userData.user.email;
+                localStorage.setItem('userEmail', savedEmail);
+              }
             }
           }
         }
@@ -53,7 +59,7 @@ export default function ProfilePage() {
         setNewName(savedName);
         setNewPhone(dbPhone);
 
-        // جلب السيارات وتصفيتها بناءً على بريدك الإلكتروني الفعلي والملتقط
+        // جلب السيارات وتصفيتها بناءً على بريدك الإلكتروني الفعلي والملتقط بنجاح
         if (savedEmail) {
           const carsRes = await fetch('/api/cars', { cache: 'no-store' });
           if (carsRes.ok) {
@@ -77,6 +83,7 @@ export default function ProfilePage() {
     loadLocalUserData();
     return () => clearTimeout(safetyTimer);
   }, []);
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     // جدار حماية لمنع إرسال طلبات فارغة في حال عدم التقاط الـ ID
@@ -106,7 +113,6 @@ export default function ProfilePage() {
       alert('خطأ في شبكة الاتصال أثناء التحديث');
     }
   };
-
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword || !newPassword) return alert('الرجاء تعبئة كافة حقول كلمة السر');
@@ -150,7 +156,7 @@ export default function ProfilePage() {
         </header>
         <div style={styles.heroBody}>
           <h2 style={styles.heroMainTitle}>{userInfo.name}</h2>
-          <p style={styles.heroSubTitle}>{userInfo.email}</p>
+          <p style={styles.heroSubTitle}>{userInfo.email || 'جاري تحميل البريد الإلكتروني...'}</p>
         </div>
       </div>
 
@@ -165,7 +171,7 @@ export default function ProfilePage() {
           <form onSubmit={handleUpdateProfile} style={{ marginBottom: '25px' }}>
             <div style={{ marginBottom: '12px' }}>
               <label style={styles.labelField}>البريد الإلكتروني (محمي لا يمكن تعديله) 🛡️</label>
-              <input type="text" value={userInfo.email} disabled style={styles.disabledInput} />
+              <input type="text" value={userInfo.email} disabled style={styles.disabledInput} placeholder="جاري جلب البريد الإلكتروني المحمي..." />
             </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={styles.labelField}>الاسم الكامل</label>
@@ -191,6 +197,7 @@ export default function ProfilePage() {
             <button type="submit" style={styles.passwordButton}>تحديث كلمة السر بأمان</button>
           </form>
         </div>
+
         <h2 style={styles.sectionTitle}>🚗 إعلاناتي الحالية ({validCars.length})</h2>
         {validCars.length === 0 ? (
           <div style={styles.noCars}>لم تقم بنشر أي سيارات حتى الآن 🔍</div>
