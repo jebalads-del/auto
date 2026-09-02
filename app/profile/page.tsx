@@ -1,4 +1,3 @@
-cat > app/profile/page.tsx << 'EOF'
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -312,4 +311,3 @@ const styles = {
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
-EOF
