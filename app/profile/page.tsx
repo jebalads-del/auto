@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 
 interface Car {
@@ -20,6 +21,7 @@ interface Car {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState({ id: '', name: '', email: '', phone: '' });
@@ -38,6 +40,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
+        // جلب الجلسة الحالية
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {
@@ -48,6 +51,7 @@ export default function ProfilePage() {
         const userId = session.user.id;
         const userEmail = session.user.email || '';
 
+        // جلب بيانات المستخدم من جدول users
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('name, phone, email')
@@ -70,6 +74,7 @@ export default function ProfilePage() {
         setNewName(userName);
         setNewPhone(userPhone);
 
+        // جلب سيارات المستخدم
         const { data: carsData, error: carsError } = await supabase
           .from('cars')
           .select('*')
@@ -92,6 +97,7 @@ export default function ProfilePage() {
     loadUserData();
   }, [supabase]);
 
+  // تحديث الملف الشخصي
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdateMessage({ text: '', type: '' });
@@ -125,6 +131,7 @@ export default function ProfilePage() {
     }
   };
 
+  // تغيير كلمة المرور
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMessage({ text: '', type: '' });
@@ -140,6 +147,7 @@ export default function ProfilePage() {
     }
 
     try {
+      // التحقق من كلمة المرور الحالية
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: userInfo.email,
         password: currentPassword,
@@ -150,6 +158,7 @@ export default function ProfilePage() {
         return;
       }
 
+      // تغيير كلمة المرور
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -168,6 +177,19 @@ export default function ProfilePage() {
     }
   };
 
+  // تسجيل الخروج
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userEmail');
+      router.push('/login');
+    } catch (err) {
+      console.error('❌ خطأ في تسجيل الخروج:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
@@ -183,7 +205,10 @@ export default function ProfilePage() {
         <header style={styles.header}>
           <div style={styles.headerContent}>
             <h1 style={styles.headerTitle}>👤 حسابي الشخصي</h1>
-            <Link href="/" style={styles.headerLink}>🏠 العودة للرئيسية</Link>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <Link href="/" style={styles.headerLink}>🏠 العودة للرئيسية</Link>
+              <button onClick={handleLogout} style={styles.logoutButton}>🚪 خروج</button>
+            </div>
           </div>
         </header>
         <div style={styles.heroBody}>
@@ -288,6 +313,7 @@ const styles = {
   headerContent: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' },
   headerTitle: { fontSize: '20px', fontWeight: 'bold', color: '#ffffff', margin: 0 },
   headerLink: { fontSize: '14px', color: '#cbd5e1', textDecoration: 'none' },
+  logoutButton: { padding: '6px 14px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' },
   heroBody: { textAlign: 'center' as const, padding: '40px 20px 10px 20px' },
   heroMainTitle: { fontSize: '26px', fontWeight: '800', color: '#ffffff', marginBottom: '8px' },
   heroSubTitle: { fontSize: '14px', color: '#bfdbfe' },
