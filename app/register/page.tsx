@@ -10,7 +10,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6 خانات
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [step, setStep] = useState<'register' | 'verify'>('register');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -25,9 +25,7 @@ export default function RegisterPage() {
 
   const handleOtpChange = (element: HTMLInputElement, index: number) => {
     if (isNaN(Number(element.value))) return;
-
     setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
-
     if (element.value !== '' && element.nextSibling) {
       (element.nextSibling as HTMLInputElement).focus();
     }
@@ -40,6 +38,7 @@ export default function RegisterPage() {
     setSuccess('');
 
     try {
+      // 1. إنشاء المستخدم في Supabase Auth (بدون إرسال بريد)
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password: password,
@@ -48,21 +47,55 @@ export default function RegisterPage() {
             name: name.trim(),
             phone: phone.trim(),
           },
+          emailRedirectTo: `${window.location.origin}/register`,
         },
       });
 
       if (error) {
+        console.error('❌ SignUp error:', error);
         setError(error.message);
         setLoading(false);
         return;
       }
 
       if (data.user) {
+        // 2. إنشاء OTP عشوائي
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // حفظ OTP مؤقتاً
+        localStorage.setItem('tempOtp', otpCode);
+        localStorage.setItem('tempEmail', email.trim());
+        localStorage.setItem('tempName', name.trim());
+        localStorage.setItem('tempPhone', phone.trim());
+        localStorage.setItem('tempPassword', password);
+        
+        // 3. إرسال البريد عبر Resend
+        const resendResponse = await fetch('/api/resend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            token: otpCode,
+            name: name.trim(),
+          }),
+        });
+
+        const resendData = await resendResponse.json();
+
+        if (!resendResponse.ok) {
+          console.error('❌ Resend error:', resendData);
+          setError(resendData.message || 'حدث خطأ في إرسال البريد الإلكتروني');
+          setLoading(false);
+          return;
+        }
+
         setUserId(data.user.id);
         setStep('verify');
         setSuccess('✅ تم إرسال رمز التحقق إلى بريدك الإلكتروني');
+        console.log('✅ OTP sent:', otpCode);
       }
     } catch (err: any) {
+      console.error('❌ Error:', err);
       setError(err.message || 'حدث خطأ');
     } finally {
       setLoading(false);
@@ -76,6 +109,11 @@ export default function RegisterPage() {
     setSuccess('');
 
     const fullOtp = otp.join('');
+    const storedOtp = localStorage.getItem('tempOtp');
+    const storedEmail = localStorage.getItem('tempEmail') || email;
+    const storedName = localStorage.getItem('tempName') || name;
+    const storedPhone = localStorage.getItem('tempPhone') || phone;
+    const storedPassword = localStorage.getItem('tempPassword') || password;
 
     if (fullOtp.length < 6) {
       setError('يرجى إدخال رمز التحقق بالكامل (6 أرقام)');
@@ -83,28 +121,38 @@ export default function RegisterPage() {
       return;
     }
 
+    // التحقق من OTP محلياً
+    if (fullOtp !== storedOtp) {
+      setError('رمز التحقق غير صحيح');
+      setLoading(false);
+      return;
+    }
+
     try {
+      // تأكيد المستخدم في Supabase
       const { data, error } = await supabase.auth.verifyOtp({
-        email: email.trim(),
+        email: storedEmail,
         token: fullOtp,
         type: 'email',
       });
 
       if (error) {
+        console.error('❌ Verify error:', error);
         setError(error.message || 'رمز التحقق غير صحيح');
         setLoading(false);
         return;
       }
 
       if (data.user) {
+        // إضافة المستخدم إلى جدول users
         const { error: insertError } = await supabase
           .from('users')
           .insert([
             {
               id: data.user.id,
-              email: email.trim(),
-              name: name.trim(),
-              phone: phone.trim(),
+              email: storedEmail,
+              name: storedName,
+              phone: storedPhone,
               role: 'user',
               status: 'active',
             },
@@ -114,9 +162,16 @@ export default function RegisterPage() {
           console.error('❌ خطأ في إضافة المستخدم:', insertError);
         }
 
+        // تنظيف localStorage
+        localStorage.removeItem('tempOtp');
+        localStorage.removeItem('tempEmail');
+        localStorage.removeItem('tempName');
+        localStorage.removeItem('tempPhone');
+        localStorage.removeItem('tempPassword');
+
         localStorage.setItem('userId', data.user.id);
-        localStorage.setItem('userName', name.trim());
-        localStorage.setItem('userEmail', email.trim());
+        localStorage.setItem('userName', storedName);
+        localStorage.setItem('userEmail', storedEmail);
 
         setSuccess('✅ تم تفعيل حسابك بنجاح!');
         setTimeout(() => {
@@ -124,6 +179,7 @@ export default function RegisterPage() {
         }, 1500);
       }
     } catch (err: any) {
+      console.error('❌ Error:', err);
       setError(err.message || 'حدث خطأ');
     } finally {
       setLoading(false);
@@ -136,17 +192,34 @@ export default function RegisterPage() {
     setError('');
     setSuccess('');
 
+    const storedEmail = localStorage.getItem('tempEmail') || email;
+    const storedName = localStorage.getItem('tempName') || name;
+
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',  // ✅ تم التعديل هنا
-        email: email.trim(),
+      // إنشاء OTP جديد
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      localStorage.setItem('tempOtp', otpCode);
+
+      // إرسال البريد عبر Resend
+      const resendResponse = await fetch('/api/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: storedEmail,
+          token: otpCode,
+          name: storedName,
+        }),
       });
 
-      if (error) {
-        setError(error.message);
-      } else {
-        setSuccess('✅ تم إعادة إرسال الرمز إلى بريدك الإلكتروني');
+      if (!resendResponse.ok) {
+        const errorData = await resendResponse.json();
+        setError(errorData.message || 'حدث خطأ في إعادة الإرسال');
+        setLoading(false);
+        return;
       }
+
+      setSuccess('✅ تم إعادة إرسال الرمز إلى بريدك الإلكتروني');
+      console.log('✅ OTP resent:', otpCode);
     } catch (err: any) {
       setError(err.message || 'حدث خطأ');
     } finally {
@@ -160,7 +233,7 @@ export default function RegisterPage() {
       <div style={{ direction: 'rtl', maxWidth: '400px', margin: '50px auto', padding: '30px', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
         <h2 style={{ fontSize: '22px', marginBottom: '10px', textAlign: 'center' }}>🔐 تحقق من حسابك</h2>
         <p style={{ color: '#666', fontSize: '14px', textAlign: 'center', marginBottom: '20px' }}>
-          تم إرسال رمز التحقق إلى <br /><strong>{email}</strong>
+          تم إرسال رمز التحقق إلى <br /><strong>{email || localStorage.getItem('tempEmail')}</strong>
         </p>
 
         {error && (
