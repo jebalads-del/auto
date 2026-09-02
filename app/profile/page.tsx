@@ -1,3 +1,4 @@
+cat > app/profile/page.tsx << 'EOF'
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -38,7 +39,6 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // جلب الجلسة الحالية
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {
@@ -49,7 +49,6 @@ export default function ProfilePage() {
         const userId = session.user.id;
         const userEmail = session.user.email || '';
 
-        // جلب بيانات المستخدم من جدول users
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('name, phone, email')
@@ -72,7 +71,6 @@ export default function ProfilePage() {
         setNewName(userName);
         setNewPhone(userPhone);
 
-        // جلب سيارات المستخدم
         const { data: carsData, error: carsError } = await supabase
           .from('cars')
           .select('*')
@@ -95,7 +93,6 @@ export default function ProfilePage() {
     loadUserData();
   }, [supabase]);
 
-  // تحديث الملف الشخصي
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdateMessage({ text: '', type: '' });
@@ -129,7 +126,6 @@ export default function ProfilePage() {
     }
   };
 
-  // تغيير كلمة المرور
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMessage({ text: '', type: '' });
@@ -145,7 +141,6 @@ export default function ProfilePage() {
     }
 
     try {
-      // التحقق من كلمة المرور الحالية عن طريق محاولة تسجيل الدخول
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: userInfo.email,
         password: currentPassword,
@@ -156,7 +151,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // تغيير كلمة المرور
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -186,7 +180,6 @@ export default function ProfilePage() {
 
   return (
     <div style={styles.container}>
-      {/* Hero Section */}
       <div style={styles.heroSection}>
         <header style={styles.header}>
           <div style={styles.headerContent}>
@@ -208,7 +201,6 @@ export default function ProfilePage() {
         <div style={styles.settingsSection}>
           <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px' }}>⚙️ إعدادات الحساب</h3>
           
-          {/* رسالة التحديث */}
           {updateMessage.text && (
             <div style={{
               padding: '10px',
@@ -320,3 +312,4 @@ const styles = {
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
+EOF
