@@ -128,7 +128,7 @@ export default function CarDetailsPage() {
       </header>
 
       <div style={styles.content}>
-        {/* عرض الصور */}
+        {/* الصور في الأعلى */}
         <div style={styles.imageSection}>
           {car.images && car.images.length > 0 ? (
             <div style={styles.imageContainer}>
@@ -179,7 +179,7 @@ export default function CarDetailsPage() {
           )}
         </div>
 
-        {/* معلومات الإعلان */}
+        {/* المعلومات تحت الصورة */}
         <div style={styles.infoSection}>
           <h2 style={styles.title}>{car.brand} {car.model}</h2>
           
@@ -196,7 +196,7 @@ export default function CarDetailsPage() {
             )}
             {car.kilometers && (
               <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>📊 المشى</span>
+                <span style={styles.detailLabel}>📊 المشي</span>
                 <span style={styles.detailValue}>{car.kilometers.toLocaleString()} كم</span>
               </div>
             )}
@@ -312,11 +312,20 @@ const styles = {
   headerContent: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' },
   headerTitle: { fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0 },
   backLink: { fontSize: '14px', color: '#2563eb', textDecoration: 'none', fontWeight: '500' },
-  content: { maxWidth: '1200px', margin: '0 auto', padding: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' },
+  content: { 
+    maxWidth: '1200px', 
+    margin: '0 auto', 
+    padding: '20px', 
+    display: 'flex', 
+    flexDirection: 'column' as const, 
+    gap: '25px' 
+  },
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' },
   errorContainer: { textAlign: 'center' as const, padding: '40px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '12px', margin: '40px' },
-  imageSection: { position: 'relative' as const },
+  imageSection: { 
+    width: '100%' 
+  },
   imageContainer: { position: 'relative' as const },
   mainImageWrapper: { position: 'relative' as const, backgroundColor: '#f1f5f9', borderRadius: '12px', overflow: 'hidden' },
   mainImage: { width: '100%', height: '400px', objectFit: 'cover' as const },
@@ -325,7 +334,12 @@ const styles = {
   thumbnail: { width: '80px', height: '80px', objectFit: 'cover' as const, borderRadius: '8px', cursor: 'pointer', flexShrink: 0 },
   imageCounter: { position: 'absolute' as const, bottom: '15px', right: '15px', backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' },
   noImage: { width: '100%', height: '400px', backgroundColor: '#e2e8f0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#94a3b8' },
-  infoSection: { display: 'flex', flexDirection: 'column' as const, gap: '20px' },
+  infoSection: { 
+    width: '100%', 
+    display: 'flex', 
+    flexDirection: 'column' as const, 
+    gap: '20px' 
+  },
   title: { fontSize: '28px', fontWeight: 'bold', color: '#1e293b', margin: 0 },
   price: { fontSize: '32px', fontWeight: '800', color: '#16a34a' },
   detailsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
