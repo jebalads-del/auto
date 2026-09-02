@@ -20,6 +20,7 @@ interface Car {
   color?: string;
   description?: string;
   images?: string[];
+  user_id?: string;
 }
 
 interface User {
@@ -142,27 +143,29 @@ function AdminDashboardForm() {
       
       if (!error) {
         showMessage('🗑️ تم حذف الإعلان', 'success');
-        setCars(prev => prev.filter(c => c.id !== carId));
+        fetchCars();
+      } else {
+        showMessage('❌ فشل الحذف', 'error');
       }
     } catch {
       showMessage('❌ خطأ في الاتصال', 'error');
     }
   };
 
-  // تغيير حالة المستخدم (تفعيل/تعطيل)
-  const handleUserToggleStatus = async (userId: string, currentStatus: string) => {
+  // تغيير صلاحية المستخدم
+  const handleUserToggleRole = async (userId: string, currentRole: string) => {
     try {
-      let newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      let newRole = currentRole === 'admin' ? 'user' : 'admin';
       const { error } = await supabase
         .from('users')
-        .update({ status: newStatus })
+        .update({ role: newRole })
         .eq('id', userId);
       
       if (!error) {
-        showMessage(`✅ تم ${newStatus === 'active' ? 'تفعيل' : 'تعطيل'} المستخدم`, 'success');
+        showMessage('✅ تم تغيير صلاحية المستخدم', 'success');
         fetchUsers();
       } else {
-        showMessage('❌ فشل تحديث الحالة', 'error');
+        showMessage('❌ فشل تحديث الصلاحية', 'error');
       }
     } catch {
       showMessage('❌ خطأ في الاتصال', 'error');
@@ -171,7 +174,7 @@ function AdminDashboardForm() {
 
   // حذف المستخدم
   const handleUserDelete = async (userId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً؟')) return;
+    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
     
     try {
       const { error } = await supabase
@@ -181,7 +184,9 @@ function AdminDashboardForm() {
       
       if (!error) {
         showMessage('🗑️ تم حذف المستخدم', 'success');
-        setUsers(prev => prev.filter(u => u.id !== userId));
+        fetchUsers();
+      } else {
+        showMessage('❌ فشل حذف المستخدم', 'error');
       }
     } catch {
       showMessage('❌ خطأ في الاتصال', 'error');
@@ -229,7 +234,7 @@ function AdminDashboardForm() {
         </button>
       </div>
 
-      {/* تبويب الإعلانات */}
+      {/* تبويب الإعلانات مع عرض الصور */}
       {activeTab === 'cars' && (
         <div style={{ overflowX: 'auto', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', padding: '12px' }}>
           {carsLoading ? (
@@ -237,62 +242,148 @@ function AdminDashboardForm() {
           ) : cars.length === 0 ? (
             <p style={{ color: '#64748b', textAlign: 'center', padding: '20px', fontSize: '14px' }}>📭 لا توجد إعلانات متوفرة حالياً</p>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#1e293b', color: 'white' }}>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>الإعلان</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>السعر</th>
-                  <th style={{ padding: '10px', textAlign: 'center' }}>الحالة</th>
-                  <th style={{ padding: '10px', textAlign: 'center' }}>التحكم</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cars.map((car) => (
-                  <tr key={car.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '10px', fontWeight: '500' }}>
-                      {car.title || `${car.brand || ''} ${car.model || ''}`}
-                    </td>
-                    <td style={{ padding: '10px', color: '#16a34a', fontWeight: '600' }}>
-                      {car.price} {car.currency || 'د.ك'}
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        backgroundColor: car.status === 'approved' ? '#d1fae5' : car.status === 'pending' ? '#fef3c7' : car.status === 'sold' ? '#fee2e2' : '#f3f4f6',
-                        color: car.status === 'approved' ? '#065f46' : car.status === 'pending' ? '#92400e' : car.status === 'sold' ? '#991b1b' : '#4b5563'
-                      }}>
-                        {car.status === 'approved' ? '✅ مقبول' : car.status === 'pending' ? '⏳ قيد المراجعة' : car.status === 'sold' ? '💰 مباع' : car.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        {car.status !== 'approved' && car.status !== 'sold' && (
-                          <button onClick={() => handleCarAction(car.id, 'approve')} style={{ padding: '4px 8px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                            ✅ موافقة
-                          </button>
-                        )}
-                        {car.status === 'approved' && (
-                          <button onClick={() => handleCarAction(car.id, 'sell')} style={{ padding: '4px 8px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                            💰 مباع
-                          </button>
-                        )}
-                        <button onClick={() => handleCarDelete(car.id)} style={{ padding: '4px 8px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                          🗑️ حذف
-                        </button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+              {cars.map((car) => (
+                <div key={car.id} style={{ backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', padding: '15px' }}>
+                  
+                  {/* عرض الصورة */}
+                  {car.images && car.images.length > 0 ? (
+                    <div style={{ marginBottom: '10px' }}>
+                      <img 
+                        src={car.images[0]} 
+                        alt={`${car.brand} ${car.model}`}
+                        style={{ 
+                          width: '100%', 
+                          height: '180px', 
+                          objectFit: 'cover', 
+                          borderRadius: '8px',
+                          backgroundColor: '#f1f5f9'
+                        }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      {car.images.length > 1 && (
+                        <div style={{ display: 'flex', gap: '5px', marginTop: '5px' }}>
+                          {car.images.slice(1, 4).map((img: string, idx: number) => (
+                            <img 
+                              key={idx}
+                              src={img}
+                              alt={`صورة ${idx + 2}`}
+                              style={{ 
+                                width: '50px', 
+                                height: '50px', 
+                                objectFit: 'cover', 
+                                borderRadius: '4px',
+                                backgroundColor: '#f1f5f9'
+                              }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          ))}
+                          {car.images.length > 4 && (
+                            <div style={{ 
+                              width: '50px', 
+                              height: '50px', 
+                              backgroundColor: '#e2e8f0', 
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              color: '#64748b'
+                            }}>
+                              +{car.images.length - 4}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      width: '100%', 
+                      height: '180px', 
+                      backgroundColor: '#e2e8f0', 
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#94a3b8',
+                      fontSize: '14px',
+                      marginBottom: '10px'
+                    }}>
+                      🚗 لا توجد صورة
+                    </div>
+                  )}
+
+                  {/* معلومات الإعلان */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '16px' }}>
+                        {car.brand} {car.model}
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <div style={{ color: '#16a34a', fontWeight: '600', fontSize: '15px' }}>
+                        {car.price} {car.currency || 'د.ك'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>
+                        {car.year && <span>📅 {car.year}</span>}
+                        {car.kilometers && <span style={{ marginRight: '10px' }}>📊 {car.kilometers.toLocaleString()} كم</span>}
+                        {car.color && <span style={{ marginRight: '10px' }}>🎨 {car.color}</span>}
+                      </div>
+                      <div style={{ marginTop: '5px' }}>
+                        <span style={{
+                          padding: '3px 10px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          backgroundColor: car.status === 'approved' ? '#d1fae5' : car.status === 'pending' ? '#fef3c7' : car.status === 'sold' ? '#fee2e2' : '#f3f4f6',
+                          color: car.status === 'approved' ? '#065f46' : car.status === 'pending' ? '#92400e' : car.status === 'sold' ? '#991b1b' : '#4b5563'
+                        }}>
+                          {car.status === 'approved' ? '✅ مقبول' : car.status === 'pending' ? '⏳ قيد المراجعة' : car.status === 'sold' ? '💰 مباع' : car.status}
+                        </span>
+                      </div>
+                      {car.description && (
+                        <div style={{ fontSize: '12px', color: '#475569', marginTop: '5px', borderTop: '1px solid #e2e8f0', paddingTop: '5px' }}>
+                          {car.description.substring(0, 60)}...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* أزرار التحكم */}
+                  <div style={{ display: 'flex', gap: '5px', marginTop: '10px', flexWrap: 'wrap' }}>
+                    {car.status !== 'approved' && car.status !== 'sold' && (
+                      <button 
+                        onClick={() => handleCarAction(car.id, 'approve')} 
+                        style={{ padding: '5px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', flex: 1 }}
+                      >
+                        ✅ موافقة
+                      </button>
+                    )}
+                    {car.status === 'approved' && (
+                      <button 
+                        onClick={() => handleCarAction(car.id, 'sell')} 
+                        style={{ padding: '5px 12px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', flex: 1 }}
+                      >
+                        💰 مباع
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleCarDelete(car.id)} 
+                      style={{ padding: '5px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', flex: 1 }}
+                    >
+                      🗑️ حذف
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
 
-      {/* تبويب المستخدمين - النسخة المعدلة */}
+      {/* تبويب المستخدمين */}
       {activeTab === 'users' && (
         <div style={{ overflowX: 'auto', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', padding: '12px' }}>
           {usersLoading ? (
@@ -310,7 +401,6 @@ function AdminDashboardForm() {
               </thead>
               <tbody>
                 {users.map((user) => {
-                  // تحديد إذا كان هذا هو الأدمن الرئيسي
                   const isMainAdmin = user.email === 'admin@sayarty.store';
                   
                   return (
@@ -338,10 +428,9 @@ function AdminDashboardForm() {
                       </td>
                       <td style={{ padding: '10px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                          {/* زر تفعيل/تعطيل - يظهر لكل المستخدمين ما عدا الأدمن الرئيسي */}
                           {!isMainAdmin && (
                             <button 
-                              onClick={() => handleUserToggleStatus(user.id, user.status || 'active')} 
+                              onClick={() => handleUserToggleRole(user.id, user.role || 'user')} 
                               style={{ 
                                 padding: '4px 8px', 
                                 backgroundColor: user.status === 'active' ? '#f59e0b' : '#10b981', 
@@ -355,8 +444,6 @@ function AdminDashboardForm() {
                               {user.status === 'active' ? '⛔ تعطيل' : '✅ تفعيل'}
                             </button>
                           )}
-                          
-                          {/* زر حذف - يظهر لكل المستخدمين ما عدا الأدمن الرئيسي */}
                           {!isMainAdmin && (
                             <button 
                               onClick={() => handleUserDelete(user.id)} 
@@ -365,8 +452,6 @@ function AdminDashboardForm() {
                               🗑️ حذف
                             </button>
                           )}
-                          
-                          {/* إذا كان الأدمن الرئيسي، نعرض رسالة بدلاً من الأزرار */}
                           {isMainAdmin && (
                             <span style={{ fontSize: '12px', color: '#64748b', padding: '4px 8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
                               🔒 محمي
