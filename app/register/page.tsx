@@ -40,7 +40,6 @@ export default function RegisterPage() {
     setSuccess('');
 
     try {
-      // 1. تسجيل المستخدم في Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password: password,
@@ -85,7 +84,6 @@ export default function RegisterPage() {
     }
 
     try {
-      // التحقق من OTP
       const { data, error } = await supabase.auth.verifyOtp({
         email: email.trim(),
         token: fullOtp,
@@ -99,7 +97,6 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
-        // إضافة المستخدم إلى جدول users
         const { error: insertError } = await supabase
           .from('users')
           .insert([
@@ -117,7 +114,6 @@ export default function RegisterPage() {
           console.error('❌ خطأ في إضافة المستخدم:', insertError);
         }
 
-        // حفظ userId في localStorage
         localStorage.setItem('userId', data.user.id);
         localStorage.setItem('userName', name.trim());
         localStorage.setItem('userEmail', email.trim());
@@ -142,7 +138,7 @@ export default function RegisterPage() {
 
     try {
       const { error } = await supabase.auth.resend({
-        type: 'email',
+        type: 'signup',  // ✅ تم التعديل هنا
         email: email.trim(),
       });
 
