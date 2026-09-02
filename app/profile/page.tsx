@@ -40,17 +40,31 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // جلب المستخدم الحالي مباشرة
+        console.log('🔍 بدء تحميل بيانات المستخدم...');
+        
+        // جلب المستخدم الحالي
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
+        console.log('👤 user:', user);
+        console.log('❌ userError:', userError);
+
         if (userError || !user) {
           console.error('❌ خطأ في جلب المستخدم:', userError);
+          // محاولة الحصول على userId من localStorage
+          const savedId = localStorage.getItem('userId');
+          if (savedId) {
+            console.log('📦 استخدام userId من localStorage:', savedId);
+            setUserInfo(prev => ({ ...prev, id: savedId }));
+          }
           setLoading(false);
           return;
         }
 
         const userId = user.id;
         const userEmail = user.email || '';
+
+        console.log('✅ userId:', userId);
+        console.log('✅ userEmail:', userEmail);
 
         // جلب بيانات المستخدم من جدول users
         const { data: userData, error: dbError } = await supabase
@@ -60,8 +74,10 @@ export default function ProfilePage() {
           .single();
 
         if (dbError) {
-          console.error('❌ خطأ في جلب بيانات المستخدم:', dbError);
+          console.error('❌ خطأ في جلب بيانات المستخدم من DB:', dbError);
         }
+
+        console.log('📦 userData from DB:', userData);
 
         const userName = userData?.name || user.user_metadata?.name || userEmail.split('@')[0] || 'مستخدم';
         const userPhone = userData?.phone || '';
@@ -74,6 +90,11 @@ export default function ProfilePage() {
         });
         setNewName(userName);
         setNewPhone(userPhone);
+
+        // حفظ في localStorage كنسخة احتياطية
+        localStorage.setItem('userId', userId);
+        localStorage.setItem('userName', userName);
+        localStorage.setItem('userEmail', userEmail);
 
         // جلب سيارات المستخدم
         const { data: carsData, error: carsError } = await supabase
@@ -89,7 +110,7 @@ export default function ProfilePage() {
         }
 
       } catch (err) {
-        console.error('❌ خطأ:', err);
+        console.error('❌ خطأ غير متوقع:', err);
       } finally {
         setLoading(false);
       }
@@ -103,7 +124,13 @@ export default function ProfilePage() {
     e.preventDefault();
     setUpdateMessage({ text: '', type: '' });
 
-    if (!userInfo.id) {
+    // محاولة الحصول على userId من userInfo أو localStorage
+    let userId = userInfo.id;
+    if (!userId) {
+      userId = localStorage.getItem('userId') || '';
+    }
+
+    if (!userId) {
       setUpdateMessage({ text: '❌ لم يتم العثور على معرف المستخدم', type: 'error' });
       return;
     }
@@ -116,7 +143,7 @@ export default function ProfilePage() {
           phone: newPhone.trim(),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', userInfo.id);
+        .eq('id', userId);
 
       if (error) {
         setUpdateMessage({ text: `❌ ${error.message}`, type: 'error' });
