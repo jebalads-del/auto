@@ -47,7 +47,6 @@ export default function CarDetailsPage() {
       try {
         const carId = params.id as string;
         
-        // جلب بيانات الإعلان
         const { data: carData, error: carError } = await supabase
           .from('cars')
           .select('*')
@@ -62,7 +61,6 @@ export default function CarDetailsPage() {
 
         setCar(carData);
 
-        // جلب بيانات البائع
         if (carData.user_id) {
           const { data: userData, error: userError } = await supabase
             .from('users')
@@ -86,7 +84,6 @@ export default function CarDetailsPage() {
     fetchCarDetails();
   }, [params.id, supabase]);
 
-  // التنقل بين الصور
   const nextImage = () => {
     if (car?.images && currentImageIndex < car.images.length - 1) {
       setCurrentImageIndex(currentImageIndex + 1);
@@ -123,7 +120,6 @@ export default function CarDetailsPage() {
 
   return (
     <div style={styles.container}>
-      {/* الهيدر */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
@@ -133,53 +129,55 @@ export default function CarDetailsPage() {
 
       <div style={styles.content}>
         {/* عرض الصور */}
-        {car.images && car.images.length > 0 ? (
-          <div style={styles.imageContainer}>
-            <div style={styles.mainImageWrapper}>
-              <img 
-                src={car.images[currentImageIndex]} 
-                alt={`${car.brand} ${car.model}`}
-                style={styles.mainImage}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-              {car.images.length > 1 && (
-                <>
-                  <button onClick={prevImage} style={{ ...styles.navButton, left: '10px' }} disabled={currentImageIndex === 0}>
-                    ‹
-                  </button>
-                  <button onClick={nextImage} style={{ ...styles.navButton, right: '10px' }} disabled={currentImageIndex === car.images.length - 1}>
-                    ›
-                  </button>
-                </>
-              )}
-            </div>
-            {car.images.length > 1 && (
-              <div style={styles.thumbnailContainer}>
-                {car.images.map((img, idx) => (
-                  <img 
-                    key={idx}
-                    src={img}
-                    alt={`صورة ${idx + 1}`}
-                    style={{
-                      ...styles.thumbnail,
-                      border: idx === currentImageIndex ? '3px solid #2563eb' : '2px solid transparent'
-                    }}
-                    onClick={() => setCurrentImageIndex(idx)}
-                  />
-                ))}
+        <div style={styles.imageSection}>
+          {car.images && car.images.length > 0 ? (
+            <div style={styles.imageContainer}>
+              <div style={styles.mainImageWrapper}>
+                <img 
+                  src={car.images[currentImageIndex]} 
+                  alt={`${car.brand} ${car.model}`}
+                  style={styles.mainImage}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                {car.images.length > 1 && (
+                  <>
+                    <button onClick={prevImage} style={{ ...styles.navButton, left: '10px' }} disabled={currentImageIndex === 0}>
+                      ‹
+                    </button>
+                    <button onClick={nextImage} style={{ ...styles.navButton, right: '10px' }} disabled={currentImageIndex === car.images.length - 1}>
+                      ›
+                    </button>
+                  </>
+                )}
               </div>
-            )}
-            <div style={styles.imageCounter}>
-              {currentImageIndex + 1} / {car.images.length}
+              {car.images.length > 1 && (
+                <div style={styles.thumbnailContainer}>
+                  {car.images.map((img, idx) => (
+                    <img 
+                      key={idx}
+                      src={img}
+                      alt={`صورة ${idx + 1}`}
+                      style={{
+                        ...styles.thumbnail,
+                        border: idx === currentImageIndex ? '3px solid #2563eb' : '2px solid transparent'
+                      }}
+                      onClick={() => setCurrentImageIndex(idx)}
+                    />
+                  ))}
+                </div>
+              )}
+              <div style={styles.imageCounter}>
+                {currentImageIndex + 1} / {car.images.length}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div style={styles.noImage}>
-            🚗 لا توجد صور
-          </div>
-        )}
+          ) : (
+            <div style={styles.noImage}>
+              🚗 لا توجد صور
+            </div>
+          )}
+        </div>
 
         {/* معلومات الإعلان */}
         <div style={styles.infoSection}>
@@ -244,32 +242,62 @@ export default function CarDetailsPage() {
           </div>
 
           {/* أزرار التواصل */}
-          <div style={styles.contactButtons}>
-            {sellerPhone && (
-              <a 
-                href={`https://wa.me/${sellerPhone.replace(/[^0-9]/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={styles.whatsappButton}
-              >
-                💬 واتساب
-              </a>
-            )}
-            {sellerEmail && (
-              <a 
-                href={`mailto:${sellerEmail}?subject=استفسار عن إعلان ${car.brand} ${car.model}`}
-                style={styles.emailButton}
-              >
-                📧 إيميل
-              </a>
-            )}
-            {sellerPhone && (
-              <a 
-                href={`tel:${sellerPhone.replace(/[^0-9]/g, '')}`}
-                style={styles.callButton}
-              >
-                📞 اتصال
-              </a>
+          <div style={styles.contactSection}>
+            <h3 style={styles.sectionTitle}>📞 وسائل التواصل مع البائع</h3>
+            
+            <div style={styles.contactButtons}>
+              {sellerPhone ? (
+                <a 
+                  href={`https://wa.me/${sellerPhone.replace(/[^0-9]/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={styles.whatsappButton}
+                >
+                  <span style={{ fontSize: '20px' }}>💬</span>
+                  واتساب
+                </a>
+              ) : (
+                <div style={styles.disabledButton}>
+                  <span style={{ fontSize: '20px' }}>💬</span>
+                  رقم غير متوفر
+                </div>
+              )}
+              
+              {sellerEmail ? (
+                <a 
+                  href={`mailto:${sellerEmail}?subject=استفسار عن إعلان ${car.brand} ${car.model}`}
+                  style={styles.emailButton}
+                >
+                  <span style={{ fontSize: '20px' }}>📧</span>
+                  إيميل
+                </a>
+              ) : (
+                <div style={styles.disabledButton}>
+                  <span style={{ fontSize: '20px' }}>📧</span>
+                  إيميل غير متوفر
+                </div>
+              )}
+              
+              {sellerPhone ? (
+                <a 
+                  href={`tel:${sellerPhone.replace(/[^0-9]/g, '')}`}
+                  style={styles.callButton}
+                >
+                  <span style={{ fontSize: '20px' }}>📞</span>
+                  اتصال
+                </a>
+              ) : (
+                <div style={styles.disabledButton}>
+                  <span style={{ fontSize: '20px' }}>📞</span>
+                  رقم غير متوفر
+                </div>
+              )}
+            </div>
+            
+            {!sellerPhone && (
+              <p style={styles.noteText}>
+                💡 رقم الهاتف غير متوفر حالياً. يمكنك التواصل عن طريق الإيميل.
+              </p>
             )}
           </div>
         </div>
@@ -288,6 +316,7 @@ const styles = {
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' },
   errorContainer: { textAlign: 'center' as const, padding: '40px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '12px', margin: '40px' },
+  imageSection: { position: 'relative' as const },
   imageContainer: { position: 'relative' as const },
   mainImageWrapper: { position: 'relative' as const, backgroundColor: '#f1f5f9', borderRadius: '12px', overflow: 'hidden' },
   mainImage: { width: '100%', height: '400px', objectFit: 'cover' as const },
@@ -311,8 +340,94 @@ const styles = {
   sellerName: { fontSize: '16px', fontWeight: '600', color: '#1e293b' },
   sellerEmail: { fontSize: '14px', color: '#64748b' },
   sellerPhone: { fontSize: '14px', color: '#64748b' },
-  contactButtons: { display: 'flex', gap: '10px', flexWrap: 'wrap' as const, marginTop: '10px' },
-  whatsappButton: { flex: 1, padding: '14px', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center' as const, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
-  emailButton: { flex: 1, padding: '14px', backgroundColor: '#EA4335', color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center' as const, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
-  callButton: { flex: 1, padding: '14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center' as const, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }
+  contactSection: { 
+    backgroundColor: '#f8fafc', 
+    padding: '20px', 
+    borderRadius: '12px', 
+    border: '1px solid #e2e8f0',
+    marginTop: '10px'
+  },
+  contactButtons: { 
+    display: 'flex', 
+    gap: '12px', 
+    flexWrap: 'wrap' as const,
+    marginTop: '10px'
+  },
+  whatsappButton: { 
+    flex: 1, 
+    minWidth: '120px',
+    padding: '14px 20px', 
+    backgroundColor: '#25D366', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '10px', 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer', 
+    textAlign: 'center' as const, 
+    textDecoration: 'none', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: '10px'
+  },
+  emailButton: { 
+    flex: 1, 
+    minWidth: '120px',
+    padding: '14px 20px', 
+    backgroundColor: '#EA4335', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '10px', 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer', 
+    textAlign: 'center' as const, 
+    textDecoration: 'none', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: '10px'
+  },
+  callButton: { 
+    flex: 1, 
+    minWidth: '120px',
+    padding: '14px 20px', 
+    backgroundColor: '#2563eb', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '10px', 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer', 
+    textAlign: 'center' as const, 
+    textDecoration: 'none', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: '10px'
+  },
+  disabledButton: { 
+    flex: 1, 
+    minWidth: '120px',
+    padding: '14px 20px', 
+    backgroundColor: '#e2e8f0', 
+    color: '#94a3b8', 
+    borderRadius: '10px', 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    textAlign: 'center' as const, 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: '10px',
+    opacity: 0.7
+  },
+  noteText: { 
+    fontSize: '13px', 
+    color: '#64748b', 
+    marginTop: '10px',
+    textAlign: 'center' as const,
+    fontStyle: 'italic'
+  }
 };
