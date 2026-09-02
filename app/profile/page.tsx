@@ -40,29 +40,30 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // جلب الجلسة الحالية
-        const { data: { session } } = await supabase.auth.getSession();
+        // جلب المستخدم الحالي مباشرة
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        if (!session?.user) {
+        if (userError || !user) {
+          console.error('❌ خطأ في جلب المستخدم:', userError);
           setLoading(false);
           return;
         }
 
-        const userId = session.user.id;
-        const userEmail = session.user.email || '';
+        const userId = user.id;
+        const userEmail = user.email || '';
 
         // جلب بيانات المستخدم من جدول users
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: dbError } = await supabase
           .from('users')
           .select('name, phone, email')
           .eq('id', userId)
           .single();
 
-        if (userError) {
-          console.error('❌ خطأ في جلب بيانات المستخدم:', userError);
+        if (dbError) {
+          console.error('❌ خطأ في جلب بيانات المستخدم:', dbError);
         }
 
-        const userName = userData?.name || session.user.user_metadata?.name || userEmail.split('@')[0] || 'مستخدم';
+        const userName = userData?.name || user.user_metadata?.name || userEmail.split('@')[0] || 'مستخدم';
         const userPhone = userData?.phone || '';
 
         setUserInfo({
