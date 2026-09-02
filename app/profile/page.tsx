@@ -5,158 +5,188 @@ import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 
 interface Car {
-  id?: number; ID?: number; brand?: string; BRAND?: string;
-  model?: string; MODEL?: string; year?: number; YEAR?: number;
-  price?: number; PRICE?: number; kilometers?: number; KILOMETERS?: number;
-  color?: string; COLOR?: string; description?: string; DESCRIPTION?: string;
-  images?: any; IMAGES?: any; status?: string; STATUS?: string; currency?: string; CURRENCY?: string;
-  user_email?: string; USER_EMAIL?: string;
+  id?: number;
+  brand?: string;
+  model?: string;
+  year?: number;
+  price?: number;
+  kilometers?: number;
+  color?: string;
+  description?: string;
+  images?: any;
+  status?: string;
+  currency?: string;
+  user_id?: string;
 }
 
 export default function ProfilePage() {
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // تهيئة الحقول لتستقبل البيانات الحقيقية من المتصفح مباشرة
-  const [userInfo, setUserInfo] = useState({ id: '', name: 'مستعمل سيارتي', email: '', phone: '' });
-  const [newName, setNewName] = useState('مستعمل سيارتي');
+  const [userInfo, setUserInfo] = useState({ id: '', name: '', email: '', phone: '' });
+  const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [updateMessage, setUpdateMessage] = useState({ text: '', type: '' });
+  const [passwordMessage, setPasswordMessage] = useState({ text: '', type: '' });
 
-  // إنشاء اتصال Supabase مدمج ومباشر لحل المشكلة فوراً وعبر الواجهة
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-  const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   useEffect(() => {
-    const safetyTimer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-
-    const loadLocalUserData = async () => {
+    const loadUserData = async () => {
       try {
-        // قراءة المتغيرات المحلية المخزنة
-        const savedId = localStorage.getItem('userId') || '';
-        const savedName = localStorage.getItem('userName') || 'مستعمل سيارتي';
-        let savedEmail = localStorage.getItem('userEmail') || '';
-        let dbPhone = '';
-
-        // الحل السحري الصارم: جلب الإيميل الحقيقي والآمن مباشرة من جلسة Supabase لكسر التعليق
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && user.email) {
-          savedEmail = user.email;
-          localStorage.setItem('userEmail', savedEmail);
+        // جلب الجلسة الحالية
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          setLoading(false);
+          return;
         }
 
-        // جلب الهاتف من قاعدة البيانات المحلية الخاصة بك باستخدام المعرف الرقمي
-        if (savedId) {
-          const userRes = await fetch(`/api/user/${savedId}`, { cache: 'no-store' });
-          if (userRes.ok) {
-            const userData = await userRes.json();
-            if (userData && userData.success && userData.user) {
-              dbPhone = userData.user.phone || '';
-              // حماية إضافية في حال عدم توفر الإيميل في الجلسة نأخذه من الـ API
-              if (!savedEmail && userData.user.email) {
-                savedEmail = userData.user.email;
-                localStorage.setItem('userEmail', savedEmail);
-              }
-            }
-          }
+        const userId = session.user.id;
+        const userEmail = session.user.email || '';
+
+        // جلب بيانات المستخدم من جدول users
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('name, phone, email')
+          .eq('id', userId)
+          .single();
+
+        if (userError) {
+          console.error('❌ خطأ في جلب بيانات المستخدم:', userError);
         }
 
-        // حقن وتثبيت البيانات الحقيقية 100% داخل حقول الواجهة والشريط الأزرق العلوي
-        setUserInfo({ id: savedId, name: savedName, email: savedEmail, phone: dbPhone });
-        setNewName(savedName);
-        setNewPhone(dbPhone);
+        const userName = userData?.name || session.user.user_metadata?.name || userEmail.split('@')[0] || 'مستخدم';
+        const userPhone = userData?.phone || '';
 
-        // جلب السيارات وتصفيتها بناءً على البريد الإلكتروني
-        if (savedEmail) {
-          const carsRes = await fetch('/api/cars', { cache: 'no-store' });
-          if (carsRes.ok) {
-            const carsData = await carsRes.json();
-            if (carsData && carsData.success && Array.isArray(carsData.cars)) {
-              const filtered = carsData.cars.filter((car: any) => {
-                const carEmail = car.user_email || car.USER_EMAIL || car.email || car.EMAIL || '';
-                return carEmail.toLowerCase() === savedEmail.trim().toLowerCase();
-              });
-              setMyCars(filtered);
-            }
-          }
+        setUserInfo({
+          id: userId,
+          name: userName,
+          email: userEmail,
+          phone: userPhone,
+        });
+        setNewName(userName);
+        setNewPhone(userPhone);
+
+        // جلب سيارات المستخدم
+        const { data: carsData, error: carsError } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (carsError) {
+          console.error('❌ خطأ في جلب السيارات:', carsError);
+        } else {
+          setMyCars(carsData || []);
         }
-      } catch (error) {
-        console.error(error);
+
+      } catch (err) {
+        console.error('❌ خطأ:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadLocalUserData();
-    return () => clearTimeout(safetyTimer);
-  }, []);
+    loadUserData();
+  }, [supabase]);
 
+  // تحديث الملف الشخصي
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUpdateMessage({ text: '', type: '' });
+
     if (!userInfo.id) {
-      alert('خطأ: لم يتم العثور على معرف المستخدم الرقمي المخزن محلياً، الرجاء إعادة تسجيل الدخول لتحديث البيانات');
+      setUpdateMessage({ text: '❌ لم يتم العثور على معرف المستخدم', type: 'error' });
       return;
     }
+
     try {
-      const res = await fetch('/api/user/update', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          id: userInfo.id, 
-          name: newName, 
-          phone: newPhone 
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: newName.trim(),
+          phone: newPhone.trim(),
+          updated_at: new Date().toISOString(),
         })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        alert('تم تحديث بياناتك الشخصية بنجاح واكتمل الحفظ! ✅');
-        localStorage.setItem('userName', newName);
-        setUserInfo(prev => ({ ...prev, name: newName, phone: newPhone }));
-      } else {
-        alert(data.message || 'فشل السيرفر في معالجة طلب الحفظ');
+        .eq('id', userInfo.id);
+
+      if (error) {
+        setUpdateMessage({ text: `❌ ${error.message}`, type: 'error' });
+        return;
       }
-    } catch {
-      alert('خطأ في شبكة الاتصال أثناء التحديث');
-    }
-  };
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentPassword || !newPassword) return alert('الرجاء تعبئة كافة حقول كلمة السر');
-    try {
-      const res = await fetch('/api/user/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword })
-      });
-      if (res.ok) {
-        alert('تم تغيير كلمة السر بنجاح! 🔒');
-        setCurrentPassword('');
-        setNewPassword('');
-      } else {
-        alert('فشل تغيير كلمة السر، تأكد من الكلمة الحالية');
-      }
-    } catch {
-      alert('خطأ في الاتصال بالسيرفر');
+
+      setUserInfo(prev => ({ ...prev, name: newName.trim(), phone: newPhone.trim() }));
+      localStorage.setItem('userName', newName.trim());
+      setUpdateMessage({ text: '✅ تم تحديث بياناتك الشخصية بنجاح!', type: 'success' });
+
+    } catch (err: any) {
+      setUpdateMessage({ text: `❌ ${err.message || 'حدث خطأ'}`, type: 'error' });
     }
   };
 
-  const validCars = Array.isArray(myCars) ? myCars : [];
+  // تغيير كلمة المرور
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordMessage({ text: '', type: '' });
+
+    if (!currentPassword || !newPassword) {
+      setPasswordMessage({ text: '❌ الرجاء تعبئة كافة حقول كلمة السر', type: 'error' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordMessage({ text: '❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل', type: 'error' });
+      return;
+    }
+
+    try {
+      // التحقق من كلمة المرور الحالية عن طريق محاولة تسجيل الدخول
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: userInfo.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        setPasswordMessage({ text: '❌ كلمة المرور الحالية غير صحيحة', type: 'error' });
+        return;
+      }
+
+      // تغيير كلمة المرور
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        setPasswordMessage({ text: `❌ ${updateError.message}`, type: 'error' });
+        return;
+      }
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setPasswordMessage({ text: '✅ تم تغيير كلمة السر بنجاح! 🔒', type: 'success' });
+
+    } catch (err: any) {
+      setPasswordMessage({ text: `❌ ${err.message || 'حدث خطأ'}`, type: 'error' });
+    }
+  };
 
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>جاري فتح ملفك الشخصي بأمان...</p>
+        <p style={{ fontFamily: 'sans-serif', color: '#64748b', marginTop: '15px' }}>⏳ جاري تحميل الملف الشخصي...</p>
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
+      {/* Hero Section */}
       <div style={styles.heroSection}>
         <header style={styles.header}>
           <div style={styles.headerContent}>
@@ -165,8 +195,8 @@ export default function ProfilePage() {
           </div>
         </header>
         <div style={styles.heroBody}>
-          <h2 style={styles.heroMainTitle}>{userInfo.name}</h2>
-          <p style={styles.heroSubTitle}>{userInfo.email || 'جاري تحميل البريد الإلكتروني...'}</p>
+          <h2 style={styles.heroMainTitle}>{userInfo.name || 'مستخدم'}</h2>
+          <p style={styles.heroSubTitle}>{userInfo.email || 'البريد الإلكتروني'}</p>
         </div>
       </div>
 
@@ -176,60 +206,83 @@ export default function ProfilePage() {
         </div>
 
         <div style={styles.settingsSection}>
-          <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px' }}>⚙️ إعدادات الحساب والأمان</h3>
+          <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px' }}>⚙️ إعدادات الحساب</h3>
           
-          <form onSubmit={handleUpdateProfile} style={{ marginBottom: '25px' }}>
+          {/* رسالة التحديث */}
+          {updateMessage.text && (
+            <div style={{
+              padding: '10px',
+              backgroundColor: updateMessage.type === 'success' ? '#d1fae5' : '#fee2e2',
+              color: updateMessage.type === 'success' ? '#065f46' : '#991b1b',
+              borderRadius: '8px',
+              marginBottom: '15px',
+              fontSize: '14px'
+            }}>
+              {updateMessage.text}
+            </div>
+          )}
+
+          <form onSubmit={handleUpdateProfile}>
             <div style={{ marginBottom: '12px' }}>
-              <label style={styles.labelField}>البريد الإلكتروني (محمي لا يمكن تعديله) 🛡️</label>
-              <input type="text" value={userInfo.email} disabled style={styles.disabledInput} placeholder="جاري جلب البريد الإلكتروني المحمي..." />
+              <label style={styles.labelField}>البريد الإلكتروني (لا يمكن تعديله) 🛡️</label>
+              <input type="text" value={userInfo.email} disabled style={styles.disabledInput} />
             </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={styles.labelField}>الاسم الكامل</label>
-              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} style={styles.inputField} />
+              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} style={styles.inputField} required />
             </div>
             <div style={{ marginBottom: '15px' }}>
               <label style={styles.labelField}>رقم الهاتف</label>
-              <input type="text" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="أدخل رقم هاتفك هنا" style={styles.inputField} />
+              <input type="text" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="أدخل رقم هاتفك" style={styles.inputField} />
             </div>
-            <button type="submit" style={styles.saveButton}>حفظ التغييرات الشخصية</button>
+            <button type="submit" style={styles.saveButton}>💾 حفظ التغييرات</button>
           </form>
 
-          <hr style={{ border: '0', height: '1px', backgroundColor: '#e2e8f0', margin: '20px 0' }} />
+          <hr style={{ border: '0', height: '1px', backgroundColor: '#e2e8f0', margin: '25px 0' }} />
 
           <form onSubmit={handleChangePassword}>
             <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#475569', marginBottom: '10px' }}>🔒 تغيير كلمة السر</h4>
+            
+            {passwordMessage.text && (
+              <div style={{
+                padding: '10px',
+                backgroundColor: passwordMessage.type === 'success' ? '#d1fae5' : '#fee2e2',
+                color: passwordMessage.type === 'success' ? '#065f46' : '#991b1b',
+                borderRadius: '8px',
+                marginBottom: '15px',
+                fontSize: '14px'
+              }}>
+                {passwordMessage.text}
+              </div>
+            )}
+
             <div style={{ marginBottom: '12px' }}>
-              <input type="password" placeholder="كلمة السر الحالية" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={styles.inputField} />
+              <input type="password" placeholder="كلمة السر الحالية" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} style={styles.inputField} required />
             </div>
             <div style={{ marginBottom: '15px' }}>
-              <input type="password" placeholder="كلمة السر الجديدة" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={styles.inputField} />
+              <input type="password" placeholder="كلمة السر الجديدة (6 أحرف على الأقل)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={styles.inputField} required />
             </div>
-            <button type="submit" style={styles.passwordButton}>تحديث كلمة السر بأمان</button>
+            <button type="submit" style={styles.passwordButton}>🔑 تغيير كلمة السر</button>
           </form>
         </div>
 
-        <h2 style={styles.sectionTitle}>🚗 إعلاناتي الحالية ({validCars.length})</h2>
-        {validCars.length === 0 ? (
-          <div style={styles.noCars}>لم تقم بنشر أي سيارات حتى الآن 🔍</div>
+        <h2 style={styles.sectionTitle}>🚗 إعلاناتي ({myCars.length})</h2>
+        {myCars.length === 0 ? (
+          <div style={styles.noCars}>📭 لم تقم بنشر أي سيارات حتى الآن</div>
         ) : (
           <div style={styles.grid}>
-            {validCars.map((car) => {
-              if (!car) return null;
-              const carId = car.id || car.ID;
-              const carBrand = car.brand || car.BRAND || '';
-              const carModel = car.model || car.MODEL || '';
-              const carPrice = car.price || car.PRICE || 0;
-              const carCurrency = car.currency || car.CURRENCY || '';
-              return (
-                <div key={carId} style={styles.card}>
-                  <div style={styles.cardBody}>
-                    <h3 style={styles.carTitle}>{carBrand} {carModel}</h3>
-                    <div style={styles.carPrice}>{carPrice.toLocaleString()} {carCurrency === 'SAR' ? 'ر.س' : 'د.ك'}</div>
-                    <Link href={`/car/${carId}`} style={styles.viewLink}>معاينة الإعلان ←</Link>
+            {myCars.map((car) => (
+              <div key={car.id} style={styles.card}>
+                <div style={styles.cardBody}>
+                  <h3 style={styles.carTitle}>{car.brand} {car.model}</h3>
+                  <div style={styles.carPrice}>{car.price?.toLocaleString()} {car.currency === 'SAR' ? 'ر.س' : 'د.ك'}</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
+                    {car.status === 'approved' ? '✅ مقبول' : car.status === 'pending' ? '⏳ قيد المراجعة' : car.status}
                   </div>
+                  <Link href={`/car/${car.id}`} style={styles.viewLink}>🔍 معاينة الإعلان</Link>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -262,8 +315,8 @@ const styles = {
   card: { backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' },
   cardBody: { padding: '20px' },
   carTitle: { fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px', marginTop: 0 },
-  carPrice: { fontSize: '18px', fontWeight: '800', color: '#10b981', marginBottom: '12px' },
+  carPrice: { fontSize: '18px', fontWeight: '800', color: '#10b981', marginBottom: '8px' },
   viewLink: { display: 'block', textAlign: 'center' as const, backgroundColor: '#f8fafc', color: '#475569', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', border: '1px solid #e2e8f0' },
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
-  spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #3b82f6', borderRadius: '50%' }
+  spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
