@@ -117,7 +117,7 @@ export default function ProfilePage() {
         localStorage.setItem('userName', newName);
         setUserInfo(prev => ({ ...prev, name: newName, phone: newPhone }));
       } else {
-        alert(data.message || 'فشل السيرفر في معالجة طلب الحفظ');
+        alert('فشل الحفظ بسبب: ' + JSON.stringify(data));
       }
     } catch {
       alert('خطأ في شبكة الاتصال أثناء التحديث');
