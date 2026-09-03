@@ -115,7 +115,8 @@ export default function HomePage() {
                       {firstImage ? (
                         <div style={{ width: '100%', height: '130px', backgroundColor: '#f8fafc', overflow: 'hidden' }}>
                           <img 
-                            src={firstImage} 
+                        src={Array.isArray(firstImage) ? firstImage[0] : (firstImage || '')}
+
                             alt={`${car.brand} ${car.model}`}
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e) => {
