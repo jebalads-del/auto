@@ -59,25 +59,29 @@ export default function HomePage() {
   return (
     <div style={{ direction: 'rtl', padding: '16px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       
-      {/* الـ Header الفاخر المطور بالأزرار المتناسقة والمصغرة */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '12px 16px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
+      {/* الـ Header الفاخر المطور - تم إجبار التوزيع ليكون عمودياً للأزرار بشكل قاطع */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px 16px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
+        
+        {/* عنوان الموقع الجذاب */}
         <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>🚗 سيارتي ستور</h1>
         
-        {/* صندوق الأزرار الجانبية المصغرة والأنيقة */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* 1. زر نشر الإعلان الأخضر الموجه لتسجيل الدخول */}
-          <Link href="/login">
-            <button style={{ padding: '8px 14px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: '0.2s', boxShadow: '0 2px 6px rgba(22,163,74,0.2)' }}>
+        {/* صندوق عمودي صارم (flexDirection: column) يُجبر الأزرار أن تكون مستطيلة ومتساوية وتحت بعضها فوراً */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '120px', alignItems: 'stretch', justifyContent: 'center' }}>
+          
+          {/* 1. زر نشر الإعلان الأخضر المستطيل (العلوي) */}
+          <Link href="/login" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
+            <button style={{ width: '100%', padding: '9px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 4px rgba(22,163,74,0.15)', textAlign: 'center', display: 'block', boxSizing: 'border-box' }}>
               ➕ نشر إعلان
             </button>
           </Link>
 
-          {/* 2. زر دخول حسابي الأزرق المصغر لتناسق الهيدر */}
-          <Link href="/login">
-            <button style={{ padding: '8px 14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: '0.2s', boxShadow: '0 2px 6px rgba(37,99,235,0.2)' }}>
+          {/* 2. زر دخول حسابي الأزرق المستطيل والمتطابق تماماً وتحته مباشرة (السفلي) */}
+          <Link href="/login" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
+            <button style={{ width: '100%', padding: '9px 0', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 4px rgba(37,99,235,0.15)', textAlign: 'center', display: 'block', boxSizing: 'border-box' }}>
               🔑 دخول
             </button>
           </Link>
+
         </div>
       </div>
 
@@ -101,7 +105,7 @@ export default function HomePage() {
             /* شبكة العرض العصرية المكونة من صفين متناسقين تماماً */
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
               {cars.map((car) => {
-                const firstImage = car.images && car.images.length > 0 ? car.images[0] : null;
+                const firstImage = car.images && car.images.length > 0 ? car.images : null;
                 
                 return (
                   <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
