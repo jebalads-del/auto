@@ -23,11 +23,10 @@ export default function HomePage() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // المزامنة الذكية لمتغيرات البيئة لضمان جلب البيانات دون انقطاع
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
-  const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   useEffect(() => {
     const fetchCars = async () => {
@@ -41,13 +40,13 @@ export default function HomePage() {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error('❌ خطأ في جلب البيانات:', error);
+          console.error('❌ خطأ:', error);
         } else {
-          console.log('✅ تم جلب الإعلانات بنجاح:', data?.length || 0);
+          console.log('✅ تم جلب الإعلانات:', data?.length || 0);
           setCars(data || []);
         }
       } catch (err) {
-        console.error('❌ خطأ غير متوقع:', err);
+        console.error('❌ خطأ:', err);
       } finally {
         setLoading(false);
       }
@@ -57,90 +56,136 @@ export default function HomePage() {
   }, [supabase]);
 
   return (
-    <div style={{ direction: 'rtl', padding: '16px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+    <div style={{ direction: 'rtl', padding: '20px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       
-      {/* الـ Header الفاخر */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px 20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>🚗 سيارتي ستور</h1>
-        <Link href="/login">
-          <button style={{ padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: '0.2s', boxShadow: '0 4px 10px rgba(37,99,235,0.2)' }}>
-            🔑 دخول / حسابي
-          </button>
-        </Link>
+      {/* Header مع زرين */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', backgroundColor: 'white', padding: '12px 20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🚗 سيارتي ستور</h1>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <Link href="/login" style={{ textDecoration: 'none' }}>
+            <button style={{ 
+              padding: '6px 14px', 
+              backgroundColor: '#2563eb', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '6px', 
+              cursor: 'pointer', 
+              fontSize: '13px',
+              fontWeight: '500'
+            }}>
+              🔑 تسجيل الدخول
+            </button>
+          </Link>
+          <Link href="/login" style={{ textDecoration: 'none' }}>
+            <button style={{ 
+              padding: '6px 14px', 
+              backgroundColor: '#10b981', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '6px', 
+              cursor: 'pointer', 
+              fontSize: '13px',
+              fontWeight: '500'
+            }}>
+              ➕ نشر إعلانك
+            </button>
+          </Link>
+        </div>
       </div>
 
-      <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#1e293b', paddingRight: '4px' }}>
-        🚙 أحدث السيارات المعروضة
+      <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '20px', color: '#1e293b' }}>
+        🚙 أحدث الإعلانات
       </h2>
 
       {loading && (
-        <div style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '15px' }}>
-          ⏳ جاري تصفح أحدث السيارات الفاخرة...
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          ⏳ جاري تحميل الإعلانات...
         </div>
       )}
 
       {!loading && (
         <>
           {cars.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '80px 20px', backgroundColor: 'white', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-              <p style={{ fontSize: '16px', color: '#64748b', margin: 0 }}>📭 لا توجد سيارات معروضة للبيع حالياً</p>
+            <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: 'white', borderRadius: '12px' }}>
+              <p style={{ fontSize: '18px', color: '#64748b' }}>📭 لا توجد إعلانات متاحة حالياً</p>
             </div>
           ) : (
-            /* شبكة العرض العصرية المكونة من صفين متناسقين تماماً */
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
               {cars.map((car) => {
                 const firstImage = car.images && car.images.length > 0 ? car.images[0] : null;
                 
                 return (
-                  <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <div style={{ backgroundColor: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #eecbd5e1', display: 'flex', flexDirection: 'column', height: '100%', cursor: 'pointer', transition: '0.2s' }}>
-                      
-                      {/* 1. الصورة بتنسيق زوايا دائرية فاخرة */}
-                      {firstImage ? (
-                        <div style={{ width: '100%', height: '130px', backgroundColor: '#f8fafc', overflow: 'hidden' }}>
-                          <img 
-                            src={firstImage} 
-                            alt={`${car.brand} ${car.model}`}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            onError={(e) => {
-                              console.error('❌ خطأ في الصورة:', firstImage);
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div style={{ width: '100%', height: '130px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '13px' }}>
-                          🚗 لا توجد صورة
-                        </div>
-                      )}
-
-                      {/* 2. بيانات السيارة الأساسية بتصميم مريح وبسيط */}
-                      <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px', flexGrow: 1 }}>
-                        <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {car.brand} {car.model}
-                        </h3>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#64748b' }}>
-                          {car.year && <span>📅 {car.year}</span>}
-                          {car.kilometers && <span>• 📊 {car.kilometers.toLocaleString()} كم</span>}
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginTop: 'auto', paddingTop: '6px' }}>
-                          <span style={{ fontSize: '15px', fontWeight: '800', color: '#16a34a' }}>
-                            {car.price} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
-                          </span>
-                        </div>
+                  <div key={car.id} style={{ backgroundColor: 'white', borderRadius: '12px', padding: '15px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                    
+                    {firstImage ? (
+                      <div style={{ marginBottom: '12px' }}>
+                        <img 
+                          src={firstImage} 
+                          alt={`${car.brand} ${car.model}`}
+                          style={{ 
+                            width: '100%', 
+                            height: '180px', 
+                            objectFit: 'cover', 
+                            borderRadius: '8px',
+                            backgroundColor: '#f1f5f9'
+                          }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
                       </div>
-
-                      {/* 3. زر التفاصيل السفلي الأنيق لزيادة الجمال البصري */}
-                      <div style={{ padding: '0 12px 12px 12px' }}>
-                        <button style={{ width: '100%', padding: '8px', backgroundColor: '#f1f5f9', color: '#334155', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                          تفاصيل الإعلان 👀
-                        </button>
+                    ) : (
+                      <div style={{ 
+                        width: '100%', 
+                        height: '180px', 
+                        backgroundColor: '#e2e8f0', 
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#94a3b8',
+                        fontSize: '14px',
+                        marginBottom: '12px'
+                      }}>
+                        🚗 لا توجد صورة
                       </div>
+                    )}
 
+                    <div style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '5px' }}>
+                      {car.brand} {car.model}
                     </div>
-                  </Link>
+                    <div style={{ color: '#16a34a', fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>
+                      {car.price} {car.currency || 'د.ك'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#64748b' }}>
+                      {car.year && <span>📅 {car.year}</span>}
+                      {car.kilometers && <span style={{ marginRight: '10px' }}>📊 {car.kilometers.toLocaleString()} كم</span>}
+                      {car.color && <span style={{ marginRight: '10px' }}>🎨 {car.color}</span>}
+                    </div>
+                    {car.description && (
+                      <div style={{ fontSize: '13px', color: '#475569', marginTop: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '8px' }}>
+                        {car.description.substring(0, 100)}...
+                      </div>
+                    )}
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '10px' }}>
+                      🕐 {new Date(car.created_at).toLocaleDateString('ar-KW')}
+                    </div>
+                    <Link href={`/car/${car.id}`} style={{ textDecoration: 'none' }}>
+                      <button style={{
+                        width: '100%',
+                        marginTop: '10px',
+                        padding: '8px',
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '13px'
+                      }}>
+                        🔍 تفاصيل الإعلان
+                      </button>
+                    </Link>
+                  </div>
                 );
               })}
             </div>
@@ -148,8 +193,7 @@ export default function HomePage() {
         </>
       )}
 
-      {/* الـ Footer */}
-      <div style={{ textAlign: 'center', marginTop: '50px', padding: '20px 0', color: '#94a3b8', fontSize: '12px', borderTop: '1px solid #e2e8f0' }}>
+      <div style={{ textAlign: 'center', marginTop: '40px', padding: '20px', color: '#94a3b8', fontSize: '14px', borderTop: '1px solid #e2e8f0' }}>
         © 2026 سيارتي ستور - جميع الحقوق محفوظة
       </div>
     </div>
