@@ -58,7 +58,6 @@ export default function HomePage() {
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       
-      {/* Header مع زرين */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', backgroundColor: 'white', padding: '12px 20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🚗 سيارتي ستور</h1>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
