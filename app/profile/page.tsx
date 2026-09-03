@@ -40,9 +40,10 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadUserData = async () => {
       try {
+        setLoading(true);
         console.log('🔍 بدء تحميل بيانات المستخدم...');
         
-        // جلب المستخدم الحالي
+        // 1. جلب المستخدم الحالي من Supabase Auth
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError || !user) {
@@ -54,40 +55,72 @@ export default function ProfilePage() {
         const userId = user.id;
         const userEmail = user.email || '';
 
-        console.log('✅ userId:', userId);
-        console.log('✅ userEmail:', userEmail);
+        console.log('✅ userId من Auth:', userId);
+        console.log('✅ userEmail من Auth:', userEmail);
 
-        // جلب بيانات المستخدم من جدول users
+        // 2. جلب بيانات المستخدم من جدول users
         const { data: userData, error: dbError } = await supabase
           .from('users')
           .select('name, phone, email')
-          .eq('id', userId)
-          .single();
+          .eq('id', userId);
 
-        if (dbError) {
-          console.error('❌ خطأ في جلب بيانات المستخدم من DB:', dbError);
+        console.log('📦 userData من قاعدة البيانات:', userData);
+        console.log('❌ dbError:', dbError);
+
+        // 3. معالجة البيانات
+        let userName = userEmail.split('@')[0] || 'مستخدم';
+        let userPhone = '';
+        let userEmailFromDB = userEmail;
+
+        if (userData && userData.length > 0) {
+          // إذا وجدت بيانات في جدول users
+          const userRecord = userData[0];
+          userName = userRecord.name || userName;
+          userPhone = userRecord.phone || '';
+          userEmailFromDB = userRecord.email || userEmail;
+          console.log('✅ تم جلب البيانات من جدول users');
+        } else {
+          console.log('⚠️ لا توجد بيانات في جدول users، سيتم إضافة المستخدم');
+          
+          // إذا لم يكن المستخدم في جدول users، أضفه
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert([
+              {
+                id: userId,
+                email: userEmail,
+                name: userName,
+                phone: '',
+                role: 'user',
+                status: 'active',
+              }
+            ]);
+
+          if (insertError) {
+            console.error('❌ خطأ في إضافة المستخدم:', insertError);
+          } else {
+            console.log('✅ تم إضافة المستخدم إلى جدول users');
+          }
         }
 
-        console.log('📦 userData from DB:', userData);
-
-        const userName = userData?.name || user.user_metadata?.name || userEmail.split('@')[0] || 'مستخدم';
-        const userPhone = userData?.phone || '';
-
+        // 4. تحديث State
         setUserInfo({
           id: userId,
           name: userName,
-          email: userEmail,
+          email: userEmailFromDB,
           phone: userPhone,
         });
         setNewName(userName);
         setNewPhone(userPhone);
 
-        // حفظ في localStorage
+        // 5. تحديث localStorage
         localStorage.setItem('userId', userId);
         localStorage.setItem('userName', userName);
-        localStorage.setItem('userEmail', userEmail);
+        localStorage.setItem('userEmail', userEmailFromDB);
 
-        // جلب سيارات المستخدم
+        console.log('✅ تم تعيين البيانات:', { name: userName, phone: userPhone, email: userEmailFromDB });
+
+        // 6. جلب سيارات المستخدم
         const { data: carsData, error: carsError } = await supabase
           .from('cars')
           .select('*')
@@ -98,6 +131,7 @@ export default function ProfilePage() {
           console.error('❌ خطأ في جلب السيارات:', carsError);
         } else {
           setMyCars(carsData || []);
+          console.log('✅ تم جلب السيارات:', carsData?.length || 0);
         }
 
       } catch (err) {
