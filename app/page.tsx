@@ -109,21 +109,21 @@ export default function HomePage() {
               <p style={{ fontSize: '18px', color: '#64748b' }}>📭 لا توجد إعلانات متاحة حالياً</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
               {cars.map((car) => {
                 const firstImage = car.images && car.images.length > 0 ? car.images[0] : null;
                 
                 return (
-                  <div key={car.id} style={{ backgroundColor: 'white', borderRadius: '12px', padding: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                  <div key={car.id} style={{ backgroundColor: 'white', borderRadius: '12px', padding: '15px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                     
                     {firstImage ? (
-                      <div style={{ marginBottom: '10px' }}>
+                      <div style={{ marginBottom: '12px' }}>
                         <img 
                           src={firstImage} 
                           alt={`${car.brand} ${car.model}`}
                           style={{ 
                             width: '100%', 
-                            height: '150px', 
+                            height: '180px', 
                             objectFit: 'cover', 
                             borderRadius: '8px',
                             backgroundColor: '#f1f5f9'
@@ -136,7 +136,7 @@ export default function HomePage() {
                     ) : (
                       <div style={{ 
                         width: '100%', 
-                        height: '150px', 
+                        height: '180px', 
                         backgroundColor: '#e2e8f0', 
                         borderRadius: '8px',
                         display: 'flex',
@@ -144,36 +144,44 @@ export default function HomePage() {
                         justifyContent: 'center',
                         color: '#94a3b8',
                         fontSize: '14px',
-                        marginBottom: '10px'
+                        marginBottom: '12px'
                       }}>
-                        🚗
+                        🚗 لا توجد صورة
                       </div>
                     )}
 
-                    <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '3px' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '5px' }}>
                       {car.brand} {car.model}
                     </div>
-                    <div style={{ color: '#16a34a', fontSize: '18px', fontWeight: 'bold', marginBottom: '5px' }}>
+                    <div style={{ color: '#16a34a', fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>
                       {car.price} {car.currency || 'د.ك'}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    <div style={{ fontSize: '13px', color: '#64748b' }}>
                       {car.year && <span>📅 {car.year}</span>}
-                      {car.kilometers && <span style={{ marginRight: '8px' }}>📊 {car.kilometers.toLocaleString()} كم</span>}
-                      {car.color && <span style={{ marginRight: '8px' }}>🎨 {car.color}</span>}
+                      {car.kilometers && <span style={{ marginRight: '10px' }}>📊 {car.kilometers.toLocaleString()} كم</span>}
+                      {car.color && <span style={{ marginRight: '10px' }}>🎨 {car.color}</span>}
+                    </div>
+                    {car.description && (
+                      <div style={{ fontSize: '13px', color: '#475569', marginTop: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '8px' }}>
+                        {car.description.substring(0, 100)}...
+                      </div>
+                    )}
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '10px' }}>
+                      🕐 {new Date(car.created_at).toLocaleDateString('ar-KW')}
                     </div>
                     <Link href={`/car/${car.id}`} style={{ textDecoration: 'none' }}>
                       <button style={{
                         width: '100%',
-                        marginTop: '8px',
-                        padding: '6px',
+                        marginTop: '10px',
+                        padding: '8px',
                         backgroundColor: '#3b82f6',
                         color: 'white',
                         border: 'none',
                         borderRadius: '6px',
                         cursor: 'pointer',
-                        fontSize: '12px'
+                        fontSize: '13px'
                       }}>
-                        🔍 تفاصيل
+                        🔍 تفاصيل الإعلان
                       </button>
                     </Link>
                   </div>
