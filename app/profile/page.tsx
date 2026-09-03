@@ -42,20 +42,11 @@ export default function ProfilePage() {
       try {
         console.log('🔍 بدء تحميل بيانات المستخدم...');
         
-        // جلب المستخدم الحالي
+        // جلب المستخدم الحالي من Supabase
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        console.log('👤 user:', user);
-        console.log('❌ userError:', userError);
-
         if (userError || !user) {
           console.error('❌ خطأ في جلب المستخدم:', userError);
-          // محاولة الحصول على userId من localStorage
-          const savedId = localStorage.getItem('userId');
-          if (savedId) {
-            console.log('📦 استخدام userId من localStorage:', savedId);
-            setUserInfo(prev => ({ ...prev, id: savedId }));
-          }
           setLoading(false);
           return;
         }
@@ -81,20 +72,21 @@ export default function ProfilePage() {
 
         const userName = userData?.name || user.user_metadata?.name || userEmail.split('@')[0] || 'مستخدم';
         const userPhone = userData?.phone || '';
+        const userEmailFromDB = userData?.email || userEmail;
 
         setUserInfo({
           id: userId,
           name: userName,
-          email: userEmail,
+          email: userEmailFromDB,
           phone: userPhone,
         });
         setNewName(userName);
         setNewPhone(userPhone);
 
-        // حفظ في localStorage كنسخة احتياطية
+        // تحديث localStorage
         localStorage.setItem('userId', userId);
         localStorage.setItem('userName', userName);
-        localStorage.setItem('userEmail', userEmail);
+        localStorage.setItem('userEmail', userEmailFromDB);
 
         // جلب سيارات المستخدم
         const { data: carsData, error: carsError } = await supabase
@@ -124,7 +116,6 @@ export default function ProfilePage() {
     e.preventDefault();
     setUpdateMessage({ text: '', type: '' });
 
-    // محاولة الحصول على userId من userInfo أو localStorage
     let userId = userInfo.id;
     if (!userId) {
       userId = localStorage.getItem('userId') || '';
@@ -150,8 +141,14 @@ export default function ProfilePage() {
         return;
       }
 
-      setUserInfo(prev => ({ ...prev, name: newName.trim(), phone: newPhone.trim() }));
       localStorage.setItem('userName', newName.trim());
+      
+      setUserInfo(prev => ({ 
+        ...prev, 
+        name: newName.trim(), 
+        phone: newPhone.trim() 
+      }));
+      
       setUpdateMessage({ text: '✅ تم تحديث بياناتك الشخصية بنجاح!', type: 'success' });
 
     } catch (err: any) {
@@ -175,7 +172,6 @@ export default function ProfilePage() {
     }
 
     try {
-      // التحقق من كلمة المرور الحالية
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: userInfo.email,
         password: currentPassword,
@@ -186,7 +182,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // تغيير كلمة المرور
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
