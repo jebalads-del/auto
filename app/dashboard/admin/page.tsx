@@ -81,31 +81,31 @@ function AdminDashboardForm() {
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      setUsersLoading(true);
-      console.log('🔄 جلب المستخدمين...');
-      
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('❌ خطأ في جلب المستخدمين:', error);
-        setUsers([]);
-      } else {
-        console.log('✅ تم جلب المستخدمين:', data?.length || 0);
-        setUsers(data || []);
-      }
-    } catch (err) {
-      console.error('❌ خطأ:', err);
+const fetchUsers = async () => {
+  try {
+    setUsersLoading(true);
+    console.log('🔄 جلب المستخدمين...');
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('❌ خطأ في جلب المستخدمين:', error);
       setUsers([]);
-    } finally {
-      setUsersLoading(false);
+    } else {
+      console.log('✅ تم جلب المستخدمين:', data?.length || 0);
+      console.log('📦 بيانات المستخدمين:', data);
+      setUsers(data || []);
     }
-  };
-
+  } catch (err) {
+    console.error('❌ خطأ:', err);
+    setUsers([]);
+  } finally {
+    setUsersLoading(false);
+  }
+};
   useEffect(() => {
     fetchCars();
     fetchUsers();
