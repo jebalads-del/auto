@@ -410,6 +410,7 @@ export default function ProfilePage() {
 
   const handleRequestFeature = async () => {
     if (!selectedCarId) return;
+    // ======= كود معالجة وإرسال طلب التميز النظيف 100% =======
     try {
       setFeatureLoading(selectedCarId);
       setShowPaymentModal(false);
@@ -418,11 +419,10 @@ export default function ProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ featured_status: 'pending' })
       });
+
       if (res.ok) {
         alert('⭐ تم إرسال طلب التمييز بنجاح! سيقوم المشرف بتفعيله فور التأكد من الدفع.');
-        window.location.reload(); // <-- التحديث التلقائي الآمن والمضمون هنا
-      } else {
-
+        window.location.reload();
       } else {
         alert('❌ فشل إرسال الطلب');
       }
@@ -433,7 +433,6 @@ export default function ProfilePage() {
       setSelectedCarId(null);
     }
   };
-
 
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
