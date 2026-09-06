@@ -364,7 +364,7 @@ export default function ProfilePage() {
               <button 
                 type="button"
                 disabled={featureLoading === car.id}
-                onClick={() => { setSelectedCarId(car.id); setShowPaymentModal(true); }}
+                onClick={() => { setSelectedCarId(car.id ?? null); setShowPaymentModal(true); }}
                 style={{ width: '100%', padding: '6px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}
               >
                 ⭐ طلب ترقية لمميز
