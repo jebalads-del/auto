@@ -351,6 +351,25 @@ export default function ProfilePage() {
                   <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '10px' }}>
                     {car.status === 'approved' ? '✅ مقبول' : car.status === 'pending' ? '⏳ قيد المراجعة' : car.status}
                   </div>
+                           {/* زر الترقية الذهبي المدفوع والمربوط بالمنبثقة والسيرفر */}
+          <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {car.is_featured ? (
+              <span style={{ backgroundColor: '#fef3c7', color: '#d97706', padding: '6px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', textAlign: 'center', border: '1px solid #f59e0b' }}>🌟 مميز نشط لايف</span>
+            ) : car.featured_status === 'pending' ? (
+              <span style={{ backgroundColor: '#f3f4f6', color: '#4b5563', padding: '6px', borderRadius: '6px', fontSize: '11px', textAlign: 'center' }}>⏳ قيد المراجعة الماليّة</span>
+            ) : (
+              <button 
+                type="button"
+                disabled={featureLoading === car.id}
+                onClick={() => { setSelectedCarId(car.id); setShowPaymentModal(true); }}
+                style={{ width: '100%', padding: '6px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}
+              >
+                ⭐ طلب ترقية لمميز
+              </button>
+            )}
+          </div>
+
+
                   <Link href={`/car/${car.id}`} style={styles.viewLink}>🔍 معاينة الإعلان</Link>
                 </div>
               </div>
@@ -358,9 +377,58 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+      {showPaymentModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '15px', zIndex: 1000, color: '#000' }}>
+          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '400px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px' }}>⭐ ترقية الإعلان إلى مميز</h3>
+            <p style={{ fontSize: '13px', color: '#475569', marginBottom: '12px', lineHeight: '1.5' }}>تمنحك الترقية ظهور سيارتك في أعلى نتائج البحث بالصفحة الرئيسية دائماً لزيادة سرعة البيع.</p>
+            <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontSize: '12px', border: '1px solid #e2e8f0' }}>
+              <p style={{ fontWeight: 'bold', margin: '0 0 5px 0' }}>💰 طرق تحويل الرسوم المتاحة:</p>
+              <p style={{ margin: '3px 0' }}>• <b>Western Union:</b> الاسم الكامل: مدير الموقع - الدولة: الكويت</p>
+              <p style={{ margin: '3px 0' }}>• <b>PayPal:</b> admin@sayarty.store</p>
+              <p style={{ margin: '8px 0 0 0', color: '#2563eb', fontWeight: 'bold' }}>* يرجى تحويل الرسوم المقررة ثم الضغط على زر التأكيد أدناه.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setShowPaymentModal(false); setSelectedCarId(null); }} style={{ padding: '8px 14px', backgroundColor: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>إلغاء</button>
+              <button onClick={handleRequestFeature} style={{ padding: '8px 14px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>✅ تم الدفع، إرسال الطلب</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
+  // ======= نظام التميز والدفع المطور لصفحة الملف الشخصي =======
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedCarId, setSelectedCarId] = useState<number | null>(null);
+  const [featureLoading, setFeatureLoading] = useState<number | null>(null);
+
+  const handleRequestFeature = async () => {
+    if (!selectedCarId) return;
+    try {
+      setFeatureLoading(selectedCarId);
+      setShowPaymentModal(false);
+      const res = await fetch(`/api/car/${selectedCarId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured_status: 'pending' })
+      });
+      if (res.ok) {
+        alert('⭐ تم إرسال طلب التمييز بنجاح! سيقوم المشرف بتفعيله فور التأكد من الدفع.');
+        setCars(prev => prev.map(c => c.id === selectedCarId ? { ...c, featured_status: 'pending' } : c));
+      } else {
+        alert('❌ فشل إرسال الطلب');
+      }
+    } catch {
+      alert('❌ خطأ في الاتصال بالخادم');
+    } finally {
+      setFeatureLoading(null);
+      setSelectedCarId(null);
+    }
+  };
+
 
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
