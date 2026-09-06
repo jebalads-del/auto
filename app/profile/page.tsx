@@ -420,7 +420,7 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         alert('⭐ تم إرسال طلب التمييز بنجاح! سيقوم المشرف بتفعيله فور التأكد من الدفع.');
-        setCars(prev => prev.map(c => c.id === selectedCarId ? { ...c, featured_status: 'pending' } : c));
+        setMyCars(prev => prev.map(c => c.id === selectedCarId ? { ...c, featured_status: 'pending' } : c));
       } else {
         alert('❌ فشل إرسال الطلب');
       }
