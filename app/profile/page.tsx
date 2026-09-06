@@ -420,7 +420,9 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         alert('⭐ تم إرسال طلب التمييز بنجاح! سيقوم المشرف بتفعيله فور التأكد من الدفع.');
-        fetchProfileData(); // <-- ضع هذه الدالة النظيفة هنا بدلاً من السطر القديم
+        window.location.reload(); // <-- التحديث التلقائي الآمن والمضمون هنا
+      } else {
+
       } else {
         alert('❌ فشل إرسال الطلب');
       }
