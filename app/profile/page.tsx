@@ -24,6 +24,10 @@ interface Car {
 }
 
 export default function ProfilePage() {
+  // حماية السيرفر: منع تشغيل الـ hooks أثناء الـ Prerendering حتى يكتمل تحميل المتصفح
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => { setIsClient(true); }, []);
+  if (!isClient) return <div style={{ textAlign: 'center', padding: '50px' }}>جاري تهيئة الحساب الشخصي...</div>;
   const router = useRouter();
   const [myCars, setMyCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
