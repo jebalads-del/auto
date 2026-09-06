@@ -18,6 +18,9 @@ interface Car {
   status?: string;
   currency?: string;
   user_id?: string;
+  is_featured?: boolean;
+  featured_status?: string | null;
+
 }
 
 export default function ProfilePage() {
