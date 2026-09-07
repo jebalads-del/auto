@@ -440,7 +440,7 @@ function ProfilePage() {
   };
 
 const styles = {
-  export default dynamic(() => Promise.resolve(ProfilePage), { ssr: false });
+ export default dynamicImport(() => Promise.resolve(ProfilePage), { ssr: false });
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   heroSection: { background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: '#ffffff', paddingBottom: '30px', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px' },
   header: { borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '15px 20px' },
