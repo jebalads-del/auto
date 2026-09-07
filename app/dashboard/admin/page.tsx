@@ -108,7 +108,7 @@ export default function AdminDashboardForm() {
   };
 
   const handleUserDelete = async (userId: string, userEmail: string) => {
-    if (userEmail === 'admin@sayarty.store') return; // حماية إضافية في الكود
+    if (userEmail === 'admin@sayarty.store') return; 
     if (!confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً؟')) return;
     try {
       const { error } = await supabase.from('users').delete().eq('id', userId);
@@ -157,7 +157,7 @@ export default function AdminDashboardForm() {
           {carsLoading ? <p>جاري تحميل السيارات...</p> : cars.map((car) => (
             <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 5px', borderBottom: '1px solid #e2e8f0', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {car.images && car.images[0] ? (
+                {car.images && car.images.length > 0 ? (
                   <img src={car.images[0]} alt="car" style={{ width: '70px', height: '50px', borderRadius: '6px', objectFit: 'cover', backgroundColor: '#e2e8f0' }} />
                 ) : (
                   <div style={{ width: '70px', height: '50px', borderRadius: '6px', backgroundColor: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#475569' }}>بلا صورة</div>
@@ -165,7 +165,7 @@ export default function AdminDashboardForm() {
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model} {car.year ? `(${car.year})` : ''}</div>
                   <div style={{ fontSize: '13px', color: '#059669', fontWeight: '600', marginTop: '2px' }}>{car.price} {car.currency || 'KWD'}</div>
-                  <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '8px', backgroundColor: car.status === 'sold' ? '#fee2e2' : '#d1fae5', color: car.status === 'sold' ? '#dc2626' : '#065f46', inlineSize: 'fit-content', display: 'inline-block', marginTop: '4px' }}>
+                  <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '8px', backgroundColor: car.status === 'sold' ? '#fee2e2' : '#d1fae5', color: car.status === 'sold' ? '#dc2626' : '#065f46', display: 'inline-block', marginTop: '4px' }}>
                     {car.status === 'sold' ? 'مباع' : 'نشط'}
                   </span>
                 </div>
@@ -195,7 +195,7 @@ export default function AdminDashboardForm() {
               </div>
               <div style={{ display: 'flex', gap: '5px' }}>
                 {user.email !== 'admin@sayarty.store' ? (
-                  <button onClick={() => handleUserDelete(user.id, user.email || '') style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>حذف الحساب</button>
+                  <button onClick={() => handleUserDelete(user.id, user.email || '')} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>حذف الحساب</button>
                 ) : (
                   <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', padding: '6px' }}>غير قابل للتعديل</span>
                 )}
