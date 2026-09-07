@@ -84,13 +84,6 @@ export default function AdminDashboardForm() {
     } catch { showMessage('❌ خطأ في الاتصال', 'error'); }
   };
 
-  const handleCarDelete = async (carId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
-    try {
-      const { error } = await supabase.from('cars').delete().eq('id', carId);
-      if (!error) { showMessage('🗑️ تم حذف الإعلان بنجاح', 'success'); fetchCars(); }
-    } catch { showMessage('❌ خطأ في الاتصال', 'error'); }
-  };
 
     return (
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
