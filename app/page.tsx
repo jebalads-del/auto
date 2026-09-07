@@ -163,12 +163,19 @@ export default function HomePage() {
                     <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{ backgroundColor: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', height: '100%', cursor: 'pointer', transition: '0.2s' }}>
                         
-                        {/* 1. الصورة بتنسيق زوايا دائرية فاخرة */}
-                        {firstImage ? (
-                          <div style={{ width: '100%', height: '130px', backgroundColor: '#f8fafc', overflow: 'hidden' }}>
-                            <img 
-                              src={Array.isArray(firstImage) ? firstImage[0] : (firstImage || '')}
-                              alt={`${car.brand} ${car.model}`}
+                                              {/* 1. الصورة بتنسيق زوايا دائرية فاخرة مع الشارة الخضراء الطافية */}
+                      {firstImage ? (
+                        <div style={{ width: '100%', height: '130px', backgroundColor: '#f8fafc', overflow: 'hidden', position: 'relative' }}>
+                          <img 
+                            src={Array.isArray(firstImage) ? firstImage[0] : (firstImage || '')}
+                            alt={`${car.brand} ${car.model}`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          {car.status === 'sold' && (
+                            <div style={{ position: 'absolute', top: '8px', right: '8px', backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', zIndex: 2 }}>🔒 مباعة</div>
+                          )}
+                        </div>
+
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           onError={(e) => {
                             console.error('❌ خطأ في الصورة:', firstImage);
