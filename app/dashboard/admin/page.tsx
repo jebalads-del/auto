@@ -45,7 +45,6 @@ export default function AdminDashboardForm() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
-  // 1. جلب الإعلانات بأمان عبر السيرفر رول المخفي في Vercel
   const fetchCars = async () => {
     try {
       setCarsLoading(true);
@@ -58,29 +57,13 @@ export default function AdminDashboardForm() {
     }
   };
 
-  // 2. جلب المستخدمين بأمان من جدول auth المحمي
   const fetchUsers = async () => {
     try {
       setUsersLoading(true);
-      // طلب البيانات من نظام السيرفر الخاص بـ Supabase مباشرة
-      const { data: { users: authUsers }, error } = await supabase.auth.admin.listUsers();
-      if (!error && authUsers) {
-        const mappedUsers = authUsers.map(u => ({
-          id: u.id,
-          email: u.email,
-          name: u.user_metadata?.name || u.email?.split('@')[0],
-          role: u.user_metadata?.role || 'user',
-          status: 'active',
-          created_at: u.created_at
-        }));
-        setUsers(mappedUsers);
-      } else {
-        // إذا فشل جلب الـ auth نقرأ من جدول public.users المخصص بحماية السيرفر رول
-        const { data } = await supabase.from('users').select('*');
-        if (data) setUsers(data);
-      }
-    } catch {
-      setUsers([]);
+      const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+      if (!error) setUsers(data || []);
+    } catch (err) {
+      console.error(err);
     } finally {
       setUsersLoading(false);
     }
@@ -91,12 +74,10 @@ export default function AdminDashboardForm() {
     fetchUsers();
   }, []);
 
-  // 3. تحديث حالة الإعلان إلى (مباع / موافق عليه) بالسيرفر رول
   const handleCarAction = async (carId: string, action: 'approve' | 'sell') => {
     try {
       let newStatus = action === 'approve' ? 'approved' : 'sold';
       const { error } = await supabase.from('cars').update({ status: newStatus }).eq('id', carId);
-      
       if (!error) {
         showMessage('✅ تم تحديث حالة الإعلان بنجاح', 'success');
         fetchCars();
@@ -108,10 +89,8 @@ export default function AdminDashboardForm() {
     }
   };
 
-  // 4. حذف الإعلان نهائياً بأمان
   const handleCarDelete = async (carId: string) => {
     if (!confirm('هل أنت متأكد من حذف هذا الإعلان نهائياً؟')) return;
-    
     try {
       const { error } = await supabase.from('cars').delete().eq('id', carId);
       if (!error) {
@@ -125,6 +104,36 @@ export default function AdminDashboardForm() {
     }
   };
 
+  const handleUserToggleRole = async (userId: string, currentRole: string) => {
+    try {
+      let newRole = currentRole === 'admin' ? 'user' : 'admin';
+      const { error } = await supabase.from('users').update({ role: newRole }).eq('id', userId);
+      if (!error) {
+        showMessage('✅ تم تغيير صلاحية المستخدم', 'success');
+        fetchUsers();
+      } else {
+        showMessage('❌ فشل تحديث الصلاحية', 'error');
+      }
+    } catch {
+      showMessage('❌ خطأ في الاتصال', 'error');
+    }
+  };
+
+  const handleUserDelete = async (userId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+    try {
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (!error) {
+        showMessage('🗑️ تم حذف المستخدم', 'success');
+        fetchUsers();
+      } else {
+        showMessage('❌ فشل حذف المستخدم', 'error');
+      }
+    } catch {
+      showMessage('❌ خطأ في الاتصال', 'error');
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
@@ -132,7 +141,7 @@ export default function AdminDashboardForm() {
 
   return (
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      {/* الواجهات والـ HTML الخاصة بك كما هي تماماً لضمان عدم تغير التصميم */}
+      
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🎛️ لوحة تحكم الإدارة</h1>
         <button onClick={handleLogout} style={{ padding: '8px 14px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>🚪 خروج</button>
@@ -153,21 +162,44 @@ export default function AdminDashboardForm() {
         </button>
       </div>
 
-      {/* هنا سيتم عرض الجداول بناءً على الـ Active Tab وتعمل الأزرار بكفاءة */}
       {activeTab === 'cars' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ fontSize: '16px', marginBottom: '15px' }}>قائمة الإعلانات الحالية</h2>
-          {cars.map((car) => (
-            <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid #e2e8f0' }}>
-              <div>{car.title || 'إعلان سيارة'} - <span style={{color: car.status === 'sold' ? 'red' : 'green'}}>{car.status}</span></div>
+          <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>قائمة الإعلانات الحالية</h2>
+          {carsLoading ? <p>جاري التحميل...</p> : cars.map((car) => (
+            <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 5px', borderBottom: '1px solid #e2e8f0' }}>
               <div>
-                <button onClick={() => handleCarAction(car.id, 'sell')} style={{ marginLeft: '5px', backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer' }}>مباع</button>
-                <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer' }}>حذف</button>
+                <span style={{ fontWeight: '500' }}>{car.title || 'إعلان سيارة'}</span> - 
+                <span style={{ marginRight: '8px', fontSize: '13px', padding: '2px 8px', borderRadius: '12px', backgroundColor: car.status === 'sold' ? '#fee2e2' : '#d1fae5', color: car.status === 'sold' ? '#dc2626' : '#065f46' }}>
+                  {car.status === 'sold' ? 'sold' : 'approved'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>مباع</button>
+                <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>حذف</button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {activeTab === 'users' && (
+        <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>قائمة المستخدمين الحالية</h2>
+          {usersLoading ? <p>جاري التحميل...</p> : users.map((user) => (
+            <div key={user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 5px', borderBottom: '1px solid #e2e8f0' }}>
+              <div>
+                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{user.name || 'مستخدم غير مسمى'}</div>
+                <div style={{ fontSize: '12px', color: '#64748b' }}>{user.email} - <span style={{ color: user.role === 'admin' ? '#2563eb' : '#64748b', fontWeight: user.role === 'admin' ? 'bold' : 'normal' }}>{user.role}</span></div>
+              </div>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <button onClick={() => handleUserToggleRole(user.id, user.role || 'user')} style={{ backgroundColor: '#3b82f6', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>تعديل الصلاحية</button>
+                <button onClick={() => handleUserDelete(user.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>حذف</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
     </div>
   );
 }
