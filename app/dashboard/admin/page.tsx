@@ -14,6 +14,9 @@ interface Car {
   price: number;
   status: string;
   created_at: string;
+  year?: number;
+  currency?: string;
+  images?: string[];
   user_id?: string;
 }
 
@@ -37,7 +40,7 @@ export default function AdminDashboardForm() {
   const [users, setUsers] = useState<User[]>([]);
   const [carsLoading, setCarsLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'cars' | 'users' | 'settings' | 'payments'>('cars');
+  const [activeTab, setActiveTab] = useState<'cars' | 'users'>('cars');
   const [message, setMessage] = useState({ text: '', type: '' });
 
   const showMessage = (text: string, type: 'success' | 'error') => {
@@ -104,27 +107,13 @@ export default function AdminDashboardForm() {
     }
   };
 
-  const handleUserToggleRole = async (userId: string, currentRole: string) => {
-    try {
-      let newRole = currentRole === 'admin' ? 'user' : 'admin';
-      const { error } = await supabase.from('users').update({ role: newRole }).eq('id', userId);
-      if (!error) {
-        showMessage('✅ تم تغيير صلاحية المستخدم', 'success');
-        fetchUsers();
-      } else {
-        showMessage('❌ فشل تحديث الصلاحية', 'error');
-      }
-    } catch {
-      showMessage('❌ خطأ في الاتصال', 'error');
-    }
-  };
-
-  const handleUserDelete = async (userId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+  const handleUserDelete = async (userId: string, userEmail: string) => {
+    if (userEmail === 'admin@sayarty.store') return; // حماية إضافية في الكود
+    if (!confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً؟')) return;
     try {
       const { error } = await supabase.from('users').delete().eq('id', userId);
       if (!error) {
-        showMessage('🗑️ تم حذف المستخدم', 'success');
+        showMessage('🗑️ تم حذف المستخدم بنجاح', 'success');
         fetchUsers();
       } else {
         showMessage('❌ فشل حذف المستخدم', 'error');
@@ -143,7 +132,7 @@ export default function AdminDashboardForm() {
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-        <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🎛️ لوحة تحكم الإدارة</h1>
+        <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🎛️ لوحة تحكم الإدارة الاحترافية</h1>
         <button onClick={handleLogout} style={{ padding: '8px 14px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>🚪 خروج</button>
       </div>
 
@@ -164,18 +153,28 @@ export default function AdminDashboardForm() {
 
       {activeTab === 'cars' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>قائمة الإعلانات الحالية</h2>
-          {carsLoading ? <p>جاري التحميل...</p> : cars.map((car) => (
-            <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 5px', borderBottom: '1px solid #e2e8f0' }}>
-              <div>
-                <span style={{ fontWeight: '500' }}>{car.title || 'إعلان سيارة'}</span> - 
-                <span style={{ marginRight: '8px', fontSize: '13px', padding: '2px 8px', borderRadius: '12px', backgroundColor: car.status === 'sold' ? '#fee2e2' : '#d1fae5', color: car.status === 'sold' ? '#dc2626' : '#065f46' }}>
-                  {car.status === 'sold' ? 'sold' : 'approved'}
-                </span>
+          <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>قائمة السيارات والمعاينة</h2>
+          {carsLoading ? <p>جاري تحميل السيارات...</p> : cars.map((car) => (
+            <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 5px', borderBottom: '1px solid #e2e8f0', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {car.images && car.images[0] ? (
+                  <img src={car.images[0]} alt="car" style={{ width: '70px', height: '50px', borderRadius: '6px', objectFit: 'cover', backgroundColor: '#e2e8f0' }} />
+                ) : (
+                  <div style={{ width: '70px', height: '50px', borderRadius: '6px', backgroundColor: '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#475569' }}>بلا صورة</div>
+                )}
+                <div>
+                  <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model} {car.year ? `(${car.year})` : ''}</div>
+                  <div style={{ fontSize: '13px', color: '#059669', fontWeight: '600', marginTop: '2px' }}>{car.price} {car.currency || 'KWD'}</div>
+                  <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '8px', backgroundColor: car.status === 'sold' ? '#fee2e2' : '#d1fae5', color: car.status === 'sold' ? '#dc2626' : '#065f46', inlineSize: 'fit-content', display: 'inline-block', marginTop: '4px' }}>
+                    {car.status === 'sold' ? 'مباع' : 'نشط'}
+                  </span>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '5px' }}>
-                <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>مباع</button>
-                <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>حذف</button>
+              <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
+                {car.status !== 'sold' && (
+                  <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>تحويل لمباع</button>
+                )}
+                <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>حذف الإعلان</button>
               </div>
             </div>
           ))}
@@ -184,16 +183,22 @@ export default function AdminDashboardForm() {
 
       {activeTab === 'users' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>قائمة المستخدمين الحالية</h2>
-          {usersLoading ? <p>جاري التحميل...</p> : users.map((user) => (
+          <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>إدارة الحسابات</h2>
+          {usersLoading ? <p>جاري تحميل المستخدمين...</p> : users.map((user) => (
             <div key={user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 5px', borderBottom: '1px solid #e2e8f0' }}>
               <div>
-                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{user.name || 'مستخدم غير مسمى'}</div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>{user.email} - <span style={{ color: user.role === 'admin' ? '#2563eb' : '#64748b', fontWeight: user.role === 'admin' ? 'bold' : 'normal' }}>{user.role}</span></div>
+                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{user.name || 'مستخدم جديد'}</div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{user.email}</div>
+                {user.email === 'admin@sayarty.store' && (
+                  <span style={{ fontSize: '11px', color: '#2563eb', backgroundColor: '#dbeafe', padding: '1px 6px', borderRadius: '6px', fontWeight: 'bold', display: 'inline-block', marginTop: '4px' }}>المدير العام المحمي 👑</span>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '5px' }}>
-                <button onClick={() => handleUserToggleRole(user.id, user.role || 'user')} style={{ backgroundColor: '#3b82f6', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>تعديل الصلاحية</button>
-                <button onClick={() => handleUserDelete(user.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>حذف</button>
+                {user.email !== 'admin@sayarty.store' ? (
+                  <button onClick={() => handleUserDelete(user.id, user.email || '') style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>حذف الحساب</button>
+                ) : (
+                  <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', padding: '6px' }}>غير قابل للتعديل</span>
+                )}
               </div>
             </div>
           ))}
