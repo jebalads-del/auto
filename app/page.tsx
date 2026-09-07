@@ -32,7 +32,7 @@ export default function HomePage() {
         const { data, error } = await supabase
           .from('cars')
           .select('*')
-          .eq('status', 'approved')
+          .in('status', ['approved', 'sold'])
           .order('created_at', { ascending: false });
 
         if (!error && data) setCars(data);
