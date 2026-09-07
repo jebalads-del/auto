@@ -92,14 +92,6 @@ export default function AdminDashboardForm() {
     } catch { showMessage('❌ خطأ في الاتصال', 'error'); }
   };
 
-  const handleUserDelete = async (userId: string, userEmail: string) => {
-    if (userEmail === 'admin@sayarty.store') return; 
-    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
-    try {
-      const { error } = await supabase.from('users').delete().eq('id', userId);
-      if (!error) { showMessage('🗑️ تم حذف المستخدم بنجاح', 'success'); fetchUsers(); }
-    } catch { showMessage('❌ خطأ في الاتصال', 'error'); }
-  };
     return (
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       
