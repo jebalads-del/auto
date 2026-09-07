@@ -111,7 +111,7 @@ export default function AdminDashboardForm() {
           {carsLoading ? <p>جاري تحميل السيارات...</p> : cars.map((car) => (
             <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 5px', borderBottom: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {car.images && car.images.length > 0 && <img src={car.images} alt="car" style={{ width: '70px', height: '50px', borderRadius: '6px', objectFit: 'cover' }} />}
+                {car.images && car.images.length > 0 && <img src={car.images[0]} alt="car" style={{ width: '70px', height: '50px', borderRadius: '6px', objectFit: 'cover' }} />}
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model} {car.year && `(${car.year})`}</div>
                   <div style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold', marginTop: '2px' }}>{car.price} {car.currency || 'د.ك'}</div>
