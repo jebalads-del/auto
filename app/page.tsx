@@ -78,7 +78,7 @@ export default function HomePage() {
         🚙 أحدث السيارات المعروضة
       </h2>
 
-      {/* 🛠️ محرك البحث الذكي المدمج والموفر للمساحة */}
+      {/* 🛠️ محرك البحث المطور بالقوائم المنسدلة التلقائية الموفرة للمساحة */}
       <div style={{ backgroundColor: '#ffffff', padding: '10px 12px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <input 
@@ -97,16 +97,41 @@ export default function HomePage() {
         </div>
 
         {/* التصفية المتقدمة التلقائية (تنبثق وتختفي لتوفير المساحة) */}
+              {/* القوائم المنسدلة الذكية المستخرجة تلقائياً من بيانات سياراتك */}
         {showAdvanced && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+            
+            {/* 1. قائمة منسدلة السنوات المتوفرة */}
             <div>
-              <input type="number" placeholder="سنة الصنع (مثال: 2022)" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }} />
+              <select 
+                value={filterYear} 
+                onChange={(e) => setFilterYear(e.target.value)} 
+                style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', backgroundColor: 'white', boxSizing: 'border-box' }}
+              >
+                <option value="">اختر سنة الصنع...</option>
+                {Array.from(new Set(cars.map(c => c.year).filter(Boolean))).sort((a,b) => b! - a!).map(year => (
+                  <option key={year} value={year?.toString()}>{year}</option>
+                ))}
+              </select>
             </div>
+
+            {/* 2. قائمة منسدلة الألوان المتوفرة */}
             <div>
-              <input type="text" placeholder="اللون (مثال: أبيض)" value={filterColor} onChange={(e) => setFilterColor(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }} />
+              <select 
+                value={filterColor} 
+                onChange={(e) => setFilterColor(e.target.value)} 
+                style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', backgroundColor: 'white', boxSizing: 'border-box' }}
+              >
+                <option value="">اختر اللون...</option>
+                {Array.from(new Set(cars.map(c => c.color?.trim()).filter(Boolean))).map(color => (
+                  <option key={color} value={color}>{color}</option>
+                ))}
+              </select>
             </div>
+
           </div>
         )}
+
       </div>
 
       {loading && (
