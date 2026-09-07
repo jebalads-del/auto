@@ -117,16 +117,36 @@ export default function AdminDashboardForm() {
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model} {car.year && `(${car.year})`}</div>
                   <div style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold', marginTop: '2px' }}>{car.price} {car.currency || 'د.ك'}</div>
-                  <span style={{ fontSize: '11px', padding: '2px 6px', borderRadius: '8px', backgroundColor: car.status === 'sold' ? '#fee2e2' : '#d1fae5', color: car.status === 'sold' ? '#dc2626' : '#065f46', display: 'inline-block', marginTop: '4px' }}>{car.status === 'sold' ? 'مباع' : 'نشط'}</span>
+                                    <span style={{ 
+                    fontSize: '11px', 
+                    padding: '2px 8px', 
+                    borderRadius: '8px', 
+                    display: 'inline-block', 
+                    marginTop: '4px',
+                    fontWeight: '600',
+                    backgroundColor: car.status === 'sold' ? '#fee2e2' : car.status === 'pending' ? '#fef3c7' : '#d1fae5', 
+                    color: car.status === 'sold' ? '#dc2626' : car.status === 'pending' ? '#d97706' : '#065f46' 
+                  }}>
+                    {car.status === 'sold' ? 'مباع' : car.status === 'pending' ? 'قيد المراجعة' : 'نشط'}
+                  </span>
+
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
-                {car.status !== 'sold' && <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>مباع</button>}
-                <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>حذف</button>
+                            <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
+                {/* 1. إذا كان الإعلان بحاجة لمراجعة يظهر زر موافقة أخضر */}
+                {car.status === 'pending' && (
+                  <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>موافقة ونشر</button>
+                )}
+                
+                {/* 2. إذا كان الإعلان نشطاً يظهر زر تحويل لمباع أصفر */}
+                {car.status === 'approved' && (
+                  <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>تحويل لمباع</button>
+                )}
+                
+                {/* 3. زر الحذف ثابت دائماً لجميع الحالات */}
+                <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>حذف الإعلان</button>
               </div>
-            </div>
-          ))}
-        </div>
+
       )}
 
       {activeTab === 'users' && (
