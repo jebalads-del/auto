@@ -329,10 +329,10 @@ const styles = {
   imageSection: { width: '100%' },
   imageContainer: { position: 'relative' as const },
   mainImageWrapper: { position: 'relative' as const, backgroundColor: '#f1f5f9', borderRadius: '12px', overflow: 'hidden' },
-  mainImage: { width: '100%', height: '400px', objectFit: 'cover' as const },
+  mainImage: { width: '100%', height: '400px', objectFit: 'contain' as const },
   navButton: { position: 'absolute' as const, top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   thumbnailContainer: { display: 'flex', gap: '10px', marginTop: '10px', overflowX: 'auto' as const, paddingBottom: '5px' },
-  thumbnail: { width: '80px', height: '80px', objectFit: 'cover' as const, borderRadius: '8px', cursor: 'pointer', flexShrink: 0 },
+  thumbnail: { width: '80px', height: '80px', objectFit: 'contain' as const, borderRadius: '8px', cursor: 'pointer', flexShrink: 0 },
   imageCounter: { position: 'absolute' as const, bottom: '15px', right: '15px', backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' },
   noImage: { width: '100%', height: '400px', backgroundColor: '#e2e8f0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#94a3b8' },
   infoSection: { 
