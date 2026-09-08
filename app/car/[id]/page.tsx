@@ -83,6 +83,25 @@ export default function CarDetailsPage() {
     fetchCarDetails();
   }, [params.id, supabase]);
 
+  // دالة تنسيق رقم الهاتف لواتساب
+  const formatPhoneForWhatsApp = (phone: string) => {
+    // إزالة المسافات والشرطات والأقواس
+    let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+    
+    // إذا كان الرقم يبدأ بـ 0، استبدله بـ 965 (كود الكويت)
+    if (cleaned.startsWith('0')) {
+      cleaned = '965' + cleaned.substring(1);
+    }
+    
+    // إذا كان الرقم لا يبدأ بـ 965، أضف 965 (افتراضي كود الكويت)
+    if (!cleaned.startsWith('965') && !cleaned.startsWith('+')) {
+      cleaned = '965' + cleaned;
+    }
+    
+    // إزالة أي + أو أحرف غير رقمية
+    return cleaned.replace(/[^0-9]/g, '');
+  };
+
   const nextImage = () => {
     if (car?.images && currentImageIndex < car.images.length - 1) {
       setCurrentImageIndex(currentImageIndex + 1);
@@ -244,14 +263,14 @@ export default function CarDetailsPage() {
             </div>
           </div>
 
-          {/* أزرار التواصل - التعديل هنا */}
+          {/* أزرار التواصل */}
           <div style={styles.contactSection}>
             <h3 style={styles.sectionTitle}>📞 وسائل التواصل مع البائع</h3>
             
             <div style={styles.contactButtons}>
               {sellerPhone ? (
                 <a 
-                  href={`https://wa.me/${sellerPhone.replace(/\D/g, "").replace(/^965/, "")}`}
+                  href={`https://wa.me/${formatPhoneForWhatsApp(sellerPhone)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={styles.whatsappButton}
