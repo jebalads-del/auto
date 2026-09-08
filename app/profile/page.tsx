@@ -362,21 +362,21 @@ export default function ProfilePage() {
   );
 }
 
+// ✅ ستايلات - بانر صغير جداً
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
   
-  // ✅ هيدر صغير جداً
   heroSection: { 
     background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', 
     color: '#ffffff', 
-    paddingBottom: '8px',
-    borderBottomLeftRadius: '16px',
-    borderBottomRightRadius: '16px' 
+    paddingBottom: '4px',
+    borderBottomLeftRadius: '12px',
+    borderBottomRightRadius: '12px' 
   },
   
   header: { 
-    borderBottom: '1px solid rgba(255,255,255,0.08)', 
-    padding: '6px 16px'
+    borderBottom: '1px solid rgba(255,255,255,0.05)', 
+    padding: '4px 14px'
   },
   
   headerContent: { 
@@ -388,57 +388,57 @@ const styles = {
   },
   
   headerTitle: { 
-    fontSize: '16px', 
+    fontSize: '15px', 
     fontWeight: 'bold', 
     color: '#ffffff', 
     margin: 0 
   },
   
   logoutButton: { 
-    padding: '4px 10px', 
+    padding: '3px 8px', 
     backgroundColor: '#ef4444', 
     color: 'white', 
     border: 'none', 
-    borderRadius: '6px', 
+    borderRadius: '5px', 
     cursor: 'pointer', 
-    fontSize: '11px', 
+    fontSize: '10px', 
     fontWeight: '600' 
   },
   
   heroBody: { 
     textAlign: 'center' as const, 
-    padding: '10px 20px 4px 20px'
+    padding: '6px 20px 2px 20px'
   },
   
   heroMainTitle: { 
-    fontSize: '18px', 
+    fontSize: '17px', 
     fontWeight: '800', 
     color: '#ffffff', 
-    marginBottom: '2px' 
+    marginBottom: '1px' 
   },
   
   heroSubTitle: { 
-    fontSize: '12px', 
+    fontSize: '11px', 
     color: '#bfdbfe' 
   },
   
   heroPhone: { 
-    fontSize: '12px', 
+    fontSize: '11px', 
     color: '#93c5fd', 
-    marginTop: '2px' 
+    marginTop: '1px' 
   },
   
   content: { 
     maxWidth: '1200px', 
     margin: '0 auto', 
-    padding: '16px' 
+    padding: '14px' 
   },
   
   actionButtonsGrid: { 
     display: 'grid', 
     gridTemplateColumns: '1fr', 
     gap: '12px', 
-    marginBottom: '16px' 
+    marginBottom: '14px' 
   },
   
   actionButtonPost: { 
@@ -460,7 +460,7 @@ const styles = {
     padding: '16px', 
     borderRadius: '14px', 
     border: '1px solid #e2e8f0', 
-    marginBottom: '20px', 
+    marginBottom: '18px', 
     boxShadow: '0 1px 3px rgba(0,0,0,0.05)' 
   },
   
