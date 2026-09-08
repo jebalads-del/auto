@@ -20,6 +20,20 @@ interface Car {
   user_id?: string;
 }
 
+// ✅ دالة تنظيف رقم الهاتف
+const cleanPhoneNumber = (phone: string): string => {
+  if (!phone) return '';
+  let cleaned = phone.replace(/[^0-9]/g, '');
+  if (!cleaned) return '';
+  if (cleaned.startsWith('0')) {
+    cleaned = '965' + cleaned.substring(1);
+  }
+  if (!cleaned.startsWith('965')) {
+    cleaned = '965' + cleaned;
+  }
+  return cleaned;
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const [myCars, setMyCars] = useState<Car[]>([]);
@@ -43,7 +57,6 @@ export default function ProfilePage() {
         setLoading(true);
         console.log('🔍 بدء تحميل بيانات المستخدم...');
         
-        // 1. جلب المستخدم الحالي من Supabase Auth
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError || !user) {
@@ -56,33 +69,27 @@ export default function ProfilePage() {
         const userEmail = user.email || '';
 
         console.log('✅ userId من Auth:', userId);
-        console.log('✅ userEmail من Auth:', userEmail);
 
-        // 2. جلب بيانات المستخدم من جدول users
         const { data: userData, error: dbError } = await supabase
           .from('users')
           .select('name, phone, email')
           .eq('id', userId);
 
         console.log('📦 userData من قاعدة البيانات:', userData);
-        console.log('❌ dbError:', dbError);
 
-        // 3. معالجة البيانات
         let userName = userEmail.split('@')[0] || 'مستخدم';
         let userPhone = '';
         let userEmailFromDB = userEmail;
 
         if (userData && userData.length > 0) {
-          // إذا وجدت بيانات في جدول users
           const userRecord = userData[0];
           userName = userRecord.name || userName;
-          userPhone = userRecord.phone || '';
+          userPhone = userRecord.phone ? cleanPhoneNumber(userRecord.phone) : '';
           userEmailFromDB = userRecord.email || userEmail;
           console.log('✅ تم جلب البيانات من جدول users');
         } else {
           console.log('⚠️ لا توجد بيانات في جدول users، سيتم إضافة المستخدم');
           
-          // إذا لم يكن المستخدم في جدول users، أضفه
           const { error: insertError } = await supabase
             .from('users')
             .insert([
@@ -103,7 +110,6 @@ export default function ProfilePage() {
           }
         }
 
-        // 4. تحديث State
         setUserInfo({
           id: userId,
           name: userName,
@@ -113,14 +119,12 @@ export default function ProfilePage() {
         setNewName(userName);
         setNewPhone(userPhone);
 
-        // 5. تحديث localStorage
         localStorage.setItem('userId', userId);
         localStorage.setItem('userName', userName);
         localStorage.setItem('userEmail', userEmailFromDB);
 
         console.log('✅ تم تعيين البيانات:', { name: userName, phone: userPhone, email: userEmailFromDB });
 
-        // 6. جلب سيارات المستخدم
         const { data: carsData, error: carsError } = await supabase
           .from('cars')
           .select('*')
@@ -144,7 +148,6 @@ export default function ProfilePage() {
     loadUserData();
   }, [supabase]);
 
-  // تحديث الملف الشخصي
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdateMessage({ text: '', type: '' });
@@ -160,11 +163,13 @@ export default function ProfilePage() {
     }
 
     try {
+      const cleanedPhone = cleanPhoneNumber(newPhone);
+      
       const { error } = await supabase
         .from('users')
         .update({
           name: newName.trim(),
-          phone: newPhone.trim(),
+          phone: cleanedPhone,
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId);
@@ -179,8 +184,9 @@ export default function ProfilePage() {
       setUserInfo(prev => ({ 
         ...prev, 
         name: newName.trim(), 
-        phone: newPhone.trim() 
+        phone: cleanedPhone 
       }));
+      setNewPhone(cleanedPhone);
       
       setUpdateMessage({ text: '✅ تم تحديث بياناتك الشخصية بنجاح!', type: 'success' });
 
@@ -189,7 +195,6 @@ export default function ProfilePage() {
     }
   };
 
-  // تغيير كلمة المرور
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMessage({ text: '', type: '' });
@@ -233,7 +238,6 @@ export default function ProfilePage() {
     }
   };
 
-  // تسجيل الخروج
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -270,6 +274,9 @@ export default function ProfilePage() {
         <div style={styles.heroBody}>
           <h2 style={styles.heroMainTitle}>{userInfo.name || 'مستخدم'}</h2>
           <p style={styles.heroSubTitle}>{userInfo.email || 'البريد الإلكتروني'}</p>
+          <p style={{ ...styles.heroSubTitle, fontSize: '13px', color: '#93c5fd', marginTop: '5px' }}>
+            📱 {userInfo.phone || 'رقم الهاتف غير مسجل'}
+          </p>
         </div>
       </div>
 
@@ -305,7 +312,16 @@ export default function ProfilePage() {
             </div>
             <div style={{ marginBottom: '15px' }}>
               <label style={styles.labelField}>رقم الهاتف</label>
-              <input type="text" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="أدخل رقم هاتفك" style={styles.inputField} />
+              <input 
+                type="text" 
+                value={newPhone} 
+                onChange={(e) => setNewPhone(e.target.value)} 
+                placeholder="أدخل رقم هاتفك (مثال: 96512345678)" 
+                style={styles.inputField} 
+              />
+              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                💡 سيتم تنسيق الرقم تلقائياً
+              </p>
             </div>
             <button type="submit" style={styles.saveButton}>💾 حفظ التغييرات</button>
           </form>
