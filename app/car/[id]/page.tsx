@@ -41,30 +41,6 @@ export default function CarDetailsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // ✅ دالة تنظيف رقم الهاتف - الحل النهائي
-  const cleanPhoneNumber = (phone: string): string => {
-    if (!phone) return '';
-    
-    // 1. إزالة كل ما ليس رقم (مسافات، شرطات، أقواس، +، إلخ)
-    let cleaned = phone.replace(/[^0-9]/g, '');
-    
-    // 2. إذا كان الرقم فارغاً بعد التنظيف، ارجع نص فارغ
-    if (!cleaned) return '';
-    
-    // 3. إذا كان الرقم يبدأ بـ 0، استبدله بـ 965 (كود الكويت)
-    if (cleaned.startsWith('0')) {
-      cleaned = '965' + cleaned.substring(1);
-    }
-    
-    // 4. إذا كان الرقم لا يبدأ بـ 965، أضف 965
-    if (!cleaned.startsWith('965')) {
-      cleaned = '965' + cleaned;
-    }
-    
-    // 5. تأكد من أن الرقم يتكون من أرقام فقط
-    return cleaned.replace(/[^0-9]/g, '');
-  };
-
   useEffect(() => {
     const fetchCarDetails = async () => {
       try {
@@ -92,10 +68,6 @@ export default function CarDetailsPage() {
             .single();
 
           if (!userError && userData) {
-            // ✅ تنظيف الرقم فور استلامه من قاعدة البيانات
-            if (userData.phone) {
-              userData.phone = cleanPhoneNumber(userData.phone);
-            }
             setSeller(userData);
           }
         }
@@ -279,7 +251,7 @@ export default function CarDetailsPage() {
             <div style={styles.contactButtons}>
               {sellerPhone ? (
                 <a 
-                  href={`https://wa.me/${sellerPhone}`}
+                  href={`https://wa.me/${sellerPhone.replace(/[^0-9]/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={styles.whatsappButton}
