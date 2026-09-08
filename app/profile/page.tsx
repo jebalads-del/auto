@@ -20,7 +20,6 @@ interface Car {
   user_id?: string;
 }
 
-// ✅ دالة تنظيف رقم الهاتف
 const cleanPhoneNumber = (phone: string): string => {
   if (!phone) return '';
   let cleaned = phone.replace(/[^0-9]/g, '');
@@ -55,7 +54,6 @@ export default function ProfilePage() {
     const loadUserData = async () => {
       try {
         setLoading(true);
-        console.log('🔍 بدء تحميل بيانات المستخدم...');
         
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
@@ -68,14 +66,10 @@ export default function ProfilePage() {
         const userId = user.id;
         const userEmail = user.email || '';
 
-        console.log('✅ userId من Auth:', userId);
-
         const { data: userData, error: dbError } = await supabase
           .from('users')
           .select('name, phone, email')
           .eq('id', userId);
-
-        console.log('📦 userData من قاعدة البيانات:', userData);
 
         let userName = userEmail.split('@')[0] || 'مستخدم';
         let userPhone = '';
@@ -86,10 +80,7 @@ export default function ProfilePage() {
           userName = userRecord.name || userName;
           userPhone = userRecord.phone ? cleanPhoneNumber(userRecord.phone) : '';
           userEmailFromDB = userRecord.email || userEmail;
-          console.log('✅ تم جلب البيانات من جدول users');
         } else {
-          console.log('⚠️ لا توجد بيانات في جدول users، سيتم إضافة المستخدم');
-          
           const { error: insertError } = await supabase
             .from('users')
             .insert([
@@ -105,8 +96,6 @@ export default function ProfilePage() {
 
           if (insertError) {
             console.error('❌ خطأ في إضافة المستخدم:', insertError);
-          } else {
-            console.log('✅ تم إضافة المستخدم إلى جدول users');
           }
         }
 
@@ -123,8 +112,6 @@ export default function ProfilePage() {
         localStorage.setItem('userName', userName);
         localStorage.setItem('userEmail', userEmailFromDB);
 
-        console.log('✅ تم تعيين البيانات:', { name: userName, phone: userPhone, email: userEmailFromDB });
-
         const { data: carsData, error: carsError } = await supabase
           .from('cars')
           .select('*')
@@ -135,7 +122,6 @@ export default function ProfilePage() {
           console.error('❌ خطأ في جلب السيارات:', carsError);
         } else {
           setMyCars(carsData || []);
-          console.log('✅ تم جلب السيارات:', carsData?.length || 0);
         }
 
       } catch (err) {
@@ -261,22 +247,20 @@ export default function ProfilePage() {
 
   return (
     <div style={styles.container}>
+      {/* ✅ هيدر صغير جداً */}
       <div style={styles.heroSection}>
         <header style={styles.header}>
           <div style={styles.headerContent}>
-            <h1 style={styles.headerTitle}>👤 حسابي الشخصي</h1>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <Link href="/" style={styles.headerLink}>🏠 العودة للرئيسية</Link>
-              <button onClick={handleLogout} style={styles.logoutButton}>🚪 خروج</button>
-            </div>
+            <h1 style={styles.headerTitle}>👤 حسابي</h1>
+            <button onClick={handleLogout} style={styles.logoutButton}>🚪 خروج</button>
           </div>
         </header>
         <div style={styles.heroBody}>
           <h2 style={styles.heroMainTitle}>{userInfo.name || 'مستخدم'}</h2>
           <p style={styles.heroSubTitle}>{userInfo.email || 'البريد الإلكتروني'}</p>
-          <p style={{ ...styles.heroSubTitle, fontSize: '13px', color: '#93c5fd', marginTop: '5px' }}>
-            📱 {userInfo.phone || 'رقم الهاتف غير مسجل'}
-          </p>
+          {userInfo.phone && (
+            <p style={styles.heroPhone}>📱 {userInfo.phone}</p>
+          )}
         </div>
       </div>
 
@@ -380,32 +364,237 @@ export default function ProfilePage() {
 
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
-  heroSection: { background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: '#ffffff', paddingBottom: '30px', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px' },
-  header: { borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '15px 20px' },
-  headerContent: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' },
-  headerTitle: { fontSize: '20px', fontWeight: 'bold', color: '#ffffff', margin: 0 },
-  headerLink: { fontSize: '14px', color: '#cbd5e1', textDecoration: 'none' },
-  logoutButton: { padding: '6px 14px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' },
-  heroBody: { textAlign: 'center' as const, padding: '40px 20px 10px 20px' },
-  heroMainTitle: { fontSize: '26px', fontWeight: '800', color: '#ffffff', marginBottom: '8px' },
-  heroSubTitle: { fontSize: '14px', color: '#bfdbfe' },
-  content: { maxWidth: '1200px', margin: '0 auto', padding: '25px 20px' },
-  actionButtonsGrid: { display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginBottom: '25px' },
-  actionButtonPost: { display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#10b981', color: '#ffffff', padding: '14px', borderRadius: '12px', fontSize: '15px', fontWeight: 'bold', textDecoration: 'none', textAlign: 'center' as const },
-  settingsSection: { backgroundColor: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '30px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
-  labelField: { display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '5px' },
-  inputField: { width: '100%', padding: '11px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const },
-  disabledInput: { width: '100%', padding: '11px', borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#edf2f7', color: '#718096', fontSize: '14px', cursor: 'not-allowed', boxSizing: 'border-box' as const },
-  saveButton: { width: '100%', padding: '12px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' },
-  passwordButton: { width: '100%', padding: '12px', backgroundColor: '#475569', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' },
-  sectionTitle: { fontSize: '18px', fontWeight: 'bold', color: '#1e293b', marginBottom: '20px' },
-  noCars: { textAlign: 'center' as const, padding: '40px 20px', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', color: '#64748b' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' },
-  card: { backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' },
-  cardBody: { padding: '20px' },
-  carTitle: { fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px', marginTop: 0 },
-  carPrice: { fontSize: '18px', fontWeight: '800', color: '#10b981', marginBottom: '8px' },
-  viewLink: { display: 'block', textAlign: 'center' as const, backgroundColor: '#f8fafc', color: '#475569', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', textDecoration: 'none', border: '1px solid #e2e8f0' },
-  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
-  spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }
+  
+  // ✅ هيدر صغير جداً
+  heroSection: { 
+    background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', 
+    color: '#ffffff', 
+    paddingBottom: '8px',
+    borderBottomLeftRadius: '16px',
+    borderBottomRightRadius: '16px' 
+  },
+  
+  header: { 
+    borderBottom: '1px solid rgba(255,255,255,0.08)', 
+    padding: '6px 16px'
+  },
+  
+  headerContent: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    maxWidth: '1200px', 
+    margin: '0 auto' 
+  },
+  
+  headerTitle: { 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    color: '#ffffff', 
+    margin: 0 
+  },
+  
+  logoutButton: { 
+    padding: '4px 10px', 
+    backgroundColor: '#ef4444', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '6px', 
+    cursor: 'pointer', 
+    fontSize: '11px', 
+    fontWeight: '600' 
+  },
+  
+  heroBody: { 
+    textAlign: 'center' as const, 
+    padding: '10px 20px 4px 20px'
+  },
+  
+  heroMainTitle: { 
+    fontSize: '18px', 
+    fontWeight: '800', 
+    color: '#ffffff', 
+    marginBottom: '2px' 
+  },
+  
+  heroSubTitle: { 
+    fontSize: '12px', 
+    color: '#bfdbfe' 
+  },
+  
+  heroPhone: { 
+    fontSize: '12px', 
+    color: '#93c5fd', 
+    marginTop: '2px' 
+  },
+  
+  content: { 
+    maxWidth: '1200px', 
+    margin: '0 auto', 
+    padding: '16px' 
+  },
+  
+  actionButtonsGrid: { 
+    display: 'grid', 
+    gridTemplateColumns: '1fr', 
+    gap: '12px', 
+    marginBottom: '16px' 
+  },
+  
+  actionButtonPost: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: '#10b981', 
+    color: '#ffffff', 
+    padding: '10px', 
+    borderRadius: '12px', 
+    fontSize: '14px', 
+    fontWeight: 'bold', 
+    textDecoration: 'none', 
+    textAlign: 'center' as const 
+  },
+  
+  settingsSection: { 
+    backgroundColor: '#ffffff', 
+    padding: '16px', 
+    borderRadius: '14px', 
+    border: '1px solid #e2e8f0', 
+    marginBottom: '20px', 
+    boxShadow: '0 1px 3px rgba(0,0,0,0.05)' 
+  },
+  
+  labelField: { 
+    display: 'block', 
+    fontSize: '12px', 
+    fontWeight: '600', 
+    color: '#475569', 
+    marginBottom: '4px' 
+  },
+  
+  inputField: { 
+    width: '100%', 
+    padding: '9px 12px', 
+    borderRadius: '8px', 
+    border: '1px solid #cbd5e1', 
+    backgroundColor: '#f8fafc', 
+    fontSize: '13px', 
+    outline: 'none', 
+    boxSizing: 'border-box' as const 
+  },
+  
+  disabledInput: { 
+    width: '100%', 
+    padding: '9px 12px', 
+    borderRadius: '8px', 
+    border: '1px solid #e2e8f0', 
+    backgroundColor: '#edf2f7', 
+    color: '#718096', 
+    fontSize: '13px', 
+    cursor: 'not-allowed', 
+    boxSizing: 'border-box' as const 
+  },
+  
+  saveButton: { 
+    width: '100%', 
+    padding: '10px', 
+    backgroundColor: '#2563eb', 
+    color: '#ffffff', 
+    border: 'none', 
+    borderRadius: '8px', 
+    fontSize: '14px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer' 
+  },
+  
+  passwordButton: { 
+    width: '100%', 
+    padding: '10px', 
+    backgroundColor: '#475569', 
+    color: '#ffffff', 
+    border: 'none', 
+    borderRadius: '8px', 
+    fontSize: '14px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer' 
+  },
+  
+  sectionTitle: { 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    color: '#1e293b', 
+    marginBottom: '12px' 
+  },
+  
+  noCars: { 
+    textAlign: 'center' as const, 
+    padding: '24px 20px', 
+    backgroundColor: '#ffffff', 
+    borderRadius: '14px', 
+    border: '1px solid #e2e8f0', 
+    color: '#64748b' 
+  },
+  
+  grid: { 
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', 
+    gap: '12px' 
+  },
+  
+  card: { 
+    backgroundColor: '#ffffff', 
+    borderRadius: '14px', 
+    border: '1px solid #e2e8f0', 
+    overflow: 'hidden' 
+  },
+  
+  cardBody: { 
+    padding: '14px' 
+  },
+  
+  carTitle: { 
+    fontSize: '14px', 
+    fontWeight: 'bold', 
+    color: '#1e293b', 
+    marginBottom: '4px', 
+    marginTop: 0 
+  },
+  
+  carPrice: { 
+    fontSize: '16px', 
+    fontWeight: '800', 
+    color: '#10b981', 
+    marginBottom: '4px' 
+  },
+  
+  viewLink: { 
+    display: 'block', 
+    textAlign: 'center' as const, 
+    backgroundColor: '#f8fafc', 
+    color: '#475569', 
+    padding: '7px', 
+    borderRadius: '8px', 
+    fontSize: '12px', 
+    fontWeight: '600', 
+    textDecoration: 'none', 
+    border: '1px solid #e2e8f0' 
+  },
+  
+  loadingContainer: { 
+    display: 'flex', 
+    flexDirection: 'column' as const, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    minHeight: '100vh', 
+    backgroundColor: '#f8fafc' 
+  },
+  
+  spinner: { 
+    width: '40px', 
+    height: '40px', 
+    border: '4px solid #e2e8f0', 
+    borderTop: '4px solid #3b82f6', 
+    borderRadius: '50%', 
+    animation: 'spin 1s linear infinite' 
+  }
 };
