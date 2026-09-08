@@ -244,14 +244,14 @@ export default function CarDetailsPage() {
             </div>
           </div>
 
-          {/* أزرار التواصل */}
+          {/* أزرار التواصل - التعديل هنا */}
           <div style={styles.contactSection}>
             <h3 style={styles.sectionTitle}>📞 وسائل التواصل مع البائع</h3>
             
             <div style={styles.contactButtons}>
               {sellerPhone ? (
                 <a 
-                  href={https://wa.me{car.phone?.replace(/\D/g, "").replace(/^965/, "")}}
+                  href={`https://wa.me/${sellerPhone.replace(/\D/g, "").replace(/^965/, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={styles.whatsappButton}
