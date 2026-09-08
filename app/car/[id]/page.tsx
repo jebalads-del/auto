@@ -251,7 +251,7 @@ export default function CarDetailsPage() {
             <div style={styles.contactButtons}>
               {sellerPhone ? (
                 <a 
-                  href={`https://wa.me{car.phone?.replace(/\D/g, "").replace(/^965/, "")}`}
+                  href={`https://wa.me/${car.user_phone.replace(/\D/g, '')}`}
 
                   target="_blank"
                   rel="noopener noreferrer"
