@@ -52,7 +52,7 @@ export default function HomePage() {
         {/* صندوق اللوجو مرن ومتناسق لا يضغط على الأزرار */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', maxWidth: '50%' }}>
           <img 
-            src="/logo.png" 
+            src="/logo1.jpg" 
             alt="سيارتي ستور" 
             style={{ height: '60px', width: 'auto', objectFit: 'contain', borderRadius: '6px' }} 
           />
