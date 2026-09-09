@@ -54,7 +54,7 @@ export default function HomePage() {
           <img 
             src="/logo.png" 
             alt="سيارتي ستور" 
-            style={{ height: '85px', width: '220px', objectFit: 'cover', objectFit: 'contain', borderRadius: '8px' }} 
+            style={{ height: '85px', width: '220px', objectFit: 'contain', borderRadius: '8px' }} 
           />
         </div>
 
