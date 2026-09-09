@@ -3,362 +3,146 @@
 import { useEffect, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 interface Car {
-  id: string;
-  brand: string;
-  model: string;
-  year?: number;
-  price: number;
-  kilometers?: number;
-  color?: string;
-  description?: string;
-  currency?: string;
-  status: string;
-  created_at: string;
-  images?: string[];
-  user_id?: string;
+  id: string; brand: string; model: string; price: number;
+  year?: number; kilometers?: number; color?: string;
+  description?: string; currency?: string; status: string;
+  created_at: string; images?: string[];
 }
 
 export default function HomePage() {
-  const router = useRouter();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [minYear, setMinYear] = useState('');
-  const [maxYear, setMaxYear] = useState('');
-  const [maxKilometers, setMaxKilometers] = useState('');
-  const [user, setUser] = useState<any>(null);
-  const [showFilters, setShowFilters] = useState(false);
-  const [brands, setBrands] = useState<string[]>([]);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [filterYear, setFilterYear] = useState('');
+  const [filterColor, setFilterColor] = useState('');
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
-  }, []);
-
-  // ✅ جلب الماركات للقائمة المنسدلة (مع التعديل)
-  useEffect(() => {
-    const fetchBrands = async () => {
-      const { data } = await supabase
-        .from('cars')
-        .select('brand')
-        .in('status', ['approved', 'sold']);
-      
-      if (data) {
-        // ✅ استخدم Array.from بدلاً من spread operator
-        const uniqueBrands = Array.from(new Set(data.map(car => car.brand))).filter(Boolean);
-        setBrands(uniqueBrands);
-      }
-    };
-    fetchBrands();
-  }, []);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
   useEffect(() => {
     const fetchCars = async () => {
       try {
         setLoading(true);
-        let query = supabase
+        const { data, error } = await supabase
           .from('cars')
           .select('*')
           .in('status', ['approved', 'sold'])
           .order('created_at', { ascending: false });
 
-        if (searchTerm) {
-          query = query.or(`brand.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%`);
-        }
-
-        if (selectedBrand) {
-          query = query.eq('brand', selectedBrand);
-        }
-
-        if (minPrice) {
-          query = query.gte('price', parseInt(minPrice));
-        }
-        if (maxPrice) {
-          query = query.lte('price', parseInt(maxPrice));
-        }
-
-        if (minYear) {
-          query = query.gte('year', parseInt(minYear));
-        }
-        if (maxYear) {
-          query = query.lte('year', parseInt(maxYear));
-        }
-
-        if (maxKilometers) {
-          query = query.lte('kilometers', parseInt(maxKilometers));
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-          console.error('❌ خطأ في جلب السيارات:', error);
-        } else {
-          setCars(data || []);
-        }
+        if (!error && data) setCars(data);
       } catch (err) {
-        console.error('❌ خطأ:', err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchCars();
-  }, [searchTerm, selectedBrand, minPrice, maxPrice, minYear, maxYear, maxKilometers]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    router.push('/');
-  };
-
-  const resetFilters = () => {
-    setSelectedBrand('');
-    setMinPrice('');
-    setMaxPrice('');
-    setMinYear('');
-    setMaxYear('');
-    setMaxKilometers('');
-    setSearchTerm('');
-  };
-
-  if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinner}></div>
-        <p>⏳ جاري تحميل السيارات...</p>
-      </div>
-    );
-  }
+  }, [supabase]);
 
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <div style={styles.headerContent}>
-          <div>
-            <h1 style={styles.headerTitle}>🚗 سيارتي</h1>
-            <p style={styles.headerSub}>سوق السيارات في الكويت</p>
-          </div>
-          <div style={styles.headerButtons}>
-            {user ? (
-              <>
-                <Link href="/dashboard/cars/new" style={styles.newAdButton}>
-                  ➕ إعلان جديد
-                </Link>
-                <Link href="/profile" style={styles.profileButton}>
-                  👤 {user.email?.split('@')[0] || 'حسابي'}
-                </Link>
-                <button onClick={handleLogout} style={styles.logoutButton}>
-                  🚪 خروج
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" style={styles.loginButton}>
-                  🔑 دخول
-                </Link>
-                <Link href="/register" style={styles.registerButton}>
-                  📝 أعلن مجاناً
-                </Link>
-              </>
-            )}
-          </div>
+    <div style={{ direction: 'rtl', padding: '16px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px 16px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
+        <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>🚗 سيارتي ستور</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '120px', alignItems: 'stretch', justifyContent: 'center' }}>
+          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '9px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700' }}>➕ نشر إعلان</button></Link>
+          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '9px 0', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700' }}>🔑 دخول</button></Link>
         </div>
-      </header>
+      </div>
 
-      {/* ✅ البحث والفلاتر */}
-      <div style={styles.searchSection}>
-        <div style={styles.searchRow}>
-          <input
-            type="text"
-            placeholder="🔍 ابحث عن سيارة (ماركة، موديل)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.searchInput}
-          />
-          <button 
-            onClick={() => setShowFilters(!showFilters)} 
-            style={styles.filterToggle}
-          >
-            {showFilters ? '⬆️ إخفاء الفلاتر' : '⬇️ فلاتر متقدمة'}
-          </button>
+      <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#1e293b', paddingRight: '4px' }}>🚙 أحدث السيارات المعروضة</h2>
+
+      <div style={{ backgroundColor: '#ffffff', padding: '10px 12px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <input type="text" placeholder="ابحث عن ماركة أو موديل السيارة..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc' }} />
+          <button onClick={() => setShowAdvanced(!showAdvanced)} style={{ padding: '9px 12px', backgroundColor: showAdvanced ? '#2563eb' : '#f1f5f9', color: showAdvanced ? '#fff' : '#475569', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px' }}>🔍 تصفية</button>
         </div>
 
-        {/* ✅ الفلاتر */}
-        {showFilters && (
-          <div style={styles.filtersContainer}>
-            <div style={styles.filtersGrid}>
-              {/* الماركة */}
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>🏷️ الماركة</label>
-                <select
-                  value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value)}
-                  style={styles.filterSelect}
-                >
-                  <option value="">كل الماركات</option>
-                  {brands.map((brand) => (
-                    <option key={brand} value={brand}>{brand}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* السعر من */}
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>💰 السعر من</label>
-                <input
-                  type="number"
-                  placeholder="أقل سعر"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                  style={styles.filterInput}
-                />
-              </div>
-
-              {/* السعر إلى */}
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>💰 السعر إلى</label>
-                <input
-                  type="number"
-                  placeholder="أعلى سعر"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  style={styles.filterInput}
-                />
-              </div>
-
-              {/* السنة من */}
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>📅 السنة من</label>
-                <input
-                  type="number"
-                  placeholder="من سنة"
-                  value={minYear}
-                  onChange={(e) => setMinYear(e.target.value)}
-                  style={styles.filterInput}
-                />
-              </div>
-
-              {/* السنة إلى */}
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>📅 السنة إلى</label>
-                <input
-                  type="number"
-                  placeholder="إلى سنة"
-                  value={maxYear}
-                  onChange={(e) => setMaxYear(e.target.value)}
-                  style={styles.filterInput}
-                />
-              </div>
-
-              {/* المشي */}
-              <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>📊 المشي حتى</label>
-                <input
-                  type="number"
-                  placeholder="أقصى مسافة (كم)"
-                  value={maxKilometers}
-                  onChange={(e) => setMaxKilometers(e.target.value)}
-                  style={styles.filterInput}
-                />
-              </div>
+        {showAdvanced && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+            <div>
+              <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', backgroundColor: 'white' }}>
+                <option value="">اختر سنة الصنع...</option>
+                {Array.from({ length: 2027 - 1988 + 1 }, (_, i) => 2027 - i).map(year => (
+                  <option key={year} value={year.toString()}>{year}</option>
+                ))}
+              </select>
             </div>
-
-            <button onClick={resetFilters} style={styles.resetButton}>
-              🔄 إعادة تعيين الفلاتر
-            </button>
+            <div>
+              <select value={filterColor} onChange={(e) => setFilterColor(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', backgroundColor: 'white' }}>
+                <option value="">اختر اللون...</option>
+                {['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'].map(color => (
+                  <option key={color} value={color}>{color}</option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
       </div>
 
-      {/* ✅ السيارات */}
-      <div style={styles.grid}>
-        {cars.length === 0 ? (
-          <div style={styles.noCars}>🚫 لا توجد سيارات مطابقة للبحث</div>
-        ) : (
-          cars.map((car) => (
-            <Link href={`/car/${car.id}`} key={car.id} style={styles.cardLink}>
-              <div style={styles.card}>
-                {car.images && car.images.length > 0 ? (
-                  <img src={car.images[0]} alt={car.brand} style={styles.cardImage} />
-                ) : (
-                  <div style={styles.cardImagePlaceholder}>🚗</div>
-                )}
-                <div style={styles.cardBody}>
-                  <h3 style={styles.cardTitle}>{car.brand} {car.model}</h3>
-                  <div style={styles.cardPrice}>
-                    {car.price.toLocaleString()} {car.currency === 'SAR' ? 'ر.س' : 'د.ك'}
-                  </div>
-                  <div style={styles.cardMeta}>
-                    {car.year && <span>{car.year}</span>}
-                    {car.kilometers && <span>• {car.kilometers.toLocaleString()} كم</span>}
-                  </div>
-                  <div style={styles.cardStatus}>
-                    {car.status === 'approved' ? '✅ متاح' : '💰 مباع'}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))
-        )}
-      </div>
+      {loading && <div style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '15px' }}>⏳ جاري تصفح أحدث السيارات...</div>}
+
+      {!loading && (
+        <>
+          {cars.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '80px 20px', backgroundColor: 'white', borderRadius: '16px', border: '1px solid #f1f5f9' }}><p style={{ fontSize: '16px', color: '#64748b', margin: 0 }}>📭 لا توجد سيارات معروضة للبيع حالياً</p></div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              {cars
+                .filter((car) => {
+                  const matchesQuery = !searchQuery || car.brand?.toLowerCase().includes(searchQuery.toLowerCase()) || car.model?.toLowerCase().includes(searchQuery.toLowerCase());
+                  const matchesYear = !filterYear || car.year?.toString() === filterYear;
+                  const matchesColor = !filterColor || car.color?.toLowerCase().includes(filterColor.toLowerCase());
+                  return matchesQuery && matchesYear && matchesColor;
+                })
+                .map((car) => {
+                  const firstImage = car.images && car.images.length > 0 ? car.images : null;
+                  
+                  return (
+                    <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <div style={{ backgroundColor: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        
+                        {firstImage ? (
+                          <div style={{ width: '100%', height: '130px', backgroundColor: '#f8fafc', overflow: 'hidden', position: 'relative' }}>
+                            <img src={Array.isArray(firstImage) ? firstImage[0] : (firstImage || '')} alt={`${car.brand} ${car.model}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            {car.status === 'sold' && (
+                              <div style={{ position: 'absolute', top: '8px', right: '8px', backgroundColor: '#10b981', color: 'white', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', zIndex: 2 }}>🔒 مباعة</div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ width: '100%', height: '130px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '13px' }}>🚗 لا توجد صورة</div>
+                        )}
+
+                        <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px', flexGrow: 1 }}>
+                          <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{car.brand} {car.model}</h3>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#64748b' }}>
+                            {car.year && <span>📅 {car.year}</span>}
+                            {car.kilometers && <span>• 📊 {car.kilometers.toLocaleString()} كم</span>}
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '6px' }}>
+                            <span style={{ fontSize: '15px', fontWeight: '800', color: '#16a34a' }}>{car.price} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span></span>
+                          </div>
+                        </div>
+
+                        <div style={{ padding: '0 12px 12px 12px' }}>
+                          <button style={{ width: '100%', padding: '8px', backgroundColor: '#f1f5f9', color: '#334155', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '600' }}>تفاصيل الإعلان 👀</button>
+                        </div>
+
+                      </div>
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
+        </>
+      )}
+
+      <div style={{ textAlign: 'center', marginTop: '50px', padding: '20px 0', color: '#94a3b8', fontSize: '12px', borderTop: '1px solid #e2e8f0' }}>© 2026 سيارتي ستور - جميع الحقوق محفوظة</div>
     </div>
   );
 }
-
-const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
-  
-  header: { backgroundColor: '#2563eb', color: '#ffffff', padding: '16px 20px' },
-  headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '10px' },
-  headerTitle: { fontSize: '24px', fontWeight: 'bold', margin: 0 },
-  headerSub: { fontSize: '14px', color: '#bfdbfe', margin: 0 },
-  headerButtons: { display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' as const },
-  
-  loginButton: { padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
-  registerButton: { padding: '8px 16px', backgroundColor: '#10b981', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
-  newAdButton: { padding: '8px 16px', backgroundColor: '#10b981', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
-  profileButton: { padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
-  logoutButton: { padding: '8px 16px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' },
-  
-  searchSection: { maxWidth: '900px', margin: '20px auto', padding: '0 20px' },
-  searchRow: { display: 'flex', gap: '10px', alignItems: 'center' },
-  searchInput: { flex: 1, padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '16px', outline: 'none', backgroundColor: '#ffffff' },
-  filterToggle: { padding: '12px 16px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap' as const },
-  
-  filtersContainer: { marginTop: '15px', padding: '20px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' },
-  filtersGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' },
-  filterGroup: { display: 'flex', flexDirection: 'column' as const, gap: '5px' },
-  filterLabel: { fontSize: '13px', fontWeight: '600', color: '#475569' },
-  filterInput: { padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc' },
-  filterSelect: { padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc', appearance: 'auto' as const },
-  resetButton: { marginTop: '15px', padding: '10px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#475569', width: '100%' },
-  
-  grid: { maxWidth: '1200px', margin: '0 auto', padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' },
-  cardLink: { textDecoration: 'none' },
-  card: { backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', transition: 'transform 0.2s', height: '100%' },
-  cardImage: { width: '100%', height: '180px', objectFit: 'cover' as const },
-  cardImagePlaceholder: { width: '100%', height: '180px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' },
-  cardBody: { padding: '14px' },
-  cardTitle: { fontSize: '16px', fontWeight: 'bold', color: '#1e293b', margin: '0 0 4px 0' },
-  cardPrice: { fontSize: '18px', fontWeight: '800', color: '#16a34a', marginBottom: '4px' },
-  cardMeta: { fontSize: '13px', color: '#64748b' },
-  cardStatus: { fontSize: '12px', color: '#94a3b8', marginTop: '4px' },
-  noCars: { gridColumn: '1 / -1', textAlign: 'center' as const, padding: '60px 20px', color: '#64748b', fontSize: '18px' },
-  
-  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
-  spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
-};
