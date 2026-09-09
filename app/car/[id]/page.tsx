@@ -1,3 +1,70 @@
+import { Metadata } from 'next';
+import { createClient } from '@supabase/supabase-js';
+
+// ✅ دالة جلب بيانات السيارة للـ Metadata
+async function getCar(id: string) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data, error } = await supabase
+    .from('cars')
+    .select('*, users(name, phone)')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data;
+}
+
+// ✅ generateMetadata - مسؤولة عن SEO لكل سيارة
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const car = await getCar(params.id);
+
+  if (!car) {
+    return {
+      title: 'السيارة غير موجودة',
+      robots: { index: false },
+    };
+  }
+
+  const title = `${car.brand} ${car.model} ${car.year || ''} | سيارتي`;
+  const description = car.description 
+    ? `${car.brand} ${car.model} ${car.year || ''} - ${car.description.slice(0, 150)}` 
+    : `${car.brand} ${car.model} ${car.year || ''} - سيارة للبيع في الكويت`;
+
+  return {
+    title,
+    description,
+    keywords: [car.brand, car.model, 'سيارة للبيع', 'الكويت', 'سيارتي'],
+    openGraph: {
+      title,
+      description,
+      images: car.images?.[0] ? [car.images[0]] : ['/og-image.jpg'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: car.images?.[0] ? [car.images[0]] : ['/og-image.jpg'],
+    },
+    alternates: {
+      canonical: `https://sayarty.store/car/${car.id}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 'use client';
 
 import { useEffect, useState } from 'react';
