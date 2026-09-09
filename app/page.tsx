@@ -47,7 +47,26 @@ export default function HomePage() {
   return (
     <div style={{ direction: 'rtl', padding: '16px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px 16px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
+            {/* 👑 الهيدر المطور والموزون هندسياً لإعطاء اللوجو الحجم المستطيل الفاخر */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '12px 16px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', gap: '15px' }}>
+        
+        {/* اللوجو مستطيل وعريض يمتد ليملأ الجهة اليمنى ويقترب من الأزرار بسلام */}
+        <div style={{ flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+          <img 
+            src="/logo.png" 
+            alt="سيارتي ستور" 
+            style={{ height: '70px', width: '160px', objectFit: 'contain', borderRadius: '8px' }} 
+          />
+        </div>
+
+        {/* صندوق الأزرار في جهة اليسار مستقر بتناسق وأناقة */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '110px', alignItems: 'stretch', justifyContent: 'center', flexShrink: 0 }}>
+          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>➕ نشر إعلان</button></Link>
+          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>🔑 دخول</button></Link>
+        </div>
+
+      </div>
+
               <img 
           src="/logo.png" 
           alt="سيارتي ستور" 
