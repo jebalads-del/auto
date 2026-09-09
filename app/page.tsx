@@ -48,7 +48,8 @@ export default function HomePage() {
     <div style={{ direction: 'rtl', padding: '16px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px 16px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
-        <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>🚗 سيارتي ستور</h1>
+      <img src="/logo.png" alt="سيارتي ستور" style={{ height: '45px', width: 'auto', objectFit: 'contain', borderRadius: '8px' }} />
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '120px', alignItems: 'stretch', justifyContent: 'center' }}>
           <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '9px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700' }}>➕ نشر إعلان</button></Link>
           <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '9px 0', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700' }}>🔑 دخول</button></Link>
