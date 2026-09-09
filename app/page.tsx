@@ -26,14 +26,22 @@ export default function HomePage() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    brand: '',
+    minPrice: '',
+    maxPrice: '',
+    minYear: '',
+    maxYear: '',
+    maxKilometers: '',
+  });
   const [user, setUser] = useState<any>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // ✅ جلب المستخدم الحالي
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -42,18 +50,45 @@ export default function HomePage() {
     getUser();
   }, []);
 
-  // ✅ جلب السيارات
   useEffect(() => {
     const fetchCars = async () => {
       try {
+        setLoading(true);
         let query = supabase
           .from('cars')
           .select('*')
           .in('status', ['approved', 'sold'])
           .order('created_at', { ascending: false });
 
+        // ✅ البحث النصي
         if (searchTerm) {
           query = query.or(`brand.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%`);
+        }
+
+        // ✅ تصفية الماركة
+        if (filters.brand) {
+          query = query.ilike('brand', `%${filters.brand}%`);
+        }
+
+        // ✅ تصفية السعر
+        if (filters.minPrice) {
+          query = query.gte('price', parseInt(filters.minPrice));
+        }
+        if (filters.maxPrice) {
+          query = query.lte('price', parseInt(filters.maxPrice));
+        }
+
+        // ✅ تصفية السنة
+        if (filters.minYear) {
+          query = query.gte('year', parseInt(filters.minYear));
+        }
+        if (filters.maxYear) {
+          query = query.lte('year', parseInt(filters.maxYear));
+        }
+
+        // ✅ تصفية المسافة
+        if (filters.maxKilometers) {
+          query = query.lte('kilometers', parseInt(filters.maxKilometers));
         }
 
         const { data, error } = await query;
@@ -71,13 +106,25 @@ export default function HomePage() {
     };
 
     fetchCars();
-  }, [searchTerm]);
+  }, [searchTerm, filters]);
 
-  // ✅ تسجيل الخروج
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     router.push('/');
+  };
+
+  // ✅ إعادة تعيين الفلاتر
+  const resetFilters = () => {
+    setFilters({
+      brand: '',
+      minPrice: '',
+      maxPrice: '',
+      minYear: '',
+      maxYear: '',
+      maxKilometers: '',
+    });
+    setSearchTerm('');
   };
 
   if (loading) {
@@ -91,7 +138,6 @@ export default function HomePage() {
 
   return (
     <div style={styles.container}>
-      {/* ✅ الهيدر مع الأزرار */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <div>
@@ -113,11 +159,11 @@ export default function HomePage() {
               </>
             ) : (
               <>
+                <Link href="/register" style={styles.registerButton}>
+                  📝 أعلن مجاناً
+                </Link>
                 <Link href="/login" style={styles.loginButton}>
                   🔑 دخول
-                </Link>
-                <Link href="/register" style={styles.registerButton}>
-                  📝 تسجيل
                 </Link>
               </>
             )}
@@ -125,21 +171,102 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* ✅ البحث */}
+      {/* ✅ البحث + زر الفلاتر */}
       <div style={styles.searchSection}>
-        <input
-          type="text"
-          placeholder="🔍 ابحث عن سيارة..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={styles.searchInput}
-        />
+        <div style={styles.searchRow}>
+          <input
+            type="text"
+            placeholder="🔍 ابحث عن سيارة (ماركة، موديل)..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={styles.searchInput}
+          />
+          <button 
+            onClick={() => setShowFilters(!showFilters)} 
+            style={styles.filterToggle}
+          >
+            {showFilters ? '⬆️ إخفاء الفلاتر' : '⬇️ فلاتر متقدمة'}
+          </button>
+        </div>
+
+        {/* ✅ الفلاتر المتقدمة */}
+        {showFilters && (
+          <div style={styles.filtersContainer}>
+            <div style={styles.filtersRow}>
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>الماركة</label>
+                <input
+                  type="text"
+                  placeholder="مثل: تويوتا"
+                  value={filters.brand}
+                  onChange={(e) => setFilters({ ...filters, brand: e.target.value })}
+                  style={styles.filterInput}
+                />
+              </div>
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>السعر من</label>
+                <input
+                  type="number"
+                  placeholder="أقل سعر"
+                  value={filters.minPrice}
+                  onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
+                  style={styles.filterInput}
+                />
+              </div>
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>السعر إلى</label>
+                <input
+                  type="number"
+                  placeholder="أعلى سعر"
+                  value={filters.maxPrice}
+                  onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
+                  style={styles.filterInput}
+                />
+              </div>
+            </div>
+            <div style={styles.filtersRow}>
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>السنة من</label>
+                <input
+                  type="number"
+                  placeholder="من سنة"
+                  value={filters.minYear}
+                  onChange={(e) => setFilters({ ...filters, minYear: e.target.value })}
+                  style={styles.filterInput}
+                />
+              </div>
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>السنة إلى</label>
+                <input
+                  type="number"
+                  placeholder="إلى سنة"
+                  value={filters.maxYear}
+                  onChange={(e) => setFilters({ ...filters, maxYear: e.target.value })}
+                  style={styles.filterInput}
+                />
+              </div>
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>المشي حتى</label>
+                <input
+                  type="number"
+                  placeholder="أقصى مسافة (كم)"
+                  value={filters.maxKilometers}
+                  onChange={(e) => setFilters({ ...filters, maxKilometers: e.target.value })}
+                  style={styles.filterInput}
+                />
+              </div>
+            </div>
+            <button onClick={resetFilters} style={styles.resetButton}>
+              🔄 إعادة تعيين الفلاتر
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ✅ السيارات - عمودين */}
+      {/* ✅ السيارات */}
       <div style={styles.grid}>
         {cars.length === 0 ? (
-          <div style={styles.noCars}>🚫 لا توجد سيارات للعرض</div>
+          <div style={styles.noCars}>🚫 لا توجد سيارات مطابقة للبحث</div>
         ) : (
           cars.map((car) => (
             <Link href={`/car/${car.id}`} key={car.id} style={styles.cardLink}>
@@ -173,29 +300,27 @@ export default function HomePage() {
 
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
-  
-  // ✅ الهيدر
   header: { backgroundColor: '#2563eb', color: '#ffffff', padding: '16px 20px' },
   headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '10px' },
   headerTitle: { fontSize: '24px', fontWeight: 'bold', margin: 0 },
   headerSub: { fontSize: '14px', color: '#bfdbfe', margin: 0 },
   headerButtons: { display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' as const },
-  
-  // ✅ الأزرار
   loginButton: { padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
-  registerButton: { padding: '8px 16px', backgroundColor: '#ffffff', color: '#2563eb', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
+  registerButton: { padding: '8px 16px', backgroundColor: '#10b981', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
   newAdButton: { padding: '8px 16px', backgroundColor: '#10b981', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
   profileButton: { padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
   logoutButton: { padding: '8px 16px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' },
-  
-  // ✅ البحث
-  searchSection: { maxWidth: '600px', margin: '20px auto', padding: '0 20px' },
-  searchInput: { width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '16px', outline: 'none', backgroundColor: '#ffffff' },
-  
-  // ✅ الشبكة - عمودين
+  searchSection: { maxWidth: '800px', margin: '20px auto', padding: '0 20px' },
+  searchRow: { display: 'flex', gap: '10px', alignItems: 'center' },
+  searchInput: { flex: 1, padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '16px', outline: 'none', backgroundColor: '#ffffff' },
+  filterToggle: { padding: '12px 16px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap' as const },
+  filtersContainer: { marginTop: '15px', padding: '16px', backgroundColor: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0' },
+  filtersRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' },
+  filterGroup: { display: 'flex', flexDirection: 'column' as const, gap: '4px' },
+  filterLabel: { fontSize: '12px', fontWeight: '600', color: '#475569' },
+  filterInput: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' },
+  resetButton: { padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#475569', width: '100%' },
   grid: { maxWidth: '1200px', margin: '0 auto', padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' },
-  
-  // ✅ البطاقات
   cardLink: { textDecoration: 'none' },
   card: { backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', transition: 'transform 0.2s' },
   cardImage: { width: '100%', height: '180px', objectFit: 'cover' as const },
@@ -205,11 +330,7 @@ const styles = {
   cardPrice: { fontSize: '18px', fontWeight: '800', color: '#16a34a', marginBottom: '4px' },
   cardMeta: { fontSize: '13px', color: '#64748b' },
   cardStatus: { fontSize: '12px', color: '#94a3b8', marginTop: '4px' },
-  
-  // ✅ حالة عدم وجود سيارات
   noCars: { gridColumn: '1 / -1', textAlign: 'center' as const, padding: '60px 20px', color: '#64748b', fontSize: '18px' },
-  
-  // ✅ تحميل
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
