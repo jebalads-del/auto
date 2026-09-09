@@ -131,7 +131,7 @@ export default function RegisterPage() {
             <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '14px', color: '#64748b' }}>
               هل لديك حساب بالفعل؟{' '}
               <Link href="/login" style={{ color: '#2563eb', fontWeight: '700', textDecoration: 'none' }}>
-                سجل الدخول من هنا
+                سجل الدخول
               </Link>
             </div>
           </form>
