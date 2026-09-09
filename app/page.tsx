@@ -1,3 +1,14 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'سيارتي - سوق السيارات في الكويت',
+  description: 'أكبر منصة لبيع وشراء السيارات في الكويت. تصفح آلاف الإعلانات للسيارات الجديدة والمستعملة.',
+  openGraph: {
+    title: 'سيارتي - سوق السيارات في الكويت',
+    description: 'أكبر منصة لبيع وشراء السيارات في الكويت.',
+    url: 'https://sayarty.store',
+  },
+};
 'use client';
 
 import { useEffect, useState } from 'react';
