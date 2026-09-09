@@ -46,29 +46,29 @@ export default function HomePage() {
   return (
     <div style={{ direction: 'rtl', padding: '16px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       
-      {/* 👑 الهيدر المطور والموزون هندسياً لإعطاء اللوجو الحجم المستطيل الفاخر */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '12px 16px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', gap: '15px' }}>
+      {/* 👑 هيدر متوازن هندسياً يعيد الأزرار للإطار ويمنح اللوجو الحجم الكامل */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', gap: '10px', overflow: 'hidden' }}>
         
-        {/* اللوجو مستطيل وعريض يمتد ليملأ الجهة اليمنى ويقترب من الأزرار بسلام */}
-        <div style={{ flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+        {/* صندوق اللوجو مرن ومتناسق لا يضغط على الأزرار */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', maxWidth: '50%' }}>
           <img 
             src="/logo.png" 
             alt="سيارتي ستور" 
-            style={{ height: '85px', width: '220px', objectFit: 'contain', borderRadius: '8px' }} 
+            style={{ height: '60px', width: 'auto', objectFit: 'contain', borderRadius: '6px' }} 
           />
         </div>
 
-        {/* صندوق الأزرار في جهة اليسار مستقر بتناسق وأناقة */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '110px', alignItems: 'stretch', justifyContent: 'center', flexShrink: 0 }}>
-          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>➕ نشر إعلان</button></Link>
-          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>🔑 دخول</button></Link>
+        {/* صندوق الأزرار مستقر ومحمي داخل الإطار الأبيض بسلام */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '105px', flexShrink: 0 }}>
+          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>➕ نشر إعلان</button></Link>
+          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>🔑 دخول</button></Link>
         </div>
 
       </div>
 
       <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#1e293b', paddingRight: '4px' }}>🚙 أحدث السيارات المعروضة</h2>
 
-      {/* 🔍 محرك البحث وقوائم التصفية الـ 15 لوناً والسنوات كاملة */}
+      {/* 🔍 محرك البحث الذكي بـ 15 لوناً والسنوات كاملة */}
       <div style={{ backgroundColor: '#ffffff', padding: '10px 12px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <input type="text" placeholder="ابحث عن ماركة أو موديل السيارة..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc' }} />
@@ -118,7 +118,6 @@ export default function HomePage() {
                     <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{ backgroundColor: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', height: '100%', cursor: 'pointer', transition: '0.2s' }}>
                         
-                        {/* 1. هيكل الصورة الثابت هندسياً مع وسم الشارة الخضراء الطافية لـ مباع */}
                         <div style={{ width: '100%', height: '130px', backgroundColor: '#f8fafc', overflow: 'hidden', position: 'relative' }}>
                           {firstImage ? (
                             <img src={firstImage} alt={`${car.brand} ${car.model}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
