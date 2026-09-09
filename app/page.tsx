@@ -26,16 +26,15 @@ export default function HomePage() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({
-    brand: '',
-    minPrice: '',
-    maxPrice: '',
-    minYear: '',
-    maxYear: '',
-    maxKilometers: '',
-  });
+  const [selectedBrand, setSelectedBrand] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [minYear, setMinYear] = useState('');
+  const [maxYear, setMaxYear] = useState('');
+  const [maxKilometers, setMaxKilometers] = useState('');
   const [user, setUser] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [brands, setBrands] = useState<string[]>([]);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,6 +49,22 @@ export default function HomePage() {
     getUser();
   }, []);
 
+  // جلب الماركات للقائمة المنسدلة
+  useEffect(() => {
+    const fetchBrands = async () => {
+      const { data } = await supabase
+        .from('cars')
+        .select('brand')
+        .in('status', ['approved', 'sold']);
+      
+      if (data) {
+        const uniqueBrands = [...new Set(data.map(car => car.brand))].filter(Boolean);
+        setBrands(uniqueBrands);
+      }
+    };
+    fetchBrands();
+  }, []);
+
   useEffect(() => {
     const fetchCars = async () => {
       try {
@@ -60,35 +75,30 @@ export default function HomePage() {
           .in('status', ['approved', 'sold'])
           .order('created_at', { ascending: false });
 
-        // ✅ البحث النصي
         if (searchTerm) {
           query = query.or(`brand.ilike.%${searchTerm}%,model.ilike.%${searchTerm}%`);
         }
 
-        // ✅ تصفية الماركة
-        if (filters.brand) {
-          query = query.ilike('brand', `%${filters.brand}%`);
+        if (selectedBrand) {
+          query = query.eq('brand', selectedBrand);
         }
 
-        // ✅ تصفية السعر
-        if (filters.minPrice) {
-          query = query.gte('price', parseInt(filters.minPrice));
+        if (minPrice) {
+          query = query.gte('price', parseInt(minPrice));
         }
-        if (filters.maxPrice) {
-          query = query.lte('price', parseInt(filters.maxPrice));
-        }
-
-        // ✅ تصفية السنة
-        if (filters.minYear) {
-          query = query.gte('year', parseInt(filters.minYear));
-        }
-        if (filters.maxYear) {
-          query = query.lte('year', parseInt(filters.maxYear));
+        if (maxPrice) {
+          query = query.lte('price', parseInt(maxPrice));
         }
 
-        // ✅ تصفية المسافة
-        if (filters.maxKilometers) {
-          query = query.lte('kilometers', parseInt(filters.maxKilometers));
+        if (minYear) {
+          query = query.gte('year', parseInt(minYear));
+        }
+        if (maxYear) {
+          query = query.lte('year', parseInt(maxYear));
+        }
+
+        if (maxKilometers) {
+          query = query.lte('kilometers', parseInt(maxKilometers));
         }
 
         const { data, error } = await query;
@@ -106,7 +116,7 @@ export default function HomePage() {
     };
 
     fetchCars();
-  }, [searchTerm, filters]);
+  }, [searchTerm, selectedBrand, minPrice, maxPrice, minYear, maxYear, maxKilometers]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -114,16 +124,13 @@ export default function HomePage() {
     router.push('/');
   };
 
-  // ✅ إعادة تعيين الفلاتر
   const resetFilters = () => {
-    setFilters({
-      brand: '',
-      minPrice: '',
-      maxPrice: '',
-      minYear: '',
-      maxYear: '',
-      maxKilometers: '',
-    });
+    setSelectedBrand('');
+    setMinPrice('');
+    setMaxPrice('');
+    setMinYear('');
+    setMaxYear('');
+    setMaxKilometers('');
     setSearchTerm('');
   };
 
@@ -159,11 +166,11 @@ export default function HomePage() {
               </>
             ) : (
               <>
-                <Link href="/register" style={styles.registerButton}>
-                  📝 أعلن مجاناً
-                </Link>
                 <Link href="/login" style={styles.loginButton}>
                   🔑 دخول
+                </Link>
+                <Link href="/register" style={styles.registerButton}>
+                  📝 أعلن مجاناً
                 </Link>
               </>
             )}
@@ -171,7 +178,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* ✅ البحث + زر الفلاتر */}
+      {/* ✅ البحث والفلاتر */}
       <div style={styles.searchSection}>
         <div style={styles.searchRow}>
           <input
@@ -189,73 +196,86 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* ✅ الفلاتر المتقدمة */}
+        {/* ✅ الفلاتر بشكل أنيق */}
         {showFilters && (
           <div style={styles.filtersContainer}>
-            <div style={styles.filtersRow}>
+            <div style={styles.filtersGrid}>
+              {/* الماركة - قائمة منسدلة */}
               <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>الماركة</label>
-                <input
-                  type="text"
-                  placeholder="مثل: تويوتا"
-                  value={filters.brand}
-                  onChange={(e) => setFilters({ ...filters, brand: e.target.value })}
-                  style={styles.filterInput}
-                />
+                <label style={styles.filterLabel}>🏷️ الماركة</label>
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  style={styles.filterSelect}
+                >
+                  <option value="">كل الماركات</option>
+                  {brands.map((brand) => (
+                    <option key={brand} value={brand}>{brand}</option>
+                  ))}
+                </select>
               </div>
+
+              {/* السعر من */}
               <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>السعر من</label>
+                <label style={styles.filterLabel}>💰 السعر من</label>
                 <input
                   type="number"
                   placeholder="أقل سعر"
-                  value={filters.minPrice}
-                  onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
                   style={styles.filterInput}
                 />
               </div>
+
+              {/* السعر إلى */}
               <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>السعر إلى</label>
+                <label style={styles.filterLabel}>💰 السعر إلى</label>
                 <input
                   type="number"
                   placeholder="أعلى سعر"
-                  value={filters.maxPrice}
-                  onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
                   style={styles.filterInput}
                 />
               </div>
-            </div>
-            <div style={styles.filtersRow}>
+
+              {/* السنة من */}
               <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>السنة من</label>
+                <label style={styles.filterLabel}>📅 السنة من</label>
                 <input
                   type="number"
                   placeholder="من سنة"
-                  value={filters.minYear}
-                  onChange={(e) => setFilters({ ...filters, minYear: e.target.value })}
+                  value={minYear}
+                  onChange={(e) => setMinYear(e.target.value)}
                   style={styles.filterInput}
                 />
               </div>
+
+              {/* السنة إلى */}
               <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>السنة إلى</label>
+                <label style={styles.filterLabel}>📅 السنة إلى</label>
                 <input
                   type="number"
                   placeholder="إلى سنة"
-                  value={filters.maxYear}
-                  onChange={(e) => setFilters({ ...filters, maxYear: e.target.value })}
+                  value={maxYear}
+                  onChange={(e) => setMaxYear(e.target.value)}
                   style={styles.filterInput}
                 />
               </div>
+
+              {/* المشي */}
               <div style={styles.filterGroup}>
-                <label style={styles.filterLabel}>المشي حتى</label>
+                <label style={styles.filterLabel}>📊 المشي حتى</label>
                 <input
                   type="number"
                   placeholder="أقصى مسافة (كم)"
-                  value={filters.maxKilometers}
-                  onChange={(e) => setFilters({ ...filters, maxKilometers: e.target.value })}
+                  value={maxKilometers}
+                  onChange={(e) => setMaxKilometers(e.target.value)}
                   style={styles.filterInput}
                 />
               </div>
             </div>
+
             <button onClick={resetFilters} style={styles.resetButton}>
               🔄 إعادة تعيين الفلاتر
             </button>
@@ -305,24 +325,29 @@ const styles = {
   headerTitle: { fontSize: '24px', fontWeight: 'bold', margin: 0 },
   headerSub: { fontSize: '14px', color: '#bfdbfe', margin: 0 },
   headerButtons: { display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' as const },
+  
   loginButton: { padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
   registerButton: { padding: '8px 16px', backgroundColor: '#10b981', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
   newAdButton: { padding: '8px 16px', backgroundColor: '#10b981', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
   profileButton: { padding: '8px 16px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', borderRadius: '8px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' },
   logoutButton: { padding: '8px 16px', backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' },
-  searchSection: { maxWidth: '800px', margin: '20px auto', padding: '0 20px' },
+  
+  searchSection: { maxWidth: '900px', margin: '20px auto', padding: '0 20px' },
   searchRow: { display: 'flex', gap: '10px', alignItems: 'center' },
   searchInput: { flex: 1, padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '16px', outline: 'none', backgroundColor: '#ffffff' },
   filterToggle: { padding: '12px 16px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap' as const },
-  filtersContainer: { marginTop: '15px', padding: '16px', backgroundColor: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0' },
-  filtersRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' },
-  filterGroup: { display: 'flex', flexDirection: 'column' as const, gap: '4px' },
-  filterLabel: { fontSize: '12px', fontWeight: '600', color: '#475569' },
-  filterInput: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' },
-  resetButton: { padding: '8px 16px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#475569', width: '100%' },
-  grid: { maxWidth: '1200px', margin: '0 auto', padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' },
+  
+  filtersContainer: { marginTop: '15px', padding: '20px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' },
+  filtersGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' },
+  filterGroup: { display: 'flex', flexDirection: 'column' as const, gap: '5px' },
+  filterLabel: { fontSize: '13px', fontWeight: '600', color: '#475569' },
+  filterInput: { padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc' },
+  filterSelect: { padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', backgroundColor: '#f8fafc', appearance: 'auto' as const },
+  resetButton: { marginTop: '15px', padding: '10px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#475569', width: '100%' },
+  
+  grid: { maxWidth: '1200px', margin: '0 auto', padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' },
   cardLink: { textDecoration: 'none' },
-  card: { backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', transition: 'transform 0.2s' },
+  card: { backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', transition: 'transform 0.2s', height: '100%' },
   cardImage: { width: '100%', height: '180px', objectFit: 'cover' as const },
   cardImagePlaceholder: { width: '100%', height: '180px', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' },
   cardBody: { padding: '14px' },
