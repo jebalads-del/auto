@@ -9,7 +9,6 @@ const supabase = createClient(
 );
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // ✅ جلب جميع السيارات المقبولة
   const { data: cars, error } = await supabase
     .from('cars')
     .select('id, updated_at')
@@ -17,11 +16,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('❌ خطأ في جلب السيارات للـ Sitemap:', error);
+    console.error('❌ خطأ في جلب السيارات:', error);
     return [];
   }
 
-  // ✅ الصفحات الثابتة
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: URL,
@@ -43,7 +41,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // ✅ صفحات السيارات الديناميكية
   const carPages: MetadataRoute.Sitemap = cars?.map((car) => ({
     url: `${URL}/car/${car.id}`,
     lastModified: new Date(car.updated_at || new Date()),
@@ -51,6 +48,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   })) || [];
 
-  // ✅ دمج جميع الصفحات
   return [...staticPages, ...carPages];
 }
