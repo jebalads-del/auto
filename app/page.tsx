@@ -49,7 +49,7 @@ export default function HomePage() {
     getUser();
   }, []);
 
-  // جلب الماركات للقائمة المنسدلة
+  // ✅ جلب الماركات للقائمة المنسدلة (مع التعديل)
   useEffect(() => {
     const fetchBrands = async () => {
       const { data } = await supabase
@@ -58,7 +58,8 @@ export default function HomePage() {
         .in('status', ['approved', 'sold']);
       
       if (data) {
-        const uniqueBrands = [...new Set(data.map(car => car.brand))].filter(Boolean);
+        // ✅ استخدم Array.from بدلاً من spread operator
+        const uniqueBrands = Array.from(new Set(data.map(car => car.brand))).filter(Boolean);
         setBrands(uniqueBrands);
       }
     };
@@ -196,11 +197,11 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* ✅ الفلاتر بشكل أنيق */}
+        {/* ✅ الفلاتر */}
         {showFilters && (
           <div style={styles.filtersContainer}>
             <div style={styles.filtersGrid}>
-              {/* الماركة - قائمة منسدلة */}
+              {/* الماركة */}
               <div style={styles.filterGroup}>
                 <label style={styles.filterLabel}>🏷️ الماركة</label>
                 <select
@@ -320,6 +321,7 @@ export default function HomePage() {
 
 const styles = {
   container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
+  
   header: { backgroundColor: '#2563eb', color: '#ffffff', padding: '16px 20px' },
   headerContent: { maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '10px' },
   headerTitle: { fontSize: '24px', fontWeight: 'bold', margin: 0 },
@@ -356,6 +358,7 @@ const styles = {
   cardMeta: { fontSize: '13px', color: '#64748b' },
   cardStatus: { fontSize: '12px', color: '#94a3b8', marginTop: '4px' },
   noCars: { gridColumn: '1 / -1', textAlign: 'center' as const, padding: '60px 20px', color: '#64748b', fontSize: '18px' },
+  
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
