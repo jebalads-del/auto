@@ -26,11 +26,10 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // تم استخدام signInWithOtp لضمان توليد وإرسال رمز 6 أرقام من خلال السيرفر
       const { error: signUpError } = await supabase.auth.signInWithOtp({
         email: email.trim().toLowerCase(),
         options: {
-          shouldCreateUser: true, // يضمن إنشاء حساب جديد تلقائياً في السيرفر للمستخدم الجديد
+          shouldCreateUser: true, 
           data: { 
             full_name: name.trim()
           }
@@ -43,7 +42,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // الانتقال الإجباري لخطوة الـ OTP في الواجهة
       setStep('otp');
     } catch (err) {
       setError('حدث خطأ في الاتصال بالسيرفر');
@@ -63,7 +61,7 @@ export default function RegisterPage() {
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
         email: email.trim().toLowerCase(),
         token: fullCode,
-        type: 'email', // تم تعديلها إلى email لتتوافق مع دالة إرسال الـ OTP الرقمي
+        type: 'email', 
       });
 
       if (verifyError) {
@@ -72,7 +70,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // مزامنة الاسم والبيانات تلقائياً في جدول الأدمن الخارجي ليظهر في القائمة فوراً
       if (data?.user) {
         localStorage.setItem('userId', data.user.id);
         await supabase
@@ -82,7 +79,7 @@ export default function RegisterPage() {
             email: email.trim().toLowerCase(), 
             name: name.trim(), 
             role: 'user', 
-            password: password // سيتم حفظ كلمة المرور في جدولك المخصص
+            password: password 
           }]);
       }
 
@@ -129,6 +126,14 @@ export default function RegisterPage() {
             <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
               {loading ? '⏳ جاري إرسال رمز الأمان...' : '✉️ تسجيل الحساب وإرسال كود OTP'}
             </button>
+
+            {/* 🛠️ الرابط التوجيهي الذكي والأنيق لصفحة تسجيل الدخول */}
+            <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '14px', color: '#64748b' }}>
+              هل لديك حساب بالفعل؟{' '}
+              <Link href="/login" style={{ color: '#2563eb', fontWeight: '700', textDecoration: 'none' }}>
+                سجل الدخول من هنا
+              </Link>
+            </div>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} style={{ textAlign: 'center' }}>
