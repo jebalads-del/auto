@@ -1,28 +1,57 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  compress: true,
-  swcMinify: true,
   images: {
-    domains: [
-      'sayarty.store',
-      'vercel-storage.com',
-      '**.vercel-storage.com',
-    ],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.vercel-storage.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'sayarty.store',
-        port: '',
-        pathname: '/**',
-      },
-    ],
+    domains: ['sayarty.store'],
   },
-}
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'index, follow',
+          },
+        ],
+      },
+      {
+        source: '/dashboard/(.*)',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow',
+          },
+        ],
+      },
+      {
+        source: '/profile/(.*)',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow',
+          },
+        ],
+      },
+      {
+        source: '/admin/(.*)',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow',
+          },
+        ],
+      },
+      {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow',
+          },
+        ],
+      },
+    ];
+  },
+};
 
-module.exports = nextConfig
+export default nextConfig;
