@@ -119,7 +119,7 @@ export default function ProfilePage() {
         {loading ? <p style={{ textAlign: 'center', color: '#64748b' }}>⏳ جاري تحميل إعلاناتك...</p> : myCars.length === 0 ? <p style={{ color: '#64748b', textAlign: 'center', padding: '15px' }}>📭 لم تقم بنشر أي إعلانات سيارات حتى الآن.</p> : myCars.map((car) => (
           <div key={car.id} style={{ backgroundColor: 'white', padding: '15px', borderRadius: '14px', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {car.images && car.images.length > 0 && <img src={car.images} alt="car" style={{ width: '65px', height: '45px', borderRadius: '6px', objectFit: 'cover' }} />}
+              {car.images && car.images.length > 0 && <img src={car.images[0]} alt="car" style={{ width: '65px', height: '45px', borderRadius: '6px', objectFit: 'cover' }} />}
               <div>
                 <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{car.brand} {car.model}</div>
                 <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'bold', marginTop: '2px' }}>{car.price} {car.currency || 'د.ك'}</div>
