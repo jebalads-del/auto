@@ -44,7 +44,7 @@ export default function HomePage() {
     fetchCars();
   }, [supabase]);
   return (
-    <div style={{ direction: 'rtl', padding: '16px', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+    <div style={{ direction: 'rtl', padding: '10px 6px', maxWidth: '100%', margin: '0', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       
       {/* 👑 هيدر متوازن هندسياً يعيد الأزرار للإطار ويمنح اللوجو الحجم الكامل */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', gap: '10px', overflow: 'hidden' }}>
