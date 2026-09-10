@@ -29,13 +29,10 @@ export default function AdminDashboardForm() {
   const [carsLoading, setCarsLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<'cars' | 'users' | 'settings' | 'payments' | 'featured_requests'>('cars');
+  const [activeTab, setActiveTab] = useState<'cars' | 'users' | 'settings' | 'featured_requests'>('cars');
   const [message, setMessage] = useState({ text: '', type: '' });
 
   const [siteName, setSiteName] = useState('سيارتي ستور');
-  const [siteStatus, setSiteStatus] = useState('active');
-  const [westernUnionInfo, setWesternUnionInfo] = useState('الاسم الكامل: مدير الموقع - الكويت');
-  const [paypalEmail, setPaypalEmail] = useState('admin@sayarty.store');
 
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
@@ -60,12 +57,13 @@ export default function AdminDashboardForm() {
 
   useEffect(() => { fetchCars(); fetchUsers(); }, []);
 
-  const handleCarAction = async (carId: string, action: 'approve' | 'sell' | 'approve_featured') => {
+  const handleCarAction = async (carId: string, action: 'approve' | 'sell' | 'approve_featured' | 'remove_featured') => {
     try {
       let updateData: any = {};
       if (action === 'approve') updateData = { status: 'approved' };
       if (action === 'sell') updateData = { status: 'sold' };
       if (action === 'approve_featured') updateData = { is_featured: true, status: 'approved' };
+      if (action === 'remove_featured') updateData = { is_featured: false };
 
       const { error } = await supabase.from('cars').update(updateData).eq('id', carId);
       if (!error) { showMessage('✅ تم تحديث حالة الإعلان بنجاح', 'success'); fetchCars(); }
@@ -92,7 +90,7 @@ export default function AdminDashboardForm() {
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-        <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🎛️ لوحة تحكم الإدارة الاحترافية</h1>
+        <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🎛️ لوحة تحكم الإدارة</h1>
         <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ padding: '8px 14px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🚪 خروج</button>
       </div>
 
@@ -102,7 +100,6 @@ export default function AdminDashboardForm() {
         </div>
       )}
 
-      {/* أزرار التبويبات مع إضافة زر طلبات التمييز الجديد */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
         <button onClick={() => setActiveTab('cars')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'cars' ? '#2563eb' : 'white', color: activeTab === 'cars' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold' }}>🚗 الإعلانات ({cars.length})</button>
         <button onClick={() => setActiveTab('featured_requests')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'featured_requests' ? '#eab308' : 'white', color: activeTab === 'featured_requests' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold' }}>⭐ طلبات التمييز ({cars.filter(c => c.status === 'pending_featured').length})</button>
@@ -120,7 +117,16 @@ export default function AdminDashboardForm() {
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model} {car.year && `(${car.year})`}</div>
                   <div style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold' }}>{car.price} {car.currency || 'د.ك'}</div>
-                  {car.is_featured && <span style={{ fontSize: '10px', color: 'white', backgroundColor: '#eab308', padding: '1px 5px', borderRadius: '4px', fontWeight: 'bold' }}>⭐ إعلان مميز</span>}
+                  
+                  {/* ❌ زر إلغاء التميز التفاعلي السحري بدلاً من الكلمة الثابتة القديمة */}
+                  {car.is_featured && (
+                    <button 
+                      onClick={() => handleCarAction(car.id, 'remove_featured')} 
+                      style={{ fontSize: '11px', color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', marginTop: '5px', cursor: 'pointer' }}
+                    >
+                      ❌ إلغاء التميز
+                    </button>
+                  )}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
@@ -137,11 +143,10 @@ export default function AdminDashboardForm() {
         </div>
       )}
 
-      {/* تبويب مراجعة وتفعيل طلبات التمييز المدفوعة */}
       {activeTab === 'featured_requests' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold', color: '#eab308' }}>⭐ طلبات التمييز قيد الانتظار</h2>
-          {cars.filter(c => c.status === 'pending_featured').length === 0 ? <p style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>📬 لا توجد طلبات تمييز معلقة حالياً</p> : cars.filter(c => c.status === 'pending_featured').map((car) => (
+          {cars.filter(c => c.status === 'pending_featured').length === 0 ? <p style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>📬 لا توجد طلبات معلقة حالياً</p> : cars.filter(c => c.status === 'pending_featured').map((car) => (
             <div key={car.id} style={{ padding: '15px', border: '1px solid #f1f5f9', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fffdf5' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <div style={{ fontWeight: 'bold' }}>{car.brand} {car.model} ({car.year})</div>
@@ -152,7 +157,7 @@ export default function AdminDashboardForm() {
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button onClick={() => handleCarAction(car.id, 'approve_featured')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>⭐ موافقة وتثبيت كمميز</button>
-                <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#64748b', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>رفض التمييز (نشر كعادي)</button>
+                <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#64748b', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>رفض كلي</button>
               </div>
             </div>
           ))}
@@ -180,16 +185,15 @@ export default function AdminDashboardForm() {
 
       {activeTab === 'settings' && (
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ fontSize: '16px', marginBottom: '20px', fontWeight: 'bold' }}>⚙️ إعدادات الموقع والصيانة</h2>
+          <h2 style={{ fontSize: '16px', marginBottom: '20px', fontWeight: 'bold' }}>⚙️ إعدادات الموقع</h2>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>اسم الموقع</label>
             <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
           </div>
-          <button onClick={() => showMessage('✅ تم حفظ إعدادات الموقع بنجاح', 'success')} style={{ width: '100%', padding: '10px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>حفظ الإعدادات</button>
+          <button onClick={() => showMessage('✅ تم حفظ الإعدادات بنجاح', 'success')} style={{ width: '100%', padding: '10px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>حفظ</button>
         </div>
       )}
 
     </div>
   );
 }
- 
