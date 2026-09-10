@@ -137,7 +137,7 @@ export default function UserDashboard() {
       {/* 📥 النافذة المنبثقة الذكية (Modal) لإرسال بيانات الحوالة المدفوعة */}
       {modalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '15px' }}>
-          <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', width: '100%', maxWidth: '400px', boxDeep: '0 10px 25px rgba(0,0,0,0.1)', direction: 'rtl' }}>
+          <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', width: '100%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', direction: 'rtl' }}>
             <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px', color: '#1e293b' }}>⭐ طلب تمييز الإعلان في الشريط العلوي</h3>
             <p style={{ fontSize: '13px', color: '#475569', marginBottom: '15px', leading: '1.5' }}>قم بتحويل رسوم التمييز عبر أحد الحسابات التالية، ثم اكتب رقم الإيصال أو اسم المحول بالأسفل لتفعيل الإعلان فوراً:</p>
             
