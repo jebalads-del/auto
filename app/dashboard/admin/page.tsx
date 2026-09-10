@@ -32,11 +32,26 @@ export default function AdminDashboardForm() {
   const [activeTab, setActiveTab] = useState<'cars' | 'users' | 'settings' | 'featured_requests'>('cars');
   const [message, setMessage] = useState({ text: '', type: '' });
 
+  // حالات إعدادات الدفع المطور للـ Admin للتحكم الحي بالأسعار والحسابات
   const [siteName, setSiteName] = useState('سيارتي ستور');
+  const [featuredPrice, setFeaturedPrice] = useState('15');
+  const [westernUnionInfo, setWesternUnionInfo] = useState('');
+  const [paypalEmail, setPaypalEmail] = useState('');
 
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const { data } = await supabase.from('site_settings').select('*').eq('id', 'global').single();
+      if (data) {
+        setFeaturedPrice(data.featured_price?.toString() || '15');
+        setWesternUnionInfo(data.western_union_info || '');
+        setPaypalEmail(data.paypal_email || '');
+      }
+    } catch (err) { console.error(err); }
   };
 
   const fetchCars = async () => {
@@ -55,7 +70,22 @@ export default function AdminDashboardForm() {
     } catch { setUsers([]); } finally { setUsersLoading(false); }
   };
 
-  useEffect(() => { fetchCars(); fetchUsers(); }, []);
+  useEffect(() => { fetchCars(); fetchUsers(); fetchSettings(); }, []);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from('site_settings').upsert({
+        id: 'global',
+        featured_price: Number(featuredPrice),
+        western_union_info: westernUnionInfo.trim(),
+        paypal_email: paypalEmail.trim(),
+        updated_at: new Date().toISOString()
+      });
+      if (!error) showMessage('✅ تم حفظ وتحديث حسابات وأسعار الدفع الحية بنجاح', 'success');
+      else showMessage('❌ حدث خطأ أثناء حفظ الإعدادات', 'error');
+    } catch { showMessage('❌ خطأ في الاتصال بالخادم', 'error'); }
+  };
 
   const handleCarAction = async (carId: string, action: 'approve' | 'sell' | 'approve_featured' | 'remove_featured') => {
     try {
@@ -95,9 +125,7 @@ export default function AdminDashboardForm() {
       </div>
 
       {message.text && (
-        <div style={{ padding: '12px 15px', backgroundColor: message.type === 'success' ? '#d1fae5' : '#fee2e2', color: message.type === 'success' ? '#065f46' : '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>
-          {message.text}
-        </div>
+        <div style={{ padding: '12px 15px', backgroundColor: message.type === 'success' ? '#d1fae5' : '#fee2e2', color: message.type === 'success' ? '#065f46' : '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>{message.text}</div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
@@ -115,41 +143,29 @@ export default function AdminDashboardForm() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {car.images && car.images.length > 0 && <img src={car.images[0]} alt="car" style={{ width: '70px', height: '50px', borderRadius: '6px', objectFit: 'cover' }} />}
                 <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model} {car.year && `(${car.year})`}</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model}</div>
                   <div style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold' }}>{car.price} {car.currency || 'د.ك'}</div>
-                  
-                  {/* ❌ زر إلغاء التميز التفاعلي السحري بدلاً من الكلمة الثابتة القديمة */}
                   {car.is_featured && (
-                    <button 
-                      onClick={() => handleCarAction(car.id, 'remove_featured')} 
-                      style={{ fontSize: '11px', color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', marginTop: '5px', cursor: 'pointer' }}
-                    >
-                      ❌ إلغاء التميز
-                    </button>
+                    <button onClick={() => handleCarAction(car.id, 'remove_featured')} style={{ fontSize: '11px', color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', marginTop: '5px', cursor: 'pointer' }}>❌ إلغاء التميز</button>
                   )}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
-                {car.status === 'pending' && (
-                  <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>موافقة ونشر</button>
-                )}
-                {car.status === 'approved' && (
-                  <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>تحويل لمباع</button>
-                )}
+                {car.status === 'pending' && <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>موافقة ونشر</button>}
+                {car.status === 'approved' && <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>تحويل لمباع</button>}
                 <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>حذف الإعلان</button>
               </div>
             </div>
           ))}
         </div>
       )}
-
-      {activeTab === 'featured_requests' && (
+            {activeTab === 'featured_requests' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold', color: '#eab308' }}>⭐ طلبات التمييز قيد الانتظار</h2>
           {cars.filter(c => c.status === 'pending_featured').length === 0 ? <p style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>📬 لا توجد طلبات معلقة حالياً</p> : cars.filter(c => c.status === 'pending_featured').map((car) => (
             <div key={car.id} style={{ padding: '15px', border: '1px solid #f1f5f9', borderRadius: '10px', marginBottom: '10px', backgroundColor: '#fffdf5' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <div style={{ fontWeight: 'bold' }}>{car.brand} {car.model} ({car.year})</div>
+                <div style={{ fontWeight: 'bold' }}>{car.brand} {car.model}</div>
                 <div style={{ color: '#16a34a', fontWeight: 'bold' }}>{car.price} د.ك</div>
               </div>
               <div style={{ backgroundColor: '#fef3c7', padding: '10px', borderRadius: '8px', fontSize: '13px', color: '#d97706', marginBottom: '10px', border: '1px solid #fde68a' }}>
@@ -185,15 +201,30 @@ export default function AdminDashboardForm() {
 
       {activeTab === 'settings' && (
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ fontSize: '16px', marginBottom: '20px', fontWeight: 'bold' }}>⚙️ إعدادات الموقع</h2>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>اسم الموقع</label>
-            <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-          </div>
-          <button onClick={() => showMessage('✅ تم حفظ الإعدادات بنجاح', 'success')} style={{ width: '100%', padding: '10px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>حفظ</button>
+          <h2 style={{ fontSize: '16px', marginBottom: '20px', fontWeight: 'bold', color: '#2563eb' }}>⚙️ التحكم المالي وإعدادات الدفع للموقع</h2>
+          <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>اسم الموقع الرسمي</label>
+              <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>تكلفة تمييز الإعلان شهرياً (بالدينار الكويتي)</label>
+              <input type="number" value={featuredPrice} onChange={(e) => setFeaturedPrice(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>بيانات استلام ويسترن يونيون</label>
+              <textarea value={westernUnionInfo} onChange={(e) => setWesternUnionInfo(e.target.value)} required rows={2} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontFamily: 'sans-serif' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>حساب PayPal الرسمي لاستقبال الأموال فوراً</label>
+              <input type="email" value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold' }} />
+            </div>
+            <button type="submit" style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>💾 حفظ وتثبيت الإعدادات المالية الحية</button>
+          </form>
         </div>
       )}
 
     </div>
   );
 }
+
