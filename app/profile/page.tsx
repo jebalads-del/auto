@@ -26,30 +26,44 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ text: '', type: '' });
 
+  // إعدادات الدفع الديناميكية الواردة من جدول site_settings
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
   const [paymentRef, setPaymentRef] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [livePrice, setLivePrice] = useState('15');
+  const [liveWestern, setLiveWestern] = useState('الاسم الكامل: مدير الموقع - الكويت');
+  const [livePaypal, setLivePaypal] = useState('admin@sayarty.store');
 
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
-  const fetchProfileAndCars = async () => {
+  const fetchProfileCarsAndSettings = async () => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
       setEmail(user.email || '');
 
+      // 1. جلب الإعدادات المالية الحية من السيرفر
+      const { data: settings } = await supabase.from('site_settings').select('*').eq('id', 'global').single();
+      if (settings) {
+        setLivePrice(settings.featured_price?.toString() || '15');
+        setLiveWestern(settings.western_union_info || '');
+        setLivePaypal(settings.paypal_email || '');
+      }
+
+      // 2. جلب بيانات الحساب الشخصية
       const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
       if (profile) { setName(profile.name || ''); setPhone(profile.phone || ''); }
 
+      // 3. جلب إعلانات المستخدم
       const { data: carData } = await supabase.from('cars').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       if (carData) setMyCars(carData);
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchProfileAndCars(); }, []);
+  useEffect(() => { fetchProfileCarsAndSettings(); }, []);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +93,7 @@ export default function ProfilePage() {
       const { error } = await supabase.from('cars').update({ status: 'pending_featured', featured_payment_ref: paymentRef.trim() }).eq('id', selectedCarId);
       if (!error) {
         showMessage('✅ تم إرسال طلب التمييز! بانتظار مراجعة الإدارة وتفعيل الحوالة.', 'success');
-        setModalOpen(false); setPaymentRef(''); fetchProfileAndCars();
+        setModalOpen(false); setPaymentRef(''); fetchProfileCarsAndSettings();
       } else { showMessage('❌ حدث خطأ أثناء إرسال الطلب', 'error'); }
     } catch { showMessage('❌ خطأ في الاتصال بالخادم', 'error'); }
   };
@@ -133,23 +147,34 @@ export default function ProfilePage() {
           </div>
         ))}
       </div>
-
-      {modalOpen && (
+            {modalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '15px' }}>
           <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', width: '100%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', direction: 'rtl' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b' }}>⭐ طلب تمييز الإعلان في الشريط العلوي</h3>
             <div style={{ backgroundColor: '#eff6ff', padding: '10px', borderRadius: '8px', fontSize: '14px', color: '#1e40af', fontWeight: 'bold', marginBottom: '15px', border: '1px solid #bfdbfe', textAlign: 'center' }}>
-              💰 تكلفة تمييز الإعلان: 15 دينار كويتي / شهرياً
+              💰 تكلفة تمييز الإعلان: {livePrice} دينار كويتي / شهرياً
             </div>
-            <p style={{ fontSize: '13px', color: '#475569', marginBottom: '15px', lineHeight: '1.5' }}>قم بتحويل رسوم التمييز عبر أحد الحسابات التالية، ثم اكتب رقم الإيصال أو اسم المحول بالأسفل لتفعيل الإعلان فوراً:</p>
-            <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', fontSize: '12px', color: '#334155', border: '1px solid #e2e8f0', marginBottom: '15px' }}>💰 <strong>ويسترن يونيون:</strong> الاسم الكامل: مدير الموقع - الكويت<br/>📧 <strong>بايبال الفوري:</strong> admin@sayarty.store</div>
+            
+            <p style={{ fontSize: '13px', color: '#475569', marginBottom: '12px', lineHeight: '1.5' }}>قم بالسداد الفوري عبر بايبال بالضغط بالأسفل، أو التحويل عبر ويسترن يونيون، ثم اكتب رقم الحوالة للتفعيل المباشر:</p>
+            
+            <a href={`https://paypal.com{encodeURIComponent(livePaypal)}&currency_code=KWD&amount=${livePrice}&item_name=Premium%20Car%20Featured%20Ad%20Sayarty%20Store`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block', marginBottom: '15px' }}>
+              <button type="button" style={{ width: '100%', padding: '12px', backgroundColor: '#0070ba', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                💳 ادفع الآن فورا عبر PayPal
+              </button>
+            </a>
+
+            <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', fontSize: '12px', color: '#334155', border: '1px solid #e2e8f0', marginBottom: '15px', lineHeight: '1.6' }}>
+              📌 <strong>ويسترن يونيون:</strong> {liveWestern}<br/>
+              📧 <strong>حساب بايبال اليدوي:</strong> {livePaypal}
+            </div>
+
             <form onSubmit={handleRequestFeatured}>
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '6px' }}>رقم الحوالة المرجعي أو إيميل الدفع:</label>
-                <input type="text" required value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }} placeholder="مثال: WU-987654321 أو حساب الـ PayPal" />
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '6px' }}>رقم المرجع (رقم الحوالة أو إيميل بايبال المحول منه):</label>
+                <input type="text" required value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }} placeholder="إيميل حسابك في بايبال أو رقم إيصال WU" />
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button type="submit" style={{ padding: '9px 15px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>✉️ إرسال الطلب</button>
+                <button type="submit" style={{ padding: '9px 15px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>✉️ إرسال طلب التفعيل</button>
                 <button type="button" onClick={() => setModalOpen(false)} style={{ padding: '9px 15px', backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>إلغاء</button>
               </div>
             </form>
@@ -159,3 +184,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
