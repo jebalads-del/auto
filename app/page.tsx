@@ -52,7 +52,7 @@ export default function HomePage() {
           <img src="/logo.png" alt="سيارتي ستور" style={{ height: '60px', width: 'auto', objectFit: 'contain', borderRadius: '6px' }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '105px', flexShrink: 0 }}>
-          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>➕ نشر إعلان</button></Link>
+          <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>➕ أعلن مجانا</button></Link>
           <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>🔑 دخول</button></Link>
         </div>
       </div>
