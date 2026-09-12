@@ -58,7 +58,7 @@ export default function HomePage() {
       </div>
 
       {/* 🔥 شريط السيارات المميزة المتحرك أفقياً باليد (Horizontal Scroll) */}
-      <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>⭐ إعلانات مميزة (اسحب لليسار ↔️)</h2>
+      <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>⭐ إعلانات مميزة (اسحب لليسار او اليمين ↔️)</h2>
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
         {cars.slice(0, 4).map((car) => {
           const firstImage = car.images && car.images.length > 0 ? car.images[0] : null;
