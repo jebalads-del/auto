@@ -78,7 +78,7 @@ export default function HomePage() {
       </div>
 
       {/* 🔍 محرك البحث وقوائم التصفية الشاملة */}
-      <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>🚙  او ابحث عن سيارتك المفضله تصفح السيارات المعروضة</h2>
+      <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>🚙  تصفح احدث السيارات او ابحث عن سيارتك المفضله</h2>
       <div style={{ backgroundColor: '#ffffff', padding: '10px 12px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <input type="text" placeholder="ابحث عن ماركة أو موديل السيارة..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc' }} />
