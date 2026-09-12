@@ -49,7 +49,7 @@ export default function HomePage() {
       {/* 👑 الهيدر المطور والموزون هندسياً */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', backgroundColor: 'white', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', gap: '10px', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', maxWidth: '50%' }}>
-          <img src="/logo1.jpg" alt="سيارتي ستور" style={{ height: '60px', width: 'auto', objectFit: 'contain', borderRadius: '6px' }} />
+          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '60px', width: 'auto', objectFit: 'contain', borderRadius: '6px' }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '105px', flexShrink: 0 }}>
           <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>➕ أعلن مجانا</button></Link>
