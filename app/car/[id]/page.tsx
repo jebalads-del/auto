@@ -8,6 +8,7 @@ interface Car {
   id: string; brand: string; model: string; year?: number; price: number;
   kilometers?: number; color?: string; description?: string; currency?: string;
   status: string; created_at: string; images?: string[]; user_id?: string;
+  user_phone?: string; // إضافة حقل الهاتف القديم الخاص بك هنا تلقائياً
 }
 interface User { id: string; name?: string; email?: string; phone?: string; }
 
@@ -20,22 +21,17 @@ export default function CarDetailsPage() {
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
   useEffect(() => {
     const fetchCarDetails = async () => {
       try {
         const carId = params.id as string;
-        const { data: carData, error: carError } = await supabase
-          .from('cars').select('*').eq('id', carId).single();
+        const { data: carData, error: carError } = await supabase.from('cars').select('*').eq('id', carId).single();
         if (carError || !carData) { setError('الإعلان غير موجود'); setLoading(false); return; }
         setCar(carData);
         if (carData.user_id) {
-          const { data: userData } = await supabase
-            .from('users').select('id, name, email, phone').eq('id', carData.user_id).single();
+          const { data: userData } = await supabase.from('users').select('id, name, email, phone').eq('id', carData.user_id).single();
           if (userData) setSeller(userData);
         }
       } catch (err) { console.error(err); setError('حدث خطأ في تحميل البيانات'); } finally { setLoading(false); }
@@ -47,9 +43,11 @@ export default function CarDetailsPage() {
   if (error || !car) return <div style={styles.errorContainer}><h2>❌ {error}</h2><Link href="/" style={styles.errorBackLink}>🏠 للرئيسية</Link></div>;
 
   const sellerName = seller?.name || 'البائع';
-  const sellerPhone = seller?.phone || '';
   const sellerEmail = seller?.email || '';
-  const cleanPhone = sellerPhone.replace(/[^0-9]/g, '');
+  
+  // استخراج الهاتف من الإعلان مباشرة بناءً على كودك القديم، وإذا لم يوجد يأخذ من البائع
+  const finalPhone = car.user_phone || seller?.phone || '';
+  const cleanPhone = finalPhone.replace(/\D/g, '');
 
   return (
     <div style={styles.container}>
@@ -106,7 +104,7 @@ export default function CarDetailsPage() {
       <div style={styles.stickyStickyContact}>
         <div style={styles.contactButtonsContainer}>
           {cleanPhone && (
-            <a href={`https://wa.me{cleanPhone}`} target="_blank" rel="noopener noreferrer" style={{ ...styles.contactBtn, backgroundColor: '#22c55e' }}>💬 واتساب</a>
+            <a href={`https://wa.me/${cleanPhone}`} target="_blank" rel="noopener noreferrer" style={{ ...styles.contactBtn, backgroundColor: '#22c55e' }}>💬 واتساب</a>
           )}
           {sellerEmail && (
             <a href={`mailto:${sellerEmail}`} style={{ ...styles.contactBtn, backgroundColor: '#ef4444' }}>📧 إيميل</a>
