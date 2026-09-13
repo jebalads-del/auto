@@ -68,7 +68,7 @@ export default function CarDetailsPage() {
                 {car.images.length > 1 && (
                   <>
                     <button onClick={() => currentImageIndex > 0 && setCurrentImageIndex(currentImageIndex - 1)} style={{ ...styles.navButton, left: '12px' }}>‹</button>
-                    <button onClick={() => currentImageIndex < car.images.length - 1 && setCurrentImageIndex(currentImageIndex + 1)} style={{ ...styles.navButton, right: '12px' }}>›</button>
+                    <button onClick={() => car.images && currentImageIndex < car.images.length - 1 && setCurrentImageIndex(currentImageIndex + 1)} style={{ ...styles.navButton, right: '12px' }}>›</button>
                   </>
                 )}
                 <div style={styles.imageCounter}>{currentImageIndex + 1} / {car.images.length}</div>
@@ -151,8 +151,8 @@ const styles = {
   stickyStickyContact: { position: 'fixed' as const, bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: '12px 16px', borderTop: '1px solid #e2e8f0', zIndex: 999 },
   contactButtonsContainer: { display: 'flex', gap: '10px', maxWidth: '600px', margin: '0 auto' },
   contactBtn: { flex: 1, color: '#ffffff', textDecoration: 'none', textAlign: 'center' as const, padding: '12px 0', borderRadius: '12px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' },
-  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh' },
+  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justify: 'center', minHeight: '100vh' },
   spinner: { width: '32px', height: '32px', border: '3px solid #cbd5e1', borderTop: '3px solid #2563eb', borderRadius: '50%' },
-  errorContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' },
+  errorContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justify: 'center', minHeight: '100vh', padding: '20px' },
   errorBackLink: { textDecoration: 'none', backgroundColor: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '8px' }
 };
