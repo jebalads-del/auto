@@ -46,11 +46,11 @@ export default function HomePage() {
   return (
     <div style={{ direction: 'rtl', padding: '12px 6px', maxWidth: '100%', margin: '0', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
           {/* 👑 الهيدر المطور والموزون هندسياً */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', backgroundColor: 'white', padding: '8px 12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', gap: '12px', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', backgroundColor: 'white', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', gap: '10px', overflow: 'hidden' }}>
         
-        {/* البانر في اليمين: حر وبدون قيود تسبب التشويه */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', flex: '1', height: '65px' }}>
-          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '100%', maxWidth: '100%', objectFit: 'contain' }} />
+        {/* البانر في اليمين: يأخذ أكبر مساحة ممكنة ليظهر الشعار كبيراً */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', flexGrow: 1, height: '70px', overflow: 'hidden', borderRadius: '8px' }}>
+          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '100%', width: '100%', objectFit: 'cover', objectPosition: 'center' }} />
         </div>
         
         {/* الأزرار في اليسار: ثابتة ومستقرة في مكانها */}
@@ -58,8 +58,9 @@ export default function HomePage() {
           <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>➕ أعلن مجانا</button></Link>
           <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}><button style={{ width: '100%', padding: '8px 0', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>🔑 دخول</button></Link>
         </div>
-      </div>
 
+      </div>
+    
 
       {/* 🔥 شريط السيارات المميزة المتحرك أفقياً باليد (Horizontal Scroll) */}
       <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>⭐ إعلانات مميزة (اسحب لليسار او اليمين ↔️)</h2>
