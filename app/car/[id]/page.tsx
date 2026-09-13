@@ -106,7 +106,8 @@ export default function CarDetailsPage() {
       <div style={styles.stickyStickyContact}>
         <div style={styles.contactButtonsContainer}>
           {cleanPhone && (
-            <a href={https://wa.me/${car.user_phone.replace(/\D/g, '')}}
+            <a href={https://wa.me{car.phone?.replace(/\D/g, "").replace(/^965/, "")}}
+
           {sellerEmail && (
             <a href={`mailto:${sellerEmail}`} style={{ ...styles.contactBtn, backgroundColor: '#ef4444' }}>📧 إيميل</a>
           )}
