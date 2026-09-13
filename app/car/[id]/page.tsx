@@ -1,35 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 
 interface Car {
-  id: string;
-  brand: string;
-  model: string;
-  year?: number;
-  price: number;
-  kilometers?: number;
-  color?: string;
-  description?: string;
-  currency?: string;
-  status: string;
-  created_at: string;
-  images?: string[];
-  user_id?: string;
+  id: string; brand: string; model: string; year?: number;
+  price: number; kilometers?: number; color?: string;
+  description?: string; currency?: string; status: string;
+  created_at: string; images?: string[]; user_id?: string;
 }
 
 interface User {
-  id: string;
-  name?: string;
-  email?: string;
-  phone?: string;
+  id: string; name?: string; email?: string; phone?: string;
 }
 
 export default function CarDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const [car, setCar] = useState<Car | null>(null);
   const [seller, setSeller] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,33 +34,22 @@ export default function CarDetailsPage() {
     const fetchCarDetails = async () => {
       try {
         const carId = params.id as string;
-        
         const { data: carData, error: carError } = await supabase
-          .from('cars')
-          .select('*')
-          .eq('id', carId)
-          .single();
+          .from('cars').select('*').eq('id', carId).single();
 
         if (carError || !carData) {
           setError('الإعلان غير موجود');
           setLoading(false);
           return;
         }
-
         setCar(carData);
 
         if (carData.user_id) {
           const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('id, name, email, phone')
-            .eq('id', carData.user_id)
-            .single();
+            .from('users').select('id, name, email, phone').eq('id', carData.user_id).single();
 
-          if (!userError && userData) {
-            setSeller(userData);
-          }
+          if (!userError && userData) setSeller(userData);
         }
-
       } catch (err) {
         console.error('❌ خطأ:', err);
         setError('حدث خطأ في تحميل البيانات');
@@ -79,7 +57,6 @@ export default function CarDetailsPage() {
         setLoading(false);
       }
     };
-
     fetchCarDetails();
   }, [params.id]);
 
@@ -90,16 +67,14 @@ export default function CarDetailsPage() {
   };
 
   const prevImage = () => {
-    if (currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
-    }
+    if (currentImageIndex > 0) setCurrentImageIndex(currentImageIndex - 1);
   };
 
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
-        <p>⏳ جاري تحميل التفاصيل...</p>
+        <p style={{ marginTop: '12px', color: '#475569', fontSize: '14px' }}>⏳ جاري تحميل التفاصيل...</p>
       </div>
     );
   }
@@ -107,8 +82,8 @@ export default function CarDetailsPage() {
   if (error || !car) {
     return (
       <div style={styles.errorContainer}>
-        <h2>❌ {error || 'الإعلان غير موجود'}</h2>
-        <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
+        <h2 style={{ fontSize: '18px', color: '#ef4444', marginBottom: '16px' }}>❌ {error || 'الإعلان غير موجود'}</h2>
+        <Link href="/" style={styles.errorBackLink}>🏠 العودة للرئيسية</Link>
       </div>
     );
   }
@@ -116,74 +91,60 @@ export default function CarDetailsPage() {
   const sellerName = seller?.name || 'البائع';
   const sellerPhone = seller?.phone || '';
   const sellerEmail = seller?.email || '';
-
+  const cleanPhone = sellerPhone.replace(/[^0-9]/g, '');
   return (
     <div style={styles.container}>
+      {/* 🧭 شريط علوي ذكي ونظيف يسهل العودة للرئيسية */}
       <header style={styles.header}>
-        <div style={styles.headerContent}>
-          <Link href="/" style={styles.backLink}>← العودة للرئيسية</Link>
-          <h1 style={styles.headerTitle}>🚗 تفاصيل الإعلان</h1>
-        </div>
+        <button onClick={() => router.push('/')} style={styles.backButton}>🔙 الرئيسية</button>
+        <h1 style={styles.headerTitle}>تفاصيل المركبة</h1>
+        <div style={{ width: '75px' }}></div>
       </header>
 
       <div style={styles.content}>
+        {/* 📸 معرض الصور المطور بالحواف المنحنية */}
         <div style={styles.imageSection}>
           {car.images && car.images.length > 0 ? (
             <div style={styles.imageContainer}>
               <div style={styles.mainImageWrapper}>
-                <img 
-                  src={car.images[currentImageIndex]} 
-                  alt={`${car.brand} ${car.model}`}
-                  style={styles.mainImage}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
+                <img src={car.images[currentImageIndex]} alt={`${car.brand} ${car.model}`} style={styles.mainImage} />
                 {car.images.length > 1 && (
                   <>
-                    <button onClick={prevImage} style={{ ...styles.navButton, left: '10px' }} disabled={currentImageIndex === 0}>
-                      ‹
-                    </button>
-                    <button onClick={nextImage} style={{ ...styles.navButton, right: '10px' }} disabled={currentImageIndex === car.images.length - 1}>
-                      ›
-                    </button>
+                    <button onClick={prevImage} style={{ ...styles.navButton, left: '12px' }} disabled={currentImageIndex === 0}>‹</button>
+                    <button onClick={nextImage} style={{ ...styles.navButton, right: '12px' }} disabled={currentImageIndex === car.images.length - 1}>›</button>
                   </>
                 )}
+                <div style={styles.imageCounter}>{currentImageIndex + 1} / {car.images.length}</div>
               </div>
+              
               {car.images.length > 1 && (
                 <div style={styles.thumbnailContainer}>
                   {car.images.map((img, idx) => (
-                    <img 
-                      key={idx}
-                      src={img}
-                      alt={`صورة ${idx + 1}`}
+                    <img key={idx} src={img} alt={`صورة ${idx + 1}`} onClick={() => setCurrentImageIndex(idx)}
                       style={{
                         ...styles.thumbnail,
-                        border: idx === currentImageIndex ? '3px solid #2563eb' : '2px solid transparent'
+                        border: idx === currentImageIndex ? '2px solid #2563eb' : '2px solid transparent',
+                        opacity: idx === currentImageIndex ? '1' : '0.6'
                       }}
-                      onClick={() => setCurrentImageIndex(idx)}
                     />
                   ))}
                 </div>
               )}
-              <div style={styles.imageCounter}>
-                {currentImageIndex + 1} / {car.images.length}
-              </div>
             </div>
           ) : (
-            <div style={styles.noImage}>
-              🚗 لا توجد صور
-            </div>
+            <div style={styles.noImage}>🚗 لا توجد صور لهذه السيارة</div>
           )}
         </div>
 
+        {/* 📄 قسم تفاصيل وبيانات السيارة المطور بصرياً */}
         <div style={styles.infoSection}>
-          <h2 style={styles.title}>{car.brand} {car.model}</h2>
-          
-          <div style={styles.price}>
-            {car.price.toLocaleString()} {car.currency === 'SAR' ? 'ر.س' : 'د.ك'}
+          <div style={styles.titlePriceRow}>
+            <h2 style={styles.title}>{car.brand} {car.model}</h2>
+            <div style={styles.priceTag}>
+              {car.price.toLocaleString()} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
+            </div>
           </div>
-
+          
           <div style={styles.detailsGrid}>
             {car.year && (
               <div style={styles.detailItem}>
@@ -193,257 +154,97 @@ export default function CarDetailsPage() {
             )}
             {car.kilometers && (
               <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>📊 المشي</span>
+                <span style={styles.detailLabel}>📊 عداد الممشى</span>
                 <span style={styles.detailValue}>{car.kilometers.toLocaleString()} كم</span>
               </div>
             )}
             {car.color && (
               <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>🎨 اللون</span>
+                <span style={styles.detailLabel}>🎨 لون المركبة</span>
                 <span style={styles.detailValue}>{car.color}</span>
               </div>
             )}
             <div style={styles.detailItem}>
-              <span style={styles.detailLabel}>📅 تاريخ النشر</span>
-              <span style={styles.detailValue}>
-                {new Date(car.created_at).toLocaleDateString('ar-KW')}
+              <span style={styles.detailLabel}>📌 حالة الإعلان</span>
+              <span style={{ ...styles.detailValue, color: car.status === 'approved' ? '#16a34a' : car.status === 'sold' ? '#ef4444' : '#f59e0b' }}>
+                {car.status === 'approved' ? '✅ متاح للبيع' : car.status === 'sold' ? '💰 تم البيع' : '⏳ قيد المراجعة'}
               </span>
             </div>
-            <div style={styles.detailItem}>
-              <span style={styles.detailLabel}>📌 الحالة</span>
-              <span style={{
-                ...styles.detailValue,
-                color: car.status === 'approved' ? '#16a34a' : '#f59e0b',
-                fontWeight: 'bold'
-              }}>
-                {car.status === 'approved' ? '✅ متاح' : car.status === 'sold' ? '💰 مباع' : '⏳ قيد المراجعة'}
+            <div style={{ ...styles.detailItem, gridColumn: 'span 2' }}>
+              <span style={styles.detailLabel}>📆 تاريخ النشر</span>
+              <span style={styles.detailValue}>
+                {new Date(car.created_at).toLocaleDateString('ar-KW', { year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
           </div>
 
           {car.description && (
-            <div style={styles.description}>
-              <h3 style={styles.sectionTitle}>📝 تفاصيل الإعلان</h3>
+            <div style={styles.cardSection}>
+              <h3 style={styles.sectionTitle}>📝 تفاصيل ووصف الإعلان</h3>
               <p style={styles.descriptionText}>{car.description}</p>
             </div>
           )}
 
-          <div style={styles.sellerSection}>
-            <h3 style={styles.sectionTitle}>👤 معلومات البائع</h3>
+          <div style={styles.cardSection}>
+            <h3 style={styles.sectionTitle}>👤 معلومات المعلن</h3>
             <div style={styles.sellerInfo}>
-              <span style={styles.sellerName}>{sellerName}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={styles.sellerName}>{sellerName}</span>
+                {car.status === 'sold' && <span style={styles.soldBadge}>مباع</span>}
+              </div>
               {sellerEmail && <span style={styles.sellerEmail}>📧 {sellerEmail}</span>}
-              {sellerPhone && (
-                <span style={styles.sellerPhoneHidden}>
-                  📞 رقم الهاتف متاح عبر أزرار التواصل أدناه
-                </span>
-              )}
             </div>
-          </div>
-
-          <div style={styles.contactSection}>
-            <h3 style={styles.sectionTitle}>📞 وسائل التواصل مع البائع</h3>
-            
-            <div style={styles.contactButtons}>
-              {sellerPhone ? (
-                <a 
-                  href={`https://wa.me/${sellerPhone.replace(/[^0-9]/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={styles.whatsappButton}
-                >
-                  <span style={{ fontSize: '20px' }}>💬</span>
-                  واتساب
-                </a>
-              ) : (
-                <div style={styles.disabledButton}>
-                  <span style={{ fontSize: '20px' }}>💬</span>
-                  رقم غير متوفر
-                </div>
-              )}
-              
-              {sellerEmail ? (
-                <a 
-                  href={`mailto:${sellerEmail}?subject=استفسار عن إعلان ${car.brand} ${car.model}`}
-                  style={styles.emailButton}
-                >
-                  <span style={{ fontSize: '20px' }}>📧</span>
-                  إيميل
-                </a>
-              ) : (
-                <div style={styles.disabledButton}>
-                  <span style={{ fontSize: '20px' }}>📧</span>
-                  إيميل غير متوفر
-                </div>
-              )}
-              
-              {sellerPhone ? (
-                <a 
-                  href={`tel:${sellerPhone.replace(/[^0-9]/g, '')}`}
-                  style={styles.callButton}
-                >
-                  <span style={{ fontSize: '20px' }}>📞</span>
-                  اتصال
-                </a>
-              ) : (
-                <div style={styles.disabledButton}>
-                  <span style={{ fontSize: '20px' }}>📞</span>
-                  رقم غير متوفر
-                </div>
-              )}
-            </div>
-            
-            {!sellerPhone && (
-              <p style={styles.noteText}>
-                💡 رقم الهاتف غير متوفر حالياً. يمكنك التواصل عن طريق الإيميل.
-              </p>
-            )}
           </div>
         </div>
       </div>
+
+      {/* 📞 أزرار تواصل عائمة ومثبتة بأسفل الشاشة (Sticky Bottom) */}
+      {sellerPhone && (
+        <div style={styles.stickyStickyContact}>
+          <div style={styles.contactButtonsContainer}>
+            <a href={`https://wa.me{cleanPhone}`} target="_blank" rel="noopener noreferrer" style={{ ...styles.contactBtn, backgroundColor: '#22c55e' }}>💬 واتساب</a>
+            <a href={`tel:${cleanPhone}`} style={{ ...styles.contactBtn, backgroundColor: '#3b82f6' }}>📞 اتصال هاتفي</a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
 const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'sans-serif', direction: 'rtl' as const },
-  header: { backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '15px 20px', position: 'sticky' as const, top: 0, zIndex: 10 },
-  headerContent: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' },
-  headerTitle: { fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0 },
-  backLink: { fontSize: '14px', color: '#2563eb', textDecoration: 'none', fontWeight: '500' },
-  content: { 
-    maxWidth: '1200px', 
-    margin: '0 auto', 
-    padding: '20px', 
-    display: 'flex', 
-    flexDirection: 'column' as const, 
-    gap: '25px' 
-  },
+  container: { direction: 'rtl' as const, backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '90px' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '12px 16px', borderBottom: '1px solid #e2e8f0', position: 'sticky' as const, top: 0, zIndex: 100, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' },
+  backButton: { backgroundColor: '#f1f5f9', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', color: '#334155', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' },
+  headerTitle: { fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 },
+  content: { padding: '14px', maxWidth: '600px', margin: '0 auto' },
+  imageSection: { marginBottom: '16px' },
+  imageContainer: { backgroundColor: '#ffffff', borderRadius: '16px', padding: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0' },
+  mainImageWrapper: { position: 'relative' as const, width: '100%', height: '240px', backgroundColor: '#f1f5f9', borderRadius: '12px', overflow: 'hidden' },
+  mainImage: { width: '100%', height: '100%', objectFit: 'cover' as const },
+  navButton: { position: 'absolute' as const, top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255, 255, 255, 0.85)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer', color: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' },
+  imageCounter: { position: 'absolute' as const, bottom: '12px', left: '12px', backgroundColor: 'rgba(15, 23, 42, 0.75)', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' },
+  thumbnailContainer: { display: 'flex', gap: '8px', marginTop: '10px', overflowX: 'auto' as const, paddingBottom: '4px' },
+  thumbnail: { width: '60px', height: '45px', objectFit: 'cover' as const, borderRadius: '6px', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s' },
+  noImage: { width: '100%', height: '200px', backgroundColor: '#ffffff', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '14px', border: '1px solid #e2e8f0' },
+  infoSection: { display: 'flex', flexDirection: 'column' as const, gap: '14px' },
+  titlePriceRow: { backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  title: { fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 },
+  priceTag: { fontSize: '20px', fontWeight: '900', color: '#16a34a', backgroundColor: '#f0fdf4', padding: '6px 14px', borderRadius: '10px' },
+  detailsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', backgroundColor: '#ffffff', padding: '14px', borderRadius: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0' },
+  detailItem: { backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '10px', display: 'flex', flexDirection: 'column' as const, gap: '4px', border: '1px solid #f1f5f9' },
+  detailLabel: { fontSize: '11px', color: '#64748b', fontWeight: '600' },
+  detailValue: { fontSize: '14px', color: '#1e293b', fontWeight: '700' },
+  cardSection: { backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0' },
+  sectionTitle: { fontSize: '14px', fontWeight: '700', color: '#475569', marginTop: 0, marginBottom: '10px', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px' },
+  descriptionText: { fontSize: '13px', color: '#334155', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-line' as const },
+  sellerInfo: { display: 'flex', flexDirection: 'column' as const, gap: '6px' },
+  sellerName: { fontSize: '15px', fontWeight: '700', color: '#1e293b' },
+  sellerEmail: { fontSize: '13px', color: '#64748b' },
+  soldBadge: { backgroundColor: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' },
+  stickyStickyContact: { position: 'fixed' as const, bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: '12px 16px', borderTop: '1px solid #e2e8f0', boxShadow: '0 -4px 10px rgba(0,0,0,0.04)', zIndex: 999 },
+  contactButtonsContainer: { display: 'flex', gap: '10px', maxWidth: '600px', margin: '0 auto' },
+  contactBtn: { flex: 1, color: '#ffffff', textDecoration: 'none', textAlign: 'center' as const, padding: '12px 0', borderRadius: '12px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' },
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
-  spinner: { width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' },
-  errorContainer: { textAlign: 'center' as const, padding: '40px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '12px', margin: '40px' },
-  imageSection: { width: '100%' },
-  imageContainer: { position: 'relative' as const },
-  mainImageWrapper: { position: 'relative' as const, backgroundColor: '#f1f5f9', borderRadius: '12px', overflow: 'hidden' },
-  mainImage: { width: '100%', height: '400px', objectFit: 'contain' as const },
-  navButton: { position: 'absolute' as const, top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  thumbnailContainer: { display: 'flex', gap: '10px', marginTop: '10px', overflowX: 'auto' as const, paddingBottom: '5px' },
-  thumbnail: { width: '80px', height: '80px', objectFit: 'contain' as const, borderRadius: '8px', cursor: 'pointer', flexShrink: 0 },
-  imageCounter: { position: 'absolute' as const, bottom: '15px', right: '15px', backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px' },
-  noImage: { width: '100%', height: '400px', backgroundColor: '#e2e8f0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#94a3b8' },
-  infoSection: { 
-    width: '100%', 
-    display: 'flex', 
-    flexDirection: 'column' as const, 
-    gap: '20px' 
-  },
-  title: { fontSize: '28px', fontWeight: 'bold', color: '#1e293b', margin: 0 },
-  price: { fontSize: '32px', fontWeight: '800', color: '#16a34a' },
-  detailsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
-  detailItem: { backgroundColor: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0' },
-  detailLabel: { display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' },
-  detailValue: { fontSize: '16px', fontWeight: '500', color: '#1e293b' },
-  description: { backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' },
-  sectionTitle: { fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '10px' },
-  descriptionText: { fontSize: '15px', color: '#475569', lineHeight: 1.6, margin: 0 },
-  sellerSection: { backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' },
-  sellerInfo: { display: 'flex', flexDirection: 'column' as const, gap: '4px' },
-  sellerName: { fontSize: '16px', fontWeight: '600', color: '#1e293b' },
-  sellerEmail: { fontSize: '14px', color: '#64748b' },
-  sellerPhoneHidden: { 
-    fontSize: '13px', 
-    color: '#94a3b8',
-    fontStyle: 'italic',
-    marginTop: '5px'
-  },
-  contactSection: { 
-    backgroundColor: '#f8fafc', 
-    padding: '20px', 
-    borderRadius: '12px', 
-    border: '1px solid #e2e8f0',
-    marginTop: '10px'
-  },
-  contactButtons: { 
-    display: 'flex', 
-    gap: '12px', 
-    flexWrap: 'wrap' as const,
-    marginTop: '10px'
-  },
-  whatsappButton: { 
-    flex: 1, 
-    minWidth: '120px',
-    padding: '14px 20px', 
-    backgroundColor: '#25D366', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '10px', 
-    fontSize: '16px', 
-    fontWeight: 'bold', 
-    cursor: 'pointer', 
-    textAlign: 'center' as const, 
-    textDecoration: 'none', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    gap: '10px'
-  },
-  emailButton: { 
-    flex: 1, 
-    minWidth: '120px',
-    padding: '14px 20px', 
-    backgroundColor: '#EA4335', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '10px', 
-    fontSize: '16px', 
-    fontWeight: 'bold', 
-    cursor: 'pointer', 
-    textAlign: 'center' as const, 
-    textDecoration: 'none', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    gap: '10px'
-  },
-  callButton: { 
-    flex: 1, 
-    minWidth: '120px',
-    padding: '14px 20px', 
-    backgroundColor: '#2563eb', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '10px', 
-    fontSize: '16px', 
-    fontWeight: 'bold', 
-    cursor: 'pointer', 
-    textAlign: 'center' as const, 
-    textDecoration: 'none', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    gap: '10px'
-  },
-  disabledButton: { 
-    flex: 1, 
-    minWidth: '120px',
-    padding: '14px 20px', 
-    backgroundColor: '#e2e8f0', 
-    color: '#94a3b8', 
-    borderRadius: '10px', 
-    fontSize: '16px', 
-    fontWeight: 'bold', 
-    textAlign: 'center' as const, 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    gap: '10px',
-    opacity: 0.7
-  },
-  noteText: { 
-    fontSize: '13px', 
-    color: '#64748b', 
-    marginTop: '10px',
-    textAlign: 'center' as const,
-    fontStyle: 'italic'
-  }
+  spinner: { width: '32px', height: '32px', border: '3px solid #cbd5e1', borderTop: '3px solid #2563eb', borderRadius: '50%' },
+  errorContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '20px', textAlign: 'center' as const },
+  errorBackLink: { textDecoration: 'none', backgroundColor: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '700' }
 };
