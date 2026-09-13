@@ -194,8 +194,7 @@ export default function CarDetailsPage() {
           </div>
         </div>
       </div>
-
-      <div style={styles.stickyStickyContact}>
+            <div style={styles.stickyStickyContact}>
         <div style={styles.contactButtonsContainer}>
           {sellerPhone && (
             <a href={`https://wa.me{cleanPhone}`} target="_blank" rel="noopener noreferrer" style={{ ...styles.contactBtn, backgroundColor: '#22c55e' }}>💬 واتساب</a>
@@ -211,6 +210,7 @@ export default function CarDetailsPage() {
     </div>
   );
 }
+
 const styles = {
   container: { direction: 'rtl' as const, backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '90px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '12px 16px', borderBottom: '1px solid #e2e8f0', position: 'sticky' as const, top: 0, zIndex: 100, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' },
