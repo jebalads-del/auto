@@ -120,7 +120,11 @@ export default function AdminDashboardForm() {
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-        <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🎛️ لوحة تحكم الإدارة</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🎛️ لوحة الإدارة</h1>
+          <Link href="/dashboard/cars/new" style={{ textDecoration: 'none' }}><button style={{ padding: '6px 12px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>➕ نشر إعلان</button></Link>
+        </div>
+
         <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ padding: '8px 14px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🚪 خروج</button>
       </div>
 
