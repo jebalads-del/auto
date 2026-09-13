@@ -92,9 +92,9 @@ export default function CarDetailsPage() {
   const sellerPhone = seller?.phone || '';
   const sellerEmail = seller?.email || '';
   const cleanPhone = sellerPhone.replace(/[^0-9]/g, '');
+
   return (
     <div style={styles.container}>
-      {/* 🧭 شريط علوي ذكي ونظيف يسهل العودة للرئيسية */}
       <header style={styles.header}>
         <button onClick={() => router.push('/')} style={styles.backButton}>🔙 الرئيسية</button>
         <h1 style={styles.headerTitle}>تفاصيل المركبة</h1>
@@ -102,7 +102,6 @@ export default function CarDetailsPage() {
       </header>
 
       <div style={styles.content}>
-        {/* 📸 معرض الصور المطور بالحواف المنحنية */}
         <div style={styles.imageSection}>
           {car.images && car.images.length > 0 ? (
             <div style={styles.imageContainer}>
@@ -116,7 +115,6 @@ export default function CarDetailsPage() {
                 )}
                 <div style={styles.imageCounter}>{currentImageIndex + 1} / {car.images.length}</div>
               </div>
-              
               {car.images.length > 1 && (
                 <div style={styles.thumbnailContainer}>
                   {car.images.map((img, idx) => (
@@ -136,7 +134,6 @@ export default function CarDetailsPage() {
           )}
         </div>
 
-        {/* 📄 قسم تفاصيل وبيانات السيارة المطور بصرياً */}
         <div style={styles.infoSection}>
           <div style={styles.titlePriceRow}>
             <h2 style={styles.title}>{car.brand} {car.model}</h2>
@@ -198,7 +195,6 @@ export default function CarDetailsPage() {
         </div>
       </div>
 
-    {/* 📞 أزرار تواصل عائمة ومثبتة بأسفل الشاشة تشمل الأزرار الثلاثة كاملة */}
       <div style={styles.stickyStickyContact}>
         <div style={styles.contactButtonsContainer}>
           {sellerPhone && (
@@ -214,6 +210,7 @@ export default function CarDetailsPage() {
       </div>
     </div>
   );
+}
 const styles = {
   container: { direction: 'rtl' as const, backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '90px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '12px 16px', borderBottom: '1px solid #e2e8f0', position: 'sticky' as const, top: 0, zIndex: 100, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' },
@@ -224,11 +221,11 @@ const styles = {
   imageContainer: { backgroundColor: '#ffffff', borderRadius: '16px', padding: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0' },
   mainImageWrapper: { position: 'relative' as const, width: '100%', height: '240px', backgroundColor: '#f1f5f9', borderRadius: '12px', overflow: 'hidden' },
   mainImage: { width: '100%', height: '100%', objectFit: 'cover' as const },
-  navButton: { position: 'absolute' as const, top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255, 255, 255, 0.85)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer', color: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' },
+  navButton: { position: 'absolute' as const, top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255, 255, 255, 0.85)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer', color: '#1e293b', display: 'flex', alignItems: 'center', justify: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' },
   imageCounter: { position: 'absolute' as const, bottom: '12px', left: '12px', backgroundColor: 'rgba(15, 23, 42, 0.75)', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' },
   thumbnailContainer: { display: 'flex', gap: '8px', marginTop: '10px', overflowX: 'auto' as const, paddingBottom: '4px' },
   thumbnail: { width: '60px', height: '45px', objectFit: 'cover' as const, borderRadius: '6px', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s' },
-  noImage: { width: '100%', height: '200px', backgroundColor: '#ffffff', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '14px', border: '1px solid #e2e8f0' },
+  noImage: { width: '100%', height: '200px', backgroundColor: '#ffffff', borderRadius: '16px', display: 'flex', alignItems: 'center', justify: 'center', color: '#64748b', fontSize: '14px', border: '1px solid #e2e8f0' },
   infoSection: { display: 'flex', flexDirection: 'column' as const, gap: '14px' },
   titlePriceRow: { backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 },
@@ -247,8 +244,8 @@ const styles = {
   stickyStickyContact: { position: 'fixed' as const, bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: '12px 16px', borderTop: '1px solid #e2e8f0', boxShadow: '0 -4px 10px rgba(0,0,0,0.04)', zIndex: 999 },
   contactButtonsContainer: { display: 'flex', gap: '10px', maxWidth: '600px', margin: '0 auto' },
   contactBtn: { flex: 1, color: '#ffffff', textDecoration: 'none', textAlign: 'center' as const, padding: '12px 0', borderRadius: '12px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' },
-  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
+  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justify: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' },
   spinner: { width: '32px', height: '32px', border: '3px solid #cbd5e1', borderTop: '3px solid #2563eb', borderRadius: '50%' },
-  errorContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '20px', textAlign: 'center' as const },
+  errorContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justify: 'center', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '20px', textAlign: 'center' as const },
   errorBackLink: { textDecoration: 'none', backgroundColor: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: '700' }
 };
