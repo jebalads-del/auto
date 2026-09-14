@@ -210,7 +210,6 @@ return (
                   {car.is_featured && (
                     <button onClick={() => handleCarAction(car.id, 'remove_featured')} style={{ fontSize: '11px', color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', marginTop: '5px', cursor: 'pointer' }}>❌ إلغاء التميز</button>
                   )}
-              </div>
               <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
                 {car.status === 'pending' && <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>موافقة ونشر</button>}
                 {car.status === 'approved' && <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>تحويل لمباع</button>}
