@@ -215,7 +215,6 @@ return (
                 {car.status === 'approved' && <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>تحويل لمباع</button>}
                 <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>حذف الإعلان</button>
             </div>
-              </div>
             </div>
           ))}
         </div>
