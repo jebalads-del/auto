@@ -1,9 +1,9 @@
 'use client';
-import Link from 'next/link';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +33,6 @@ export default function AdminDashboardForm() {
   const [activeTab, setActiveTab] = useState<'cars' | 'users' | 'settings' | 'featured_requests'>('cars');
   const [message, setMessage] = useState({ text: '', type: '' });
 
-  // حالات إعدادات الدفع المطور للـ Admin للتحكم الحي بالأسعار والحسابات
   const [siteName, setSiteName] = useState('سيارتي ستور');
   const [featuredPrice, setFeaturedPrice] = useState('15');
   const [westernUnionInfo, setWesternUnionInfo] = useState('');
@@ -54,7 +53,6 @@ export default function AdminDashboardForm() {
       }
     } catch (err) { console.error(err); }
   };
-
   const fetchCars = async () => {
     try {
       setCarsLoading(true);
@@ -82,9 +80,14 @@ export default function AdminDashboardForm() {
         western_union_info: westernUnionInfo.trim(),
         paypal_email: paypalEmail.trim(),
         updated_at: new Date().toISOString()
-      });
-      if (!error) showMessage('✅ تم حفظ وتحديث حسابات وأسعار الدفع الحية بنجاح', 'success');
-      else showMessage('❌ حدث خطأ أثناء حفظ الإعدادات', 'error');
+      }, { onConflict: 'id' });
+
+      if (!error) {
+        showMessage('✅ تم حفظ وتحديث حسابات وأسعار الدفع الحية بنجاح', 'success');
+        fetchSettings();
+      } else {
+        showMessage('❌ حدث خطأ أثناء حفظ الإعدادات: ' + error.message, 'error');
+      }
     } catch { showMessage('❌ خطأ في الاتصال بالخادم', 'error'); }
   };
 
@@ -111,7 +114,7 @@ export default function AdminDashboardForm() {
 
   const handleUserDelete = async (userId: string, userEmail: string) => {
     if (userEmail === 'admin@sayarty.store') return; 
-    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+    if (!confirm('هل أنت متأكد من حذف هذا المستخدم Trim؟')) return;
     try {
       const { error } = await supabase.from('users').delete().eq('id', userId);
       if (!error) { showMessage('🗑️ تم حذف المستخدم بنجاح', 'success'); fetchUsers(); }
@@ -119,19 +122,15 @@ export default function AdminDashboardForm() {
   };
   return (
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <h1 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🎛️ لوحة الإدارة</h1>
           <Link href="/dashboard/cars/new" style={{ textDecoration: 'none' }}><button style={{ padding: '6px 12px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>➕ نشر إعلان</button></Link>
         </div>
-
         <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ padding: '8px 14px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🚪 خروج</button>
       </div>
 
-      {message.text && (
-        <div style={{ padding: '12px 15px', backgroundColor: message.type === 'success' ? '#d1fae5' : '#fee2e2', color: message.type === 'success' ? '#065f46' : '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>{message.text}</div>
-      )}
+      {message.text && <div style={{ padding: '12px 15px', backgroundColor: message.type === 'success' ? '#d1fae5' : '#fee2e2', color: message.type === 'success' ? '#065f46' : '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>{message.text}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
         <button onClick={() => setActiveTab('cars')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'cars' ? '#2563eb' : 'white', color: activeTab === 'cars' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold' }}>🚗 الإعلانات ({cars.length})</button>
@@ -150,9 +149,7 @@ export default function AdminDashboardForm() {
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model}</div>
                   <div style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold' }}>{car.price} {car.currency || 'د.ك'}</div>
-                  {car.is_featured && (
-                    <button onClick={() => handleCarAction(car.id, 'remove_featured')} style={{ fontSize: '11px', color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', marginTop: '5px', cursor: 'pointer' }}>❌ إلغاء التميز</button>
-                  )}
+                  {car.is_featured && <button onClick={() => handleCarAction(car.id, 'remove_featured')} style={{ fontSize: '11px', color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', marginTop: '5px', cursor: 'pointer' }}>❌ إلغاء التميز</button>}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
@@ -164,7 +161,7 @@ export default function AdminDashboardForm() {
           ))}
         </div>
       )}
-            {activeTab === 'featured_requests' && (
+      {activeTab === 'featured_requests' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold', color: '#eab308' }}>⭐ طلبات التمييز قيد الانتظار</h2>
           {cars.filter(c => c.status === 'pending_featured').length === 0 ? <p style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>📬 لا توجد طلبات معلقة حالياً</p> : cars.filter(c => c.status === 'pending_featured').map((car) => (
@@ -173,9 +170,7 @@ export default function AdminDashboardForm() {
                 <div style={{ fontWeight: 'bold' }}>{car.brand} {car.model}</div>
                 <div style={{ color: '#16a34a', fontWeight: 'bold' }}>{car.price} د.ك</div>
               </div>
-              <div style={{ backgroundColor: '#fef3c7', padding: '10px', borderRadius: '8px', fontSize: '13px', color: '#d97706', marginBottom: '10px', border: '1px solid #fde68a' }}>
-                <strong>💳 بيانات الحوالة المرسلة:</strong> {car.featured_payment_ref || 'لم يتم إدخال بيانات'}
-              </div>
+              <div style={{ backgroundColor: '#fef3c7', padding: '10px', borderRadius: '8px', fontSize: '13px', color: '#d97706', marginBottom: '10px', border: '1px solid #fde68a' }}><strong>💳 بيانات الحوالة المرسلة:</strong> {car.featured_payment_ref || 'لم يتم إدخال بيانات'}</div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button onClick={() => handleCarAction(car.id, 'approve_featured')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>⭐ موافقة وتثبيت كمميز</button>
                 <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#64748b', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>رفض كلي</button>
@@ -190,15 +185,8 @@ export default function AdminDashboardForm() {
           <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>👥 إدارة الحسابات ({users.length})</h2>
           {usersLoading ? <p>جاري تحميل الحسابات...</p> : users.map((user) => (
             <div key={user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 5px', borderBottom: '1px solid #e2e8f0' }}>
-              <div>
-                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{user.name || 'مستخدم جديد'}</div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>{user.email}</div>
-              </div>
-              {user.email !== 'admin@sayarty.store' ? (
-                <button onClick={() => handleUserDelete(user.id, user.email || '')} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>حذف الحساب</button>
-              ) : (
-                <span style={{ fontSize: '12px', color: '#2563eb', fontWeight: 'bold', backgroundColor: '#e0f2fe', padding: '4px 8px', borderRadius: '6px' }}>المدير 👑</span>
-              )}
+              <div><div style={{ fontWeight: 'bold', fontSize: '14px' }}>{user.name || 'مستخدم جديد'}</div><div style={{ fontSize: '12px', color: '#64748b' }}>{user.email}</div></div>
+              {user.email !== 'admin@sayarty.store' ? <button onClick={() => handleUserDelete(user.id, user.email || '')} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>حذف الحساب</button> : <span style={{ fontSize: '12px', color: '#2563eb', fontWeight: 'bold', backgroundColor: '#e0f2fe', padding: '4px 8px', borderRadius: '6px' }}>المدير 👑</span>}
             </div>
           ))}
         </div>
@@ -208,28 +196,14 @@ export default function AdminDashboardForm() {
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '20px', fontWeight: 'bold', color: '#2563eb' }}>⚙️ التحكم المالي وإعدادات الدفع للموقع</h2>
           <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>اسم الموقع الرسمي</label>
-              <input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>تكلفة تمييز الإعلان شهرياً (بالدينار الكويتي)</label>
-              <input type="number" value={featuredPrice} onChange={(e) => setFeaturedPrice(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>بيانات استلام ويسترن يونيون</label>
-              <textarea value={westernUnionInfo} onChange={(e) => setWesternUnionInfo(e.target.value)} required rows={2} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontFamily: 'sans-serif' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>حساب PayPal الرسمي لاستقبال الأموال فوراً</label>
-              <input type="email" value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold' }} />
-            </div>
+            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>اسم الموقع الرسمي</label><input type="text" value={siteName} onChange={(e) => setSiteName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} /></div>
+            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>تكلفة تمييز الإعلان شهرياً (بالدينار الكويتي)</label><input type="number" value={featuredPrice} onChange={(e) => setFeaturedPrice(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold' }} /></div>
+            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>بيانات استلام ويسترن يونيون</label><textarea value={westernUnionInfo} onChange={(e) => setWesternUnionInfo(e.target.value)} required rows={2} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontFamily: 'sans-serif' }} /></div>
+            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>حساب PayPal الرسمي لاستقبال الأموال فوراً</label><input type="email" value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold' }} /></div>
             <button type="submit" style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>💾 حفظ وتثبيت الإعدادات المالية الحية</button>
           </form>
         </div>
       )}
-
     </div>
   );
 }
-
