@@ -85,10 +85,6 @@ export default function ProfilePage() {
     } catch { showMessage('❌ خطأ في الاتصال بالخادم', 'error'); }
   };
   return (
-   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-  <h1 style={{ fontSize: '16px', fontWeight: 'bold' }}>👋 إعدادات الملف الشخصي</h1>
-  <button onClick={handleSignOut} ...>خروج</button>
-</div>
 
         <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ padding: '8px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>خروج</button>
       </div>
