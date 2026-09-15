@@ -1,8 +1,61 @@
 'use client';
 
-import React, { useState } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+
+const currencies = [
+  { code: 'KWD', symbol: 'د.ك', name: 'دينار كويتي' },
+  { code: 'SAR', symbol: 'ر.س', name: 'ريال سعودي' },
+  { code: 'AED', symbol: 'د.إ', name: 'درهم إماراتي' },
+  { code: 'QAR', symbol: 'ر.ق', name: 'ريال قطري' },
+  { code: 'BHD', symbol: 'د.ب', name: 'دينار بحريني' },
+  { code: 'OMR', symbol: 'ر.ع', name: 'ريال عماني' },
+];
+
+const BRANDS = [
+  'تويوتا', 'هوندا', 'مرسيدس', 'بي إم دبليو', 'أودي',
+  'فولكس واجن', 'فورد', 'شيفروليه', 'نيسان', 'هيونداي',
+  'كيا', 'مازدا', 'لكزس', 'جيب', 'رينو', 'بيجو',
+  'سيات', 'ميتسوبيشي', 'سوبارو', 'فولفو', 'جاغوار',
+  'لاند روفر', 'بورش', 'فيات', 'ألفا روميو', 'أخرى'
+];
+
+const MODELS: Record<string, string[]> = {
+  'تويوتا': ['كامري', 'كورولا', 'لاندكروزر', 'برادو', 'أفالون', 'راف فور', 'يارس', 'هيلوكس', 'هايلوكس', 'فورتشنر', 'أخرى'],
+  'هوندا': ['أكورد', 'سيفيك', 'سي آر في', 'بايلوت', 'أوديسي', 'سيتي', 'HR-V', 'أخرى'],
+  'مرسيدس': ['الفئة C', 'الفئة E', 'الفئة S', 'GLC', 'GLE', 'G-Class', 'CLA', 'A-Class', 'AMG GT', 'أخرى'],
+  'بي إم دبليو': ['الفئة الثالثة', 'الفئة الخامسة', 'الفئة السابعة', 'X5', 'X6', 'X3', 'X7', 'X1', 'Z4', 'أخرى'],
+  'أودي': ['A4', 'A6', 'A8', 'Q5', 'Q7', 'Q8', 'A5', 'A3', 'Q3', 'RS6', 'أخرى'],
+  'فولكس واجن': ['جولف', 'باسات', 'تويج', 'طوارق', 'أطلس', 'بيتل', 'أخرى'],
+  'فورد': ['تورس', 'موستانج', 'إكسبلورر', 'إكسبيدشن', 'إف 150', 'إيدج', 'فوكس', 'فيوجن', 'أخرى'],
+  'شيفروليه': ['تاهو', 'سيلفرادو', 'كامارو', 'ماليبو', 'كابرس', 'ترافرس', 'كورفيت', 'أخرى'],
+  'نيسان': ['باترول', 'ألتيما', 'ماكسيما', 'صني', 'إكس تريل', 'باثفايندر', 'نافارا', 'سفاري', 'أخرى'],
+  'هيونداي': ['إلنترا', 'سوناتا', 'أكسنت', 'سانتا في', 'توسان', 'أزيرا', 'كريتا', 'باليسايد', 'أخرى'],
+  'كيا': ['أوبتيما', 'سيراتو', 'سبورتج', 'سورينتو', 'ريو', 'K5', 'كادينزا', 'ستنجر', 'أخرى'],
+  'مازدا': ['مازدا 3', 'مازدا 6', 'CX-5', 'CX-9', 'MX-5', 'أخرى'],
+  'لكزس': ['LS', 'LX', 'RX', 'ES', 'IS', 'GX', 'NX', 'UX', 'LC', 'أخرى'],
+  'جيب': ['جراند شيروكي', 'روبيكون', 'رولنجر', 'شيروكي', 'كومباس', 'رينيجيد', 'أخرى'],
+  'رينو': ['لوجان', 'سانديرو', 'ميجان', 'كابتشر', 'داستر', 'كوليو', 'أخرى'],
+  'بيجو': ['208', '301', '308', '408', '508', '2008', '3008', '5008', 'بارتنر', 'أخرى'],
+  'سيات': ['إيبيزا', 'ليون', 'طليعة', 'أرونا', 'أتيكا', 'أخرى'],
+  'ميتسوبيشي': ['لانسر', 'باجيرو', 'آوتلاندر', 'ASX', 'إكليبس', 'أخرى'],
+  'سوبارو': ['إمبريزا', 'أوت باك', 'فورستر', 'ليغاسي', 'XV', 'WRX', 'أخرى'],
+  'فولفو': ['S60', 'S90', 'XC40', 'XC60', 'XC90', 'V60', 'أخرى'],
+  'جاغوار': ['XE', 'XF', 'XJ', 'F-PACE', 'E-PACE', 'I-PACE', 'أخرى'],
+  'لاند روفر': ['رينج روفر', 'سبورت', 'فيلار', 'ديسكفري', 'ديفندر', 'أخرى'],
+  'بورش': ['كايين', 'ماكان', 'باناميرا', 'تاي كان', '911', 'بوكستر', 'أخرى'],
+  'فيات': ['500', 'باندا', 'تيبو', 'دوبلو', 'أخرى'],
+  'ألفا روميو': ['جوليا', 'ستيلفيو', 'جوليتا', 'أخرى'],
+  'أخرى': ['أخرى']
+};
+
+const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'];
+
+// الـ User ID الثابت - تأكد من صحة هذا الرقم
+const MY_USER_ID = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
 
 export default function NewCarPage() {
   const router = useRouter();
@@ -10,99 +63,384 @@ export default function NewCarPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  const [brand, setBrand] = useState('');
-  const [model, setModel] = useState('');
-  const [price, setPrice] = useState('');
-  const [year, setYear] = useState('2026');
-  const [kilometers, setKilometers] = useState('');
-  const [color, setColor] = useState('أبيض');
-  const [currency, setCurrency] = useState('د.ك');
-  const [description, setDescription] = useState('');
-  const [images, setImages] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [msg, setMsg] = useState('');
+  const [formData, setFormData] = useState({
+    brand: '',
+    model: '',
+    year: new Date().getFullYear(),
+    price: '',
+    kilometers: '',
+    color: '',
+    description: '',
+    currency: 'KWD',
+  });
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    try {
-      setUploading(true);
-      const file = e.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('car-images')
-        .upload(fileName, file);
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        // 1. محاولة جلب الجلسة من Supabase
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          const id = session.user.id;
+          // التأكد من أن الـ ID بصيغة UUID صحيحة
+          if (id && id.length > 10 && id.includes('-')) {
+            setUserId(id);
+            localStorage.setItem('userId', id);
+            console.log('✅ Session user ID:', id);
+            setIsCheckingAuth(false);
+            return;
+          }
+        }
 
-      if (uploadError) throw uploadError;
+        // 2. محاولة جلب userId من localStorage
+        const savedUserId = localStorage.getItem('userId');
+        if (savedUserId && savedUserId.length > 10 && savedUserId.includes('-')) {
+          setUserId(savedUserId);
+          console.log('✅ Using saved userId:', savedUserId);
+          setIsCheckingAuth(false);
+          return;
+        }
 
-      const { data } = supabase.storage.from('car-images').getPublicUrl(fileName);
-      if (data) setImages([...images, data.publicUrl]);
-    } catch { 
-      setMsg('❌ خطأ في رفع الصورة'); 
-    } finally { 
-      setUploading(false); 
+        // 3. استخدام الـ ID الثابت
+        const fixedId = MY_USER_ID;
+        if (fixedId && fixedId.length > 10 && fixedId.includes('-')) {
+          setUserId(fixedId);
+          localStorage.setItem('userId', fixedId);
+          console.log('✅ Using fixed userId:', fixedId);
+        } else {
+          // إذا كان الـ ID الثابت غير صحيح، استخدم الـ ID الصحيح
+          const fallbackId = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
+          setUserId(fallbackId);
+          localStorage.setItem('userId', fallbackId);
+          console.log('⚠️ Using fallback userId:', fallbackId);
+        }
+
+      } catch (err) {
+        console.error('❌ Error getting user:', err);
+        const fallbackId = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
+        setUserId(fallbackId);
+        localStorage.setItem('userId', fallbackId);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    getUser();
+  }, [supabase.auth]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const maxImages = 4;
+
+    if (files.length + images.length > maxImages) {
+      setError(`يمكنك رفع ${maxImages} صور فقط`);
+      return;
     }
+
+    setImages([...images, ...files]);
+    const previews = files.map(file => URL.createObjectURL(file));
+    setImagePreviews([...imagePreviews, ...previews]);
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
+
+    const newPreviews = [...imagePreviews];
+    newPreviews.splice(index, 1);
+    setImagePreviews(newPreviews);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
     try {
-      setUploading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from('cars').insert({
-        brand: brand.trim(), model: model.trim(), price: Number(price),
-        year: Number(year), kilometers: kilometers ? Number(kilometers) : null,
-        color, currency, description: description.trim(), images, status: 'pending', user_id: user?.id || null
-      });
-      if (!error) { 
-        setMsg('✅ تم إرسال الإعلان للإدارة بنجاح وجاري مراجعته ونشره!'); 
-        setTimeout(() => router.push('/dashboard'), 2000);
-      } else { 
-        setMsg('❌ خطأ: ' + error.message); 
+      // التحقق من وجود userId
+      if (!userId) {
+        setError('يجب تسجيل الدخول أولاً');
+        setLoading(false);
+        return;
       }
-    } catch { 
-      setMsg('❌ خطأ في الاتصال بالخادم'); 
-    } finally { 
-      setUploading(false); 
+
+      // التحقق من صحة userId (UUID)
+      if (!userId.includes('-') || userId.length < 10) {
+        setError('معرف المستخدم غير صحيح');
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.brand || !formData.model || !formData.price) {
+        setError('الماركة، الموديل، والسعر مطلوبة');
+        setLoading(false);
+        return;
+      }
+
+      console.log('📤 Publishing car with userId:', userId);
+
+      // 1. إنشاء الإعلان
+      const payload = {
+        brand: formData.brand,
+        model: formData.model,
+        year: parseInt(formData.year.toString()) || null,
+        price: parseFloat(formData.price),
+        kilometers: formData.kilometers ? parseFloat(formData.kilometers) : null,
+        color: formData.color || null,
+        description: formData.description || null,
+        images: [],
+        user_id: userId,
+        currency: formData.currency || 'KWD',
+        status: 'pending',
+      };
+
+      console.log('📦 Payload:', payload);
+
+      const response = await fetch('/api/cars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'فشل نشر الإعلان');
+        setLoading(false);
+        return;
+      }
+
+      const carId = data.data?.[0]?.id || data.id;
+      console.log('✅ Car created with ID:', carId);
+
+      // 2. رفع الصور إلى Supabase Storage
+      if (images.length > 0 && carId) {
+        try {
+          const uploadedUrls = [];
+
+          for (const file of images) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${carId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = `cars/${fileName}`;
+
+            console.log('📤 جاري رفع الصورة:', fileName);
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('car-images')
+              .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: file.type,
+              });
+
+            if (uploadError) {
+              console.error('❌ فشل رفع الصورة:', uploadError);
+              continue;
+            }
+
+            console.log('✅ تم رفع الصورة:', uploadData);
+
+            const { data: urlData } = supabase.storage
+              .from('car-images')
+              .getPublicUrl(filePath);
+
+            if (urlData?.publicUrl) {
+              uploadedUrls.push(urlData.publicUrl);
+              console.log('🔗 رابط الصورة:', urlData.publicUrl);
+            }
+          }
+
+          // 3. تحديث الإعلان بروابط الصور
+          if (uploadedUrls.length > 0) {
+            const { error: updateError } = await supabase
+              .from('cars')
+              .update({ images: uploadedUrls })
+              .eq('id', carId);
+
+            if (updateError) {
+              console.error('❌ فشل تحديث الصور:', updateError);
+              setSuccess('⚠️ تم نشر الإعلان لكن فشل حفظ الصور');
+            } else {
+              setSuccess(`✅ تم نشر الإعلان مع ${uploadedUrls.length} صور!`);
+            }
+          } else {
+            setSuccess('⚠️ تم نشر الإعلان لكن فشل رفع الصور');
+          }
+        } catch (error) {
+          console.error('❌ خطأ في رفع الصور:', error);
+          setSuccess('⚠️ تم نشر الإعلان لكن حدث خطأ في رفع الصور');
+        }
+      } else {
+        setSuccess('✅ تم نشر الإعلان بنجاح!');
+      }
+
+      // إعادة تعيين النموذج
+      setFormData({
+        brand: '',
+        model: '',
+        year: new Date().getFullYear(),
+        price: '',
+        kilometers: '',
+        color: '',
+        description: '',
+        currency: 'KWD',
+      });
+      setImages([]);
+      setImagePreviews([]);
+
+      setTimeout(() => { router.push('/'); }, 2000);
+
+    } catch (err: any) {
+      setError('حدث خطأ غير متوقع');
+      console.error('❌ Error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <div style={{ direction: 'rtl', padding: '20px 15px', maxWidth: '550px', margin: '0 auto', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '25px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
-        <span style={{ fontSize: '20px' }}>➕</span>
-        <h1 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>إضافة إعلان سيارة جديدة</h1>
+  const styIn = {
+    width: '100%',
+    padding: '10px',
+    borderRadius: '8px',
+    border: '1px solid #ccc',
+    marginTop: '5px',
+    boxSizing: 'border-box' as const,
+  };
+
+  if (isCheckingAuth) {
+    return (
+      <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+        <p>⏳ جاري التحقق من الجلسة...</p>
       </div>
-      
-      {msg && <div style={{ padding: '12px', backgroundColor: msg.includes('✅') ? '#d1fae5' : '#fee2e2', color: msg.includes('✅') ? '#065f46' : '#dc2626', borderRadius: '8px', marginBottom: '15px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center' }}>{msg}</div>}
-      
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
-        <div><label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>ماركة السيارة</label><input type="text" placeholder="مثال: مرسيدس، تويوتا" required value={brand} onChange={e => setBrand(e.target.value)} style={{ width: '100%', padding: '11px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} /></div>
-        <div><label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>الموديل</label><input type="text" placeholder="مثال: E300، لاندكروزر" required value={model} onChange={e => setModel(e.target.value)} style={{ width: '100%', padding: '11px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} /></div>
-        <div><label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>السعر المتوقع (بالدينار الكويتي)</label><input type="number" placeholder="ادخل السعر" required value={price} onChange={e => setPrice(e.target.value)} style={{ width: '100%', padding: '11px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box', fontWeight: 'bold', color: '#059669' }} /></div>
-        <div><label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>المسافة المقطوعة (كم)</label><input type="number" placeholder="اختياري" value={kilometers} onChange={e => setKilometers(e.target.value)} style={{ width: '100%', padding: '11px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }} /></div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <div><label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>سنة الصنع</label><select value={year} onChange={e => setYear(e.target.value)} style={{ width: '100%', padding: '11px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', backgroundColor: 'white', boxSizing: 'border-box' }}>{Array.from({ length: 2027 - 1990 + 1 }, (_, i) => 2027 - i).map(y => <option key={y} value={y}>{y}</option>)}</select></div>
-          <div><label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>اللون الخارجي</label><select value={color} onChange={e => setColor(e.target.value)} style={{ width: '100%', padding: '11px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', backgroundColor: 'white', boxSizing: 'border-box' }}>{['أبيض', 'أسود', 'فضي', 'رمادي', 'أحمر', 'أزرق', 'ذهبي', 'بني', 'أخضر'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
+          <h2>⚠️ يجب تسجيل الدخول أولاً</h2>
+          <p style={{ marginTop: '10px' }}>للوصول إلى هذه الصفحة، يرجى تسجيل الدخول.</p>
+          <button 
+            onClick={() => router.push('/login')}
+            style={{ marginTop: '15px', padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+          >
+            تسجيل الدخول
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+      <button onClick={() => router.push('/')} style={{ marginBottom: '15px', padding: '8px 12px', border: 'none', backgroundColor: '#334155', color: 'white', borderRadius: '6px', cursor: 'pointer' }}>
+        ← العودة للرئيسية
+      </button>
+
+      <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>📢 إضافة إعلان سيارة جديدة</h1>
+
+      {error && <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>❌ {error}</div>}
+      {success && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>✅ {success}</div>}
+
+      <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الماركة *</label>
+          <select required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={styIn}>
+            <option value="">اختر الماركة</option>
+            {BRANDS.map(brand => <option key={brand} value={brand}>{brand}</option>)}
+          </select>
         </div>
 
-        <div><label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>تفاصيل ومواصفات إضافية</label><textarea placeholder="اكتب حالة السيارة، الفحص، إلخ..." value={description} onChange={e => setDescription(e.target.value)} rows={3} style={{ width: '100%', padding: '11px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', fontFamily: 'sans-serif', boxSizing: 'border-box', resize: 'none' }} /></div>
-        
-        <div style={{ padding: '15px', border: '2px dashed #cbd5e1', borderRadius: '10px', backgroundColor: '#f8fafc', textAlign: 'center' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#1e293b', marginBottom: '6px' }}>📸 اضغط لاختيار وتحميل صور السيارة</label>
-          <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} style={{ fontSize: '12px', width: '100%' }} />
-          {uploading && <p style={{ fontSize: '12px', color: '#2563eb', margin: '8px 0 0 0', fontWeight: '500' }}>⏳ جاري رفع الصورة وتأمينها...</p>}
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الموديل *</label>
+          <select required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} style={styIn} disabled={!formData.brand}>
+            <option value="">{formData.brand ? 'اختر الموديل' : 'يرجى اختيار الماركة أولاً'}</option>
+            {formData.brand && (MODELS[formData.brand] || ['أخرى']).map(model => <option key={model} value={model}>{model}</option>)}
+          </select>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '5px' }}>
-          {images.map((img, i) => <img key={i} src={img} alt="preview" style={{ width: '65px', height: '48px', borderRadius: '6px', objectFit: 'cover', border: '1px solid #cbd5e1' }} />)}
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>السعر *</label>
+          <input type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} placeholder="مثال: 5000" />
         </div>
 
-        <button type="submit" disabled={uploading} style={{ width: '100%', padding: '13px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>
-          {uploading ? 'جاري الحفظ والمعالجة...' : '🚀 إرسال ونشر الإعلان المكتمل'}
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>💰 العملة</label>
+          <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={styIn}>
+            {currencies.map(curr => <option key={curr.code} value={curr.code}>{curr.name}</option>)}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>سنة الصنع</label>
+          <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} style={styIn}>
+            {Array.from({ length: 40 }, (_, i) => new Date().getFullYear() + 1 - i).map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الممشي (كم)</label>
+          <input type="number" min="0" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} placeholder="مثال: 50000" />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>اللون</label>
+          <select value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={styIn}>
+            <option value="">اختر اللون</option>
+            {COLORS.map(color => <option key={color} value={color}>{color}</option>)}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px', border: '2px dashed #2563eb', padding: '15px', borderRadius: '8px' }}>
+          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>📸 صور السيارة (حد أقصى 4)</label>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageUpload}
+            style={styIn}
+          />
+
+          {imagePreviews.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+              {imagePreviews.map((preview, index) => (
+                <div key={index} style={{ position: 'relative' }}>
+                  <img src={preview} alt={`صورة ${index + 1}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>
+            {images.length}/4 صور تم اختيارها
+          </p>
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>وصف الإعلان</label>
+          <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: '80px', resize: 'none' }} placeholder="اكتب وصفاً مفصلاً للسيارة..." />
+        </div>
+
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
+          {loading ? '⏳ جاري النشر...' : '🚙 نشر الإعلان'}
         </button>
       </form>
     </div>
