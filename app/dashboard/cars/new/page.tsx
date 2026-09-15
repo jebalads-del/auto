@@ -62,6 +62,7 @@ export default function NewCarPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -86,24 +87,21 @@ export default function NewCarPage() {
     const getUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (session?.user) {
           const id = session.user.id;
           if (id && id.length > 10 && id.includes('-')) {
             setUserId(id);
             localStorage.setItem('userId', id);
-            
+
             const { data: userData } = await supabase
               .from('users')
               .select('role')
               .eq('id', id)
               .single();
-            
-            if (userData?.role) {
-              setUserRole(userData.role);
-              console.log('✅ User role:', userData.role);
-            }
-            
+
+            if (userData?.role) setUserRole(userData.role);
+
             setIsCheckingAuth(false);
             return;
           }
@@ -112,27 +110,21 @@ export default function NewCarPage() {
         const savedUserId = localStorage.getItem('userId');
         if (savedUserId && savedUserId.length > 10 && savedUserId.includes('-')) {
           setUserId(savedUserId);
-          
+
           const { data: userData } = await supabase
             .from('users')
             .select('role')
             .eq('id', savedUserId)
             .single();
-          
-          if (userData?.role) {
-            setUserRole(userData.role);
-          }
-          
+
+          if (userData?.role) setUserRole(userData.role);
+
           setIsCheckingAuth(false);
           return;
         }
 
-        const fixedId = MY_USER_ID;
-        if (fixedId && fixedId.length > 10 && fixedId.includes('-')) {
-          setUserId(fixedId);
-          localStorage.setItem('userId', fixedId);
-        }
-
+        setUserId(MY_USER_ID);
+        localStorage.setItem('userId', MY_USER_ID);
       } catch (err) {
         console.error('❌ Error getting user:', err);
       } finally {
@@ -180,12 +172,6 @@ export default function NewCarPage() {
         return;
       }
 
-      if (!userId.includes('-') || userId.length < 10) {
-        setError('معرف المستخدم غير صحيح');
-        setLoading(false);
-        return;
-      }
-
       if (!formData.brand || !formData.model || !formData.price) {
         setError('الماركة، الموديل، والسعر مطلوبة');
         setLoading(false);
@@ -223,53 +209,39 @@ export default function NewCarPage() {
       const carId = data.data?.[0]?.id || data.id;
 
       if (images.length > 0 && carId) {
-        try {
-          const uploadedUrls = [];
+        const uploadedUrls = [];
 
-          for (const file of images) {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${carId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-            const filePath = `cars/${fileName}`;
+        for (const file of images) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${carId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `cars/${fileName}`;
 
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('car-images')
-              .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false,
-                contentType: file.type,
-              });
+          const { error: uploadError } = await supabase.storage
+            .from('car-images')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false,
+              contentType: file.type,
+            });
 
-            if (uploadError) continue;
+          if (uploadError) continue;
 
-            const { data: urlData } = supabase.storage
-              .from('car-images')
-              .getPublicUrl(filePath);
+          const { data: urlData } = supabase.storage
+            .from('car-images')
+            .getPublicUrl(filePath);
 
-            if (urlData?.publicUrl) {
-              uploadedUrls.push(urlData.publicUrl);
-            }
-          }
-
-          if (uploadedUrls.length > 0) {
-            const { error: updateError } = await supabase
-              .from('cars')
-              .update({ images: uploadedUrls })
-              .eq('id', carId);
-
-            if (updateError) {
-              setSuccess('⚠️ تم نشر الإعلان لكن فشل حفظ الصور');
-            } else {
-              setSuccess(`✅ تم نشر الإعلان مع ${uploadedUrls.length} صور!`);
-            }
-          } else {
-            setSuccess('⚠️ تم نشر الإعلان لكن فشل رفع الصور');
-          }
-        } catch (error) {
-          setSuccess('⚠️ تم نشر الإعلان لكن حدث خطأ في رفع الصور');
+          if (urlData?.publicUrl) uploadedUrls.push(urlData.publicUrl);
         }
-      } else {
-        setSuccess('✅ تم نشر الإعلان بنجاح!');
+
+        if (uploadedUrls.length > 0) {
+          await supabase
+            .from('cars')
+            .update({ images: uploadedUrls })
+            .eq('id', carId);
+        }
       }
+
+      setSuccess('✅ تم نشر الإعلان بنجاح!');
 
       setFormData({
         brand: '',
@@ -283,7 +255,6 @@ export default function NewCarPage() {
       });
       setImages([]);
       setImagePreviews([]);
-
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err: any) {
@@ -304,7 +275,7 @@ export default function NewCarPage() {
 
   if (isCheckingAuth) {
     return (
-      <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+      <div style={{ direction: 'rtl', padding: '20px', textAlign: 'center' }}>
         <p>⏳ جاري التحقق من الجلسة...</p>
       </div>
     );
@@ -313,10 +284,9 @@ export default function NewCarPage() {
   if (!userId) {
     return (
       <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-        <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
+        <div style={{ backgroundColor: '#fee2e2', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
           <h2>⚠️ يجب تسجيل الدخول أولاً</h2>
-          <p style={{ marginTop: '10px' }}>للوصول إلى هذه الصفحة، يرجى تسجيل الدخول.</p>
-          <button 
+          <button
             onClick={() => router.push('/login')}
             style={{ marginTop: '15px', padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
           >
@@ -331,33 +301,29 @@ export default function NewCarPage() {
 
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      
+
       {/* ✅ أزرار التنقل - حسب الدور */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', flexWrap: 'wrap' }}>
-        <button 
-          onClick={() => router.push('/')} 
+        <button
+          onClick={() => router.push('/')}
           style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#334155', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
         >
           🏠 الرئيسية
         </button>
-        
-        {/* ✅ المستخدم العادي: زر ملفي الشخصي */}
-        {!isAdmin && (
-          <button 
-            onClick={() => router.push('/profile')} 
+
+        {isAdmin ? (
+          <button
+            onClick={() => router.push('/dashboard')}
+            style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#7c3aed', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+          >
+            ⚙️ لوحة الإدارة
+          </button>
+        ) : (
+          <button
+            onClick={() => router.push('/profile')}
             style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#2563eb', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
           >
             👤 ملفي الشخصي
-          </button>
-        )}
-        
-        {/* ✅ الأدمن: زر لوحة التحكم بدلاً من ملفي الشخصي */}
-        {isAdmin && (
-          <button 
-            onClick={() => router.push('/dashboard')} 
-            style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#7c3aed', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
-          >
-            ⚙️ لوحة التحكم
           </button>
         )}
       </div>
@@ -367,88 +333,44 @@ export default function NewCarPage() {
       {error && <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>❌ {error}</div>}
       {success && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>✅ {success}</div>}
 
-      <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+      <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px' }}>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الماركة *</label>
-          <select required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={styIn}>
-            <option value="">اختر الماركة</option>
-            {BRANDS.map(brand => <option key={brand} value={brand}>{brand}</option>)}
-          </select>
-        </div>
+        <label>الماركة *</label>
+        <select required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={styIn}>
+          <option value="">اختر الماركة</option>
+          {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+        </select>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الموديل *</label>
-          <select required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} style={styIn} disabled={!formData.brand}>
-            <option value="">{formData.brand ? 'اختر الموديل' : 'يرجى اختيار الماركة أولاً'}</option>
-            {formData.brand && (MODELS[formData.brand] || ['أخرى']).map(model => <option key={model} value={model}>{model}</option>)}
-          </select>
-        </div>
+        <label style={{ marginTop: '10px', display: 'block' }}>الموديل *</label>
+        <select required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} style={styIn} disabled={!formData.brand}>
+          <option value="">{formData.brand ? 'اختر الموديل' : 'اختر الماركة أولاً'}</option>
+          {formData.brand && (MODELS[formData.brand] || []).map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>السعر *</label>
-          <input type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} placeholder="مثال: 5000" />
-        </div>
+        <label style={{ marginTop: '10px', display: 'block' }}>السعر *</label>
+        <input type="number" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} />
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>💰 العملة</label>
-          <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={styIn}>
-            {currencies.map(curr => <option key={curr.code} value={curr.code}>{curr.name}</option>)}
-          </select>
-        </div>
+        <label style={{ marginTop: '10px', display: 'block' }}>سنة الصنع</label>
+        <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} style={styIn}>
+          {Array.from({ length: 40 }, (_, i) => new Date().getFullYear() + 1 - i).map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>سنة الصنع</label>
-          <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} style={styIn}>
-            {Array.from({ length: 40 }, (_, i) => new Date().getFullYear() + 1 - i).map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-        </div>
+        <label style={{ marginTop: '10px', display: 'block' }}>اللون</label>
+        <select value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={styIn}>
+          <option value="">اختر اللون</option>
+          {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>الممشي (كم)</label>
-          <input type="number" min="0" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} placeholder="مثال: 50000" />
-        </div>
+        <label style={{ marginTop: '10px', display: 'block' }}>صور السيارة</label>
+        <input type="file" multiple accept="image/*" onChange={handleImageUpload} style={styIn} />
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>اللون</label>
-          <select value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={styIn}>
-            <option value="">اختر اللون</option>
-            {COLORS.map(color => <option key={color} value={color}>{color}</option>)}
-          </select>
-        </div>
+        {imagePreviews.map((p, i) => <img key={i} src={p} style={{ width: 70, margin: 4 }} />)}
 
-        <div style={{ marginBottom: '15px', border: '2px dashed #2563eb', padding: '15px', borderRadius: '8px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>📸 صور السيارة (حد أقصى 4)</label>
-          <input type="file" multiple accept="image/*" onChange={handleImageUpload} style={styIn} />
+        <label style={{ marginTop: '10px', display: 'block' }}>الوصف</label>
+        <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: 80 }} />
 
-          {imagePreviews.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-              {imagePreviews.map((preview, index) => (
-                <div key={index} style={{ position: 'relative' }}>
-                  <img src={preview} alt={`صورة ${index + 1}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px' }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '5px' }}>
-            {images.length}/4 صور تم اختيارها
-          </p>
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>وصف الإعلان</label>
-          <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: '80px', resize: 'none' }} placeholder="اكتب وصفاً مفصلاً للسيارة..." />
-        </div>
-
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
-          {loading ? '⏳ جاري النشر...' : '🚙 نشر الإعلان'}
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: 12, marginTop: 15, backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: 8 }}>
+          {loading ? 'جاري النشر...' : 'نشر الإعلان'}
         </button>
       </form>
     </div>
