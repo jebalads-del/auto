@@ -69,6 +69,7 @@ export default function NewCarPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [userRole, setUserRole] = useState<string>('user');
 
   const [formData, setFormData] = useState({
     brand: '',
@@ -91,7 +92,19 @@ export default function NewCarPage() {
           if (id && id.length > 10 && id.includes('-')) {
             setUserId(id);
             localStorage.setItem('userId', id);
-            console.log('✅ Session user ID:', id);
+            
+            // ✅ جلب دور المستخدم من قاعدة البيانات
+            const { data: userData } = await supabase
+              .from('users')
+              .select('role')
+              .eq('id', id)
+              .single();
+            
+            if (userData?.role) {
+              setUserRole(userData.role);
+              console.log('✅ User role:', userData.role);
+            }
+            
             setIsCheckingAuth(false);
             return;
           }
@@ -100,7 +113,18 @@ export default function NewCarPage() {
         const savedUserId = localStorage.getItem('userId');
         if (savedUserId && savedUserId.length > 10 && savedUserId.includes('-')) {
           setUserId(savedUserId);
-          console.log('✅ Using saved userId:', savedUserId);
+          
+          // ✅ جلب دور المستخدم
+          const { data: userData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', savedUserId)
+            .single();
+          
+          if (userData?.role) {
+            setUserRole(userData.role);
+          }
+          
           setIsCheckingAuth(false);
           return;
         }
@@ -109,19 +133,10 @@ export default function NewCarPage() {
         if (fixedId && fixedId.length > 10 && fixedId.includes('-')) {
           setUserId(fixedId);
           localStorage.setItem('userId', fixedId);
-          console.log('✅ Using fixed userId:', fixedId);
-        } else {
-          const fallbackId = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
-          setUserId(fallbackId);
-          localStorage.setItem('userId', fallbackId);
-          console.log('⚠️ Using fallback userId:', fallbackId);
         }
 
       } catch (err) {
         console.error('❌ Error getting user:', err);
-        const fallbackId = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
-        setUserId(fallbackId);
-        localStorage.setItem('userId', fallbackId);
       } finally {
         setIsCheckingAuth(false);
       }
@@ -195,8 +210,6 @@ export default function NewCarPage() {
         status: 'pending',
       };
 
-      console.log('📦 Payload:', payload);
-
       const response = await fetch('/api/cars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -212,7 +225,6 @@ export default function NewCarPage() {
       }
 
       const carId = data.data?.[0]?.id || data.id;
-      console.log('✅ Car created with ID:', carId);
 
       if (images.length > 0 && carId) {
         try {
@@ -222,8 +234,6 @@ export default function NewCarPage() {
             const fileExt = file.name.split('.').pop();
             const fileName = `${carId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
             const filePath = `cars/${fileName}`;
-
-            console.log('📤 جاري رفع الصورة:', fileName);
 
             const { data: uploadData, error: uploadError } = await supabase.storage
               .from('car-images')
@@ -238,15 +248,12 @@ export default function NewCarPage() {
               continue;
             }
 
-            console.log('✅ تم رفع الصورة:', uploadData);
-
             const { data: urlData } = supabase.storage
               .from('car-images')
               .getPublicUrl(filePath);
 
             if (urlData?.publicUrl) {
               uploadedUrls.push(urlData.publicUrl);
-              console.log('🔗 رابط الصورة:', urlData.publicUrl);
             }
           }
 
@@ -257,7 +264,6 @@ export default function NewCarPage() {
               .eq('id', carId);
 
             if (updateError) {
-              console.error('❌ فشل تحديث الصور:', updateError);
               setSuccess('⚠️ تم نشر الإعلان لكن فشل حفظ الصور');
             } else {
               setSuccess(`✅ تم نشر الإعلان مع ${uploadedUrls.length} صور!`);
@@ -266,7 +272,6 @@ export default function NewCarPage() {
             setSuccess('⚠️ تم نشر الإعلان لكن فشل رفع الصور');
           }
         } catch (error) {
-          console.error('❌ خطأ في رفع الصور:', error);
           setSuccess('⚠️ تم نشر الإعلان لكن حدث خطأ في رفع الصور');
         }
       } else {
@@ -290,7 +295,6 @@ export default function NewCarPage() {
 
     } catch (err: any) {
       setError('حدث خطأ غير متوقع');
-      console.error('❌ Error:', err);
     } finally {
       setLoading(false);
     }
@@ -330,10 +334,13 @@ export default function NewCarPage() {
     );
   }
 
+  // ✅ التحقق من أن المستخدم أدمن
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
       
-      {/* ✅ أزرار التنقل */}
+      {/* ✅ أزرار التنقل - حسب الدور */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', flexWrap: 'wrap' }}>
         <button 
           onClick={() => router.push('/')} 
@@ -347,12 +354,15 @@ export default function NewCarPage() {
         >
           👤 ملفي الشخصي
         </button>
-        <button 
-          onClick={() => router.push('/dashboard')} 
-          style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#7c3aed', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
-        >
-          ⚙️ لوحة التحكم
-        </button>
+        {/* ✅ زر لوحة التحكم يظهر فقط للأدمن */}
+        {isAdmin && (
+          <button 
+            onClick={() => router.push('/dashboard')} 
+            style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#7c3aed', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+          >
+            ⚙️ لوحة التحكم
+          </button>
+        )}
       </div>
 
       <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>📢 إضافة إعلان سيارة جديدة</h1>
