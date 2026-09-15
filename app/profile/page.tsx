@@ -87,7 +87,6 @@ export default function ProfilePage() {
   return (
 
         <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} style={{ padding: '8px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>خروج</button>
-      </div>
 
       {message.text && <div style={{ padding: '12px', backgroundColor: message.type === 'success' ? '#d1fae5' : '#fee2e2', color: message.type === 'success' ? '#065f46' : '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center' }}>{message.text}</div>}
 
