@@ -93,7 +93,6 @@ export default function NewCarPage() {
             setUserId(id);
             localStorage.setItem('userId', id);
             
-            // ✅ جلب دور المستخدم من قاعدة البيانات
             const { data: userData } = await supabase
               .from('users')
               .select('role')
@@ -114,7 +113,6 @@ export default function NewCarPage() {
         if (savedUserId && savedUserId.length > 10 && savedUserId.includes('-')) {
           setUserId(savedUserId);
           
-          // ✅ جلب دور المستخدم
           const { data: userData } = await supabase
             .from('users')
             .select('role')
@@ -194,8 +192,6 @@ export default function NewCarPage() {
         return;
       }
 
-      console.log('📤 Publishing car with userId:', userId);
-
       const payload = {
         brand: formData.brand,
         model: formData.model,
@@ -243,10 +239,7 @@ export default function NewCarPage() {
                 contentType: file.type,
               });
 
-            if (uploadError) {
-              console.error('❌ فشل رفع الصورة:', uploadError);
-              continue;
-            }
+            if (uploadError) continue;
 
             const { data: urlData } = supabase.storage
               .from('car-images')
@@ -334,7 +327,6 @@ export default function NewCarPage() {
     );
   }
 
-  // ✅ التحقق من أن المستخدم أدمن
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 
   return (
@@ -348,13 +340,18 @@ export default function NewCarPage() {
         >
           🏠 الرئيسية
         </button>
-        <button 
-          onClick={() => router.push('/profile')} 
-          style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#2563eb', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
-        >
-          👤 ملفي الشخصي
-        </button>
-        {/* ✅ زر لوحة التحكم يظهر فقط للأدمن */}
+        
+        {/* ✅ المستخدم العادي: زر ملفي الشخصي */}
+        {!isAdmin && (
+          <button 
+            onClick={() => router.push('/profile')} 
+            style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#2563eb', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+          >
+            👤 ملفي الشخصي
+          </button>
+        )}
+        
+        {/* ✅ الأدمن: زر لوحة التحكم بدلاً من ملفي الشخصي */}
         {isAdmin && (
           <button 
             onClick={() => router.push('/dashboard')} 
@@ -422,13 +419,7 @@ export default function NewCarPage() {
 
         <div style={{ marginBottom: '15px', border: '2px dashed #2563eb', padding: '15px', borderRadius: '8px' }}>
           <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>📸 صور السيارة (حد أقصى 4)</label>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleImageUpload}
-            style={styIn}
-          />
+          <input type="file" multiple accept="image/*" onChange={handleImageUpload} style={styIn} />
 
           {imagePreviews.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
