@@ -286,7 +286,6 @@ export default function NewCarPage() {
       setImages([]);
       setImagePreviews([]);
 
-      // ✅ التعديل الوحيد: بدلاً من router.push('/')
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err: any) {
@@ -333,9 +332,28 @@ export default function NewCarPage() {
 
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <button onClick={() => router.push('/')} style={{ marginBottom: '15px', padding: '8px 12px', border: 'none', backgroundColor: '#334155', color: 'white', borderRadius: '6px', cursor: 'pointer' }}>
-        ← العودة للرئيسية
-      </button>
+      
+      {/* ✅ أزرار التنقل */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', flexWrap: 'wrap' }}>
+        <button 
+          onClick={() => router.push('/')} 
+          style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#334155', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+        >
+          🏠 الرئيسية
+        </button>
+        <button 
+          onClick={() => router.push('/profile')} 
+          style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#2563eb', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+        >
+          👤 ملفي الشخصي
+        </button>
+        <button 
+          onClick={() => router.push('/dashboard')} 
+          style={{ flex: 1, minWidth: '100px', padding: '10px 14px', border: 'none', backgroundColor: '#7c3aed', color: 'white', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+        >
+          ⚙️ لوحة التحكم
+        </button>
+      </div>
 
       <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>📢 إضافة إعلان سيارة جديدة</h1>
 
