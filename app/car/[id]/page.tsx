@@ -8,7 +8,7 @@ interface Car {
   id: string; brand: string; model: string; year?: number; price: number;
   kilometers?: number; color?: string; description?: string; currency?: string;
   status: string; created_at: string; images?: string[]; user_id?: string;
-  user_phone?: string; // إضافة حقل الهاتف القديم الخاص بك هنا تلقائياً
+  user_phone?: string;
 }
 interface User { id: string; name?: string; email?: string; phone?: string; }
 
@@ -45,9 +45,17 @@ export default function CarDetailsPage() {
   const sellerName = seller?.name || 'البائع';
   const sellerEmail = seller?.email || '';
   
-  // استخراج الهاتف من الإعلان مباشرة بناءً على كودك القديم، وإذا لم يوجد يأخذ من البائع
   const finalPhone = car.user_phone || seller?.phone || '';
   const cleanPhone = finalPhone.replace(/\D/g, '');
+
+  // ✅ تنسيق تاريخ النشر
+  const publishDate = car.created_at 
+    ? new Date(car.created_at).toLocaleDateString('ar-KW', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : 'غير معروف';
 
   return (
     <div style={styles.container}>
@@ -87,16 +95,53 @@ export default function CarDetailsPage() {
             <h2 style={styles.title}>{car.brand} {car.model}</h2>
             <div style={styles.priceTag}>{car.price.toLocaleString()} {car.currency || 'د.ك'}</div>
           </div>
+          
           <div style={styles.detailsGrid}>
-            {car.year && <div style={styles.detailItem}><span style={styles.detailLabel}>📅 سنة الصنع</span><span style={styles.detailValue}>{car.year}</span></div>}
-            {car.kilometers && <div style={styles.detailItem}><span style={styles.detailLabel}>📊 عداد الممشى</span><span style={styles.detailValue}>{car.kilometers.toLocaleString()} كم</span></div>}
-            {car.color && <div style={styles.detailItem}><span style={styles.detailLabel}>🎨 لون المركبة</span><span style={styles.detailValue}>{car.color}</span></div>}
-            <div style={styles.detailItem}><span style={styles.detailLabel}>📌 حالة الإعلان</span><span style={{ ...styles.detailValue, color: car.status === 'approved' ? '#16a34a' : '#ef4444' }}>{car.status === 'approved' ? '✅ متاح' : '💰 تم البيع'}</span></div>
+            {car.year && (
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>📅 سنة الصنع</span>
+                <span style={styles.detailValue}>{car.year}</span>
+              </div>
+            )}
+            {car.kilometers && (
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>📊 عداد الممشى</span>
+                <span style={styles.detailValue}>{car.kilometers.toLocaleString()} كم</span>
+              </div>
+            )}
+            {car.color && (
+              <div style={styles.detailItem}>
+                <span style={styles.detailLabel}>🎨 لون المركبة</span>
+                <span style={styles.detailValue}>{car.color}</span>
+              </div>
+            )}
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>📌 حالة الإعلان</span>
+              <span style={{ ...styles.detailValue, color: car.status === 'approved' ? '#16a34a' : '#ef4444' }}>
+                {car.status === 'approved' ? '✅ متاح' : '💰 تم البيع'}
+              </span>
+            </div>
+            
+            {/* ✅ تاريخ نشر الإعلان - جديد */}
+            <div style={styles.detailItem}>
+              <span style={styles.detailLabel}>🕒 تاريخ النشر</span>
+              <span style={styles.detailValue}>{publishDate}</span>
+            </div>
           </div>
-          {car.description && <div style={styles.cardSection}><h3 style={styles.sectionTitle}>📝 التفاصيل</h3><p style={styles.descriptionText}>{car.description}</p></div>}
+
+          {car.description && (
+            <div style={styles.cardSection}>
+              <h3 style={styles.sectionTitle}>📝 التفاصيل</h3>
+              <p style={styles.descriptionText}>{car.description}</p>
+            </div>
+          )}
+          
           <div style={styles.cardSection}>
             <h3 style={styles.sectionTitle}>👤 المعلن</h3>
-            <div style={styles.sellerInfo}><span style={styles.sellerName}>{sellerName}</span>{sellerEmail && <span style={styles.sellerEmail}>📧 {sellerEmail}</span>}</div>
+            <div style={styles.sellerInfo}>
+              <span style={styles.sellerName}>{sellerName}</span>
+              {sellerEmail && <span style={styles.sellerEmail}>📧 {sellerEmail}</span>}
+            </div>
           </div>
         </div>
       </div>
@@ -117,6 +162,7 @@ export default function CarDetailsPage() {
     </div>
   );
 }
+
 const styles = {
   container: { direction: 'rtl' as const, backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '90px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '12px 16px', borderBottom: '1px solid #e2e8f0', position: 'sticky' as const, top: 0, zIndex: 100 },
@@ -149,8 +195,8 @@ const styles = {
   stickyStickyContact: { position: 'fixed' as const, bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', padding: '12px 16px', borderTop: '1px solid #e2e8f0', zIndex: 999 },
   contactButtonsContainer: { display: 'flex', gap: '10px', maxWidth: '600px', margin: '0 auto' },
   contactBtn: { flex: 1, color: '#ffffff', textDecoration: 'none', textAlign: 'center' as const, padding: '12px 0', borderRadius: '12px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' },
-  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justify: 'center', minHeight: '100vh' },
+  loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh' },
   spinner: { width: '32px', height: '32px', border: '3px solid #cbd5e1', borderTop: '3px solid #2563eb', borderRadius: '50%' },
-  errorContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justify: 'center', minHeight: '100vh', padding: '20px' },
+  errorContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' },
   errorBackLink: { textDecoration: 'none', backgroundColor: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '8px' }
 };
