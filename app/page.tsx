@@ -9,6 +9,7 @@ interface Car {
   year?: number; kilometers?: number; color?: string;
   description?: string; currency?: string; status: string;
   created_at: string; images?: string[]; is_featured?: boolean;
+  featured_until?: string;
 }
 
 export default function HomePage() {
@@ -28,6 +29,16 @@ export default function HomePage() {
     const fetchCars = async () => {
       try {
         setLoading(true);
+
+        // ✅ 1. إلغاء تلقائي للإعلانات المنتهية
+        const now = new Date().toISOString();
+        await supabase
+          .from('cars')
+          .update({ is_featured: false, featured_until: null })
+          .lt('featured_until', now)
+          .eq('is_featured', true);
+
+        // ✅ 2. جلب السيارات
         const { data, error } = await supabase
           .from('cars')
           .select('*')
@@ -66,7 +77,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 🔍 محرك البحث - انتقل للأعلى */}
+      {/* 🔍 محرك البحث */}
       <div style={{ backgroundColor: '#ffffff', padding: '10px 12px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <input 
@@ -106,7 +117,7 @@ export default function HomePage() {
         )}
       </div>
 
-            {/* ⭐ الإعلانات المميزة - تظهر فقط إذا كانت هناك إعلانات مميزة فعلاً */}
+      {/* ⭐ الإعلانات المميزة - تظهر فقط إذا كانت هناك إعلانات مميزة */}
       {cars.filter((car) => car.is_featured).length > 0 && (
         <>
           <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>⭐ إعلانات مميزة (اسحب لليسار او اليمين ↔️)</h2>
