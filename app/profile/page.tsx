@@ -4,11 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
-
-interface Car {
+ interface Car {
   id: string; brand: string; model: string; price: number;
   year?: number; currency?: string; status: string; images?: string[];
   is_featured?: boolean; featured_payment_ref?: string;
+  featured_until?: string; // ✅ جديد - تاريخ انتهاء التمييز
 }
 
 export default function ProfilePage() {
