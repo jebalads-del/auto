@@ -12,6 +12,7 @@ interface Car {
   price: number; status: string; created_at: string;
   year?: number; currency?: string; images?: string[];
   is_featured?: boolean; featured_payment_ref?: string;
+  featured_until?: string; // ✅ جديد
 }
 
 interface User {
@@ -53,6 +54,7 @@ export default function AdminDashboardForm() {
       }
     } catch (err) { console.error(err); }
   };
+
   const fetchCars = async () => {
     try {
       setCarsLoading(true);
@@ -70,6 +72,15 @@ export default function AdminDashboardForm() {
   };
 
   useEffect(() => { fetchCars(); fetchUsers(); fetchSettings(); }, []);
+
+  // ✅ دالة حساب الأيام المتبقية
+  const getFeaturedDaysLeft = (car: Car) => {
+    if (!car.is_featured || !car.featured_until) return null;
+    const daysLeft = Math.ceil(
+      (new Date(car.featured_until).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return daysLeft;
+  };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,13 +105,41 @@ export default function AdminDashboardForm() {
   const handleCarAction = async (carId: string, action: 'approve' | 'sell' | 'approve_featured' | 'remove_featured') => {
     try {
       let updateData: any = {};
+      
       if (action === 'approve') updateData = { status: 'approved' };
       if (action === 'sell') updateData = { status: 'sold' };
-      if (action === 'approve_featured') updateData = { is_featured: true, status: 'approved' };
-      if (action === 'remove_featured') updateData = { is_featured: false };
+      
+      // ✅ تمييز الإعلان مع تحديد 30 يوم
+      if (action === 'approve_featured') {
+        const featuredUntil = new Date();
+        featuredUntil.setDate(featuredUntil.getDate() + 30);
+        updateData = { 
+          is_featured: true, 
+          status: 'approved',
+          featured_until: featuredUntil.toISOString(),
+        };
+      }
+      
+      // ✅ إلغاء التمييز مع مسح تاريخ الانتهاء
+      if (action === 'remove_featured') {
+        updateData = { 
+          is_featured: false,
+          featured_until: null,
+        };
+      }
 
       const { error } = await supabase.from('cars').update(updateData).eq('id', carId);
-      if (!error) { showMessage('✅ تم تحديث حالة الإعلان بنجاح', 'success'); fetchCars(); }
+      
+      if (!error) { 
+        if (action === 'approve_featured') {
+          showMessage('⭐ تم تمييز الإعلان لمدة 30 يوم بنجاح', 'success');
+        } else if (action === 'remove_featured') {
+          showMessage('✅ تم إلغاء التمييز بنجاح', 'success');
+        } else {
+          showMessage('✅ تم تحديث حالة الإعلان بنجاح', 'success');
+        }
+        fetchCars(); 
+      }
     } catch { showMessage('❌ خطأ في الاتصال', 'error'); }
   };
 
@@ -114,15 +153,16 @@ export default function AdminDashboardForm() {
 
   const handleUserDelete = async (userId: string, userEmail: string) => {
     if (userEmail === 'admin@sayarty.store') return;
-    if (!confirm('هل أنت متأكد من حذف هذا المستخدم Trim؟')) return;
+    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
     try {
       const { error } = await supabase.from('users').delete().eq('id', userId);
       if (!error) { showMessage('🗑️ تم حذف المستخدم بنجاح', 'success'); fetchUsers(); }
     } catch { showMessage('❌ خطأ في الاتصال', 'error'); }
   };
+
   return (
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8 rgba(0,0,0,0.05)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <h1 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>🎛️ لوحة الإدارة</h1>
           <Link href="/dashboard/cars/new" style={{ textDecoration: 'none' }}><button style={{ padding: '6px 12px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>➕ نشر إعلان</button></Link>
@@ -133,34 +173,71 @@ export default function AdminDashboardForm() {
       {message.text && <div style={{ padding: '12px 15px', backgroundColor: message.type === 'success' ? '#d1fae5' : '#fee2e2', color: message.type === 'success' ? '#065f46' : '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>{message.text}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
-        <button onClick={() => setActiveTab('cars')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'cars' ? '#2563eb' : 'white', color: activeTab === 'cars' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold' }}>🚗 الإعلانات ({cars.length})</button>
-        <button onClick={() => setActiveTab('featured_requests')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'featured_requests' ? '#eab308' : 'white', color: activeTab === 'featured_requests' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold' }}>⭐ طلبات التمييز ({cars.filter(c => c.status === 'pending_featured').length})</button>
-        <button onClick={() => setActiveTab('users')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'users' ? '#2563eb' : 'white', color: activeTab === 'users' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold' }}>👥 المستخدمين ({users.length})</button>
-        <button onClick={() => setActiveTab('settings')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'settings' ? '#2563eb' : 'white', color: activeTab === 'settings' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold' }}>⚙️ الإعدادات</button>
+        <button onClick={() => setActiveTab('cars')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'cars' ? '#2563eb' : 'white', color: activeTab === 'cars' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>🚗 الإعلانات ({cars.length})</button>
+        <button onClick={() => setActiveTab('featured_requests')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'featured_requests' ? '#eab308' : 'white', color: activeTab === 'featured_requests' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>⭐ طلبات التمييز ({cars.filter(c => c.status === 'pending_featured').length})</button>
+        <button onClick={() => setActiveTab('users')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'users' ? '#2563eb' : 'white', color: activeTab === 'users' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>👥 المستخدمين ({users.length})</button>
+        <button onClick={() => setActiveTab('settings')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'settings' ? '#2563eb' : 'white', color: activeTab === 'settings' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>⚙️ الإعدادات</button>
       </div>
 
       {activeTab === 'cars' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>🚗 قائمة إعلانات السيارات</h2>
-          {carsLoading ? <p>جاري تحميل السيارات...</p> : cars.map((car) => (
-            <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 5px', borderBottom: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {car.images && car.images.length > 0 && <img src={car.images[0]} alt="car" style={{ width: '70px', height: '50px', borderRadius: '6px', objectFit: 'cover' }} />}
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model}</div>
-                  <div style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold' }}>{car.price} {car.currency || 'د.ك'}</div>
-                  {car.is_featured && <button onClick={() => handleCarAction(car.id, 'remove_featured')} style={{ fontSize: '11px', color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', marginTop: '5px', cursor: 'pointer' }}>❌ إلغاء التميز</button>}
+          {carsLoading ? <p>جاري تحميل السيارات...</p> : cars.map((car) => {
+            const daysLeft = getFeaturedDaysLeft(car);
+            return (
+              <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 5px', borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                  {car.images && car.images.length > 0 && <img src={car.images[0]} alt="car" style={{ width: '70px', height: '50px', borderRadius: '6px', objectFit: 'cover' }} />}
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model}</div>
+                    <div style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold' }}>{car.price} {car.currency || 'د.ك'}</div>
+                    
+                    {/* ✅ عداد الأيام المتبقية */}
+                    {car.is_featured && daysLeft !== null && (
+                      <>
+                        {daysLeft > 0 ? (
+                          <div style={{ 
+                            fontSize: '11px', 
+                            fontWeight: 'bold', 
+                            marginTop: '5px', 
+                            padding: '3px 8px', 
+                            borderRadius: '6px', 
+                            display: 'inline-block',
+                            backgroundColor: daysLeft <= 5 ? '#ffedd5' : '#fef3c7',
+                            color: daysLeft <= 5 ? '#ea580c' : '#d97706',
+                          }}>
+                            {daysLeft <= 5 ? `⚠️ ينتهي خلال ${daysLeft} أيام` : `👑 مميز (${daysLeft} يوم متبقي)`}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '5px', padding: '3px 8px', borderRadius: '6px', display: 'inline-block', backgroundColor: '#fee2e2', color: '#dc2626' }}>
+                            ❌ انتهى التمييز
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* زر إلغاء التميز */}
+                    {car.is_featured && (
+                      <button 
+                        onClick={() => handleCarAction(car.id, 'remove_featured')} 
+                        style={{ fontSize: '11px', color: '#dc2626', backgroundColor: '#fee2e2', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', marginTop: '5px', cursor: 'pointer', display: 'block' }}
+                      >
+                        ❌ إلغاء التميز
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
+                  {car.status === 'pending' && <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>موافقة ونشر</button>}
+                  {car.status === 'approved' && <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>تحويل لمباع</button>}
+                  <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>حذف الإعلان</button>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
-                {car.status === 'pending' && <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>موافقة ونشر</button>}
-                {car.status === 'approved' && <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>تحويل لمباع</button>}
-                <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>حذف الإعلان</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
+
       {activeTab === 'featured_requests' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold', color: '#eab308' }}>⭐ طلبات التمييز قيد الانتظار</h2>
@@ -172,7 +249,7 @@ export default function AdminDashboardForm() {
               </div>
               <div style={{ backgroundColor: '#fef3c7', padding: '10px', borderRadius: '8px', fontSize: '13px', color: '#d97706', marginBottom: '10px', border: '1px solid #fde68a' }}><strong>💳 بيانات الحوالة:</strong> {car.featured_payment_ref}</div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button onClick={() => handleCarAction(car.id, 'approve_featured')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>⭐ موافقة وتثبيت كمميز</button>
+                <button onClick={() => handleCarAction(car.id, 'approve_featured')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>⭐ موافقة وتمييز 30 يوم</button>
                 <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#64748b', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>رفض كلي</button>
               </div>
             </div>
@@ -186,18 +263,19 @@ export default function AdminDashboardForm() {
           {usersLoading ? <p>جاري تحميل الحسابات...</p> : users.map((user) => (
             <div key={user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 5px', borderBottom: '1px solid #e2e8f0' }}>
               <div><div style={{ fontWeight: 'bold', fontSize: '14px' }}>{user.name || 'مستخدم جديد'}</div><div style={{ fontSize: '12px', color: '#64748b' }}>{user.email}</div></div>
-              {user.email !== 'admin@sayarty.store' ? <button onClick={() => handleUserDelete(user.id, user.email || '')} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>حذف الحساب</button> : <span style={{ fontSize: '12px', color: '#2563eb', fontWeight: 'bold', backgroundColor: '#e0f2fe', padding: '4px 8px', borderRadius: '6px' }}>المدير 👑</span>}
+              {user.email !== 'admin@sayarty.store' ? <button onClick={() => handleUserDelete(user.id, user.email || '')} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>حذف الحساب</button> : <span style={{ fontSize: '12px', color: '#2563eb', fontWeight: 'bold', backgroundColor: '#e0f2fe', padding: '4px 8px', borderRadius: '6px' }}>المدير 👑</span>}
             </div>
           ))}
         </div>
       )}
+
       {activeTab === 'settings' && (
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '20px', fontWeight: 'bold', color: '#2563eb' }}>⚙️ التحكم المالي وإعدادات الدفع للموقع</h2>
           <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>تكلفة تمييز الإعلان شهرياً (بالدينار الكويتي)</label><input type="number" value={featuredPrice} onChange={e => setFeaturedPrice(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold' }} /></div>
-            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>بيانات استلام ويسترن يونيون</label><textarea value={westernUnionInfo} onChange={e => setWesternUnionInfo(e.target.value)} required rows={2} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} /></div>
-            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>حساب PayPal الرسمي لاستقبال الأموال فوراً</label><input type="email" value={paypalEmail} onChange={e => setPaypalEmail(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold' }} /></div>
+            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>تكلفة تمييز الإعلان شهرياً (بالدينار الكويتي)</label><input type="number" value={featuredPrice} onChange={e => setFeaturedPrice(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} /></div>
+            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>بيانات استلام ويسترن يونيون</label><textarea value={westernUnionInfo} onChange={e => setWesternUnionInfo(e.target.value)} required rows={2} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} /></div>
+            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>حساب PayPal الرسمي لاستقبال الأموال فوراً</label><input type="email" value={paypalEmail} onChange={e => setPaypalEmail(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} /></div>
             <button type="submit" style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>💾 حفظ وتثبيت الإعدادات المالية الحية</button>
           </form>
         </div>
