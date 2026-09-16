@@ -203,9 +203,79 @@ export default function ProfilePage() {
                     ⭐ تمييز الإعلان
                   </button>
                 )}
-                {car.is_featured && (
-                  <span style={{ fontSize: '11px', color: '#eab308', fontWeight: 'bold', backgroundColor: '#fef3c7', padding: '4px 8px', borderRadius: '6px', textAlign: 'center' }}>👑 مميز نشط</span>
-                )}
+              {car.is_featured && car.featured_until && (() => {
+  // ✅ حساب الأيام المتبقية
+  const daysLeft = Math.ceil(
+    (new Date(car.featured_until).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+  );
+  
+  // ❌ انتهى التمييز
+  if (daysLeft <= 0) {
+    return (
+      <span style={{ 
+        fontSize: '11px', 
+        color: '#ef4444', 
+        fontWeight: 'bold', 
+        backgroundColor: '#fee2e2', 
+        padding: '4px 8px', 
+        borderRadius: '6px',
+        display: 'inline-block'
+      }}>
+        ❌ انتهى التمييز
+      </span>
+    );
+  }
+  
+  // ⚠️ قرب الانتهاء (5 أيام أو أقل)
+  if (daysLeft <= 5) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <span style={{ 
+          fontSize: '11px', 
+          color: '#ea580c', 
+          fontWeight: 'bold', 
+          backgroundColor: '#ffedd5', 
+          padding: '4px 8px', 
+          borderRadius: '6px', 
+          textAlign: 'center' 
+        }}>
+          ⚠️ ينتهي خلال {daysLeft} أيام
+        </span>
+        <button 
+          onClick={() => { setSelectedCarId(car.id); setModalOpen(true); }}
+          style={{ 
+            fontSize: '10px', 
+            color: 'white', 
+            backgroundColor: '#eab308', 
+            padding: '5px 8px', 
+            borderRadius: '6px', 
+            border: 'none', 
+            cursor: 'pointer', 
+            fontWeight: 'bold' 
+          }}
+        >
+          🔄 تجديد التمييز
+        </button>
+      </div>
+    );
+  }
+  
+  // 👑 مميز - عادي
+  return (
+    <span style={{ 
+      fontSize: '11px', 
+      color: '#eab308', 
+      fontWeight: 'bold', 
+      backgroundColor: '#fef3c7', 
+      padding: '4px 8px', 
+      borderRadius: '6px', 
+      textAlign: 'center',
+      display: 'inline-block'
+    }}>
+      👑 مميز ({daysLeft} يوم متبقي)
+    </span>
+  );
+})()}
               </div>
             </div>
           ))}
