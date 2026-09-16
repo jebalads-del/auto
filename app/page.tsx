@@ -106,25 +106,29 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* ⭐ الإعلانات المميزة */}
-      <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>⭐ إعلانات مميزة (اسحب لليسار او اليمين ↔️)</h2>
-      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-        {cars.slice(0, 4).map((car) => {
-          const firstImage = car.images && car.images.length > 0 ? car.images[0] : null;
-          return (
-            <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: '160px' }}>
-              <div style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #cbd5e1', padding: '6px' }}>
-                <div style={{ width: '100%', height: '90px', backgroundColor: '#f8fafc', overflow: 'hidden', borderRadius: '8px', position: 'relative' }}>
-                  {firstImage ? <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '11px' }}>🚗 لا توجد صورة</div>}
-                  <div style={{ position: 'absolute', top: '4px', right: '4px', backgroundColor: '#eab308', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold' }}>⭐ مميز</div>
-                </div>
-                <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#1e293b', margin: '6px 0 2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{car.brand} {car.model}</h3>
-                <span style={{ fontSize: '13px', fontWeight: '800', color: '#16a34a' }}>{car.price} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span></span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+            {/* ⭐ الإعلانات المميزة - تظهر فقط إذا كانت هناك إعلانات مميزة فعلاً */}
+      {cars.filter((car) => car.is_featured).length > 0 && (
+        <>
+          <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>⭐ إعلانات مميزة (اسحب لليسار او اليمين ↔️)</h2>
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            {cars.filter((car) => car.is_featured).map((car) => {
+              const firstImage = car.images && car.images.length > 0 ? car.images[0] : null;
+              return (
+                <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: '160px' }}>
+                  <div style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #cbd5e1', padding: '6px' }}>
+                    <div style={{ width: '100%', height: '90px', backgroundColor: '#f8fafc', overflow: 'hidden', borderRadius: '8px', position: 'relative' }}>
+                      {firstImage ? <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '11px' }}>🚗 لا توجد صورة</div>}
+                      <div style={{ position: 'absolute', top: '4px', right: '4px', backgroundColor: '#eab308', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold' }}>⭐ مميز</div>
+                    </div>
+                    <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#1e293b', margin: '6px 0 2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{car.brand} {car.model}</h3>
+                    <span style={{ fontSize: '13px', fontWeight: '800', color: '#16a34a' }}>{car.price} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span></span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* 🚙 عنوان قسم السيارات */}
       <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>🚙 تصفح احدث السيارات او ابحث عن سيارتك المفضله</h2>
