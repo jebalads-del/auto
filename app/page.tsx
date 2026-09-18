@@ -61,12 +61,10 @@ export default function HomePage() {
       {/* 👑 الهيدر */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', backgroundColor: 'white', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', gap: '10px', overflow: 'hidden' }}>
         
-        {/* البانر */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', flexGrow: 1, height: '70px', overflow: 'hidden', borderRadius: '8px' }}>
           <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '100%', width: '100%', objectFit: 'cover', objectPosition: 'center' }} />
         </div>
         
-        {/* الأزرار */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100px', flexShrink: 0 }}>
           <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
             <button style={{ width: '100%', padding: '8px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>➕ أعلن مجانا</button>
@@ -117,7 +115,7 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* ⭐ الإعلانات المميزة - تظهر فقط إذا كانت هناك إعلانات مميزة */}
+      {/* ⭐ الإعلانات المميزة */}
       {cars.filter((car) => car.is_featured).length > 0 && (
         <>
           <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>⭐ إعلانات مميزة (اسحب لليسار او اليمين ↔️)</h2>
@@ -141,7 +139,7 @@ export default function HomePage() {
         </>
       )}
 
-      {/* 🚙 عنوان قسم السيارات */}
+      {/* 🚙 قسم السيارات */}
       <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>🚙 تصفح احدث السيارات او ابحث عن سيارتك المفضله</h2>
 
       {loading && <div style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '15px' }}>⏳ جاري تصفح أحدث السيارات...</div>}
@@ -192,7 +190,86 @@ export default function HomePage() {
         </>
       )}
 
-      <div style={{ textAlign: 'center', marginTop: '50px', padding: '20px 0', color: '#94a3b8', fontSize: '12px', borderTop: '1px solid #e2e8f0' }}>© 2026 سيارتي ستور - جميع الحقوق محفوظة</div>
+      {/* 📞 قسم التواصل مع الإدارة */}
+      <div style={{ 
+        maxWidth: '600px', 
+        margin: '40px auto 0', 
+        padding: '20px 16px', 
+        backgroundColor: '#ffffff', 
+        borderRadius: '16px', 
+        border: '1px solid #e2e8f0',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <div style={{ fontSize: '32px', marginBottom: '8px' }}>📞</div>
+          <h3 style={{ 
+            fontSize: '16px', 
+            fontWeight: 'bold', 
+            color: '#1e293b', 
+            margin: '0 0 6px 0' 
+          }}>
+            تواصل مع الإدارة
+          </h3>
+          <p style={{ 
+            fontSize: '12px', 
+            color: '#64748b', 
+            margin: 0 
+          }}>
+            هل لديك استفسار أو اقتراح؟ نحن هنا لمساعدتك
+          </p>
+        </div>
+
+        <a 
+          href="mailto:admin@sayarty.com?subject=استفسار من موقع سيارتي" 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '14px 20px', 
+            backgroundColor: '#2563eb', 
+            color: 'white', 
+            borderRadius: '12px', 
+            textDecoration: 'none', 
+            fontSize: '14px', 
+            fontWeight: 'bold',
+            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+            transition: 'transform 0.2s',
+          }}
+        >
+          📧 راسلنا عبر الإيميل
+        </a>
+
+        <div style={{ 
+          textAlign: 'center', 
+          marginTop: '16px',
+          paddingTop: '14px',
+          borderTop: '1px solid #f1f5f9',
+        }}>
+          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
+            📧 أو راسلنا مباشرة على:
+          </p>
+          <a 
+            href="mailto:admin@sayarty.com" 
+            style={{ 
+              color: '#2563eb', 
+              textDecoration: 'none', 
+              fontWeight: 'bold',
+              direction: 'ltr' as const,
+              display: 'inline-block',
+              marginTop: '4px',
+              fontSize: '13px',
+            }}
+          >
+            admin@sayarty.com
+          </a>
+        </div>
+      </div>
+
+      {/* حقوق النشر */}
+      <div style={{ textAlign: 'center', marginTop: '30px', padding: '20px 0', color: '#94a3b8', fontSize: '12px', borderTop: '1px solid #e2e8f0' }}>
+        © 2026 سيارتي ستور - جميع الحقوق محفوظة
+      </div>
     </div>
   );
 }
