@@ -66,6 +66,7 @@ export default function NewCarPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+    const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
