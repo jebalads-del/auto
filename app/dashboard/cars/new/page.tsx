@@ -369,8 +369,142 @@ export default function NewCarPage() {
         <label style={{ marginTop: '10px', display: 'block' }}>الوصف</label>
         <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: 80 }} />
 
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: 12, marginTop: 15, backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: 8 }}>
-          {loading ? 'جاري النشر...' : 'نشر الإعلان'}
+                {/* ⚠️ قسم الشروط والأحكام */}
+        <div style={{ 
+          backgroundColor: '#fef2f2', 
+          padding: '18px', 
+          borderRadius: '12px', 
+          border: '2px solid #ef4444',
+          marginBottom: '20px',
+        }}>
+          {/* العنوان */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            marginBottom: '12px',
+            paddingBottom: '10px',
+            borderBottom: '1px solid #fecaca',
+          }}>
+            <span style={{ fontSize: '22px' }}>📜</span>
+            <h3 style={{ 
+              fontSize: '15px', 
+              fontWeight: 'bold', 
+              color: '#dc2626', 
+              margin: 0,
+            }}>
+              الشروط والأحكام
+            </h3>
+          </div>
+
+          {/* الشروط */}
+          <div style={{ 
+            fontSize: '12.5px', 
+            color: '#7f1d1d', 
+            lineHeight: '1.8', 
+            marginBottom: '15px',
+            backgroundColor: '#ffffff',
+            padding: '12px',
+            borderRadius: '8px',
+            border: '1px solid #fecaca',
+          }}>
+            <p style={{ margin: '0 0 10px', fontWeight: 'bold', color: '#991b1b' }}>
+              🚫 يُمنع منعاً باتاً:
+            </p>
+            <ul style={{ paddingRight: '20px', margin: '0 0 12px' }}>
+              <li>نقل الإعلانات من مواقع أخرى (Haraj، OLX، 4Sale، إلخ)</li>
+              <li>نشر معلومات مضللة أو صور غير حقيقية</li>
+              <li>استخدام صور لا تملك حقوقها</li>
+              <li>نشر إعلانات مكررة لنفس السيارة</li>
+              <li>انتحال شخصية البائع الحقيقي</li>
+            </ul>
+
+            <p style={{ margin: '0 0 10px', fontWeight: 'bold', color: '#991b1b' }}>
+              ✅ أقر وأتعهد بما يلي:
+            </p>
+            <ul style={{ paddingRight: '20px', margin: 0 }}>
+              <li>أن الإعلان خاص بي وليس منقولاً من أي موقع آخر</li>
+              <li>أن جميع المعلومات والصور المرفقة مملوكة لي</li>
+              <li>أنني المسؤول الكامل عن صحة المعلومات المذكورة</li>
+              <li>أنني لن أنشر إعلانات مكررة أو مضللة</li>
+              <li>أنني أتحمل كامل المسؤولية القانونية عن الإعلان</li>
+            </ul>
+          </div>
+
+          {/* تنبيه الموقع */}
+          <div style={{ 
+            fontSize: '11.5px', 
+            color: '#7f1d1d', 
+            lineHeight: '1.7', 
+            marginBottom: '15px',
+            fontWeight: 'bold',
+            backgroundColor: '#fee2e2',
+            padding: '10px 12px',
+            borderRadius: '8px',
+          }}>
+            ⚠️ منصة سيارتي غير مسؤولة عن أي إعلانات منقولة أو منتحلة، وتحتفظ بحق حذف أي إعلان دون إشعار مسبق وفي أي وقت.
+          </div>
+
+          {/* خانة الموافقة */}
+          <label 
+            htmlFor="agree-terms" 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              gap: '10px',
+              cursor: 'pointer',
+              backgroundColor: agreeToTerms ? '#f0fdf4' : '#ffffff',
+              padding: '12px',
+              borderRadius: '10px',
+              border: agreeToTerms ? '2px solid #16a34a' : '2px solid #cbd5e1',
+              transition: 'all 0.2s',
+            }}
+          >
+            <input 
+              type="checkbox" 
+              id="agree-terms" 
+              checked={agreeToTerms}
+              onChange={(e) => setAgreeToTerms(e.target.checked)}
+              style={{ 
+                marginTop: '3px', 
+                width: '20px', 
+                height: '20px', 
+                cursor: 'pointer', 
+                flexShrink: 0,
+                accentColor: '#16a34a',
+              }} 
+            />
+            <span style={{ 
+              fontSize: '13px', 
+              color: agreeToTerms ? '#166534' : '#475569', 
+              lineHeight: '1.6', 
+              fontWeight: 'bold',
+            }}>
+              {agreeToTerms ? '✅ ' : ''}
+              أوافق على جميع الشروط والأحكام، وأتعهد بأن الإعلان خاص بي وليس منقولاً، وأتحمل كامل المسؤولية القانونية عن صحته.
+            </span>
+          </label>
+        </div>
+
+        {/* زر النشر */}
+        <button 
+          type="submit" 
+          disabled={loading || !agreeToTerms}
+          style={{ 
+            width: '100%', 
+            padding: '14px', 
+            backgroundColor: loading || !agreeToTerms ? '#94a3b8' : '#2563eb', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '10px', 
+            fontSize: '16px', 
+            fontWeight: 'bold', 
+            cursor: loading || !agreeToTerms ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s',
+            opacity: !agreeToTerms ? 0.6 : 1,
+          }}
+        >
+          {loading ? '⏳ جاري النشر...' : !agreeToTerms ? '⚠️ يجب الموافقة على الشروط أولاً' : '🚙 نشر الإعلان'}
         </button>
       </form>
     </div>
