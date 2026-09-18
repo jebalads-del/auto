@@ -66,7 +66,7 @@ export default function NewCarPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-    const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
@@ -179,6 +179,13 @@ export default function NewCarPage() {
         return;
       }
 
+      // ✅ التحقق من الموافقة على الشروط
+      if (!agreeToTerms) {
+        setError('يجب الموافقة على الشروط والأحكام قبل النشر');
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         brand: formData.brand,
         model: formData.model,
@@ -191,6 +198,10 @@ export default function NewCarPage() {
         user_id: userId,
         currency: formData.currency || 'KWD',
         status: 'pending',
+        // ✅ حفظ الموافقة على الشروط
+        terms_accepted: true,
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: 'v1.0',
       };
 
       const response = await fetch('/api/cars', {
@@ -256,6 +267,7 @@ export default function NewCarPage() {
       });
       setImages([]);
       setImagePreviews([]);
+      setAgreeToTerms(false); // ✅ إعادة تعيين الموافقة
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err: any) {
@@ -303,7 +315,7 @@ export default function NewCarPage() {
   return (
     <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
 
-      {/* ✅ أزرار التنقل - حسب الدور */}
+      {/* ✅ أزرار التنقل */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', flexWrap: 'wrap' }}>
         <button
           onClick={() => router.push('/')}
@@ -370,7 +382,7 @@ export default function NewCarPage() {
         <label style={{ marginTop: '10px', display: 'block' }}>الوصف</label>
         <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: 80 }} />
 
-                {/* ⚠️ قسم الشروط والأحكام */}
+        {/* ⚠️ قسم الشروط والأحكام */}
         <div style={{ 
           backgroundColor: '#fef2f2', 
           padding: '18px', 
@@ -378,7 +390,6 @@ export default function NewCarPage() {
           border: '2px solid #ef4444',
           marginBottom: '20px',
         }}>
-          {/* العنوان */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -398,7 +409,6 @@ export default function NewCarPage() {
             </h3>
           </div>
 
-          {/* الشروط */}
           <div style={{ 
             fontSize: '12.5px', 
             color: '#7f1d1d', 
@@ -432,7 +442,6 @@ export default function NewCarPage() {
             </ul>
           </div>
 
-          {/* تنبيه الموقع */}
           <div style={{ 
             fontSize: '11.5px', 
             color: '#7f1d1d', 
@@ -446,7 +455,6 @@ export default function NewCarPage() {
             ⚠️ منصة سيارتي غير مسؤولة عن أي إعلانات منقولة أو منتحلة، وتحتفظ بحق حذف أي إعلان دون إشعار مسبق وفي أي وقت.
           </div>
 
-          {/* خانة الموافقة */}
           <label 
             htmlFor="agree-terms" 
             style={{ 
