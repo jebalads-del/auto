@@ -48,7 +48,6 @@ export default function CarDetailsPage() {
   const finalPhone = car.user_phone || seller?.phone || '';
   const cleanPhone = finalPhone.replace(/\D/g, '');
 
-  // ✅ تنسيق تاريخ النشر
   const publishDate = car.created_at 
     ? new Date(car.created_at).toLocaleDateString('ar-KW', {
         year: 'numeric',
@@ -122,7 +121,6 @@ export default function CarDetailsPage() {
               </span>
             </div>
             
-            {/* ✅ تاريخ نشر الإعلان - جديد */}
             <div style={styles.detailItem}>
               <span style={styles.detailLabel}>🕒 تاريخ النشر</span>
               <span style={styles.detailValue}>{publishDate}</span>
@@ -142,6 +140,19 @@ export default function CarDetailsPage() {
               <span style={styles.sellerName}>{sellerName}</span>
               {sellerEmail && <span style={styles.sellerEmail}>📧 {sellerEmail}</span>}
             </div>
+          </div>
+
+          {/* ⚠️ تنبيه هام */}
+          <div style={styles.warningBox}>
+            <div style={styles.warningHeader}>
+              <span style={{ fontSize: '20px' }}>⚠️</span>
+              <h3 style={styles.warningTitle}>تنبيه هام</h3>
+            </div>
+            <p style={styles.warningText}>
+              منصة <strong>سيارتي</strong> لا تتحمل أي مسؤولية قانونية عن محتوى الإعلانات أو مصداقيتها، 
+              وليست طرفاً في عملية البيع أو الشراء. يجب التواصل مع البائع ومعاينة السيارة 
+              وأوراقها وفحصها معاينة نافية للجهالة.
+            </p>
           </div>
         </div>
       </div>
@@ -198,5 +209,35 @@ const styles = {
   loadingContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh' },
   spinner: { width: '32px', height: '32px', border: '3px solid #cbd5e1', borderTop: '3px solid #2563eb', borderRadius: '50%' },
   errorContainer: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' },
-  errorBackLink: { textDecoration: 'none', backgroundColor: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '8px' }
+  errorBackLink: { textDecoration: 'none', backgroundColor: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '8px' },
+  
+  // ✅ ستايلات التنبيه الهام
+  warningBox: {
+    backgroundColor: '#fef2f2',
+    padding: '16px',
+    borderRadius: '12px',
+    border: '2px solid #ef4444',
+    marginTop: '0',
+  },
+  warningHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '10px',
+    paddingBottom: '10px',
+    borderBottom: '1px solid #fecaca',
+  },
+  warningTitle: {
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#dc2626',
+    margin: 0,
+  },
+  warningText: {
+    fontSize: '12.5px',
+    color: '#7f1d1d',
+    lineHeight: '1.8',
+    margin: 0,
+    fontWeight: '500',
+  },
 };
