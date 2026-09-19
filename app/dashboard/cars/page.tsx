@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Car {
   id: number;
@@ -15,6 +16,7 @@ interface Car {
 }
 
 export default function DashboardCars() {
+  const router = useRouter();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -22,6 +24,7 @@ export default function DashboardCars() {
   // حالات التحكم في منبثقة الدفع والتمييز
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedCarId, setSelectedCarId] = useState<number | null>(null);
+
   const fetchCars = async () => {
     try {
       setLoading(true);
@@ -89,6 +92,7 @@ export default function DashboardCars() {
       setActionLoading(null);
     }
   };
+
   const getCarImage = (car: Car): string => {
     try {
       if (!car.images) return '/car-placeholder.png';
@@ -120,31 +124,35 @@ export default function DashboardCars() {
     return statusMap[status] || { label: status, bg: '#f1f5f9', color: '#64748b' };
   };
 
-  if (loading) return <div style={{ direction: 'rtl', padding: '20px', textAlign: 'center', paddingTop: '50px' }}><p>جاري تحميل السيارات...</p></div>;
+  if (loading) return (
+    <div style={{ direction: 'rtl', padding: '20px', textAlign: 'center', paddingTop: '50px' }}>
+      <p>⏳ جاري تحميل السيارات...</p>
+    </div>
+  );
 
   return (
-    <div style={{ direction: 'rtl', padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+    <div style={{ direction: 'rtl', padding: '16px', fontFamily: 'sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh', maxWidth: '1100px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 'bold' }}>🚗 إدارة إعلانات السيارات</h1>
-          <p style={{ color: '#64748b', fontSize: '14px' }}>إجمالي السيارات المتاحة: <b>{cars.length}</b></p>
+          <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0, color: '#1e293b' }}>🚗 إدارة إعلانات السيارات</h1>
+          <p style={{ color: '#64748b', fontSize: '13px', margin: '4px 0 0 0' }}>إجمالي السيارات المتاحة: <b>{cars.length}</b></p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href="/dashboard" style={{ backgroundColor: '#6b7280', color: 'white', padding: '10px 16px', borderRadius: '8px', textDecoration: 'none', fontSize: '14px' }}>⬅️ الرئيسية</Link>
-          <Link href="/dashboard/cars/new" style={{ backgroundColor: '#2563eb', color: 'white', padding: '10px 16px', borderRadius: '8px', textDecoration: 'none', fontSize: '14px' }}>➕ إضافة سيارة</Link>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Link href="/dashboard" style={{ backgroundColor: '#64748b', color: 'white', padding: '8px 14px', borderRadius: '8px', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>⬅️ الرئيسية</Link>
+          <Link href="/dashboard/cars/new" style={{ backgroundColor: '#2563eb', color: 'white', padding: '8px 14px', borderRadius: '8px', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>➕ إضافة سيارة</Link>
         </div>
       </div>
 
       {cars.length === 0 ? (
-        <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center', color: '#64748b' }}>📭 لا توجد إعلانات سيارات منشورة حالياً.</div>
+        <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center', color: '#64748b', border: '1px solid #e2e8f0' }}>📭 لا توجد إعلانات سيارات منشورة حالياً.</div>
       ) : (
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+        <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right', minWidth: '600px' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
+              <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0', fontSize: '13px', color: '#334155' }}>
                 <th style={{ padding: '12px' }}>الصورة</th>
                 <th style={{ padding: '12px' }}>السيارة</th>
-                <th style={{ padding: '12px' }}>الموديل</th>
+                <th style={{ padding: '12px' }}>السنة</th>
                 <th style={{ padding: '12px' }}>السعر</th>
                 <th style={{ padding: '12px' }}>الحالة</th>
                 <th style={{ padding: '12px', textAlign: 'center' }}>التميز المدفوع</th>
@@ -155,26 +163,47 @@ export default function DashboardCars() {
               {cars.map((car) => {
                 const statusInfo = getStatusDisplay(car.status);
                 return (
-                  <tr key={car.id} style={{ borderBottom: '1px solid #edf2f7' }}>
-                    <td style={{ padding: '12px' }}><img src={getCarImage(car)} alt={car.brand} style={{ width: '50px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} /></td>
-                    <td style={{ padding: '12px', fontWeight: 'bold' }}>{car.brand} {car.model}</td>
-                    <td style={{ padding: '12px' }}>{car.year}</td>
-                    <td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{car.price} KWD</td>
-                    <td style={{ padding: '12px' }}><span style={{ backgroundColor: statusInfo.bg, color: statusInfo.color, padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>{statusInfo.label}</span></td>
+                  <tr key={car.id} style={{ borderBottom: '1px solid #edf2f7', fontSize: '14px' }}>
+                    <td style={{ padding: '10px 12px' }}>
+                      <img src={getCarImage(car)} alt={car.brand} style={{ width: '50px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />
+                    </td>
+                    <td style={{ padding: '10px 12px', fontWeight: 'bold' }}>{car.brand} {car.model}</td>
+                    <td style={{ padding: '10px 12px' }}>{car.year}</td>
+                    <td style={{ padding: '10px 12px', color: '#059669', fontWeight: 'bold' }}>{car.price} KWD</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ backgroundColor: statusInfo.bg, color: statusInfo.color, padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
+                        {statusInfo.label}
+                      </span>
+                    </td>
                     
-                    {/* زر طلب التميز الذهبي الذكي */}
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                    {/* زر طلب التميز الذهبي */}
+                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                       {car.is_featured ? (
                         <span style={{ backgroundColor: '#fef3c7', color: '#d97706', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', border: '1px solid #f59e0b' }}>🌟 مميز نشط</span>
                       ) : car.featured_status === 'pending' ? (
-                        <span style={{ backgroundColor: '#f3f4f6', color: '#4b5563', padding: '6px 12px', borderRadius: '6px', fontSize: '12px' }}>⏳ قيد المراجعة الماليّة</span>
+                        <span style={{ backgroundColor: '#f3f4f6', color: '#4b5563', padding: '6px 12px', borderRadius: '6px', fontSize: '12px' }}>⏳ قيد المراجعة</span>
                       ) : (
-                        <button onClick={() => { setSelectedCarId(car.id); setShowPaymentModal(true); }} style={{ padding: '6px 12px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>⭐ طلب ترقية لمميز</button>
+                        <button onClick={() => { setSelectedCarId(car.id); setShowPaymentModal(true); }} style={{ padding: '6px 12px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>⭐ ترقية لمميز</button>
                       )}
                     </td>
 
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <button onClick={() => handleDeleteCar(car.id)} style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>حذف</button>
+                    {/* أزرار التحكم (تعديل وحذف) */}
+                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                        <button 
+                          onClick={() => router.push(`/dashboard/edit/${car.id}`)} 
+                          style={{ padding: '6px 12px', backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                        >
+                          ✏️ تعديل
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCar(car.id)} 
+                          disabled={actionLoading === car.id}
+                          style={{ padding: '6px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                        >
+                          {actionLoading === car.id ? '...' : '🗑️ حذف'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -187,19 +216,19 @@ export default function DashboardCars() {
       {/* منبثقة تفاصيل الدفع للترقية */}
       {showPaymentModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '15px', zIndex: 1000 }}>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '450px' }}>
-            <h2 style={{ fontSize: '17px', fontWeight: 'bold', marginBottom: '12px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px' }}>⭐ ترقية الإعلان إلى مميز (مدفوع)</h2>
+          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '450px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+            <h2 style={{ fontSize: '17px', fontWeight: 'bold', marginBottom: '12px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#1e293b' }}>⭐ ترقية الإعلان إلى مميز (مدفوع)</h2>
             <p style={{ fontSize: '13px', color: '#475569', marginBottom: '12px', lineHeight: '1.5' }}>تمنحك الترقية ظهور إعلانك في أعلى الصفحة الرئيسية دائماً لجذب انتباه المشترين فوراً.</p>
             
             <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontSize: '13px', border: '1px solid #e2e8f0' }}>
-              <p style={{ fontWeight: 'bold', margin: '0 0 6px 0' }}>💰 طرق الدفع المتوفرة:</p>
+              <p style={{ fontWeight: 'bold', margin: '0 0 6px 0', color: '#334155' }}>💰 طرق الدفع المتوفرة:</p>
               <p style={{ margin: '3px 0' }}>• <b>Western Union:</b> الاسم الكامل: مدير الموقع - الدولة: الكويت</p>
               <p style={{ margin: '3px 0' }}>• <b>PayPal:</b> admin@sayarty.store</p>
               <p style={{ margin: '8px 0 0 0', color: '#2563eb', fontWeight: 'bold' }}>* يرجى تحويل الرسوم ثم الضغط على تأكيد الإرسال.</p>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setShowPaymentModal(false); setSelectedCarId(null); }} style={{ padding: '8px 14px', backgroundColor: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>إلغاء</button>
+              <button onClick={() => { setShowPaymentModal(false); setSelectedCarId(null); }} style={{ padding: '8px 14px', backgroundColor: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>إلغاء</button>
               <button onClick={handleRequestFeature} style={{ padding: '8px 14px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>✅ تم الدفع، إرسال الطلب</button>
             </div>
           </div>
