@@ -20,12 +20,21 @@ export default function HomePage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [filterYear, setFilterYear] = useState('');
   const [filterColor, setFilterColor] = useState('');
+  const [isApp, setIsApp] = useState(false);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
   useEffect(() => {
+    // فحص ما إذا كان الزائر يتصفح من داخل التطبيق
+    if (typeof window !== 'undefined') {
+      const userAgent = navigator.userAgent || '';
+      if (userAgent.includes('MobileApp') || window.location.search.includes('mode=app')) {
+        setIsApp(true);
+      }
+    }
+
     const fetchCars = async () => {
       try {
         setLoading(true);
@@ -56,7 +65,16 @@ export default function HomePage() {
   }, [supabase]);
 
   return (
-    <div style={{ direction: 'rtl', padding: '12px 6px', maxWidth: '100%', margin: '0', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+    <div style={{ 
+      direction: 'rtl', 
+      padding: '12px 6px', 
+      paddingBottom: isApp ? '80px' : '20px', // مساحة إضافية للشريط السفلي للتطبيق
+      maxWidth: '100%', 
+      margin: '0', 
+      backgroundColor: '#f8fafc', 
+      minHeight: '100vh', 
+      fontFamily: 'sans-serif' 
+    }}>
       
       {/* 👑 الهيدر */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', backgroundColor: 'white', padding: '12px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', gap: '10px', overflow: 'hidden' }}>
@@ -265,6 +283,37 @@ export default function HomePage() {
           </a>
         </div>
       </div>
+
+      {/* 📱 شريط تنقل سفلي خاص بالتطبيق فقط */}
+      {isApp && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#ffffff',
+          display: 'flex',
+          justify: 'space-around',
+          alignItems: 'center',
+          padding: '8px 0',
+          boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
+          borderTop: '1px solid #e2e8f0',
+          zIndex: 9999
+        }}>
+          <Link href="/" style={{ textDecoration: 'none', color: '#2563eb', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
+            <div style={{ fontSize: '20px' }}>🏠</div>
+            الرئيسية
+          </Link>
+          <Link href="/login" style={{ textDecoration: 'none', color: '#16a34a', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
+            <div style={{ fontSize: '20px' }}>➕</div>
+            أضف إعلان
+          </Link>
+          <Link href="/login" style={{ textDecoration: 'none', color: '#64748b', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
+            <div style={{ fontSize: '20px' }}>👤</div>
+            حسابي
+          </Link>
+        </div>
+      )}
 
       {/* حقوق النشر */}
       <div style={{ textAlign: 'center', marginTop: '30px', padding: '20px 0', color: '#94a3b8', fontSize: '12px', borderTop: '1px solid #e2e8f0' }}>
