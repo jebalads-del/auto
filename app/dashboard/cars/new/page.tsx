@@ -279,16 +279,19 @@ export default function NewCarPage() {
 
   const styIn = {
     width: '100%',
-    padding: '10px',
-    borderRadius: '8px',
-    border: '1px solid #ccc',
-    marginTop: '5px',
+    padding: '12px',
+    borderRadius: '10px',
+    border: '1px solid #cbd5e1',
+    marginTop: '6px',
     boxSizing: 'border-box' as const,
+    backgroundColor: '#f8fafc',
+    fontSize: '14px',
+    outline: 'none',
   };
 
   if (isCheckingAuth) {
     return (
-      <div style={{ direction: 'rtl', padding: '20px', textAlign: 'center' }}>
+      <div style={{ direction: 'rtl', padding: '40px 20px', textAlign: 'center' }}>
         <p>⏳ جاري التحقق من الجلسة...</p>
       </div>
     );
@@ -297,11 +300,11 @@ export default function NewCarPage() {
   if (!userId) {
     return (
       <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-        <div style={{ backgroundColor: '#fee2e2', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
+        <div style={{ backgroundColor: '#fee2e2', padding: '20px', borderRadius: '12px', textAlign: 'center' }}>
           <h2>⚠️ يجب تسجيل الدخول أولاً</h2>
           <button
             onClick={() => router.push('/login')}
-            style={{ marginTop: '15px', padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+            style={{ marginTop: '15px', padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             تسجيل الدخول
           </button>
@@ -313,9 +316,41 @@ export default function NewCarPage() {
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 
   return (
-    <div style={{ direction: 'rtl', padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ direction: 'rtl', padding: '16px', maxWidth: '600px', margin: '0 auto', fontFamily: 'sans-serif' }}>
 
-      {/* ✅ أزرار التنقل */}
+      {/* 🛑 شريط علوي مع زر الإغلاق X */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid #e2e8f0' }}>
+        <h1 style={{ fontSize: '18px', margin: 0, fontWeight: 'bold', color: '#1e293b' }}>📢 إضافة إعلان سيارة جديد</h1>
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push('/');
+            }
+          }}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            backgroundColor: '#f1f5f9',
+            border: 'none',
+            color: '#64748b',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+          }}
+          title="إغلاق"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* ✅ أزرار التنقل السريعة */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', flexWrap: 'wrap' }}>
         <button
           onClick={() => router.push('/')}
@@ -341,66 +376,145 @@ export default function NewCarPage() {
         )}
       </div>
 
-      <h1 style={{ fontSize: '22px', marginBottom: '20px' }}>📢 إضافة إعلان سيارة جديدة</h1>
+      {error && <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '10px', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold' }}>❌ {error}</div>}
+      {success && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '12px', borderRadius: '10px', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold' }}>✅ {success}</div>}
 
-      {error && <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>❌ {error}</div>}
-      {success && <div style={{ backgroundColor: '#d1fae5', color: '#065f46', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>✅ {success}</div>}
+      <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0' }}>
 
-      <form onSubmit={handleSubmit} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px' }}>
+        <div style={{ marginBottom: '14px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>الماركة *</label>
+          <select required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={styIn}>
+            <option value="">اختر الماركة</option>
+            {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+        </div>
 
-        <label>الماركة *</label>
-        <select required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })} style={styIn}>
-          <option value="">اختر الماركة</option>
-          {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-        </select>
+        <div style={{ marginBottom: '14px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>الموديل *</label>
+          <select required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} style={styIn} disabled={!formData.brand}>
+            <option value="">{formData.brand ? 'اختر الموديل' : 'اختر الماركة أولاً'}</option>
+            {formData.brand && (MODELS[formData.brand] || []).map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
 
-        <label style={{ marginTop: '10px', display: 'block' }}>الموديل *</label>
-        <select required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} style={styIn} disabled={!formData.brand}>
-          <option value="">{formData.brand ? 'اختر الموديل' : 'اختر الماركة أولاً'}</option>
-          {formData.brand && (MODELS[formData.brand] || []).map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px', marginBottom: '14px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>السعر *</label>
+            <input type="number" required placeholder="0.00" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} />
+          </div>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>العملة</label>
+            <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={styIn}>
+              {currencies.map(c => <option key={c.code} value={c.code}>{c.symbol}</option>)}
+            </select>
+          </div>
+        </div>
 
-        <label style={{ marginTop: '10px', display: 'block' }}>السعر *</label>
-        <input type="number" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>سنة الصنع</label>
+            <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} style={styIn}>
+              {Array.from({ length: 40 }, (_, i) => new Date().getFullYear() + 1 - i).map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>اللون</label>
+            <select value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={styIn}>
+              <option value="">اختر اللون</option>
+              {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
 
-        <label style={{ marginTop: '10px', display: 'block' }}>سنة الصنع</label>
-        <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} style={styIn}>
-          {Array.from({ length: 40 }, (_, i) => new Date().getFullYear() + 1 - i).map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
+        <div style={{ marginBottom: '14px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>المسافة المقطوعة (كيلومترات)</label>
+          <input type="number" placeholder="مثال: 50000" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} />
+        </div>
 
-        <label style={{ marginTop: '10px', display: 'block' }}>اللون</label>
-        <select value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={styIn}>
-          <option value="">اختر اللون</option>
-          {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+        {/* 📸 مربع رفع الصور المحسّن */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '6px' }}>
+            صور السيارة (حتى 4 صور)
+          </label>
+          
+          <div style={{ border: '2px dashed #cbd5e1', padding: '16px', borderRadius: '12px', textAlign: 'center', backgroundColor: '#f8fafc', cursor: 'pointer' }}>
+            <input 
+              type="file" 
+              id="file-input"
+              multiple 
+              accept="image/*" 
+              onChange={handleImageUpload} 
+              style={{ display: 'none' }} 
+            />
+            <label htmlFor="file-input" style={{ cursor: 'pointer', display: 'block' }}>
+              <div style={{ fontSize: '28px', marginBottom: '4px' }}>📸</div>
+              <span style={{ fontSize: '13px', color: '#2563eb', fontWeight: 'bold' }}>اضغط هنا لاختيار الصور</span>
+            </label>
+          </div>
 
-        <label style={{ marginTop: '10px', display: 'block' }}>صور السيارة</label>
-        <input type="file" multiple accept="image/*" onChange={handleImageUpload} style={styIn} />
+          {/* معاينة الصور المرفوعة */}
+          {imagePreviews.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+              {imagePreviews.map((p, i) => (
+                <div key={i} style={{ position: 'relative', width: '75px', height: '75px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                  <img src={p} alt="car preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    style={{
+                      position: 'absolute',
+                      top: '2px',
+                      right: '2px',
+                      backgroundColor: 'rgba(220, 38, 38, 0.85)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '20px',
+                      height: '20px',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-        {imagePreviews.map((p, i) => <img key={i} src={p} style={{ width: 70, margin: 4 }} />)}
-
-        <label style={{ marginTop: '10px', display: 'block' }}>الوصف</label>
-        <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} style={{ ...styIn, height: 80 }} />
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>الوصف</label>
+          <textarea 
+            placeholder="اكتب تفاصيل إضافية عن حالة السيارة، الفحص، المواصفات..."
+            value={formData.description} 
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+            style={{ ...styIn, height: '90px', resize: 'vertical' }} 
+          />
+        </div>
 
         {/* ⚠️ قسم الشروط والأحكام */}
         <div style={{ 
           backgroundColor: '#fef2f2', 
-          padding: '18px', 
+          padding: '16px', 
           borderRadius: '12px', 
-          border: '2px solid #ef4444',
+          border: '1px solid #fecaca',
           marginBottom: '20px',
         }}>
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
             gap: '8px',
-            marginBottom: '12px',
-            paddingBottom: '10px',
+            marginBottom: '10px',
+            paddingBottom: '8px',
             borderBottom: '1px solid #fecaca',
           }}>
-            <span style={{ fontSize: '22px' }}>📜</span>
+            <span style={{ fontSize: '20px' }}>📜</span>
             <h3 style={{ 
-              fontSize: '15px', 
+              fontSize: '14px', 
               fontWeight: 'bold', 
               color: '#dc2626', 
               margin: 0,
@@ -410,19 +524,19 @@ export default function NewCarPage() {
           </div>
 
           <div style={{ 
-            fontSize: '12.5px', 
+            fontSize: '12px', 
             color: '#7f1d1d', 
-            lineHeight: '1.8', 
-            marginBottom: '15px',
+            lineHeight: '1.7', 
+            marginBottom: '12px',
             backgroundColor: '#ffffff',
-            padding: '12px',
+            padding: '10px',
             borderRadius: '8px',
             border: '1px solid #fecaca',
           }}>
-            <p style={{ margin: '0 0 10px', fontWeight: 'bold', color: '#991b1b' }}>
+            <p style={{ margin: '0 0 6px', fontWeight: 'bold', color: '#991b1b' }}>
               🚫 يُمنع منعاً باتاً:
             </p>
-            <ul style={{ paddingRight: '20px', margin: '0 0 12px' }}>
+            <ul style={{ paddingRight: '16px', margin: '0 0 10px' }}>
               <li>نقل الإعلانات من مواقع أخرى (Haraj، OLX، 4Sale، إلخ)</li>
               <li>نشر معلومات مضللة أو صور غير حقيقية</li>
               <li>استخدام صور لا تملك حقوقها</li>
@@ -430,29 +544,14 @@ export default function NewCarPage() {
               <li>انتحال شخصية البائع الحقيقي</li>
             </ul>
 
-            <p style={{ margin: '0 0 10px', fontWeight: 'bold', color: '#991b1b' }}>
+            <p style={{ margin: '0 0 6px', fontWeight: 'bold', color: '#991b1b' }}>
               ✅ أقر وأتعهد بما يلي:
             </p>
-            <ul style={{ paddingRight: '20px', margin: 0 }}>
+            <ul style={{ paddingRight: '16px', margin: 0 }}>
               <li>أن الإعلان خاص بي وليس منقولاً من أي موقع آخر</li>
               <li>أن جميع المعلومات والصور المرفقة مملوكة لي</li>
               <li>أنني المسؤول الكامل عن صحة المعلومات المذكورة</li>
-              <li>أنني لن أنشر إعلانات مكررة أو مضللة</li>
-              <li>أنني أتحمل كامل المسؤولية القانونية عن الإعلان</li>
             </ul>
-          </div>
-
-          <div style={{ 
-            fontSize: '11.5px', 
-            color: '#7f1d1d', 
-            lineHeight: '1.7', 
-            marginBottom: '15px',
-            fontWeight: 'bold',
-            backgroundColor: '#fee2e2',
-            padding: '10px 12px',
-            borderRadius: '8px',
-          }}>
-            ⚠️ منصة سيارتي غير مسؤولة عن أي إعلانات منقولة أو منتحلة، وتحتفظ بحق حذف أي إعلان دون إشعار مسبق وفي أي وقت.
           </div>
 
           <label 
@@ -463,9 +562,9 @@ export default function NewCarPage() {
               gap: '10px',
               cursor: 'pointer',
               backgroundColor: agreeToTerms ? '#f0fdf4' : '#ffffff',
-              padding: '12px',
-              borderRadius: '10px',
-              border: agreeToTerms ? '2px solid #16a34a' : '2px solid #cbd5e1',
+              padding: '10px',
+              borderRadius: '8px',
+              border: agreeToTerms ? '2px solid #16a34a' : '1px solid #cbd5e1',
               transition: 'all 0.2s',
             }}
           >
@@ -475,22 +574,21 @@ export default function NewCarPage() {
               checked={agreeToTerms}
               onChange={(e) => setAgreeToTerms(e.target.checked)}
               style={{ 
-                marginTop: '3px', 
-                width: '20px', 
-                height: '20px', 
+                marginTop: '2px', 
+                width: '18px', 
+                height: '18px', 
                 cursor: 'pointer', 
                 flexShrink: 0,
                 accentColor: '#16a34a',
               }} 
             />
             <span style={{ 
-              fontSize: '13px', 
+              fontSize: '12px', 
               color: agreeToTerms ? '#166534' : '#475569', 
-              lineHeight: '1.6', 
+              lineHeight: '1.5', 
               fontWeight: 'bold',
             }}>
-              {agreeToTerms ? '✅ ' : ''}
-              أوافق على جميع الشروط والأحكام، وأتعهد بأن الإعلان خاص بي وليس منقولاً، وأتحمل كامل المسؤولية القانونية عن صحته.
+              أوافق على الشروط والأحكام، وأتعهد بأن الإعلان خاص بي وأتحمل كامل المسؤولية عنه.
             </span>
           </label>
         </div>
@@ -506,11 +604,11 @@ export default function NewCarPage() {
             color: 'white', 
             border: 'none', 
             borderRadius: '10px', 
-            fontSize: '16px', 
+            fontSize: '15px', 
             fontWeight: 'bold', 
             cursor: loading || !agreeToTerms ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s',
-            opacity: !agreeToTerms ? 0.6 : 1,
+            opacity: !agreeToTerms ? 0.7 : 1,
           }}
         >
           {loading ? '⏳ جاري النشر...' : !agreeToTerms ? '⚠️ يجب الموافقة على الشروط أولاً' : '🚙 نشر الإعلان'}
