@@ -5,291 +5,261 @@ import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
 
 interface Car {
-id: string; 
-brand: string; 
-model: string; 
-price: number;
-year?: number; 
-kilometers?: number; 
-color?: string;
-description?: string; 
-currency?: string; 
-status: string;
-created_at: string; 
-images?: any; 
-is_featured?: boolean;
-featured_until?: string;
+  id: string; 
+  brand: string; 
+  model: string; 
+  price: number;
+  year?: number; 
+  kilometers?: number; 
+  color?: string;
+  description?: string; 
+  currency?: string; 
+  status: string;
+  created_at: string; 
+  images?: any; 
+  is_featured?: boolean;
+  featured_until?: string;
 }
 
 export default function HomePage() {
-const [cars, setCars] = useState<Car[]>([]);
-const [loading, setLoading] = useState(true);
+  const [cars, setCars] = useState<Car[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const [searchQuery, setSearchQuery] = useState('');
-const [showAdvanced, setShowAdvanced] = useState(false);
-const [filterYear, setFilterYear] = useState('');
-const [filterColor, setFilterColor] = useState('');
-const [isApp, setIsApp] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [filterYear, setFilterYear] = useState('');
+  const [filterColor, setFilterColor] = useState('');
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
-const getFirstImage = (images: any): string | null => {
-if (!images) return null;
-if (Array.isArray(images) && images.length > 0) return images[0];
-if (typeof images === 'string') {
-  const clean = images.trim();
-  if (clean.startsWith('[') && clean.endsWith(']')) {
-    try {
-      const parsed = JSON.parse(clean);
-      return parsed.length > 0 ? parsed[0] : null;
-    } catch { return null; }
-  }
-  if (clean.startsWith('http')) return clean;
-  const splitArr = clean.split(',').map(s => s.trim()).filter(Boolean);
-  return splitArr.length > 0 ? splitArr[0] : null;
-}
-return null;
-};
+  const getFirstImage = (images: any): string | null => {
+    if (!images) return null;
+    if (Array.isArray(images) && images.length > 0) return images[0];
+    if (typeof images === 'string') {
+      const clean = images.trim();
+      if (clean.startsWith('[') && clean.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(clean);
+          return parsed.length > 0 ? parsed[0] : null;
+        } catch { return null; }
+      }
+      if (clean.startsWith('http')) return clean;
+      const splitArr = clean.split(',').map(s => s.trim()).filter(Boolean);
+      return splitArr.length > 0 ? splitArr[0] : null;
+    }
+    return null;
+  };
 
-useEffect(() => {
-if (typeof window !== 'undefined') {
-  const userAgent = navigator.userAgent || '';
-  if (userAgent.includes('MobileApp') || window.location.search.includes('mode=app')) {
-    setIsApp(true);
-  }
-}
+  useEffect(() => {
+    const fetchCars = async () => {
+      try {
+        setLoading(true);
 
-const fetchCars = async () => {
-  try {
-    setLoading(true);
+        const now = new Date().toISOString();
+        await supabase
+          .from('cars')
+          .update({ is_featured: false, featured_until: null })
+          .lt('featured_until', now)
+          .eq('is_featured', true);
 
-    const now = new Date().toISOString();
-    await supabase
-      .from('cars')
-      .update({ is_featured: false, featured_until: null })
-      .lt('featured_until', now)
-      .eq('is_featured', true);
+        const { data, error } = await supabase
+          .from('cars')
+          .select('*')
+          .in('status', ['approved', 'sold'])
+          .order('created_at', { ascending: false });
 
-    const { data, error } = await supabase
-      .from('cars')
-      .select('*')
-      .in('status', ['approved', 'sold'])
-      .order('created_at', { ascending: false });
+        if (!error && data) setCars(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCars();
+  }, [supabase]);
 
-    if (!error && data) setCars(data);
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
-fetchCars();
-}, [supabase]);
-
-return (
-<div style={{ 
-  direction: 'rtl', 
-  padding: '12px 8px', 
-  paddingBottom: isApp ? '80px' : '20px',
-  maxWidth: '600px', 
-  margin: '0 auto', 
-  backgroundColor: '#f8fafc', 
-  minHeight: '100vh', 
-  fontFamily: 'sans-serif' 
-}}>
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', backgroundColor: 'white', padding: '12px', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0', gap: '10px' }}>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', flexGrow: 1, height: '60px', overflow: 'hidden', borderRadius: '8px' }}>
-      <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '100%', width: '100%', objectFit: 'contain', objectPosition: 'right' }} />
-    </div>
-    
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100px', flexShrink: 0 }}>
-      <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
-        <button style={{ width: '100%', padding: '8px 0', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>➕ أعلن مجانا</button>
-      </Link>
-      <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
-        <button style={{ width: '100%', padding: '8px 0', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>🔑 دخول</button>
-      </Link>
-    </div>
-  </div>
-
-  <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
-    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-      <input 
-        type="text" 
-        placeholder="ابحث عن ماركة أو موديل السيارة..." 
-        value={searchQuery} 
-        onChange={(e) => setSearchQuery(e.target.value)} 
-        style={{ flex: 1, padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', backgroundColor: '#f8fafc' }} 
-      />
-      <button 
-        onClick={() => setShowAdvanced(!showAdvanced)} 
-        style={{ padding: '10px 12px', backgroundColor: showAdvanced ? '#2563eb' : '#f1f5f9', color: showAdvanced ? '#fff' : '#475569', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
-      >
-        🔍 تصفية
-      </button>
-    </div>
-
-    {showAdvanced && (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
-        <div>
-          <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', backgroundColor: 'white' }}>
-            <option value="">اختر سنة الصنع...</option>
-            {Array.from({ length: 2027 - 1988 + 1 }, (_, i) => 2027 - i).map(year => (
-              <option key={year} value={year.toString()}>{year}</option>
-            ))}
-          </select>
+  return (
+    <div className="bg-slate-100 min-h-screen text-slate-800 dir-rtl pb-24 font-sans max-w-md mx-auto shadow-2xl relative">
+      {/* Top Header */}
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2">
+          <img src="/logo2.jpg" alt="سيارتي ستور" className="h-10 w-auto object-contain rounded-lg" />
         </div>
-        <div>
-          <select value={filterColor} onChange={(e) => setFilterColor(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', backgroundColor: 'white' }}>
-            <option value="">اختر اللون...</option>
-            {['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'].map(color => (
-              <option key={color} value={color}>{color}</option>
-            ))}
-          </select>
+        
+        <div className="flex items-center gap-2">
+          <Link href="/login">
+            <button className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all color-white text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1">
+              <span>➕</span> أعلن مجاناً
+            </button>
+          </Link>
+          <Link href="/login">
+            <button className="bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1">
+              <span>🔑</span> دخول
+            </button>
+          </Link>
         </div>
-      </div>
-    )}
-  </div>
+      </header>
 
-  {cars.filter((car) => car.is_featured).length > 0 && (
-    <>
-      <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>⭐ إعلانات مميزة (اسحب لليسار ↔️)</h2>
-      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px', scrollbarWidth: 'none' }}>
-        {cars.filter((car) => car.is_featured).map((car) => {
-          const firstImage = getFirstImage(car.images);
-          return (
-            <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: '160px' }}>
-              <div style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', border: '1px solid #cbd5e1', padding: '6px' }}>
-                <div style={{ width: '100%', height: '100px', backgroundColor: '#f8fafc', overflow: 'hidden', borderRadius: '8px', position: 'relative' }}>
-                  {firstImage ? <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '11px' }}>🚗 لا توجد صورة</div>}
-                  <div style={{ position: 'absolute', top: '4px', right: '4px', backgroundColor: '#eab308', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold' }}>⭐ مميز</div>
-                </div>
-                <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#1e293b', margin: '6px 0 2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{car.brand} {car.model}</h3>
-                <span style={{ fontSize: '13px', fontWeight: '800', color: '#16a34a' }}>{car.price} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span></span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </>
-  )}
+      <main className="p-3 space-y-4">
+        {/* Search Bar */}
+        <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <input 
+                type="text" 
+                placeholder="ابحث عن سيارة، ماركة، موديل..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="w-full bg-slate-50 text-slate-800 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <button 
+              onClick={() => setShowAdvanced(!showAdvanced)} 
+              className={`px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${showAdvanced ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+            >
+              <span>⚙️</span> تصفية
+            </button>
+          </div>
 
-  <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', paddingRight: '4px' }}>🚙 تصفح أحدث السيارات</h2>
+          {showAdvanced && (
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
+              <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                <option value="">سنة الصنع...</option>
+                {Array.from({ length: 2027 - 1988 + 1 }, (_, i) => 2027 - i).map(year => (
+                  <option key={year} value={year.toString()}>{year}</option>
+                ))}
+              </select>
 
-  {loading && <div style={{ textAlign: 'center', padding: '60px', color: '#64748b', fontSize: '15px' }}>⏳ جاري تصفح أحدث السيارات...</div>}
-
-  {!loading && (
-    <>
-      {cars.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '80px 20px', backgroundColor: 'white', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-          <p style={{ fontSize: '16px', color: '#64748b', margin: 0 }}>📭 لا توجد سيارات معروضة للبيع حالياً</p>
+              <select value={filterColor} onChange={(e) => setFilterColor(e.target.value)} className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                <option value="">اللون...</option>
+                {['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بيج'].map(color => (
+                  <option key={color} value={color}>{color}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-          {cars
-            .filter((car) => {
-              const matchesQuery = !searchQuery || car.brand?.toLowerCase().includes(searchQuery.toLowerCase()) || car.model?.toLowerCase().includes(searchQuery.toLowerCase());
-              const matchesYear = !filterYear || car.year?.toString() === filterYear;
-              const matchesColor = !filterColor || car.color?.toLowerCase().includes(filterColor.toLowerCase());
-              return matchesQuery && matchesYear && matchesColor;
-            })
-            .map((car) => {
-              const firstImage = getFirstImage(car.images);
-              return (
-                <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div style={{ backgroundColor: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', height: '100%', cursor: 'pointer' }}>
-                    <div style={{ width: '100%', height: '120px', backgroundColor: '#f8fafc', overflow: 'hidden', position: 'relative' }}>
-                      {firstImage ? <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '12px' }}>🚗 لا توجد صورة</div>}
-                      {car.status === 'sold' && <div style={{ position: 'absolute', top: '8px', right: '8px', backgroundColor: '#ef4444', color: 'white', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', zIndex: 2 }}>💰 تم البيع</div>}
-                    </div>
-                    <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '4px', flexGrow: 1 }}>
-                      <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{car.brand} {car.model}</h3>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#64748b' }}>
-                        {car.year && <span>📅 {car.year}</span>}
-                        {car.kilometers && <span>• 📊 {car.kilometers.toLocaleString()} كم</span>}
+
+        {/* Featured Cars Horizontal Slider */}
+        {cars.filter((car) => car.is_featured).length > 0 && (
+          <section className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-xs font-black text-slate-800 flex items-center gap-1">
+                <span>⭐</span> إعلانات مميزة
+              </h2>
+              <span className="text-[10px] text-slate-400">اسحب للجانب ↔️</span>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+              {cars.filter((car) => car.is_featured).map((car) => {
+                const firstImage = getFirstImage(car.images);
+                return (
+                  <Link key={`feat-${car.id}`} href={`/car/${car.id}`} className="flex-shrink-0 w-40 group">
+                    <div className="bg-white rounded-2xl overflow-hidden border border-amber-200 shadow-sm p-1.5 hover:shadow-md transition-all">
+                      <div className="w-full h-24 bg-slate-100 rounded-xl overflow-hidden relative">
+                        {firstImage ? (
+                          <img src={firstImage} alt="car" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">🚗 لا توجد صورة</div>
+                        )}
+                        <span className="absolute top-1.5 right-1.5 bg-amber-500 text-white px-2 py-0.5 rounded-md text-[9px] font-black shadow-sm">
+                          ⭐ مميز
+                        </span>
                       </div>
-                      <div style={{ marginTop: 'auto', paddingTop: '6px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: '800', color: '#16a34a' }}>{car.price ? car.price.toLocaleString() : car.price} <span style={{ fontSize: '11px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span></span>
+                      <div className="pt-2 px-1">
+                        <h3 className="text-xs font-bold text-slate-800 truncate">{car.brand} {car.model}</h3>
+                        <p className="text-xs font-black text-emerald-600 mt-0.5">
+                          {car.price} <span className="text-[10px] font-normal">{car.currency || 'د.ك'}</span>
+                        </p>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
-        </div>
-      )}
-    </>
-  )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
-  <div style={{ 
-    margin: '30px auto 0', 
-    padding: '16px', 
-    backgroundColor: '#ffffff', 
-    borderRadius: '16px', 
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-  }}>
-    <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-      <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#1e293b', margin: '0 0 4px 0' }}>📞 تواصل مع الإدارة</h3>
-      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>هل لديك استفسار أو اقتراح؟ نحن هنا لمساعدتك</p>
+        {/* Recent Cars Section */}
+        <section className="space-y-2">
+          <h2 className="text-xs font-black text-slate-800 px-1 flex items-center gap-1">
+            <span>🚙</span> أحدث السيارات المعروضة
+          </h2>
+
+          {loading ? (
+            <div className="text-center py-12 text-slate-400 text-xs">⏳ جاري تحميل السيارات...</div>
+          ) : cars.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 text-slate-500 text-xs">
+              📭 لا توجد سيارات معروضة حالياً
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2.5">
+              {cars
+                .filter((car) => {
+                  const matchesQuery = !searchQuery || car.brand?.toLowerCase().includes(searchQuery.toLowerCase()) || car.model?.toLowerCase().includes(searchQuery.toLowerCase());
+                  const matchesYear = !filterYear || car.year?.toString() === filterYear;
+                  const matchesColor = !filterColor || car.color?.toLowerCase().includes(filterColor.toLowerCase());
+                  return matchesQuery && matchesYear && matchesColor;
+                })
+                .map((car) => {
+                  const firstImage = getFirstImage(car.images);
+                  return (
+                    <Link key={car.id} href={`/car/${car.id}`}>
+                      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
+                        <div className="w-full h-28 bg-slate-100 relative overflow-hidden">
+                          {firstImage ? (
+                            <img src={firstImage} alt="car" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">🚗 لا توجد صورة</div>
+                          )}
+                          {car.status === 'sold' && (
+                            <span className="absolute top-2 right-2 bg-rose-600 text-white px-2 py-0.5 rounded-md text-[9px] font-bold shadow-sm">
+                              💰 تم البيع
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="p-2.5 flex flex-col justify-between flex-1 space-y-1">
+                          <div>
+                            <h3 className="text-xs font-bold text-slate-800 truncate">{car.brand} {car.model}</h3>
+                            <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
+                              {car.year && <span>📅 {car.year}</span>}
+                              {car.kilometers && <span>• 📊 {car.kilometers.toLocaleString()} كم</span>}
+                            </div>
+                          </div>
+
+                          <div className="pt-1 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-xs font-black text-emerald-600">
+                              {car.price ? car.price.toLocaleString() : car.price} <span className="text-[9px] font-normal">{car.currency || 'د.ك'}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* Bottom App Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex items-center justify-between shadow-lg z-50">
+        <Link href="/" className="flex flex-col items-center gap-0.5 text-blue-600 font-bold text-[10px]">
+          <span className="text-base">🏠</span>
+          الرئيسية
+        </Link>
+        <Link href="/login" className="flex flex-col items-center gap-0.5 text-emerald-600 font-bold text-[10px]">
+          <span className="text-base">➕</span>
+          أضف إعلان
+        </Link>
+        <Link href="/login" className="flex flex-col items-center gap-0.5 text-slate-500 font-bold text-[10px]">
+          <span className="text-base">👤</span>
+          حسابي
+        </Link>
+      </nav>
     </div>
-
-    <a 
-      href="mailto:admin@sayarty.com?subject=استفسار من موقع سيارتي" 
-      style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        gap: '8px',
-        padding: '12px', 
-        backgroundColor: '#2563eb', 
-        color: 'white', 
-        borderRadius: '10px', 
-        textDecoration: 'none', 
-        fontSize: '13px', 
-        fontWeight: 'bold',
-        textAlign: 'center'
-      }}
-    >
-      📧 راسلنا عبر الإيميل
-    </a>
-  </div>
-
-  {isApp && (
-    <div style={{
-      position: 'fixed',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: '#ffffff',
-      display: 'flex',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      padding: '8px 0',
-      boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
-      borderTop: '1px solid #e2e8f0',
-      zIndex: 9999
-    }}>
-      <Link href="/" style={{ textDecoration: 'none', color: '#2563eb', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
-        <div style={{ fontSize: '18px' }}>🏠</div>
-        الرئيسية
-      </Link>
-      <Link href="/login" style={{ textDecoration: 'none', color: '#16a34a', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
-        <div style={{ fontSize: '18px' }}>➕</div>
-        أضف إعلان
-      </Link>
-      <Link href="/login" style={{ textDecoration: 'none', color: '#64748b', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
-        <div style={{ fontSize: '18px' }}>👤</div>
-        حسابي
-      </Link>
-    </div>
-  )}
-
-  <div style={{ textAlign: 'center', marginTop: '20px', padding: '16px 0', color: '#94a3b8', fontSize: '11px', borderTop: '1px solid #e2e8f0' }}>
-    © 2026 سيارتي ستور - جميع الحقوق محفوظة
-  </div>
-</div>
-);
+  );
 }
