@@ -12,7 +12,11 @@ interface Car {
   price: number; status: string; created_at: string;
   year?: number; currency?: string; images?: string[];
   is_featured?: boolean; featured_payment_ref?: string;
-  featured_until?: string; // ✅ جديد
+  featured_until?: string;
+  user_id?: string;
+  owner_name?: string;
+  owner_email?: string;
+  owner_phone?: string;
 }
 
 interface User {
@@ -58,9 +62,45 @@ export default function AdminDashboardForm() {
   const fetchCars = async () => {
     try {
       setCarsLoading(true);
-      const { data } = await supabase.from('cars').select('*').order('created_at', { ascending: false });
-      if (data) setCars(data);
-    } catch { setCars([]); } finally { setCarsLoading(false); }
+      
+      const { data: carsData, error: carsError } = await supabase
+        .from('cars')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (carsError) {
+        console.error('❌ خطأ في جلب الإعلانات:', carsError);
+        setCars([]);
+        return;
+      }
+
+      // جلب بيانات المستخدمين
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, email, phone');
+      
+      if (usersError) {
+        console.error('❌ خطأ في جلب المستخدمين:', usersError);
+      }
+
+      // ربط كل إعلان ببيانات صاحبه
+      const carsWithOwners = (carsData || []).map((car) => {
+        const owner = usersData?.find((u) => u.id === car.user_id);
+        return {
+          ...car,
+          owner_name: owner?.name || 'غير معروف',
+          owner_email: owner?.email || 'غير معروف',
+          owner_phone: owner?.phone || '',
+        };
+      });
+
+      setCars(carsWithOwners);
+    } catch (err) { 
+      console.error('❌ خطأ:', err);
+      setCars([]); 
+    } finally { 
+      setCarsLoading(false); 
+    }
   };
 
   const fetchUsers = async () => {
@@ -73,7 +113,6 @@ export default function AdminDashboardForm() {
 
   useEffect(() => { fetchCars(); fetchUsers(); fetchSettings(); }, []);
 
-  // ✅ دالة حساب الأيام المتبقية
   const getFeaturedDaysLeft = (car: Car) => {
     if (!car.is_featured || !car.featured_until) return null;
     const daysLeft = Math.ceil(
@@ -109,7 +148,6 @@ export default function AdminDashboardForm() {
       if (action === 'approve') updateData = { status: 'approved' };
       if (action === 'sell') updateData = { status: 'sold' };
       
-      // ✅ تمييز الإعلان مع تحديد 30 يوم
       if (action === 'approve_featured') {
         const featuredUntil = new Date();
         featuredUntil.setDate(featuredUntil.getDate() + 30);
@@ -120,7 +158,6 @@ export default function AdminDashboardForm() {
         };
       }
       
-      // ✅ إلغاء التمييز مع مسح تاريخ الانتهاء
       if (action === 'remove_featured') {
         updateData = { 
           is_featured: false,
@@ -185,14 +222,30 @@ export default function AdminDashboardForm() {
           {carsLoading ? <p>جاري تحميل السيارات...</p> : cars.map((car) => {
             const daysLeft = getFeaturedDaysLeft(car);
             return (
-              <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 5px', borderBottom: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                  {car.images && car.images.length > 0 && <img src={car.images[0]} alt="car" style={{ width: '70px', height: '50px', borderRadius: '6px', objectFit: 'cover' }} />}
-                  <div>
+              <div key={car.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '15px 5px', borderBottom: '1px solid #e2e8f0', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1 }}>
+                  {car.images && car.images.length > 0 && <img src={car.images[0]} alt="car" style={{ width: '70px', height: '50px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />}
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model}</div>
                     <div style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold' }}>{car.price} {car.currency || 'د.ك'}</div>
                     
-                    {/* ✅ عداد الأيام المتبقية */}
+                    {/* ✅ معلومات صاحب الإعلان */}
+                    <div style={{ 
+                      marginTop: '6px', 
+                      padding: '6px 10px', 
+                      backgroundColor: '#eff6ff', 
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      borderRight: '3px solid #3b82f6',
+                      display: 'inline-block'
+                    }}>
+                      <div style={{ fontWeight: 'bold', color: '#1e40af' }}>
+                        👤 {car.owner_name}
+                      </div>
+                      <div style={{ color: '#64748b' }}>📧 {car.owner_email}</div>
+                      {car.owner_phone && <div style={{ color: '#64748b' }}>📞 {car.owner_phone}</div>}
+                    </div>
+                    
                     {car.is_featured && daysLeft !== null && (
                       <>
                         {daysLeft > 0 ? (
@@ -216,7 +269,6 @@ export default function AdminDashboardForm() {
                       </>
                     )}
                     
-                    {/* زر إلغاء التميز */}
                     {car.is_featured && (
                       <button 
                         onClick={() => handleCarAction(car.id, 'remove_featured')} 
@@ -227,10 +279,10 @@ export default function AdminDashboardForm() {
                     )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
-                  {car.status === 'pending' && <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>موافقة ونشر</button>}
-                  {car.status === 'approved' && <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>تحويل لمباع</button>}
-                  <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>حذف الإعلان</button>
+                <div style={{ display: 'flex', gap: '5px', flexDirection: 'column', flexShrink: 0 }}>
+                  {car.status === 'pending' && <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>موافقة ونشر</button>}
+                  {car.status === 'approved' && <button onClick={() => handleCarAction(car.id, 'sell')} style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>تحويل لمباع</button>}
+                  <button onClick={() => handleCarDelete(car.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>حذف الإعلان</button>
                 </div>
               </div>
             );
@@ -247,6 +299,21 @@ export default function AdminDashboardForm() {
                 <div style={{ fontWeight: 'bold' }}>{car.brand} {car.model}</div>
                 <div style={{ color: '#16a34a', fontWeight: 'bold' }}>{car.price} د.ك</div>
               </div>
+              
+              {/* ✅ معلومات صاحب الإعلان */}
+              <div style={{ 
+                marginBottom: '10px', 
+                padding: '8px 12px', 
+                backgroundColor: '#eff6ff', 
+                borderRadius: '6px',
+                fontSize: '12px',
+                borderRight: '3px solid #3b82f6'
+              }}>
+                <div style={{ fontWeight: 'bold', color: '#1e40af' }}>👤 صاحب الإعلان: {car.owner_name}</div>
+                <div style={{ color: '#64748b' }}>📧 {car.owner_email}</div>
+                {car.owner_phone && <div style={{ color: '#64748b' }}>📞 {car.owner_phone}</div>}
+              </div>
+              
               <div style={{ backgroundColor: '#fef3c7', padding: '10px', borderRadius: '8px', fontSize: '13px', color: '#d97706', marginBottom: '10px', border: '1px solid #fde68a' }}><strong>💳 بيانات الحوالة:</strong> {car.featured_payment_ref}</div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button onClick={() => handleCarAction(car.id, 'approve_featured')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>⭐ موافقة وتمييز 30 يوم</button>
