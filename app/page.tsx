@@ -88,9 +88,8 @@ export default function HomePage() {
       color: '#1e293b',
       paddingBottom: '85px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
-      maxWidth: '500px',
-      margin: '0 auto',
-      position: 'relative'
+      width: '100%',
+      maxWidth: '100%'
     }}>
       {/* Top Header */}
       <header style={{
@@ -104,7 +103,9 @@ export default function HomePage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
+        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '42px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
@@ -148,7 +149,13 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main style={{ padding: '14px' }}>
+      <main style={{ 
+        padding: '14px',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
         {/* Search Bar */}
         <div style={{
           backgroundColor: 'white',
@@ -172,7 +179,8 @@ export default function HomePage() {
                 padding: '10px 14px',
                 borderRadius: '12px',
                 border: '1px solid #cbd5e1',
-                outline: 'none'
+                outline: 'none',
+                boxSizing: 'border-box'
               }}
             />
             <button 
@@ -248,7 +256,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Recent Cars Grid */}
+        {/* Recent Cars - عمود واحد */}
         <section>
           <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px', padding: '0 2px', color: '#0f172a' }}>🚙 أحدث السيارات المعروضة</h2>
 
@@ -259,7 +267,7 @@ export default function HomePage() {
               📭 لا توجد سيارات معروضة حالياً
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {cars
                 .filter((car) => {
                   const matchesQuery = !searchQuery || car.brand?.toLowerCase().includes(searchQuery.toLowerCase()) || car.model?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -270,31 +278,47 @@ export default function HomePage() {
                 .map((car) => {
                   const firstImage = getFirstImage(car.images);
                   return (
-                    <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
-                      <div style={{ backgroundColor: 'white', borderRadius: '14px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        <div style={{ width: '100%', height: '125px', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
+                    <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                      <div style={{ backgroundColor: 'white', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', width: '100%' }}>
+                        {/* صورة كبيرة */}
+                        <div style={{ width: '100%', height: '240px', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
                           {firstImage ? (
                             <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '11px' }}>🚗 لا توجد صورة</div>
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '14px' }}>🚗 لا توجد صورة</div>
                           )}
                           {car.status === 'sold' && (
-                            <span style={{ position: 'absolute', top: '6px', right: '6px', backgroundColor: '#e11d48', color: 'white', padding: '3px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 'bold' }}>💰 تم البيع</span>
+                            <span style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: '#e11d48', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>💰 تم البيع</span>
+                          )}
+                          {car.is_featured && (
+                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#f59e0b', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>⭐ مميز</span>
                           )}
                         </div>
 
-                        <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1 }}>
-                          <div>
-                            <h3 style={{ fontSize: '12px', fontWeight: 'bold', margin: '0 0 6px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#0f172a' }}>{car.brand} {car.model}</h3>
-                            <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                              {car.year && <span>📅 {car.year}</span>}
-                              {car.kilometers && <span>• 📊 {car.kilometers.toLocaleString()} كم</span>}
-                            </div>
+                        {/* التفاصيل */}
+                        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>
+                            {car.brand} {car.model}
+                          </h3>
+                          
+                          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '13px', color: '#64748b' }}>
+                            {car.year && <span>📅 {car.year}</span>}
+                            {car.kilometers && <span>📊 {car.kilometers.toLocaleString()} كم</span>}
+                            {car.color && <span>🎨 {car.color}</span>}
                           </div>
 
-                          <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#059669' }}>
-                              {car.price ? car.price.toLocaleString() : car.price} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
+                          {car.description && (
+                            <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: '1.5' }}>
+                              {car.description.substring(0, 120)}{car.description.length > 120 ? '...' : ''}
+                            </p>
+                          )}
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
+                            <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#059669' }}>
+                              {car.price ? car.price.toLocaleString() : car.price} <span style={{ fontSize: '14px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
+                            </span>
+                            <span style={{ fontSize: '13px', color: '#2563eb', fontWeight: 'bold' }}>
+                              التفاصيل ←
                             </span>
                           </div>
                         </div>
@@ -313,27 +337,26 @@ export default function HomePage() {
         bottom: 0,
         left: 0,
         right: 0,
-        maxWidth: '500px',
-        margin: '0 auto',
         backgroundColor: 'rgba(255, 255, 255, 0.98)',
         borderTop: '1px solid #e2e8f0',
         padding: '10px 24px',
         display: 'flex',
-        justifyContent: 'space-between',
+        justifyContent: 'space-around',
         alignItems: 'center',
         boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
-        zIndex: 50
+        zIndex: 50,
+        maxWidth: '100%'
       }}>
         <Link href="/" style={{ textDecoration: 'none', color: '#2563eb', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
-          <div style={{ fontSize: '18px', marginBottom: '2px' }}>🏠</div>
+          <div style={{ fontSize: '20px', marginBottom: '2px' }}>🏠</div>
           الرئيسية
         </Link>
         <Link href="/login" style={{ textDecoration: 'none', color: '#059669', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
-          <div style={{ fontSize: '18px', marginBottom: '2px' }}>➕</div>
+          <div style={{ fontSize: '20px', marginBottom: '2px' }}>➕</div>
           أضف إعلان
         </Link>
         <Link href="/login" style={{ textDecoration: 'none', color: '#64748b', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
-          <div style={{ fontSize: '18px', marginBottom: '2px' }}>👤</div>
+          <div style={{ fontSize: '20px', marginBottom: '2px' }}>👤</div>
           حسابي
         </Link>
       </nav>
