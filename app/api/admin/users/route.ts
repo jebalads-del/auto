@@ -1,19 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// استخدام Service Role Key للوصول إلى Admin API
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export const dynamic = 'force-dynamic';
 
+// ✅ دالة لإنشاء العميل (Runtime)
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey);
+}
+
+// ===== GET: جلب قائمة المستخدمين =====
 export async function GET(request: NextRequest) {
   try {
     console.log('📋 [ADMIN USERS] جلب قائمة المستخدمين من Auth...');
 
-    // استخدام Admin API لجلب المستخدمين
+    // ✅ إنشاء العميل داخل الدالة
+    const supabaseAdmin = getSupabaseAdmin();
+
     const { data, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
@@ -26,7 +35,6 @@ export async function GET(request: NextRequest) {
 
     const users = data.users || [];
 
-    // تنسيق البيانات
     const formattedUsers = users.map((user: any) => ({
       id: user.id,
       email: user.email,
@@ -46,12 +54,13 @@ export async function GET(request: NextRequest) {
   } catch (error: unknown) {
     console.error('❌ [ADMIN USERS ERROR]:', error);
     return NextResponse.json(
-      { success: false, message: 'حدث خطأ أثناء معالجة البيانات' },
+      { success: false, message: error instanceof Error ? error.message : 'حدث خطأ أثناء معالجة البيانات' },
       { status: 500 }
     );
   }
 }
 
+// ===== DELETE: حذف مستخدم =====
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -66,7 +75,10 @@ export async function DELETE(request: NextRequest) {
 
     console.log(`🗑️ [ADMIN USERS] محاولة حذف المستخدم: ${id}`);
 
-    // منع حذف المدير الرئيسي (بالبريد الإلكتروني)
+    // ✅ إنشاء العميل داخل الدالة
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // منع حذف المدير الرئيسي
     const { data: adminUser } = await supabaseAdmin.auth.admin.getUserById(id);
     if (adminUser?.user?.email === 'admin@sayarty.store') {
       return NextResponse.json(
@@ -95,7 +107,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error: unknown) {
     console.error('❌ [ADMIN USERS DELETE ERROR]:', error);
     return NextResponse.json(
-      { success: false, message: 'حدث خطأ غير متوقع' },
+      { success: false, message: error instanceof Error ? error.message : 'حدث خطأ غير متوقع' },
       { status: 500 }
     );
   }
