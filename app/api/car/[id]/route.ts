@@ -97,7 +97,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   } catch (error: any) {
     console.error('❌ [API CARS ERROR]:', error);
-    return NextResponse.json({ success: false, message: error.message || 'حدث خطأ في السيرفر الداخلي' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: error.message || 'حدث خطأ في السيرفر الداخلي' },
+      { status: 500 }
+    );
   }
 }
 
@@ -118,6 +121,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     
     return NextResponse.json({ success: true, message: 'تم حذف الإعلان بنجاح من النظام' });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message || 'خطأ داخلي بالسيرفر' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: error.message || 'خطأ داخلي بالسيرفر' },
+      { status: 500 }
+    );
   }
 }
