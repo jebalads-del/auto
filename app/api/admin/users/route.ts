@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
   try {
     console.log('📋 [ADMIN USERS] جلب قائمة المستخدمين من Auth...');
 
-    // ✅ إنشاء العميل داخل الدالة
     const supabaseAdmin = getSupabaseAdmin();
 
     const { data, error } = await supabaseAdmin.auth.admin.listUsers();
@@ -75,7 +74,6 @@ export async function DELETE(request: NextRequest) {
 
     console.log(`🗑️ [ADMIN USERS] محاولة حذف المستخدم: ${id}`);
 
-    // ✅ إنشاء العميل داخل الدالة
     const supabaseAdmin = getSupabaseAdmin();
 
     // منع حذف المدير الرئيسي
