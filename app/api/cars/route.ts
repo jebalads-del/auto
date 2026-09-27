@@ -1,15 +1,66 @@
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
+// ✅ دالة لإنشاء العميل (Runtime)
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey);
+}
+
+// ===== GET: جلب جميع الإعلانات (جديد!) =====
+export async function GET() {
+  try {
+    console.log('📋 [GET CARS] جلب الإعلانات...');
+
+    const supabase = getSupabaseAdmin();
+
+    const { data, error } = await supabase
+      .from('cars')
+      .select('*')
+      .in('status', ['approved', 'sold'])
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ [GET CARS ERROR]:', error);
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: 500 }
+      );
+    }
+
+    console.log(`✅ [GET CARS] تم جلب ${data?.length || 0} إعلان`);
+
+    return NextResponse.json({
+      success: true,
+      cars: data || []
+    });
+
+  } catch (error: any) {
+    console.error('❌ [GET CARS ERROR]:', error);
+    return NextResponse.json(
+      { success: false, message: error.message || 'حدث خطأ' },
+      { status: 500 }
+    );
+  }
+}
+
+// ===== POST: إضافة إعلان جديد =====
 export async function POST(request: Request) {
   try {
-    // جلب البيانات
     const body = await request.json();
     
     console.log('📦 Received data:', body);
 
-    // التحقق من البيانات المطلوبة
     if (!body.brand || !body.model || !body.price) {
       return NextResponse.json(
         { success: false, message: 'الماركة، الموديل، والسعر مطلوبة' },
@@ -24,7 +75,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // إنشاء عميل Supabase باستخدام @supabase/ssr
     const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,7 +94,6 @@ export async function POST(request: Request) {
       }
     );
 
-    // إضافة الإعلان
     const { data, error } = await supabase
       .from('cars')
       .insert([{
