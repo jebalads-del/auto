@@ -55,6 +55,7 @@ const MODELS: Record<string, string[]> = {
 const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'];
 
 const MY_USER_ID = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
+const MAX_IMAGES = 6; // ✅ الحد الأقصى للصور
 
 export default function NewCarPage() {
   const router = useRouter();
@@ -138,13 +139,13 @@ export default function NewCarPage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const maxImages = 4;
 
-    if (files.length + images.length > maxImages) {
-      setError(`يمكنك رفع ${maxImages} صور فقط`);
+    if (files.length + images.length > MAX_IMAGES) {
+      setError(`يمكنك رفع ${MAX_IMAGES} صور فقط`);
       return;
     }
 
+    setError('');
     setImages([...images, ...files]);
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreviews([...imagePreviews, ...previews]);
@@ -179,7 +180,6 @@ export default function NewCarPage() {
         return;
       }
 
-      // ✅ التحقق من الموافقة على الشروط
       if (!agreeToTerms) {
         setError('يجب الموافقة على الشروط والأحكام قبل النشر');
         setLoading(false);
@@ -198,7 +198,6 @@ export default function NewCarPage() {
         user_id: userId,
         currency: formData.currency || 'KWD',
         status: 'pending',
-        // ✅ حفظ الموافقة على الشروط
         terms_accepted: true,
         terms_accepted_at: new Date().toISOString(),
         terms_version: 'v1.0',
@@ -220,15 +219,19 @@ export default function NewCarPage() {
 
       const carId = data.data?.[0]?.id || data.id;
 
+      // ===== رفع الصور =====
       if (images.length > 0 && carId) {
-        const uploadedUrls = [];
+        const uploadedUrls: string[] = [];
 
-        for (const file of images) {
-          const fileExt = file.name.split('.').pop();
+        for (let i = 0; i < images.length; i++) {
+          const file = images[i];
+          const fileExt = file.name.split('.').pop() || 'jpg';
           const fileName = `${carId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           const filePath = `cars/${fileName}`;
 
-          const { error: uploadError } = await supabase.storage
+          console.log(`📤 رفع الصورة ${i + 1}/${images.length}:`, fileName);
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
             .from('car-images')
             .upload(filePath, file, {
               cacheControl: '3600',
@@ -236,24 +239,45 @@ export default function NewCarPage() {
               contentType: file.type,
             });
 
-          if (uploadError) continue;
+          if (uploadError) {
+            console.error(`❌ فشل رفع الصورة ${i + 1}:`, uploadError);
+            continue;
+          }
+
+          console.log('✅ تم رفع الصورة:', uploadData);
 
           const { data: urlData } = supabase.storage
             .from('car-images')
             .getPublicUrl(filePath);
 
-          if (urlData?.publicUrl) uploadedUrls.push(urlData.publicUrl);
+          if (urlData?.publicUrl) {
+            uploadedUrls.push(urlData.publicUrl);
+            console.log('🔗 الرابط:', urlData.publicUrl);
+          }
         }
+
+        console.log('📦 جميع الروابط:', uploadedUrls);
 
         if (uploadedUrls.length > 0) {
-          await supabase
+          const { data: updateData, error: updateError } = await supabase
             .from('cars')
             .update({ images: uploadedUrls })
-            .eq('id', carId);
-        }
-      }
+            .eq('id', carId)
+            .select();
 
-      setSuccess('✅ تم نشر الإعلان بنجاح!');
+          if (updateError) {
+            console.error('❌ فشل تحديث الإعلان:', updateError);
+            setSuccess('⚠️ تم نشر الإعلان لكن فشل حفظ الصور');
+          } else {
+            console.log('✅ تم حفظ الصور في الإعلان:', updateData);
+            setSuccess(`✅ تم نشر الإعلان مع ${uploadedUrls.length} صور بنجاح!`);
+          }
+        } else {
+          setSuccess('⚠️ تم نشر الإعلان لكن فشل رفع الصور');
+        }
+      } else {
+        setSuccess('✅ تم نشر الإعلان بنجاح!');
+      }
 
       setFormData({
         brand: '',
@@ -267,10 +291,11 @@ export default function NewCarPage() {
       });
       setImages([]);
       setImagePreviews([]);
-      setAgreeToTerms(false); // ✅ إعادة تعيين الموافقة
+      setAgreeToTerms(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err: any) {
+      console.error('❌ خطأ:', err);
       setError('حدث خطأ غير متوقع');
     } finally {
       setLoading(false);
@@ -431,11 +456,23 @@ export default function NewCarPage() {
           <input type="number" placeholder="مثال: 50000" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} />
         </div>
 
-        {/* 📸 مربع رفع الصور المحسّن */}
+        {/* 📸 مربع رفع الصور مع عداد */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155', display: 'block', marginBottom: '6px' }}>
-            صور السيارة (حتى 4 صور)
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>
+              صور السيارة (حتى {MAX_IMAGES} صور)
+            </label>
+            <span style={{
+              fontSize: '12px',
+              fontWeight: 'bold',
+              padding: '3px 10px',
+              borderRadius: '12px',
+              backgroundColor: images.length === 0 ? '#f1f5f9' : images.length < MAX_IMAGES ? '#fef3c7' : '#d1fae5',
+              color: images.length === 0 ? '#64748b' : images.length < MAX_IMAGES ? '#92400e' : '#065f46',
+            }}>
+              📸 {images.length} / {MAX_IMAGES}
+            </span>
+          </div>
           
           <div style={{ border: '2px dashed #cbd5e1', padding: '16px', borderRadius: '12px', textAlign: 'center', backgroundColor: '#f8fafc', cursor: 'pointer' }}>
             <input 
@@ -445,14 +482,16 @@ export default function NewCarPage() {
               accept="image/*" 
               onChange={handleImageUpload} 
               style={{ display: 'none' }} 
+              disabled={images.length >= MAX_IMAGES}
             />
-            <label htmlFor="file-input" style={{ cursor: 'pointer', display: 'block' }}>
+            <label htmlFor="file-input" style={{ cursor: images.length >= MAX_IMAGES ? 'not-allowed' : 'pointer', display: 'block' }}>
               <div style={{ fontSize: '28px', marginBottom: '4px' }}>📸</div>
-              <span style={{ fontSize: '13px', color: '#2563eb', fontWeight: 'bold' }}>اضغط هنا لاختيار الصور</span>
+              <span style={{ fontSize: '13px', color: images.length >= MAX_IMAGES ? '#94a3b8' : '#2563eb', fontWeight: 'bold' }}>
+                {images.length >= MAX_IMAGES ? '✅ تم الوصول للحد الأقصى' : 'اضغط هنا لاختيار الصور'}
+              </span>
             </label>
           </div>
 
-          {/* معاينة الصور المرفوعة */}
           {imagePreviews.length > 0 && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
               {imagePreviews.map((p, i) => (
@@ -537,7 +576,7 @@ export default function NewCarPage() {
               🚫 يُمنع منعاً باتاً:
             </p>
             <ul style={{ paddingRight: '16px', margin: '0 0 10px' }}>
-              <li>نقل الإعلانات من مواقع أخرى </li>
+              <li>نقل الإعلانات من مواقع أخرى</li>
               <li>نشر معلومات مضللة أو صور غير حقيقية</li>
               <li>استخدام صور لا تملك حقوقها</li>
               <li>نشر إعلانات مكررة لنفس السيارة</li>
