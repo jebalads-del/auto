@@ -34,7 +34,7 @@ export default function HomePage() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
-  // تم إرجاع الدالة الأصلية السليمة تماماً لإظهار الإعلانات دون مشاكل
+  // تم استرجاع منطق الدالة الأصلية الدقيق (images[0]) لإظهار إعلانات السيارات بنجاح
   const getFirstImage = (images: any): string | null => {
     if (!images) return null;
     if (Array.isArray(images) && images.length > 0) return images[0];
@@ -108,9 +108,9 @@ export default function HomePage() {
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        {/* تم تكبير حجم صورة لوجو البانر هنا لتصبح أوضح وأكبر */}
+        {/* تم تكبير اللوجو / البانر ليصبح واضحاً ومتناسقاً أكثر وبحجم أكبر */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '52px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
+          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '54px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
