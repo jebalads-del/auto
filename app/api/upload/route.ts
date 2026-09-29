@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      url: urlData.publicUrl,
+      url: urlData?.publicUrl,
       path: filePath,
     });
 
