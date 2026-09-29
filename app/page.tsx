@@ -34,6 +34,7 @@ export default function HomePage() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
+  // تم إصلاح الدالة البرمجية لتعود للوضع السليم والصحيح لقراءة الصور
   const getFirstImage = (images: any): string | null => {
     if (!images) return null;
     if (Array.isArray(images) && images.length > 0) return images[0];
@@ -99,7 +100,7 @@ export default function HomePage() {
         backgroundColor: 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(8px)',
         borderBottom: '1px solid #e2e8f0',
-        padding: '12px 16px',
+        padding: '10px 12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -108,17 +109,40 @@ export default function HomePage() {
         boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '42px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
+          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '36px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* زر التواصل مع الإدارة المضاف حديثاً */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* تم تعديل الزر إلى أيقونة دائرية متناسقة وموفرة للمساحة على الهواتف */}
           <a 
             href="mailto:admin@sayarty.store?subject=إستفسار بخصوص موقع سيارتي&body=مرحباً إدارة موقع سيارتي،" 
+            title="الدعم الفني"
             style={{ 
               textDecoration: 'none',
               backgroundColor: '#475569',
               color: 'white',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
+              fontSize: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background-color 0.2s',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#334155')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#475569')}
+          >
+            ✉️
+          </a>
+
+          <Link href="/login" style={{ textDecoration: 'none' }}>
+            <button style={{
+              backgroundColor: '#059669',
+              color: 'white',
+              border: 'none',
               padding: '8px 12px',
               borderRadius: '10px',
               fontSize: '12px',
@@ -127,27 +151,7 @@ export default function HomePage() {
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#334155')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#475569')}
-          >
-            <span>📧</span> الدعم الفني
-          </a>
-
-          <Link href="/login" style={{ textDecoration: 'none' }}>
-            <button style={{
-              backgroundColor: '#059669',
-              color: 'white',
-              border: 'none',
-              padding: '8px 14px',
-              borderRadius: '10px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
+              height: '34px'
             }}>
               <span>➕</span> أعلن مجاناً
             </button>
@@ -158,14 +162,15 @@ export default function HomePage() {
               backgroundColor: '#2563eb',
               color: 'white',
               border: 'none',
-              padding: '8px 14px',
+              padding: '8px 12px',
               borderRadius: '10px',
               fontSize: '12px',
               fontWeight: 'bold',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px'
+              gap: '4px',
+              height: '34px'
             }}>
               <span>🔑</span> دخول
             </button>
@@ -253,7 +258,7 @@ export default function HomePage() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-               {/* محتوى السلايدر يستكمل هنا بشكل طبيعي */}
+               {/* محتوى السلايدر الخاص بك يستكمل هنا */}
             </div>
           </section>
         )}
