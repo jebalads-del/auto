@@ -34,7 +34,7 @@ export default function HomePage() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
-  // تم إصلاح الدالة البرمجية لتعود للوضع السليم والصحيح لقراءة الصور
+  // تم إرجاع الدالة الأصلية السليمة تماماً لإظهار الإعلانات دون مشاكل
   const getFirstImage = (images: any): string | null => {
     if (!images) return null;
     if (Array.isArray(images) && images.length > 0) return images[0];
@@ -108,12 +108,12 @@ export default function HomePage() {
         width: '100%',
         boxSizing: 'border-box'
       }}>
+        {/* تم تكبير حجم صورة لوجو البانر هنا لتصبح أوضح وأكبر */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '36px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
+          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '52px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {/* تم تعديل الزر إلى أيقونة دائرية متناسقة وموفرة للمساحة على الهواتف */}
           <a 
             href="mailto:admin@sayarty.store?subject=إستفسار بخصوص موقع سيارتي&body=مرحباً إدارة موقع سيارتي،" 
             title="الدعم الفني"
@@ -258,7 +258,7 @@ export default function HomePage() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-               {/* محتوى السلايدر الخاص بك يستكمل هنا */}
+               {/* محتوى السلايدر يستكمل هنا بشكل طبيعي */}
             </div>
           </section>
         )}
