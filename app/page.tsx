@@ -1,10 +1,10 @@
-  const getFirstImage = (images: any): string | null => {
-    if (!images) return null;
-    if (Array.isArray(images) && images.length > 0) {
-      return typeof images[0] === 'string' ? images[0] : null;
+  const getFirstImage = (imgData: any): string | null => {
+    if (!imgData) return null;
+    if (Array.isArray(imgData) && imgData.length > 0) {
+      return typeof imgData[0] === 'string' ? imgData[0] : null;
     }
-    if (typeof images === 'string') {
-      const clean = images.trim();
+    if (typeof imgData === 'string') {
+      const clean = imgData.trim();
       if (clean.startsWith('[') && clean.endsWith(']')) {
         try {
           const parsed = JSON.parse(clean);
@@ -43,13 +43,13 @@
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        {/* تكبير حجم صورة البانر واللوجو */}
+        {/* تكبير حجم صورة اللوجو / البانر بشكل ملحوظ ومنسق */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '55px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {/* زر الدعم الفني الدائري المتناسق */}
+          {/* زر البريد الإلكتروني الدائري للدعم الفني متوافق مع الهاتف */}
           <a 
             href="mailto:admin@sayarty.store?subject=إستفسار بخصوص موقع سيارتي&body=مرحباً إدارة موقع سيارتي،" 
             title="الدعم الفني"
@@ -106,7 +106,7 @@
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              height: '36px'
+              height: '34px'
             }}>
               <span>🔑</span> دخول
             </button>
