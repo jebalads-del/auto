@@ -1,23 +1,74 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/request';
+import { createServerClient } from '@supabase/ssr';
 
-export function middleware(request: NextRequest) {
-  // يمكنك إضافة منطق هنا إذا احتجت مستقبلاً
-  // مثال: التحقق من المصادقة لبعض المسارات
-  
-  return NextResponse.next();
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  // 1. تهيئة عميل Supabase داخل الـ Middleware لتأمين الجلسات
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            request.cookies.set({ name, value, ...options })
+          );
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set({ name, value, ...options })
+          );
+        },
+      },
+    }
+  );
+
+  // 2. جلب بيانات المستخدم الحالي الفورية من التحقق الأمني لـ Supabase
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const url = request.nextUrl.clone();
+
+  // 3. مسار لوحة تحكم الآدمن الحساسة والمجلدات الحساسة الأخرى (مثل dashboard و profile)
+  const isProtectedPath = 
+    url.pathname.startsWith('/admin') || 
+    url.pathname.startsWith('/dashboard') || 
+    url.pathname.startsWith('/profile');
+
+  if (isProtectedPath) {
+    // أ: إذا كان المستخدم غير مسجل دخول نهائياً، يتم طرده فوراً إلى صفحة الدخول
+    if (!user) {
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+
+    // ب: حماية خاصة بمجلد الإدارة (admin): فحص هل المستخدم يملك إيميل الإدارة الفعلي؟
+    if (url.pathname.startsWith('/admin')) {
+      if (user.email !== 'admin@sayarty.store') {
+        // إذا حاول مستخدم عادي الدخول للآدمن يتم طرده للصفحة الرئيسية
+        url.pathname = '/';
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
+  return response;
 }
 
-// تكوين المسارات التي سيتم تجاهلها
+// 4. تكوين المسارات المستثناة المحدث للسماح لملفات جوجل بالمرور بنجاح
 export const config = {
   matcher: [
-    /*
-     * تجاهل المسارات التالية:
-     * - api (طلبات API)
-     * - _next/static (ملفات static)
-     * - _next/image (صور Next.js)
-     * - favicon.ico (أيقونة الموقع)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 };
