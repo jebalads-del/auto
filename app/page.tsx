@@ -116,7 +116,7 @@ export default function HomePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <a 
             href="mailto:admin@sayarty.store?subject=إستفسار بخصوص موقع سيارتي&body=مرحباً إدارة موقع سيارتي،" 
-            title="الدعم الفني"
+            title="تواصل معنا"
             style={{ 
               textDecoration: 'none',
               backgroundColor: '#475569',
