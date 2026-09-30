@@ -9,64 +9,49 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // 1. تهيئة عميل Supabase داخل الـ Middleware لتأمين الجلسات
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set({ name, value, ...options })
-          );
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set({ name, value, ...options })
-          );
-        },
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) return response;
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          request.cookies.set({ name, value, ...options })
+        );
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set({ name, value, ...options })
+        );
+      },
+    },
+  });
 
-  // 2. جلب بيانات المستخدم الحالي الفورية من التحقق الأمني لـ Supabase
-  const { data: { user } } = await supabase.auth.getUser();
-
+  // جلب بيانات الجلسة الحالية للمستخدم
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   const url = request.nextUrl.clone();
 
-  // 3. مسار لوحة تحكم الآدمن الحساسة والمجلدات الحساسة الأخرى (مثل dashboard و profile)
-  const isProtectedPath = 
-    url.pathname.startsWith('/admin') || 
-    url.pathname.startsWith('/dashboard') || 
-    url.pathname.startsWith('/profile');
+  // المجلدات المحمية للمستخدمين العاديين فقط (تم استثناء مجلد الأدمن تماماً من هنا)
+  const isProtectedPath = url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/profile');
 
-  if (isProtectedPath) {
-    // أ: إذا كان المستخدم غير مسجل دخول نهائياً، يتم طرده فوراً إلى صفحة الدخول
-    if (!user) {
-      url.pathname = '/login';
-      return NextResponse.redirect(url);
-    }
-
-    // ب: حماية خاصة بمجلد الإدارة (admin): فحص هل المستخدم يملك إيميل الإدارة الفعلي؟
-    if (url.pathname.startsWith('/admin')) {
-      if (user.email !== 'admin@sayarty.store') {
-        // إذا حاول مستخدم عادي الدخول للآدمن يتم طرده للصفحة الرئيسية
-        url.pathname = '/';
-        return NextResponse.redirect(url);
-      }
-    }
+  if (isProtectedPath && !user) {
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
   }
 
   return response;
 }
 
-// 4. تكوين المسارات المستثناة المصحح بالكامل لتمرير ملفات أرشفة جوجل دون اعتراض
+// تكوين المسارات المستثناة للسماح لملفات جوجل بالمرور بنجاح
 export const config = {
   matcher: [
     '/((?!api|_next/static|_next/image|favicon.ico|sitemap\\.xml|robots\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
