@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/request';
+import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 export async function middleware(request: NextRequest) {
@@ -66,9 +66,9 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// 4. تكوين المسارات المستثناة المحدث للسماح لملفات جوجل بالمرور بنجاح
+// 4. تكوين المسارات المستثناة المصحح بالكامل لتمرير ملفات أرشفة جوجل دون اعتراض
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap\\.xml|robots\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
