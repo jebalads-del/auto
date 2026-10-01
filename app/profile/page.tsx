@@ -4,11 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
- interface Car {
+
+interface Car {
   id: string; brand: string; model: string; price: number;
   year?: number; currency?: string; status: string; images?: string[];
   is_featured?: boolean; featured_payment_ref?: string;
-  featured_until?: string; // ✅ جديد - تاريخ انتهاء التمييز
+  featured_until?: string;
 }
 
 export default function ProfilePage() {
@@ -31,6 +32,12 @@ export default function ProfilePage() {
   const [paymentRef, setPaymentRef] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
 
+  // ✅ إعدادات الدفع
+  const [paypalEnabled, setPaypalEnabled] = useState(true);
+  const [westernUnionEnabled, setWesternUnionEnabled] = useState(true);
+  const [paypalEmail, setPaypalEmail] = useState('');
+  const [westernUnionInfo, setWesternUnionInfo] = useState('');
+
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
@@ -48,6 +55,15 @@ export default function ProfilePage() {
 
       const { data: carData } = await supabase.from('cars').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       if (carData) setMyCars(carData);
+
+      // ✅ جلب إعدادات الدفع
+      const { data: settings } = await supabase.from('site_settings').select('*').eq('id', 'global').single();
+      if (settings) {
+        setPaypalEnabled(settings.paypal_enabled !== false);
+        setWesternUnionEnabled(settings.western_union_enabled !== false);
+        setPaypalEmail(settings.paypal_email || '');
+        setWesternUnionInfo(settings.western_union_info || '');
+      }
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
@@ -70,7 +86,7 @@ export default function ProfilePage() {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (!error) { showMessage('🔑 تم تغيير كلمة السر بنجاح', 'success'); setNewPassword(''); }
-      else { showMessage('❌ تفشل تحديث كلمة السر: ' + error.message, 'error'); }
+      else { showMessage('❌ فشل تحديث كلمة السر: ' + error.message, 'error'); }
     } catch { showMessage('❌ خطأ في الاتصال', 'error'); }
   };
 
@@ -89,7 +105,6 @@ export default function ProfilePage() {
   return (
     <div style={{ direction: 'rtl', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       
-      {/* ✅ الهيدر الأزرق الأنيق */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <div style={styles.headerRight}>
@@ -109,10 +124,8 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      {/* ✅ محتوى الصفحة */}
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '16px' }}>
         
-        {/* ✅ زر نشر إعلان جديد */}
         <Link href="/dashboard/cars/new" style={styles.newAdButton}>
           ➕ نشر إعلان سيارة جديد
         </Link>
@@ -132,7 +145,6 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* إعدادات الحساب */}
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', color: '#475569' }}>⚙️ إعدادات الحساب</h2>
           <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -152,7 +164,6 @@ export default function ProfilePage() {
           </form>
         </div>
 
-        {/* تغيير كلمة السر */}
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '25px' }}>
           <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', color: '#475569' }}>🔑 تغيير كلمة السر</h2>
           <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -163,7 +174,6 @@ export default function ProfilePage() {
           </form>
         </div>
 
-        {/* إعلاناتي */}
         <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', color: '#475569' }}>🚗 إعلاناتي الحالية ({myCars.length})</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {loading ? (
@@ -204,12 +214,10 @@ export default function ProfilePage() {
                   </button>
                 )}
               {car.is_featured && car.featured_until && (() => {
-  // ✅ حساب الأيام المتبقية
   const daysLeft = Math.ceil(
     (new Date(car.featured_until).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
   );
   
-  // ❌ انتهى التمييز
   if (daysLeft <= 0) {
     return (
       <span style={{ 
@@ -226,7 +234,6 @@ export default function ProfilePage() {
     );
   }
   
-  // ⚠️ قرب الانتهاء (5 أيام أو أقل)
   if (daysLeft <= 5) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -260,7 +267,6 @@ export default function ProfilePage() {
     );
   }
   
-  // 👑 مميز - عادي
   return (
     <span style={{ 
       fontSize: '11px', 
@@ -282,24 +288,70 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* مودال طلب التمييز - كما هو */}
+      {/* مودال طلب التمييز - مع عرض طرق الدفع المفعلة فقط */}
       {modalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '15px' }}>
           <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', width: '100%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', direction: 'rtl' }}>
             <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px', color: '#1e293b' }}>⭐ طلب تمييز الإعلان في الشريط العلوي</h3>
-            <p style={{ fontSize: '13px', color: '#475569', marginBottom: '15px', lineHeight: '1.5' }}> قم بتحويل رسوم التمييز عبر أحد الحسابات التالية، ثم اكتب رقم الإيصال أو اسم المحول بالأسفل لتفعيل الإعلان فوراً راسلنا على اذا للمساعده admin@sayarty.store:</p>
+            <p style={{ fontSize: '13px', color: '#475569', marginBottom: '15px', lineHeight: '1.5' }}>
+              قم بتحويل رسوم التمييز عبر إحدى الطرق المتاحة، ثم اكتب رقم الإيصال أو اسم المحول بالأسفل. للمساعدة: <strong>admin@sayarty.store</strong>
+            </p>
+
+            {/* ✅ عرض طرق الدفع المفعلة فقط */}
             <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', fontSize: '12px', color: '#334155', border: '1px solid #e2e8f0', marginBottom: '15px' }}>
-              💰 <strong>ويسترن يونيون:</strong> الاسم الكامل: مدير الموقع - الكويت<br/>
-              📧 <strong>بايبال الفوري:</strong> dixon361@yahoo.com
+              {westernUnionEnabled && westernUnionInfo && (
+                <div style={{ marginBottom: paypalEnabled ? '8px' : '0' }}>
+                  💰 <strong>ويسترن يونيون:</strong> {westernUnionInfo}
+                </div>
+              )}
+              {paypalEnabled && paypalEmail && (
+                <div>
+                  📧 <strong>PayPal الفوري:</strong> {paypalEmail}
+                </div>
+              )}
+              {!paypalEnabled && !westernUnionEnabled && (
+                <div style={{ color: '#dc2626', textAlign: 'center', fontWeight: 'bold' }}>
+                  ⚠️ لا توجد طرق دفع متاحة حالياً
+                </div>
+              )}
             </div>
+
             <form onSubmit={handleRequestFeatured}>
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '6px' }}>رقم الحوالة المرجعي أو إيميل الدفع:</label>
-                <input type="text" required value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }} placeholder="مثال: WU-987654321 أو حساب الـ PayPal" />
+                <input 
+                  type="text" 
+                  required 
+                  value={paymentRef} 
+                  onChange={(e) => setPaymentRef(e.target.value)} 
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }} 
+                  placeholder="مثال: WU-987654321 أو حساب PayPal" 
+                />
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button type="submit" style={{ padding: '9px 15px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>✉️ إرسال الطلب</button>
-                <button type="button" onClick={() => setModalOpen(false)} style={{ padding: '9px 15px', backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>إلغاء</button>
+                <button 
+                  type="submit" 
+                  disabled={!paypalEnabled && !westernUnionEnabled}
+                  style={{ 
+                    padding: '9px 15px', 
+                    backgroundColor: (!paypalEnabled && !westernUnionEnabled) ? '#94a3b8' : '#16a34a', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    fontSize: '12px', 
+                    fontWeight: 'bold', 
+                    cursor: (!paypalEnabled && !westernUnionEnabled) ? 'not-allowed' : 'pointer' 
+                  }}
+                >
+                  ✉️ إرسال الطلب
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setModalOpen(false)} 
+                  style={{ padding: '9px 15px', backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  إلغاء
+                </button>
               </div>
             </form>
           </div>
@@ -309,9 +361,7 @@ export default function ProfilePage() {
   );
 }
 
-// ✅ الستايلات
 const styles = {
-  // ✅ الهيدر الأزرق الأنيق - بارتفاع صغير
   header: {
     backgroundColor: '#2563eb',
     color: '#ffffff',
@@ -359,8 +409,6 @@ const styles = {
     fontSize: '12px',
     fontWeight: '600',
   },
-  
-  // ✅ زر نشر إعلان جديد
   newAdButton: {
     display: 'block',
     width: '100%',
