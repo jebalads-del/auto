@@ -36,29 +36,27 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // طلب إرسال OTP بدلاً من الرابط
-    // استخدم signInWithOtp بدلاً من resetPasswordForEmail
-    const { data, error } = await supabase.auth.signInWithOtp({
-      email: email,
-      options: {
-        shouldCreateUser: false, // لا تنشئ مستخدم جديد
-        // هذا يرسل OTP بدلاً من الرابط
-      },
-    });
+    // ✅ استخدام resetPasswordForEmail بدلاً من signInWithOtp
+    const { data, error } = await supabase.auth.resetPasswordForEmail(
+      email.trim(),
+      {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/reset-password`,
+      }
+    );
 
     if (error) {
       console.error('❌ Error:', error);
       return NextResponse.json(
         { success: false, message: error.message },
-        { status: error.message.includes('User not found') ? 404 : 500 }
+        { status: 500 }
       );
     }
 
-    console.log(`✅ [FORGOT PASSWORD] تم إرسال OTP لـ: ${email}`);
+    console.log(`✅ [FORGOT PASSWORD] تم إرسال رابط إعادة التعيين لـ: ${email}`);
 
     return NextResponse.json({
       success: true,
-      message: '✅ تم إرسال رمز التحقق إلى بريدك الإلكتروني',
+      message: '✅ تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني',
       email: email,
     });
 
