@@ -103,14 +103,20 @@ export default function HomePage() {
         boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
         backgroundColor: '#0f172a'
       }}>
-        {/* صورة البانر كخلفية */}
-        <div style={{ position: 'relative', width: '100%' }}>
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          aspectRatio: '16 / 3',
+          minHeight: '130px',
+          maxHeight: '180px',
+          overflow: 'hidden'
+        }}>
           <img 
             src="/logo.png" 
             alt="banner"
             style={{
               width: '100%',
-              height: 'clamp(110px, 22vw, 180px)',
+              height: '100%',
               objectFit: 'cover',
               objectPosition: 'center',
               display: 'block'
@@ -128,7 +134,7 @@ export default function HomePage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: 'clamp(8px, 2vw, 16px) clamp(10px, 3vw, 24px)',
+            padding: '0 clamp(10px, 3vw, 24px)',
             gap: 'clamp(6px, 1.5vw, 14px)',
             maxWidth: '1200px',
             margin: '0 auto',
@@ -147,7 +153,7 @@ export default function HomePage() {
                   src="/logo2.jpg" 
                   alt="سيارتي ستور" 
                   style={{ 
-                    height: 'clamp(32px, 8vw, 52px)', 
+                    height: 'clamp(36px, 8vw, 52px)', 
                     width: 'auto', 
                     borderRadius: 'clamp(4px, 0.8vw, 8px)', 
                     display: 'block'
