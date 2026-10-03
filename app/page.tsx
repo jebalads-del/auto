@@ -91,64 +91,138 @@ export default function HomePage() {
       width: '100%',
       maxWidth: '100%'
     }}>
-      {/* ===== Top Header ===== */}
+      {/* ===== Top Header - بانر احترافي ===== */}
       <header style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-        backdropFilter: 'blur(8px)',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '10px 12px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+        backgroundImage: 'url(/logo.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        padding: '20px 16px',
+        boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
         width: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        position: 'relative' as const,
+        minHeight: '130px',
+        overflow: 'hidden'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '52px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
-        </div>
+        {/* طبقة داكنة خفيفة لتحسين القراءة */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.55) 100%)',
+          zIndex: 1
+        }} />
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Link href="/login" style={{ textDecoration: 'none' }}>
-            <button style={{
-              backgroundColor: '#059669',
-              color: 'white',
-              border: 'none',
-              padding: '8px 12px',
-              borderRadius: '10px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              height: '34px'
+        {/* المحتوى */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          maxWidth: '1200px',
+          margin: '0 auto',
+          gap: '14px',
+          flexWrap: 'wrap',
+          minHeight: '90px'
+        }}>
+          {/* الشعار + الاسم + السلوغان */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '8px',
+              borderRadius: '14px',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.4)',
+              flexShrink: 0,
+              border: '2px solid rgba(251,191,36,0.5)'
             }}>
-              <span>➕</span> أعلن مجاناً
-            </button>
-          </Link>
-          
-          <Link href="/login" style={{ textDecoration: 'none' }}>
-            <button style={{
-              backgroundColor: '#2563eb',
-              color: 'white',
-              border: 'none',
-              padding: '8px 12px',
-              borderRadius: '10px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              height: '34px'
-            }}>
-              <span>🔑</span> دخول
-            </button>
-          </Link>
+              <img 
+                src="/logo2.jpg" 
+                alt="سيارتي ستور" 
+                style={{ 
+                  height: '62px', 
+                  width: 'auto', 
+                  borderRadius: '8px', 
+                  objectFit: 'contain',
+                  display: 'block'
+                }} 
+              />
+            </div>
+            
+            <div>
+              <h1 style={{
+                fontSize: '28px',
+                fontWeight: 'bold',
+                color: '#ffffff',
+                margin: 0,
+                textShadow: '0 3px 10px rgba(0,0,0,0.9), 0 0 20px rgba(251,191,36,0.4)',
+                lineHeight: '1.2',
+                letterSpacing: '1px'
+              }}>
+                سيارتي ستور
+              </h1>
+              <p style={{
+                fontSize: '13px',
+                color: '#fbbf24',
+                margin: '4px 0 0 0',
+                fontWeight: '600',
+                textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+                letterSpacing: '0.5px'
+              }}>
+                🚗 سوقك الموثوق للسيارات
+              </p>
+            </div>
+          </div>
+
+          {/* الأزرار */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Link href="/login" style={{ textDecoration: 'none' }}>
+              <button style={{
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                padding: '11px 18px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 4px 14px rgba(16,185,129,0.5)',
+                whiteSpace: 'nowrap',
+                transition: 'transform 0.2s'
+              }}>
+                <span>➕</span> أعلن مجاناً
+              </button>
+            </Link>
+            
+            <Link href="/login" style={{ textDecoration: 'none' }}>
+              <button style={{
+                backgroundColor: '#fbbf24',
+                color: '#1e3a8a',
+                border: 'none',
+                padding: '11px 18px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 4px 14px rgba(251,191,36,0.5)',
+                whiteSpace: 'nowrap',
+                transition: 'transform 0.2s'
+              }}>
+                <span>🔑</span> دخول
+              </button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -359,7 +433,6 @@ export default function HomePage() {
           أضف إعلان
         </Link>
         
-        {/* ✅ زر اتصل بنا (جديد) */}
         <a 
           href="mailto:admin@sayarty.store?subject=استفسار من موقع سيارتي ستور"
           style={{ textDecoration: 'none', color: '#dc2626', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}
