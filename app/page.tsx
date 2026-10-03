@@ -97,7 +97,7 @@ export default function HomePage() {
         top: 0,
         zIndex: 50,
         backgroundImage: 'url(/logo.png)',
-        backgroundSize: 'cover',
+        backgroundSize: '100% 100%',
         backgroundPosition: 'center',
         padding: '20px 16px',
         boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
