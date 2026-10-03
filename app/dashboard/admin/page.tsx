@@ -42,6 +42,8 @@ export default function AdminDashboardForm() {
   const [featuredPrice, setFeaturedPrice] = useState('15');
   const [westernUnionInfo, setWesternUnionInfo] = useState('');
   const [paypalEmail, setPaypalEmail] = useState('');
+  const [paypalEnabled, setPaypalEnabled] = useState(true);
+  const [westernUnionEnabled, setWesternUnionEnabled] = useState(true);
 
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
@@ -55,6 +57,8 @@ export default function AdminDashboardForm() {
         setFeaturedPrice(data.featured_price?.toString() || '15');
         setWesternUnionInfo(data.western_union_info || '');
         setPaypalEmail(data.paypal_email || '');
+        setPaypalEnabled(data.paypal_enabled !== false);
+        setWesternUnionEnabled(data.western_union_enabled !== false);
       }
     } catch (err) { console.error(err); }
   };
@@ -74,7 +78,6 @@ export default function AdminDashboardForm() {
         return;
       }
 
-      // جلب بيانات المستخدمين
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('id, name, email, phone');
@@ -83,7 +86,6 @@ export default function AdminDashboardForm() {
         console.error('❌ خطأ في جلب المستخدمين:', usersError);
       }
 
-      // ربط كل إعلان ببيانات صاحبه
       const carsWithOwners = (carsData || []).map((car) => {
         const owner = usersData?.find((u) => u.id === car.user_id);
         return {
@@ -129,6 +131,8 @@ export default function AdminDashboardForm() {
         featured_price: Number(featuredPrice),
         western_union_info: westernUnionInfo.trim(),
         paypal_email: paypalEmail.trim(),
+        paypal_enabled: paypalEnabled,
+        western_union_enabled: westernUnionEnabled,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
 
@@ -229,7 +233,6 @@ export default function AdminDashboardForm() {
                     <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#1e293b' }}>{car.brand} {car.model}</div>
                     <div style={{ fontSize: '13px', color: '#059669', fontWeight: 'bold' }}>{car.price} {car.currency || 'د.ك'}</div>
                     
-                    {/* ✅ معلومات صاحب الإعلان */}
                     <div style={{ 
                       marginTop: '6px', 
                       padding: '6px 10px', 
@@ -300,7 +303,6 @@ export default function AdminDashboardForm() {
                 <div style={{ color: '#16a34a', fontWeight: 'bold' }}>{car.price} د.ك</div>
               </div>
               
-              {/* ✅ معلومات صاحب الإعلان */}
               <div style={{ 
                 marginBottom: '10px', 
                 padding: '8px 12px', 
@@ -340,10 +342,119 @@ export default function AdminDashboardForm() {
         <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '20px', fontWeight: 'bold', color: '#2563eb' }}>⚙️ التحكم المالي وإعدادات الدفع للموقع</h2>
           <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>تكلفة تمييز الإعلان شهرياً (بالدينار الكويتي)</label><input type="number" value={featuredPrice} onChange={e => setFeaturedPrice(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} /></div>
-            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>بيانات استلام ويسترن يونيون</label><textarea value={westernUnionInfo} onChange={e => setWesternUnionInfo(e.target.value)} required rows={2} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} /></div>
-            <div><label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>حساب PayPal الرسمي لاستقبال الأموال فوراً</label><input type="email" value={paypalEmail} onChange={e => setPaypalEmail(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} /></div>
-            <button type="submit" style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>💾 حفظ وتثبيت الإعدادات المالية الحية</button>
+            
+            {/* تفعيل/تعطيل طرق الدفع */}
+            <div style={{ 
+              backgroundColor: '#f0f9ff', 
+              padding: '15px', 
+              borderRadius: '10px', 
+              border: '1px solid #bae6fd',
+            }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#0369a1', marginBottom: '12px', marginTop: 0 }}>
+                💳 تفعيل طرق الدفع (تظهر للمستخدمين)
+              </h3>
+
+              {/* تفعيل PayPal */}
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px',
+                padding: '12px',
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                marginBottom: '8px',
+                cursor: 'pointer',
+                border: paypalEnabled ? '2px solid #10b981' : '1px solid #cbd5e1',
+                transition: 'all 0.2s',
+              }}>
+                <input 
+                  type="checkbox" 
+                  checked={paypalEnabled}
+                  onChange={(e) => setPaypalEnabled(e.target.checked)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }} 
+                />
+                <span style={{ fontWeight: 'bold', color: paypalEnabled ? '#059669' : '#64748b', fontSize: '14px' }}>
+                  {paypalEnabled ? '✅' : '⛔'} تفعيل PayPal
+                </span>
+              </label>
+
+              {/* تفعيل Western Union */}
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px',
+                padding: '12px',
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                border: westernUnionEnabled ? '2px solid #10b981' : '1px solid #cbd5e1',
+                transition: 'all 0.2s',
+              }}>
+                <input 
+                  type="checkbox" 
+                  checked={westernUnionEnabled}
+                  onChange={(e) => setWesternUnionEnabled(e.target.checked)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }} 
+                />
+                <span style={{ fontWeight: 'bold', color: westernUnionEnabled ? '#059669' : '#64748b', fontSize: '14px' }}>
+                  {westernUnionEnabled ? '✅' : '⛔'} تفعيل Western Union
+                </span>
+              </label>
+
+              {!paypalEnabled && !westernUnionEnabled && (
+                <div style={{ 
+                  marginTop: '10px', 
+                  padding: '10px', 
+                  backgroundColor: '#fee2e2', 
+                  color: '#991b1b', 
+                  borderRadius: '6px', 
+                  fontSize: '12px',
+                  textAlign: 'center',
+                }}>
+                  ⚠️ تحذير: جميع طرق الدفع معطلة! لن يستطيع المستخدمون طلب التمييز.
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>تكلفة تمييز الإعلان شهرياً (بالدينار الكويتي)</label>
+              <input 
+                type="number" 
+                value={featuredPrice} 
+                onChange={e => setFeaturedPrice(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} 
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>بيانات استلام ويسترن يونيون</label>
+              <textarea 
+                value={westernUnionInfo} 
+                onChange={e => setWesternUnionInfo(e.target.value)} 
+                required 
+                rows={2} 
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} 
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>حساب PayPal الرسمي لاستقبال الأموال فوراً</label>
+              <input 
+                type="email" 
+                value={paypalEmail} 
+                onChange={e => setPaypalEmail(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} 
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}
+            >
+              💾 حفظ وتثبيت الإعدادات المالية الحية
+            </button>
           </form>
         </div>
       )}

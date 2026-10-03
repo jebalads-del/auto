@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://sitemaps.org">
+  <url>
+    <loc>https://sayarty.store</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://sayarty.storelogin</loc>
+    <priority>0.5</priority>
+  </url>
+</urlset>

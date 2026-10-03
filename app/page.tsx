@@ -91,7 +91,7 @@ export default function HomePage() {
       width: '100%',
       maxWidth: '100%'
     }}>
-      {/* Top Header */}
+      {/* ===== Top Header ===== */}
       <header style={{
         position: 'sticky',
         top: 0,
@@ -99,7 +99,7 @@ export default function HomePage() {
         backgroundColor: 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(8px)',
         borderBottom: '1px solid #e2e8f0',
-        padding: '12px 16px',
+        padding: '10px 12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -108,40 +108,43 @@ export default function HomePage() {
         boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '42px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
+          <img src="/logo2.jpg" alt="سيارتي ستور" style={{ height: '52px', width: 'auto', borderRadius: '8px', objectFit: 'contain' }} />
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Link href="/login" style={{ textDecoration: 'none' }}>
             <button style={{
               backgroundColor: '#059669',
               color: 'white',
               border: 'none',
-              padding: '8px 14px',
+              padding: '8px 12px',
               borderRadius: '10px',
               fontSize: '12px',
               fontWeight: 'bold',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px'
+              gap: '4px',
+              height: '34px'
             }}>
               <span>➕</span> أعلن مجاناً
             </button>
           </Link>
+          
           <Link href="/login" style={{ textDecoration: 'none' }}>
             <button style={{
               backgroundColor: '#2563eb',
               color: 'white',
               border: 'none',
-              padding: '8px 14px',
+              padding: '8px 12px',
               borderRadius: '10px',
               fontSize: '12px',
               fontWeight: 'bold',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px'
+              gap: '4px',
+              height: '34px'
             }}>
               <span>🔑</span> دخول
             </button>
@@ -156,7 +159,7 @@ export default function HomePage() {
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        {/* Search Bar */}
+        {/* ===== Search Bar ===== */}
         <div style={{
           backgroundColor: 'white',
           padding: '12px',
@@ -220,7 +223,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Featured Cars Horizontal Slider */}
+        {/* ===== Featured Cars Horizontal Slider ===== */}
         {cars.filter((car) => car.is_featured).length > 0 && (
           <section style={{ marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '0 2px' }}>
@@ -256,7 +259,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Recent Cars - عمود واحد */}
+        {/* ===== Recent Cars - عمود واحد ===== */}
         <section>
           <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px', padding: '0 2px', color: '#0f172a' }}>🚙 أحدث السيارات المعروضة</h2>
 
@@ -280,7 +283,6 @@ export default function HomePage() {
                   return (
                     <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                       <div style={{ backgroundColor: 'white', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        {/* صورة كبيرة */}
                         <div style={{ width: '100%', height: '240px', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
                           {firstImage ? (
                             <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -295,7 +297,6 @@ export default function HomePage() {
                           )}
                         </div>
 
-                        {/* التفاصيل */}
                         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>
                             {car.brand} {car.model}
@@ -331,15 +332,16 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Bottom App Navigation Bar */}
+      {/* ===== Bottom Navigation Bar ===== */}
       <nav style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
         backgroundColor: 'rgba(255, 255, 255, 0.98)',
+        backdropFilter: 'blur(8px)',
         borderTop: '1px solid #e2e8f0',
-        padding: '10px 24px',
+        padding: '10px 16px',
         display: 'flex',
         justifyContent: 'space-around',
         alignItems: 'center',
@@ -351,10 +353,21 @@ export default function HomePage() {
           <div style={{ fontSize: '20px', marginBottom: '2px' }}>🏠</div>
           الرئيسية
         </Link>
+        
         <Link href="/login" style={{ textDecoration: 'none', color: '#059669', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
           <div style={{ fontSize: '20px', marginBottom: '2px' }}>➕</div>
           أضف إعلان
         </Link>
+        
+        {/* ✅ زر اتصل بنا (جديد) */}
+        <a 
+          href="mailto:admin@sayarty.store?subject=استفسار من موقع سيارتي ستور"
+          style={{ textDecoration: 'none', color: '#dc2626', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}
+        >
+          <div style={{ fontSize: '20px', marginBottom: '2px' }}>📧</div>
+          اتصل بنا
+        </a>
+        
         <Link href="/login" style={{ textDecoration: 'none', color: '#64748b', textAlign: 'center', fontSize: '11px', fontWeight: 'bold' }}>
           <div style={{ fontSize: '20px', marginBottom: '2px' }}>👤</div>
           حسابي

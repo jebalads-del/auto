@@ -1,0 +1,15 @@
+User-Agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /profile/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login/
+Disallow: /register/
+Disallow: /forgot-password/
+Disallow: /dashboard/*
+Disallow: /profile/*
+Disallow: /admin/*
+Disallow: /api/*
+
+Sitemap: https://sayarty.store/sitemap.xml

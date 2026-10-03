@@ -28,7 +28,7 @@ export default function LoginPage() {
       console.log('🚀 بدء فحص الدخول والحقوق للحساب:', trimmedEmail);
 
       // 1. الأولوية المطلقة والذكية للأدمن (تخطي الفحص لمنع أي تضارب)
-      if (trimmedEmail === 'admin@sayarty.store' && password === '12345678') {
+      if (trimmedEmail === 'admin@sayarty.store' && password === '39899099Az&') {
         console.log('👑 تم التعرف على الأدمن - توجيه فوري للوحة التحكم');
         localStorage.setItem('userId', 'admin_override');
         localStorage.setItem('userRole', 'admin');
