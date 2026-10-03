@@ -25,66 +25,44 @@ export default function LoginPage() {
     const trimmedEmail = email.trim().toLowerCase();
 
     try {
-      console.log('🚀 بدء فحص الدخول والحقوق للحساب:', trimmedEmail);
+      console.log('🚀 بدء الدخول:', trimmedEmail);
 
-      // 1. الأولوية المطلقة والذكية للأدمن (تخطي الفحص لمنع أي تضارب)
-      if (trimmedEmail === 'admin@sayarty.store' && password === '39899099Az&') {
-        console.log('👑 تم التعرف على الأدمن - توجيه فوري للوحة التحكم');
-        localStorage.setItem('userId', 'admin_override');
-        localStorage.setItem('userRole', 'admin');
-        
-        router.push('/dashboard/admin');
-        router.refresh();
-        return;
-      }
-
-      // 2. فحص جدول المستخدمين الخارجي (للمتصفحين العاديين)
-      const { data: dbUser, error: dbError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', trimmedEmail)
-        .single();
-
-      if (!dbError && dbUser) {
-        if (dbUser.password === password || dbUser.password === '12345678') {
-          console.log('✅ تم التحقق من المستخدم من الجدول المخصص');
-          localStorage.setItem('userId', dbUser.id || 'user_session_id');
-          localStorage.setItem('userRole', dbUser.role || 'user');
-
-          // توجيه المستخدم العادي لملفه الشخصي
-          router.push('/profile');
-          router.refresh();
-          return;
-        }
-      }
-
-      // 3. الفحص الاحتياطي عبر نظام الحماية الداخلي (Supabase Auth)
+      // ✅ Supabase Auth فقط (لا تحقق يدوي)
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password: password,
       });
 
-      if (!authError && authData?.user) {
-        console.log('🔑 تم الدخول عبر نظام الحماية المدمج');
-        localStorage.setItem('userId', authData.user.id);
-        
-        // فحص احتياطي إضافي للإيميل
-        if (trimmedEmail === 'admin@sayarty.store') {
-          router.push('/dashboard/admin');
-        } else {
-          router.push('/profile');
-        }
-        router.refresh();
+      if (authError || !authData?.user) {
+        console.log('❌ فشل الدخول:', authError?.message);
+        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        setLoading(false);
         return;
       }
 
-      // إذا لم تطابق كلمة المرور أي طريقة
-      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      console.log('🔑 تم الدخول:', authData.user.id);
+      localStorage.setItem('userId', authData.user.id);
+
+      // ✅ التحقق من الدور
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', authData.user.id)
+        .single();
+
+      console.log('👤 الدور:', userData?.role);
+
+      // ✅ التوجيه حسب الدور
+      if (userData?.role === 'admin') {
+        router.push('/dashboard/admin');
+      } else {
+        router.push('/profile');
+      }
+      router.refresh();
 
     } catch (err: any) {
-      console.error('❌ خطأ غير متوقع:', err);
-      setError('حدث خطأ أثناء الاتصال بالخادم');
-    } finally {
+      console.error('❌ خطأ:', err);
+      setError('حدث خطأ أثناء الاتصال');
       setLoading(false);
     }
   };
@@ -104,43 +82,43 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>البريد الإلكتروني</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
-              style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} 
-              placeholder="example@domain.com" 
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }}
+              placeholder="example@domain.com"
             />
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>كلمة المرور</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-              style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} 
-              placeholder="••••••••" 
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }}
+              placeholder="••••••••"
             />
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading} 
-            style={{ 
-              width: '100%', 
-              padding: '14px', 
-              backgroundColor: loading ? '#93c5fd' : '#2563eb', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '8px', 
-              fontSize: '16px', 
-              fontWeight: '600', 
-              cursor: loading ? 'not-allowed' : 'pointer', 
-              opacity: loading ? 0.7 : 1, 
-              transition: '0.2s' 
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '14px',
+              backgroundColor: loading ? '#93c5fd' : '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              transition: '0.2s'
             }}
           >
             {loading ? '⏳ جاري تسجيل الدخول...' : '🚪 دخول'}
