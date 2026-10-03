@@ -103,7 +103,6 @@ export default function HomePage() {
         boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
         width: '100%',
         boxSizing: 'border-box',
-        position: 'relative' as const,
         minHeight: '130px',
         overflow: 'hidden'
       }}>
