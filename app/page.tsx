@@ -142,24 +142,20 @@ export default function HomePage() {
           }}>
             {/* الشعار + الاسم */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1.5vw, 12px)', flex: 1, minWidth: 0 }}>
-              <div style={{
-                backgroundColor: 'white',
-                padding: 'clamp(3px, 0.8vw, 6px)',
-                borderRadius: 'clamp(6px, 1vw, 10px)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                flexShrink: 0
-              }}>
-                <img 
-                  src="/logo2.jpg" 
-                  alt="سيارتي ستور" 
-                  style={{ 
-                    height: 'clamp(36px, 8vw, 52px)', 
-                    width: 'auto', 
-                    borderRadius: 'clamp(4px, 0.8vw, 8px)', 
-                    display: 'block'
-                  }} 
-                />
-              </div>
+              <img 
+                src="/logo2.jpg" 
+                alt="سيارتي ستور" 
+                style={{ 
+                  height: 'clamp(55px, 11vw, 85px)', 
+                  width: 'auto', 
+                  borderRadius: 'clamp(8px, 1.5vw, 14px)', 
+                  display: 'block',
+                  flexShrink: 0,
+                  boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+                  backgroundColor: 'white',
+                  padding: '3px'
+                }} 
+              />
               
               <div style={{ minWidth: 0, flex: 1 }}>
                 <h1 style={{
