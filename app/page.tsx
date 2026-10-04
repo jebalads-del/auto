@@ -146,7 +146,7 @@ export default function HomePage() {
                 src="/logo2.jpg" 
                 alt="سيارتي ستور" 
                 style={{ 
-                  height: 'clamp(8opx, 11vw, 130px)', 
+                  height: 'clamp(65px, 11vw, 95px)', 
                   width: 'auto', 
                   borderRadius: 'clamp(8px, 1.5vw, 14px)', 
                   display: 'block',
