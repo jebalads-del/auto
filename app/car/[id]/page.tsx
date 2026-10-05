@@ -276,7 +276,7 @@ export default function CarDetailsPage() {
           )}
           {sellerEmail && (
             <a href={`mailto:${sellerEmail}`} style={{ ...styles.contactBtn, backgroundColor: '#ef4444' }}>
-              📧 إيميل
+              📧 راسل المعلن
             </a>
           )}
           {cleanPhone && (
