@@ -244,14 +244,14 @@ export default function HomePage() {
         boxSizing: 'border-box' as const
       }}>
         {/* ===== Search Bar ===== */}
-        <div style={{
-          backgroundColor: 'white',
-          padding: 'clamp(8px, 2vw, 12px)',
-          borderRadius: 'clamp(10px, 2vw, 16px)',
-          border: '1px solid #e2e8f0',
-          marginBottom: 'clamp(10px, 2vw, 16px)',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-        }}>
+<div style={{
+  backgroundColor: 'white',
+  padding: 'clamp(8px, 2vw, 12px)',
+  borderRadius: 'clamp(10px, 2vw, 16px)',
+  border: '2px solid #0f172a',
+  marginBottom: 'clamp(10px, 2vw, 16px)',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+}}>
           <div style={{ display: 'flex', gap: 'clamp(6px, 1.5vw, 8px)', alignItems: 'center' }}>
             <input 
               type="text" 
