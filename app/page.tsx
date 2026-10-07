@@ -252,7 +252,7 @@ export default function HomePage() {
                 fontSize: 'clamp(11px, 2.5vw, 13px)',
                 padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px)',
                 borderRadius: 'clamp(8px, 2vw, 12px)',
-                border: '1px solid #cbd5e1,
+                border: '1px solid #cbd5e1',
                 outline: 'none',
                 boxSizing: 'border-box' as const
               }}
