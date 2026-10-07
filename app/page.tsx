@@ -185,40 +185,50 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* الأزرار */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(4px, 1vw, 8px)', flexShrink: 0 }}>
-              <Link href="/login" style={{ textDecoration: 'none' }}>
-                <button style={{
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: 'clamp(5px, 1.5vw, 9px) clamp(8px, 2vw, 14px)',
-                  borderRadius: 'clamp(6px, 1vw, 10px)',
-                  fontSize: 'clamp(10px, 2.2vw, 12px)',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}>
-                  ➕ أعلن مجاناً
-                </button>
-              </Link>
-              
-              <Link href="/login" style={{ textDecoration: 'none' }}>
-                <button style={{
-                  backgroundColor: '#fbbf24',
-                  color: '#1e3a8a',
-                  border: 'none',
-                  padding: 'clamp(5px, 1.5vw, 9px) clamp(8px, 2vw, 14px)',
-                  borderRadius: 'clamp(6px, 1vw, 10px)',
-                  fontSize: 'clamp(10px, 2.2vw, 12px)',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}>
-                  🔑 دخول
-                </button>
-              </Link>
-            </div>
+          {/* الأزرار - تحت بعض */}
+<div style={{ 
+  display: 'flex', 
+  flexDirection: 'column',
+  alignItems: 'center', 
+  gap: 'clamp(4px, 1vw, 8px)', 
+  flexShrink: 0 
+}}>
+  <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
+    <button style={{
+      backgroundColor: '#10b981',
+      color: 'white',
+      border: 'none',
+      padding: 'clamp(5px, 1.5vw, 9px) clamp(8px, 2vw, 14px)',
+      borderRadius: 'clamp(6px, 1vw, 10px)',
+      fontSize: 'clamp(10px, 2.2vw, 12px)',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      whiteSpace: 'nowrap',
+      width: '100%',
+      textAlign: 'center' as const
+    }}>
+      ➕ أعلن مجاناً
+    </button>
+  </Link>
+  
+  <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
+    <button style={{
+      backgroundColor: '#fbbf24',
+      color: '#1e3a8a',
+      border: 'none',
+      padding: 'clamp(5px, 1.5vw, 9px) clamp(8px, 2vw, 14px)',
+      borderRadius: 'clamp(6px, 1vw, 10px)',
+      fontSize: 'clamp(10px, 2.2vw, 12px)',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      whiteSpace: 'nowrap',
+      width: '100%',
+      textAlign: 'center' as const
+    }}>
+      🔑 دخول
+    </button>
+  </Link>
+</div>
           </div>
         </div>
       </header>
