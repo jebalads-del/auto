@@ -189,23 +189,25 @@ export default function HomePage() {
 <div style={{ 
   display: 'flex', 
   flexDirection: 'column',
-  alignItems: 'center', 
-  gap: 'clamp(4px, 1vw, 8px)', 
-  flexShrink: 0 
+  alignItems: 'stretch', 
+  gap: 'clamp(6px, 1.5vw, 10px)', 
+  flexShrink: 0,
+  minWidth: 'clamp(110px, 25vw, 150px)'
 }}>
   <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
     <button style={{
       backgroundColor: '#10b981',
       color: 'white',
       border: 'none',
-      padding: 'clamp(5px, 1.5vw, 9px) clamp(8px, 2vw, 14px)',
-      borderRadius: 'clamp(6px, 1vw, 10px)',
-      fontSize: 'clamp(10px, 2.2vw, 12px)',
+      padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
+      borderRadius: 'clamp(8px, 1.5vw, 12px)',
+      fontSize: 'clamp(12px, 2.8vw, 15px)',
       fontWeight: 'bold',
       cursor: 'pointer',
       whiteSpace: 'nowrap',
       width: '100%',
-      textAlign: 'center' as const
+      textAlign: 'center' as const,
+      boxShadow: '0 4px 12px rgba(16,185,129,0.4)'
     }}>
       ➕ أعلن مجاناً
     </button>
@@ -216,14 +218,15 @@ export default function HomePage() {
       backgroundColor: '#fbbf24',
       color: '#1e3a8a',
       border: 'none',
-      padding: 'clamp(5px, 1.5vw, 9px) clamp(8px, 2vw, 14px)',
-      borderRadius: 'clamp(6px, 1vw, 10px)',
-      fontSize: 'clamp(10px, 2.2vw, 12px)',
+      padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
+      borderRadius: 'clamp(8px, 1.5vw, 12px)',
+      fontSize: 'clamp(12px, 2.8vw, 15px)',
       fontWeight: 'bold',
       cursor: 'pointer',
       whiteSpace: 'nowrap',
       width: '100%',
-      textAlign: 'center' as const
+      textAlign: 'center' as const,
+      boxShadow: '0 4px 12px rgba(251,191,36,0.4)'
     }}>
       🔑 دخول
     </button>
