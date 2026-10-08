@@ -248,7 +248,7 @@ export default function HomePage() {
   backgroundColor: 'white',
   padding: 'clamp(8px, 2vw, 12px)',
   borderRadius: 'clamp(10px, 2vw, 16px)',
-  border: '1px solid #0f172a',
+  border: '1px solid #3d45eb',
   marginBottom: 'clamp(10px, 2vw, 16px)',
   boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
 }}>
