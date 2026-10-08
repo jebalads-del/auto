@@ -284,7 +284,7 @@ export default function HomePage() {
                 color: showAdvanced ? 'white' : '#475569'
               }}
             >
-              ⚙️ تصفية
+              ⚙️ فلتر
             </button>
           </div>
 
