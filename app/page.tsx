@@ -261,7 +261,7 @@ export default function HomePage() {
               style={{
                 width: '100%',
                 backgroundColor: '#f1f5f9',
-                color: '#000009',
+                color: '#000000',
                 fontSize: 'clamp(11px, 2.5vw, 13px)',
                 padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px)',
                 borderRadius: 'clamp(8px, 2vw, 12px)',
