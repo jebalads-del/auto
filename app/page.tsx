@@ -180,7 +180,7 @@ export default function HomePage() {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
                 }}>
-                  🚗 سوقك الموثوق للسيارات
+                  🚗  اعثر على سيارت
                 </p>
               </div>
             </div>
@@ -274,7 +274,7 @@ export default function HomePage() {
               onClick={() => setShowAdvanced(!showAdvanced)} 
               style={{
                 padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px)',
-                borderRadius: 'clamp(8px, 2vw, 12px)',
+                borderRadius: 'clamp(10px, 2vw, 14px)',
                 fontSize: 'clamp(11px, 2.2vw, 12px)',
                 fontWeight: 'bold',
                 border: 'none',
