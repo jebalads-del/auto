@@ -312,7 +312,7 @@ export default function HomePage() {
           <section style={{ marginBottom: 'clamp(14px, 3vw, 20px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px' }}>
               <h2 style={{ fontSize: 'clamp(12px, 2.8vw, 14px)', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>⭐ إعلانات مميزة</h2>
-              <span style={{ fontSize: 'clamp(10px, 2vw, 11px)', color: '#64748b' }}>اسحب للجانب ↔️</span>
+              <span style={{ fontSize: 'clamp(10px, 2vw, 11px)', color: '#64748b' }}>اسحب لليمين او اليسار ↔️</span>
             </div>
 
             <div style={{ display: 'flex', gap: 'clamp(8px, 2vw, 12px)', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none' }}>
