@@ -62,7 +62,6 @@ export default function CarDetailsPage() {
 
         setCar(carData);
 
-        // معالجة مرنة للصور سواء كانت Array أو String JSON أو نص عادي
         let parsedImages: string[] = [];
         if (carData.images) {
           if (Array.isArray(carData.images)) {
@@ -84,7 +83,6 @@ export default function CarDetailsPage() {
         }
         setImagesList(parsedImages);
 
-        // جلب بيانات المعلن
         if (carData.user_id) {
           const { data: userData } = await supabase
             .from('users')
@@ -133,7 +131,6 @@ export default function CarDetailsPage() {
 
   return (
     <div style={styles.container}>
-      {/* الهيدر العلوي */}
       <header style={styles.header}>
         <button onClick={() => router.push('/')} style={styles.backButton}>🔙 الرئيسية</button>
         <h1 style={styles.headerTitle}>تفاصيل المركبة</h1>
@@ -168,7 +165,6 @@ export default function CarDetailsPage() {
                 <div style={styles.imageCounter}>{currentImageIndex + 1} / {imagesList.length}</div>
               </div>
 
-              {/* المصغرات */}
               {imagesList.length > 1 && (
                 <div style={styles.thumbnailContainer}>
                   {imagesList.map((img, idx) => (
@@ -179,7 +175,7 @@ export default function CarDetailsPage() {
                       onClick={() => setCurrentImageIndex(idx)} 
                       style={{ 
                         ...styles.thumbnail, 
-                        border: idx === currentImageIndex ? '2px solid #2563eb' : '2px solid transparent', 
+                        border: idx === currentImageIndex ? '2px solid #2563eb' : '1px solid #fbbf24', 
                         opacity: idx === currentImageIndex ? '1' : '0.6' 
                       }} 
                     />
@@ -192,7 +188,6 @@ export default function CarDetailsPage() {
           )}
         </div>
 
-        {/* معلومات السعر والاسم */}
         <div style={styles.infoSection}>
           <div style={styles.titlePriceRow}>
             <h2 style={styles.title}>{car.brand} {car.model}</h2>
@@ -201,7 +196,6 @@ export default function CarDetailsPage() {
             </div>
           </div>
           
-          {/* شبكة المواصفات */}
           <div style={styles.detailsGrid}>
             {car.year && (
               <div style={styles.detailItem}>
@@ -234,7 +228,6 @@ export default function CarDetailsPage() {
             </div>
           </div>
 
-          {/* تفاصيل الوصف */}
           {car.description && (
             <div style={styles.cardSection}>
               <h3 style={styles.sectionTitle}>📝 التفاصيل</h3>
@@ -242,7 +235,6 @@ export default function CarDetailsPage() {
             </div>
           )}
           
-          {/* كارت المعلن */}
           <div style={styles.cardSection}>
             <h3 style={styles.sectionTitle}>👤 المعلن</h3>
             <div style={styles.sellerInfo}>
@@ -251,7 +243,6 @@ export default function CarDetailsPage() {
             </div>
           </div>
 
-          {/* تنبيه الأمان والسلامة */}
           <div style={styles.warningBox}>
             <div style={styles.warningHeader}>
               <span style={{ fontSize: '20px' }}>⚠️</span>
@@ -266,7 +257,6 @@ export default function CarDetailsPage() {
         </div>
       </div>
 
-      {/* الشريط السفلي المباشر للتواصل */}
       <div style={styles.stickyStickyContact}>
         <div style={styles.contactButtonsContainer}>
           {cleanPhone && (
@@ -298,12 +288,12 @@ const styles = {
   content: { padding: '14px', maxWidth: '600px', margin: '0 auto' },
   imageSection: { marginBottom: '16px' },
   imageContainer: { backgroundColor: '#ffffff', borderRadius: '16px', padding: '8px', border: '1px solid #e2e8f0' },
-  mainImageWrapper: { position: 'relative' as const, width: '100%', height: '260px', backgroundColor: '#f1f5f9', borderRadius: '12px', overflow: 'hidden' },
-  mainImage: { width: '100%', height: '100%', objectFit: 'cover' as const },
+  mainImageWrapper: { position: 'relative' as const, width: '100%', height: '260px', backgroundColor: '#f1f5f9', borderRadius: '12px', overflow: 'hidden', border: '1px solid #fbbf24' },
+  mainImage: { width: '100%', height: '100%', objectFit: 'contain' as const, backgroundColor: '#f1f5f9' },
   navButton: { position: 'absolute' as const, top: '50%', transform: 'translateY(-50%)', backgroundColor: 'rgba(255, 255, 255, 0.9)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' },
   imageCounter: { position: 'absolute' as const, bottom: '12px', left: '12px', backgroundColor: 'rgba(15, 23, 42, 0.75)', color: '#ffffff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' },
   thumbnailContainer: { display: 'flex', gap: '8px', marginTop: '10px', overflowX: 'auto' as const, paddingBottom: '4px' },
-  thumbnail: { width: '60px', height: '45px', objectFit: 'cover' as const, borderRadius: '6px', cursor: 'pointer', flexShrink: 0 },
+  thumbnail: { width: '60px', height: '45px', objectFit: 'cover' as const, borderRadius: '6px', cursor: 'pointer', flexShrink: 0, border: '1px solid #fbbf24' },
   noImage: { width: '100%', height: '200px', backgroundColor: '#ffffff', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 'bold' },
   infoSection: { display: 'flex', flexDirection: 'column' as const, gap: '14px' },
   titlePriceRow: { backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
