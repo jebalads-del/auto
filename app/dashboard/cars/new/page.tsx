@@ -55,7 +55,7 @@ const MODELS: Record<string, string[]> = {
 const COLORS = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'رمادي', 'فضي', 'ذهبي', 'بني', 'أخضر', 'أصفر', 'برتقالي', 'أرجواني', 'وردي', 'بيج', 'نحاسي'];
 
 const MY_USER_ID = '2bee03ee-4e4e-464a-8bd9-56f15a056432';
-const MAX_IMAGES = 6; // ✅ الحد الأقصى للصور
+const MAX_IMAGES = 6;
 
 export default function NewCarPage() {
   const router = useRouter();
@@ -73,6 +73,8 @@ export default function NewCarPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [userRole, setUserRole] = useState<string>('user');
+  const [userName, setUserName] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
 
   const [formData, setFormData] = useState({
     brand: '',
@@ -92,17 +94,22 @@ export default function NewCarPage() {
 
         if (session?.user) {
           const id = session.user.id;
+          const email = session.user.email || '';
+          
           if (id && id.length > 10 && id.includes('-')) {
             setUserId(id);
+            setUserEmail(email);
             localStorage.setItem('userId', id);
 
             const { data: userData } = await supabase
               .from('users')
-              .select('role')
+              .select('role, name')
               .eq('id', id)
               .single();
 
             if (userData?.role) setUserRole(userData.role);
+            if (userData?.name) setUserName(userData.name);
+            else setUserName(email.split('@')[0] || 'مستخدم');
 
             setIsCheckingAuth(false);
             return;
@@ -115,11 +122,13 @@ export default function NewCarPage() {
 
           const { data: userData } = await supabase
             .from('users')
-            .select('role')
+            .select('role, name, email')
             .eq('id', savedUserId)
             .single();
 
           if (userData?.role) setUserRole(userData.role);
+          if (userData?.name) setUserName(userData.name);
+          if (userData?.email) setUserEmail(userData.email);
 
           setIsCheckingAuth(false);
           return;
@@ -218,6 +227,30 @@ export default function NewCarPage() {
       }
 
       const carId = data.data?.[0]?.id || data.id;
+
+      // ✅ إرسال إشعار للأدمن
+      try {
+        await fetch('/api/notify-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            car: {
+              brand: formData.brand,
+              model: formData.model,
+              price: formData.price,
+              currency: formData.currency,
+              year: formData.year,
+              kilometers: formData.kilometers,
+              color: formData.color,
+            },
+            ownerName: userName || 'مستخدم',
+            ownerEmail: userEmail || '',
+          }),
+        });
+        console.log('✅ تم إرسال الإشعار للأدمن');
+      } catch (err) {
+        console.error('⚠️ فشل إرسال الإشعار:', err);
+      }
 
       // ===== رفع الصور =====
       if (images.length > 0 && carId) {
@@ -343,7 +376,6 @@ export default function NewCarPage() {
   return (
     <div style={{ direction: 'rtl', padding: '16px', maxWidth: '600px', margin: '0 auto', fontFamily: 'sans-serif' }}>
 
-      {/* 🛑 شريط علوي مع زر الإغلاق X */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid #e2e8f0' }}>
         <h1 style={{ fontSize: '18px', margin: 0, fontWeight: 'bold', color: '#1e293b' }}>📢 إضافة إعلان سيارة جديد</h1>
         <button
@@ -375,7 +407,6 @@ export default function NewCarPage() {
         </button>
       </div>
 
-      {/* ✅ أزرار التنقل السريعة */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', flexWrap: 'wrap' }}>
         <button
           onClick={() => router.push('/')}
@@ -456,7 +487,6 @@ export default function NewCarPage() {
           <input type="number" placeholder="مثال: 50000" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} />
         </div>
 
-        {/* 📸 مربع رفع الصور مع عداد */}
         <div style={{ marginBottom: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>
@@ -535,7 +565,6 @@ export default function NewCarPage() {
           />
         </div>
 
-        {/* ⚠️ قسم الشروط والأحكام */}
         <div style={{ 
           backgroundColor: '#fef2f2', 
           padding: '16px', 
@@ -632,7 +661,6 @@ export default function NewCarPage() {
           </label>
         </div>
 
-        {/* زر النشر */}
         <button 
           type="submit" 
           disabled={loading || !agreeToTerms}

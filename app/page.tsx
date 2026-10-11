@@ -180,7 +180,7 @@ export default function HomePage() {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
                 }}>
-                  🚗 سوقك الموثوق للسيارات
+                  🚗  اعثر على سيارت
                 </p>
               </div>
             </div>
@@ -189,23 +189,25 @@ export default function HomePage() {
 <div style={{ 
   display: 'flex', 
   flexDirection: 'column',
-  alignItems: 'center', 
-  gap: 'clamp(4px, 1vw, 8px)', 
-  flexShrink: 0 
+  alignItems: 'stretch', 
+  gap: 'clamp(6px, 1.5vw, 10px)', 
+  flexShrink: 0,
+  minWidth: 'clamp(110px, 25vw, 150px)'
 }}>
   <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
     <button style={{
       backgroundColor: '#10b981',
       color: 'white',
       border: 'none',
-      padding: 'clamp(5px, 1.5vw, 9px) clamp(8px, 2vw, 14px)',
-      borderRadius: 'clamp(6px, 1vw, 10px)',
-      fontSize: 'clamp(10px, 2.2vw, 12px)',
+      padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
+      borderRadius: 'clamp(8px, 1.5vw, 12px)',
+      fontSize: 'clamp(12px, 2.8vw, 15px)',
       fontWeight: 'bold',
       cursor: 'pointer',
       whiteSpace: 'nowrap',
       width: '100%',
-      textAlign: 'center' as const
+      textAlign: 'center' as const,
+      boxShadow: '0 4px 12px rgba(16,185,129,0.4)'
     }}>
       ➕ أعلن مجاناً
     </button>
@@ -216,14 +218,15 @@ export default function HomePage() {
       backgroundColor: '#fbbf24',
       color: '#1e3a8a',
       border: 'none',
-      padding: 'clamp(5px, 1.5vw, 9px) clamp(8px, 2vw, 14px)',
-      borderRadius: 'clamp(6px, 1vw, 10px)',
-      fontSize: 'clamp(10px, 2.2vw, 12px)',
+      padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
+      borderRadius: 'clamp(8px, 1.5vw, 12px)',
+      fontSize: 'clamp(12px, 2.8vw, 15px)',
       fontWeight: 'bold',
       cursor: 'pointer',
       whiteSpace: 'nowrap',
       width: '100%',
-      textAlign: 'center' as const
+      textAlign: 'center' as const,
+      boxShadow: '0 4px 12px rgba(251,191,36,0.4)'
     }}>
       🔑 دخول
     </button>
@@ -241,14 +244,14 @@ export default function HomePage() {
         boxSizing: 'border-box' as const
       }}>
         {/* ===== Search Bar ===== */}
-        <div style={{
-          backgroundColor: 'white',
-          padding: 'clamp(8px, 2vw, 12px)',
-          borderRadius: 'clamp(10px, 2vw, 16px)',
-          border: '1px solid #e2e8f0',
-          marginBottom: 'clamp(10px, 2vw, 16px)',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-        }}>
+<div style={{
+  backgroundColor: 'white',
+  padding: 'clamp(8px, 2vw, 12px)',
+  borderRadius: 'clamp(10px, 2vw, 16px)',
+  border: '1px solid #3d45eb',
+  marginBottom: 'clamp(10px, 2vw, 16px)',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+}}>
           <div style={{ display: 'flex', gap: 'clamp(6px, 1.5vw, 8px)', alignItems: 'center' }}>
             <input 
               type="text" 
@@ -258,7 +261,7 @@ export default function HomePage() {
               style={{
                 width: '100%',
                 backgroundColor: '#f1f5f9',
-                color: '#1e293b',
+                color: '#000000',
                 fontSize: 'clamp(11px, 2.5vw, 13px)',
                 padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px)',
                 borderRadius: 'clamp(8px, 2vw, 12px)',
@@ -271,7 +274,7 @@ export default function HomePage() {
               onClick={() => setShowAdvanced(!showAdvanced)} 
               style={{
                 padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px)',
-                borderRadius: 'clamp(8px, 2vw, 12px)',
+                borderRadius: 'clamp(10px, 2vw, 14px)',
                 fontSize: 'clamp(11px, 2.2vw, 12px)',
                 fontWeight: 'bold',
                 border: 'none',
@@ -281,7 +284,7 @@ export default function HomePage() {
                 color: showAdvanced ? 'white' : '#475569'
               }}
             >
-              ⚙️ تصفية
+              ⚙️ فلتر
             </button>
           </div>
 
@@ -309,7 +312,7 @@ export default function HomePage() {
           <section style={{ marginBottom: 'clamp(14px, 3vw, 20px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px' }}>
               <h2 style={{ fontSize: 'clamp(12px, 2.8vw, 14px)', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>⭐ إعلانات مميزة</h2>
-              <span style={{ fontSize: 'clamp(10px, 2vw, 11px)', color: '#64748b' }}>اسحب للجانب ↔️</span>
+              <span style={{ fontSize: 'clamp(10px, 2vw, 11px)', color: '#64748b' }}>اسحب لليمين او اليسار ↔️</span>
             </div>
 
             <div style={{ display: 'flex', gap: 'clamp(8px, 2vw, 12px)', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none' }}>
