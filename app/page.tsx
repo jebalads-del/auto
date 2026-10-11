@@ -123,7 +123,6 @@ export default function HomePage() {
             }}
           />
           
-          {/* طبقة داكنة + المحتوى */}
           <div style={{
             position: 'absolute',
             top: 0,
@@ -140,7 +139,6 @@ export default function HomePage() {
             margin: '0 auto',
             boxSizing: 'border-box' as const
           }}>
-            {/* الشعار + الاسم */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1.5vw, 12px)', flex: 1, minWidth: 0 }}>
               <img 
                 src="/logo2.jpg" 
@@ -185,53 +183,52 @@ export default function HomePage() {
               </div>
             </div>
 
-          {/* الأزرار - تحت بعض */}
-<div style={{ 
-  display: 'flex', 
-  flexDirection: 'column',
-  alignItems: 'stretch', 
-  gap: 'clamp(6px, 1.5vw, 10px)', 
-  flexShrink: 0,
-  minWidth: 'clamp(110px, 25vw, 150px)'
-}}>
-  <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
-    <button style={{
-      backgroundColor: '#10b981',
-      color: 'white',
-      border: 'none',
-      padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
-      borderRadius: 'clamp(8px, 1.5vw, 12px)',
-      fontSize: 'clamp(12px, 2.8vw, 15px)',
-      fontWeight: 'bold',
-      cursor: 'pointer',
-      whiteSpace: 'nowrap',
-      width: '100%',
-      textAlign: 'center' as const,
-      boxShadow: '0 4px 12px rgba(16,185,129,0.4)'
-    }}>
-      ➕ أعلن مجاناً
-    </button>
-  </Link>
-  
-  <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
-    <button style={{
-      backgroundColor: '#fbbf24',
-      color: '#1e3a8a',
-      border: 'none',
-      padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
-      borderRadius: 'clamp(8px, 1.5vw, 12px)',
-      fontSize: 'clamp(12px, 2.8vw, 15px)',
-      fontWeight: 'bold',
-      cursor: 'pointer',
-      whiteSpace: 'nowrap',
-      width: '100%',
-      textAlign: 'center' as const,
-      boxShadow: '0 4px 12px rgba(251,191,36,0.4)'
-    }}>
-      🔑 دخول
-    </button>
-  </Link>
-</div>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'stretch', 
+              gap: 'clamp(6px, 1.5vw, 10px)', 
+              flexShrink: 0,
+              minWidth: 'clamp(110px, 25vw, 150px)'
+            }}>
+              <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
+                <button style={{
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
+                  borderRadius: 'clamp(8px, 1.5vw, 12px)',
+                  fontSize: 'clamp(12px, 2.8vw, 15px)',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  width: '100%',
+                  textAlign: 'center' as const,
+                  boxShadow: '0 4px 12px rgba(16,185,129,0.4)'
+                }}>
+                  ➕ أعلن مجاناً
+                </button>
+              </Link>
+              
+              <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
+                <button style={{
+                  backgroundColor: '#fbbf24',
+                  color: '#1e3a8a',
+                  border: 'none',
+                  padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
+                  borderRadius: 'clamp(8px, 1.5vw, 12px)',
+                  fontSize: 'clamp(12px, 2.8vw, 15px)',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  width: '100%',
+                  textAlign: 'center' as const,
+                  boxShadow: '0 4px 12px rgba(251,191,36,0.4)'
+                }}>
+                  🔑 دخول
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -244,14 +241,14 @@ export default function HomePage() {
         boxSizing: 'border-box' as const
       }}>
         {/* ===== Search Bar ===== */}
-<div style={{
-  backgroundColor: 'white',
-  padding: 'clamp(8px, 2vw, 12px)',
-  borderRadius: 'clamp(10px, 2vw, 16px)',
-  border: '1px solid #3d45eb',
-  marginBottom: 'clamp(10px, 2vw, 16px)',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-}}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: 'clamp(8px, 2vw, 12px)',
+          borderRadius: 'clamp(10px, 2vw, 16px)',
+          border: '1px solid #3d45eb',
+          marginBottom: 'clamp(10px, 2vw, 16px)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        }}>
           <div style={{ display: 'flex', gap: 'clamp(6px, 1.5vw, 8px)', alignItems: 'center' }}>
             <input 
               type="text" 
@@ -321,7 +318,8 @@ export default function HomePage() {
                 return (
                   <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(130px, 40vw, 160px)' }}>
                     <div style={{ backgroundColor: 'white', borderRadius: 'clamp(10px, 2vw, 14px)', overflow: 'hidden', border: '1px solid #fde68a', padding: 'clamp(6px, 1.5vw, 8px)', boxShadow: '0 2px 5px rgba(0,0,0,0.04)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ width: '100%', height: 'clamp(80px, 25vw, 100px)', backgroundColor: '#f1f5f9', borderRadius: 'clamp(8px, 1.5vw, 10px)', overflow: 'hidden', position: 'relative' }}>
+                      {/* ✅ صورة مميزة + إطار ذهبي */}
+                      <div style={{ width: '100%', height: 'clamp(80px, 25vw, 100px)', backgroundColor: '#f1f5f9', borderRadius: 'clamp(8px, 1.5vw, 10px)', overflow: 'hidden', position: 'relative', border: '1px solid #fbbf24' }}>
                         {firstImage ? (
                           <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
@@ -367,7 +365,8 @@ export default function HomePage() {
                   return (
                     <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                       <div style={{ backgroundColor: 'white', borderRadius: 'clamp(12px, 2.5vw, 16px)', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        <div style={{ width: '100%', height: 'clamp(180px, 50vw, 240px)', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
+                        {/* ✅ صورة عادية + إطار ذهبي */}
+                        <div style={{ width: '100%', height: 'clamp(180px, 50vw, 240px)', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden', border: '1px solid #fbbf24' }}>
                           {firstImage ? (
                             <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
