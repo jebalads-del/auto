@@ -205,7 +205,7 @@ export default function CarDetailsPage() {
             )}
             {car.kilometers && (
               <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>📊 عداد الممشى</span>
+                <span style={styles.detailLabel}>📊 الكيلومترات </span>
                 <span style={styles.detailValue}>{car.kilometers.toLocaleString()} كم</span>
               </div>
             )}
