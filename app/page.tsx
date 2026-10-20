@@ -235,11 +235,7 @@ export default function HomePage() {
 
       <main style={{ 
         padding: 'clamp(8px, 2vw, 14px)',
-<<<<<<< HEAD
         maxWidth: '100%',
-=======
-        maxWidth: '100%', // ✅ تم التعديل هنا (كان 1200px)
->>>>>>> d934e46dfe3f1525b897f081e69ce4df06ef604c
         margin: '0 auto',
         width: '100%',
         boxSizing: 'border-box' as const
