@@ -28,7 +28,6 @@ export default function LoginPage() {
     try {
       console.log('🚀 بدء الدخول:', trimmedEmail);
 
-      // ✅ Supabase Auth فقط
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password: password,
@@ -44,7 +43,6 @@ export default function LoginPage() {
       console.log('🔑 تم الدخول:', authData.user.id);
       localStorage.setItem('userId', authData.user.id);
 
-      // ✅ التحقق من الدور
       const { data: userData } = await supabase
         .from('users')
         .select('role')
@@ -53,7 +51,6 @@ export default function LoginPage() {
 
       console.log('👤 الدور:', userData?.role);
 
-      // ✅ التوجيه حسب الدور
       if (userData?.role === 'admin') {
         router.push('/dashboard/admin');
       } else {
@@ -71,6 +68,29 @@ export default function LoginPage() {
   return (
     <div style={{ direction: 'rtl', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '20px', fontFamily: 'sans-serif' }}>
       <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%', maxWidth: '420px' }}>
+        
+        {/* ✅ زر العودة للرئيسية */}
+        <div style={{ marginBottom: '20px' }}>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <button style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              backgroundColor: '#f1f5f9',
+              color: '#334155',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}>
+              🏠 العودة للرئيسية
+            </button>
+          </Link>
+        </div>
+
         <h2 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', color: '#1e293b' }}>مرحباً بك مجدداً</h2>
         <p style={{ textAlign: 'center', color: '#64748b', fontSize: '14px', marginBottom: '30px' }}>سجل دخولك لإدارة حسابك وإعلاناتك</p>
 
