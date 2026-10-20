@@ -93,58 +93,56 @@ export default function HomePage() {
       overflowX: 'hidden'
     }}>
       
-      {/* ===== Top Header (تصميم احترافي ومتناسق) ===== */}
+      {/* ===== Top Header (محسن بناءً على الملاحظات) ===== */}
       <header style={{
         position: 'sticky' as const,
         top: 0,
         zIndex: 50,
         width: '100%',
-        backgroundColor: '#0f172a',
-        backgroundImage: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-        borderBottom: '3px solid #10b981',
+        backgroundColor: '#1e293b', // لون كحلي أفتح قليلاً وأكثر أناقة
+        backgroundImage: 'linear-gradient(to bottom, #1e293b, #0f172a)',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
+        padding: '14px clamp(12px, 4vw, 20px)', // زيادة الارتفاع
         boxSizing: 'border-box' as const,
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px clamp(12px, 4vw, 20px)',
-          maxWidth: '100%',
+          maxWidth: '1200px',
           margin: '0 auto',
         }}>
           
           {/* الجهة اليمنى: الشعار واسم الموقع */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img 
               src="/logo2.jpg" 
               alt="سيارتي ستور" 
               style={{ 
-                height: '45px', 
-                width: '45px', 
-                borderRadius: '12px', 
+                height: '60px', // تكبير الشعار
+                width: '60px', 
+                borderRadius: '14px', 
                 objectFit: 'cover',
                 backgroundColor: 'white',
-                padding: '2px',
+                padding: '3px',
                 boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
               }} 
             />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <h1 style={{
-                fontSize: 'clamp(16px, 4vw, 20px)',
+                fontSize: 'clamp(18px, 4.5vw, 24px)', // تكبير الخط
                 fontWeight: '900',
                 color: '#ffffff',
                 margin: 0,
-                lineHeight: '1.2',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                lineHeight: '1.1'
               }}>
                 سيارتي ستور
               </h1>
               <span style={{
-                fontSize: 'clamp(9px, 2.5vw, 11px)',
+                fontSize: 'clamp(10px, 2.8vw, 13px)',
                 color: '#10b981',
                 fontWeight: 'bold',
-                marginTop: '2px'
+                marginTop: '4px'
               }}>
                 🚗 اعثر على سيارتك
               </span>
@@ -154,36 +152,39 @@ export default function HomePage() {
           {/* الجهة اليسرى: الأزرار */}
           <div style={{ 
             display: 'flex', 
-            gap: '8px',
+            gap: '10px',
             alignItems: 'center'
           }}>
+            {/* زر الدخول - أصبح بخلفية بيضاء ليكون واضحاً جداً */}
             <Link href="/login" style={{ textDecoration: 'none' }}>
               <button style={{
-                backgroundColor: 'transparent',
-                color: '#cbd5e1',
-                border: '1px solid #475569',
-                padding: 'clamp(6px, 2vw, 8px) clamp(12px, 3vw, 16px)',
-                borderRadius: '20px',
-                fontSize: 'clamp(11px, 2.5vw, 13px)',
+                backgroundColor: '#ffffff', 
+                color: '#0f172a', // نص داكن
+                border: 'none',
+                padding: 'clamp(8px, 2.5vw, 10px) clamp(14px, 4vw, 20px)',
+                borderRadius: '25px', 
+                fontSize: 'clamp(12px, 3vw, 14px)',
                 fontWeight: 'bold',
                 cursor: 'pointer',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 8px rgba(255,255,255,0.2)'
               }}>
                 🔑 دخول
               </button>
             </Link>
             
+            {/* زر أعلن - يبقى أخضر ليكون هو زر الحركة الأساسي */}
             <Link href="/login" style={{ textDecoration: 'none' }}>
               <button style={{
                 backgroundColor: '#10b981',
                 color: 'white',
                 border: 'none',
-                padding: 'clamp(6px, 2vw, 8px) clamp(12px, 3vw, 16px)',
-                borderRadius: '20px',
-                fontSize: 'clamp(11px, 2.5vw, 13px)',
+                padding: 'clamp(8px, 2.5vw, 10px) clamp(14px, 4vw, 20px)',
+                borderRadius: '25px',
+                fontSize: 'clamp(12px, 3vw, 14px)',
                 fontWeight: 'bold',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                boxShadow: '0 4px 12px rgba(16,185,129,0.4)',
                 whiteSpace: 'nowrap'
               }}>
                 + أعلن
