@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
+import Head from 'next/head';
 
 interface Car {
   id: string; 
@@ -129,8 +130,45 @@ export default function CarDetailsPage() {
       })
     : 'غير معروف';
 
+  // ✅ البيانات المنظمة للسيارة (JSON-LD)
+  const carJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: `${car.brand} ${car.model} ${car.year || ''}`,
+    image: imagesList.length > 0 ? imagesList : ['https://sayarty.store/logo.png'],
+    description: car.description || `سيارة ${car.brand} ${car.model} ${car.year || ''} للبيع في الكويت`,
+    brand: {
+      '@type': 'Brand',
+      name: car.brand,
+    },
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: car.currency || 'KWD',
+      price: car.price,
+      availability: car.status === 'approved' 
+        ? 'https://schema.org/InStock' 
+        : 'https://schema.org/SoldOut',
+      url: `https://sayarty.store/car/${car.id}`,
+      seller: {
+        '@type': 'Organization',
+        name: 'سيارتي ستور',
+      },
+    },
+    ...(car.year && { vehicleModelDate: car.year.toString() }),
+    ...(car.kilometers && { mileageFromOdometer: { '@type': 'QuantitativeValue', value: car.kilometers, unitCode: 'KMT' } }),
+    ...(car.color && { color: car.color }),
+  };
+
   return (
     <div style={styles.container}>
+      {/* ✅ إضافة JSON-LD في الصفحة */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ 
+          __html: JSON.stringify(carJsonLd).replace(/</g, '\\u003c') 
+        }}
+      />
+
       <header style={styles.header}>
         <button onClick={() => router.push('/')} style={styles.backButton}>🔙 الرئيسية</button>
         <h1 style={styles.headerTitle}>تفاصيل المركبة</h1>
@@ -143,7 +181,7 @@ export default function CarDetailsPage() {
           {imagesList.length > 0 ? (
             <div style={styles.imageContainer}>
               <div style={styles.mainImageWrapper}>
-                <img src={imagesList[currentImageIndex]} alt="car" style={styles.mainImage} />
+                <img src={imagesList[currentImageIndex]} alt={`${car.brand} ${car.model}`} style={styles.mainImage} />
                 {imagesList.length > 1 && (
                   <>
                     <button 
@@ -171,7 +209,7 @@ export default function CarDetailsPage() {
                     <img 
                       key={idx} 
                       src={img} 
-                      alt="thumb" 
+                      alt={`${car.brand} ${car.model} - صورة ${idx + 1}`} 
                       onClick={() => setCurrentImageIndex(idx)} 
                       style={{ 
                         ...styles.thumbnail, 
@@ -281,6 +319,7 @@ export default function CarDetailsPage() {
 }
 
 const styles = {
+  // ... نفس الستايلات السابقة (لم تتغير)
   container: { direction: 'rtl' as const, backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '90px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '12px 16px', borderBottom: '1px solid #e2e8f0', position: 'sticky' as const, top: 0, zIndex: 100 },
   backButton: { backgroundColor: '#f1f5f9', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', color: '#334155', cursor: 'pointer' },
