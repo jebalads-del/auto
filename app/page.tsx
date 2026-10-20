@@ -135,7 +135,7 @@ export default function HomePage() {
             justifyContent: 'space-between',
             padding: '0 clamp(10px, 3vw, 24px)',
             gap: 'clamp(6px, 1.5vw, 14px)',
-            maxWidth: '1200px',
+            maxWidth: '100%',
             margin: '0 auto',
             boxSizing: 'border-box' as const
           }}>
