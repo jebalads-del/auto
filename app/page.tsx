@@ -92,7 +92,7 @@ export default function HomePage() {
       maxWidth: '100%',
       overflowX: 'hidden'
     }}>
-      {/* ===== Top Header - بانر متجاوب ===== */}
+      {/* ===== Top Header ===== */}
       <header style={{
         position: 'sticky' as const,
         top: 0,
@@ -235,7 +235,7 @@ export default function HomePage() {
 
       <main style={{ 
         padding: 'clamp(8px, 2vw, 14px)',
-        maxWidth: '1200px',
+        maxWidth: '100%', // ✅ تم التعديل هنا (كان 1200px)
         margin: '0 auto',
         width: '100%',
         boxSizing: 'border-box' as const
@@ -245,9 +245,11 @@ export default function HomePage() {
           backgroundColor: 'white',
           padding: 'clamp(8px, 2vw, 12px)',
           borderRadius: 'clamp(10px, 2vw, 16px)',
-          border: '2px solid #fbbf24',
+          border: '1px solid #3d45eb',
           marginBottom: 'clamp(10px, 2vw, 16px)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          width: '100%',
+          maxWidth: '100%',
         }}>
           <div style={{ display: 'flex', gap: 'clamp(6px, 1.5vw, 8px)', alignItems: 'center' }}>
             <input 
@@ -318,7 +320,6 @@ export default function HomePage() {
                 return (
                   <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(130px, 40vw, 160px)' }}>
                     <div style={{ backgroundColor: 'white', borderRadius: 'clamp(10px, 2vw, 14px)', overflow: 'hidden', border: '1px solid #fde68a', padding: 'clamp(6px, 1.5vw, 8px)', boxShadow: '0 2px 5px rgba(0,0,0,0.04)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      {/* ✅ صورة مميزة + إطار ذهبي */}
                       <div style={{ width: '100%', height: 'clamp(80px, 25vw, 100px)', backgroundColor: '#f1f5f9', borderRadius: 'clamp(8px, 1.5vw, 10px)', overflow: 'hidden', position: 'relative', border: '1px solid #fbbf24' }}>
                         {firstImage ? (
                           <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -365,7 +366,6 @@ export default function HomePage() {
                   return (
                     <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                       <div style={{ backgroundColor: 'white', borderRadius: 'clamp(12px, 2.5vw, 16px)', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        {/* ✅ صورة عادية + إطار ذهبي */}
                         <div style={{ width: '100%', height: 'clamp(180px, 50vw, 240px)', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden', border: '1px solid #fbbf24' }}>
                           {firstImage ? (
                             <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
