@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     images: [
       {
         url: '/logo.png',
-        width: 750,
+        width: 550,
         height: 630,
         alt: 'سيارتي ستور - سوق السيارات في الكويت',
       },
