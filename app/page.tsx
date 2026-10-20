@@ -92,144 +92,105 @@ export default function HomePage() {
       maxWidth: '100%',
       overflowX: 'hidden'
     }}>
-      {/* ===== Top Header ===== */}
+      
+      {/* ===== Top Header (تصميم احترافي ومتناسق) ===== */}
       <header style={{
         position: 'sticky' as const,
         top: 0,
         zIndex: 50,
         width: '100%',
+        backgroundColor: '#0f172a',
+        backgroundImage: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+        borderBottom: '3px solid #10b981',
         boxSizing: 'border-box' as const,
-        overflow: 'hidden',
-        boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-        backgroundColor: '#0f172a'
       }}>
         <div style={{
-          position: 'relative',
-          width: '100%',
-          aspectRatio: '16 / 3',
-          minHeight: '130px',
-          maxHeight: '180px',
-          overflow: 'hidden'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px clamp(12px, 4vw, 20px)',
+          maxWidth: '100%',
+          margin: '0 auto',
         }}>
-          <img 
-            src="/logo.png" 
-            alt="banner"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center',
-              display: 'block'
-            }}
-          />
           
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 clamp(10px, 3vw, 24px)',
-            gap: 'clamp(6px, 1.5vw, 14px)',
-            maxWidth: '100%',
-            margin: '0 auto',
-            boxSizing: 'border-box' as const
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1.5vw, 12px)', flex: 1, minWidth: 0 }}>
-              <img 
-                src="/logo2.jpg" 
-                alt="سيارتي ستور" 
-                style={{ 
-                  height: 'clamp(65px, 11vw, 95px)', 
-                  width: 'auto', 
-                  borderRadius: 'clamp(8px, 1.5vw, 14px)', 
-                  display: 'block',
-                  flexShrink: 0,
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
-                  backgroundColor: 'white',
-                  padding: '3px'
-                }} 
-              />
-              
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <h1 style={{
-                  fontSize: 'clamp(14px, 3.5vw, 22px)',
-                  fontWeight: 'bold',
-                  color: 'white',
-                  margin: 0,
-                  textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-                  lineHeight: '1.2',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  سيارتي ستور
-                </h1>
-                <p style={{
-                  fontSize: 'clamp(9px, 2vw, 12px)',
-                  color: '#fbbf24',
-                  margin: '2px 0 0 0',
-                  textShadow: '0 1px 3px rgba(0,0,0,0.9)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  🚗  اعثر على سيارت
-                </p>
-              </div>
+          {/* الجهة اليمنى: الشعار واسم الموقع */}
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img 
+              src="/logo2.jpg" 
+              alt="سيارتي ستور" 
+              style={{ 
+                height: '45px', 
+                width: '45px', 
+                borderRadius: '12px', 
+                objectFit: 'cover',
+                backgroundColor: 'white',
+                padding: '2px',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+              }} 
+            />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <h1 style={{
+                fontSize: 'clamp(16px, 4vw, 20px)',
+                fontWeight: '900',
+                color: '#ffffff',
+                margin: 0,
+                lineHeight: '1.2',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              }}>
+                سيارتي ستور
+              </h1>
+              <span style={{
+                fontSize: 'clamp(9px, 2.5vw, 11px)',
+                color: '#10b981',
+                fontWeight: 'bold',
+                marginTop: '2px'
+              }}>
+                🚗 اعثر على سيارتك
+              </span>
             </div>
+          </Link>
 
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column',
-              alignItems: 'stretch', 
-              gap: 'clamp(6px, 1.5vw, 10px)', 
-              flexShrink: 0,
-              minWidth: 'clamp(110px, 25vw, 150px)'
-            }}>
-              <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
-                <button style={{
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
-                  borderRadius: 'clamp(8px, 1.5vw, 12px)',
-                  fontSize: 'clamp(12px, 2.8vw, 15px)',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  width: '100%',
-                  textAlign: 'center' as const,
-                  boxShadow: '0 4px 12px rgba(16,185,129,0.4)'
-                }}>
-                  ➕ أعلن مجاناً
-                </button>
-              </Link>
-              
-              <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
-                <button style={{
-                  backgroundColor: '#fbbf24',
-                  color: '#1e3a8a',
-                  border: 'none',
-                  padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px)',
-                  borderRadius: 'clamp(8px, 1.5vw, 12px)',
-                  fontSize: 'clamp(12px, 2.8vw, 15px)',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  width: '100%',
-                  textAlign: 'center' as const,
-                  boxShadow: '0 4px 12px rgba(251,191,36,0.4)'
-                }}>
-                  🔑 دخول
-                </button>
-              </Link>
-            </div>
+          {/* الجهة اليسرى: الأزرار */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '8px',
+            alignItems: 'center'
+          }}>
+            <Link href="/login" style={{ textDecoration: 'none' }}>
+              <button style={{
+                backgroundColor: 'transparent',
+                color: '#cbd5e1',
+                border: '1px solid #475569',
+                padding: 'clamp(6px, 2vw, 8px) clamp(12px, 3vw, 16px)',
+                borderRadius: '20px',
+                fontSize: 'clamp(11px, 2.5vw, 13px)',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}>
+                🔑 دخول
+              </button>
+            </Link>
+            
+            <Link href="/login" style={{ textDecoration: 'none' }}>
+              <button style={{
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                padding: 'clamp(6px, 2vw, 8px) clamp(12px, 3vw, 16px)',
+                borderRadius: '20px',
+                fontSize: 'clamp(11px, 2.5vw, 13px)',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                whiteSpace: 'nowrap'
+              }}>
+                + أعلن
+              </button>
+            </Link>
           </div>
+
         </div>
       </header>
 
