@@ -103,7 +103,7 @@ export default function HomePage() {
         zIndex: 50,
         width: '100%',
         height: 'clamp(140px, 25vw, 180px)', 
-        backgroundImage: 'url("https://images.unsplash.com/photo-1503376712344-4c6b8f2e0c3b?q=80&w=2000&auto=format&fit=crop")', 
+         backgroundImage: 'url("/logo.png")',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
