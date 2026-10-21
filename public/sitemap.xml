@@ -8,4 +8,16 @@
     <loc>https://www.sayarty.store/login</loc>
     <priority>0.5</priority>
   </url>
+    <url>
+    <loc>https://www.sayarty.store/faq</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.sayarty.store/about</loc>
+    <priority>0.5</priority>
+  </url>
+    <url>
+    <loc>https://www.sayarty.store/register</loc>
+    <priority>1.0</priority>
+  </url>
 </urlset>
