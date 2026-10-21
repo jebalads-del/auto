@@ -98,7 +98,7 @@ export default function HomePage() {
       
       {/* ===== Top Header (خلفية سيارة + قائمة منسدلة) ===== */}
       <header style={{
-        position: 'sticky' as const, // تأكدنا من وجودها هنا فقط
+        position: 'sticky' as const,
         top: 0,
         zIndex: 50,
         width: '100%',
@@ -182,24 +182,26 @@ export default function HomePage() {
 
         </div>
 
-        {/* ===== القائمة المنسدلة (Sidebar) ===== */}
+        {/* ===== القائمة المنسدلة (Sidebar) المحسنة ===== */}
         {isMenuOpen && (
           <div style={{
             position: 'fixed',
             top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'rgba(0,0,0,0.6)', // تعتيم أقوى للخلفية
             zIndex: 100,
             display: 'flex',
-            justifyContent: 'flex-end'
+            justifyContent: 'flex-end' // تفتح من اليمين
           }}>
             <div style={{
-              width: '75%',
-              maxWidth: '300px',
+              width: '68%', // تقليل العرض ليكون 68% فقط
+              maxWidth: '280px', // حد أقصى للعرض
               backgroundColor: 'white',
               height: '100%',
-              boxShadow: '-5px 0 20px rgba(0,0,0,0.2)',
+              boxShadow: '-5px 0 25px rgba(0,0,0,0.3)',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              borderTopRightRadius: '15px', // حواف دائرية للجهة اليمنى العلوية
+              borderBottomRightRadius: '15px', // حواف دائرية للجهة اليمنى السفلية
             }}>
               {/* رأس القائمة */}
               <div style={{
@@ -208,7 +210,8 @@ export default function HomePage() {
                 color: 'white',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                borderTopRightRadius: '15px', // لتطابق الحواف
               }}>
                 <h2 style={{ margin: 0, fontSize: '18px' }}>القائمة</h2>
                 <button 
@@ -228,26 +231,26 @@ export default function HomePage() {
               {/* عناصر القائمة */}
               <div style={{ display: 'flex', flexDirection: 'column', padding: '10px' }}>
                 <Link href="/login" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
-                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold' }}>
-                    🔑 تسجيل الدخول
+                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '20px' }}>🔑</span> تسجيل الدخول
                   </div>
                 </Link>
                 
                 <Link href="/login" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
-                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#059669', fontSize: '16px', fontWeight: 'bold' }}>
-                    ➕ أعلن مجاناً
+                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#059669', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '20px' }}>➕</span> أعلن مجاناً
                   </div>
                 </Link>
 
                 <Link href="/about" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
-                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold' }}>
-                    ℹ️ من نحن
+                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '20px' }}>ℹ️</span> من نحن
                   </div>
                 </Link>
 
                 <Link href="/faq" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
-                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold' }}>
-                    ❓ الأسئلة الشائعة
+                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '20px' }}>❓</span> الأسئلة الشائعة
                   </div>
                 </Link>
               </div>
