@@ -30,7 +30,7 @@ export default function HomePage() {
   const [filterYear, setFilterYear] = useState('');
   const [filterColor, setFilterColor] = useState('');
   
-  // حالة جديدة للتحكم في فتح وإغلاق القائمة
+  // حالة التحكم في فتح وإغلاق القائمة
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -96,7 +96,7 @@ export default function HomePage() {
       overflowX: 'hidden'
     }}>
       
-      {/* ===== Top Header (خلفية سيارة + قائمة منسدلة) ===== */}
+      {/* ===== Top Header ===== */}
       <header style={{
         position: 'sticky' as const,
         top: 0,
@@ -114,7 +114,7 @@ export default function HomePage() {
         alignItems: 'center'
       }}>
         
-        {/* طبقة تظليل سوداء لضمان وضوح النص */}
+        {/* طبقة تظليل */}
         <div style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
@@ -134,7 +134,7 @@ export default function HomePage() {
           maxWidth: '1200px',
         }}>
           
-          {/* زر القائمة (3 خطوط) - على اليمين */}
+          {/* زر القائمة */}
           <button 
             onClick={() => setIsMenuOpen(true)}
             style={{
@@ -155,7 +155,7 @@ export default function HomePage() {
             <div style={{ width: '22px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }}></div>
           </button>
 
-          {/* اسم الموقع بدون الشعار الأبيض */}
+          {/* اسم الموقع */}
           <Link href="/" style={{ textDecoration: 'none', textAlign: 'center' }}>
             <h1 style={{
               fontSize: 'clamp(22px, 6vw, 30px)',
@@ -177,31 +177,39 @@ export default function HomePage() {
             </span>
           </Link>
 
-          {/* مساحة فارغة لموازنة التصميم */}
           <div style={{ width: '46px' }}></div>
-
         </div>
 
-        {/* ===== القائمة المنسدلة (Sidebar) المحسنة ===== */}
+        {/* ===== القائمة المنسدلة (Sidebar) - معدلة لتفتح من اليمين تماماً ===== */}
         {isMenuOpen && (
-          <div style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.6)', // تعتيم أقوى للخلفية
-            zIndex: 100,
-            display: 'flex',
-            justifyContent: 'flex-end' // تفتح من اليمين
-          }}>
+          <>
+            {/* خلفية التعتيم */}
+            <div 
+              onClick={() => setIsMenuOpen(false)}
+              style={{
+                position: 'fixed',
+                top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                zIndex: 100,
+              }} 
+            />
+            
+            {/* القائمة نفسها */}
             <div style={{
-              width: '68%', // تقليل العرض ليكون 68% فقط
-              maxWidth: '280px', // حد أقصى للعرض
+              position: 'fixed',
+              top: 0,
+              right: 0, // ملتصقة باليمين
+              bottom: 0,
+              width: '75%',
+              maxWidth: '300px',
               backgroundColor: 'white',
-              height: '100%',
+              zIndex: 101,
               boxShadow: '-5px 0 25px rgba(0,0,0,0.3)',
               display: 'flex',
               flexDirection: 'column',
-              borderTopRightRadius: '15px', // حواف دائرية للجهة اليمنى العلوية
-              borderBottomRightRadius: '15px', // حواف دائرية للجهة اليمنى السفلية
+              borderTopLeftRadius: '15px', // حواف دائرية للجهة اليسرى
+              borderBottomLeftRadius: '15px',
+              animation: 'slideInRight 0.3s ease-out forwards',
             }}>
               {/* رأس القائمة */}
               <div style={{
@@ -211,7 +219,7 @@ export default function HomePage() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                borderTopRightRadius: '15px', // لتطابق الحواف
+                borderTopLeftRadius: '15px',
               }}>
                 <h2 style={{ margin: 0, fontSize: '18px' }}>القائمة</h2>
                 <button 
@@ -229,7 +237,7 @@ export default function HomePage() {
               </div>
 
               {/* عناصر القائمة */}
-              <div style={{ display: 'flex', flexDirection: 'column', padding: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', padding: '10px', overflowY: 'auto' }}>
                 <Link href="/login" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
                   <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '20px' }}>🔑</span> تسجيل الدخول
@@ -255,7 +263,7 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-          </div>
+          </>
         )}
       </header>
 
