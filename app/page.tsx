@@ -283,7 +283,7 @@ export default function HomePage() {
           position: 'relative',
           zIndex: 10
         }}>
-          <div style={{ display: 'flex', gap: 'clamp(6px, 1.5vw, 8px)', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
             
             {/* زر الفلتر تم نقله لليمين */}
             <button 
@@ -298,7 +298,8 @@ export default function HomePage() {
                 whiteSpace: 'nowrap',
                 backgroundColor: showAdvanced ? '#f59e0b' : '#fef3c7',
                 color: showAdvanced ? 'white' : '#92400e',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                flexShrink: 0 // يمنع الزر من الانكماش
               }}
             >
               ⚙️ فلتر
@@ -310,6 +311,7 @@ export default function HomePage() {
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
               style={{
+                flex: 1, // يجعله يتمدد ليملأ المساحة المتبقية
                 width: '100%',
                 backgroundColor: '#f8fafc',
                 color: '#000000',
