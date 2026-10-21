@@ -29,6 +29,9 @@ export default function HomePage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [filterYear, setFilterYear] = useState('');
   const [filterColor, setFilterColor] = useState('');
+  
+  // حالة جديدة للتحكم في فتح وإغلاق القائمة
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
@@ -93,106 +96,167 @@ export default function HomePage() {
       overflowX: 'hidden'
     }}>
       
-      {/* ===== Top Header (محسن بناءً على الملاحظات) ===== */}
+      {/* ===== Top Header (خلفية سيارة + قائمة منسدلة) ===== */}
       <header style={{
         position: 'sticky' as const,
         top: 0,
         zIndex: 50,
         width: '100%',
-        backgroundColor: '#1e293b', // لون كحلي أفتح قليلاً وأكثر أناقة
-        backgroundImage: 'linear-gradient(to bottom, #1e293b, #0f172a)',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
-        padding: '14px clamp(12px, 4vw, 20px)', // زيادة الارتفاع
+        height: 'clamp(140px, 25vw, 180px)', // ارتفاع ثابت ومناسب
+        // استخدمنا صورة سيارة هنا (يمكنك تغيير رابط الصورة لاحقاً)
+        backgroundImage: 'url("https://images.unsplash.com/photo-1503376712344-4c6b8f2e0c3b?q=80&w=2000&auto=format&fit=crop")', 
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
         boxSizing: 'border-box' as const,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative'
       }}>
+        
+        {/* طبقة تظليل سوداء لضمان وضوح النص */}
         <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          zIndex: 1
+        }} />
+
+        {/* محتوى الهيدر */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          width: '100%',
+          padding: '0 clamp(12px, 4vw, 20px)',
           maxWidth: '1200px',
-          margin: '0 auto',
         }}>
           
-          {/* الجهة اليمنى: الشعار واسم الموقع */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img 
-              src="/logo2.jpg" 
-              alt="سيارتي ستور" 
-              style={{ 
-                height: '60px', // تكبير الشعار
-                width: '60px', 
-                borderRadius: '14px', 
-                objectFit: 'cover',
-                backgroundColor: 'white',
-                padding: '3px',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
-              }} 
-            />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <h1 style={{
-                fontSize: 'clamp(18px, 4.5vw, 24px)', // تكبير الخط
-                fontWeight: '900',
-                color: '#ffffff',
-                margin: 0,
-                lineHeight: '1.1'
-              }}>
-                سيارتي ستور
-              </h1>
-              <span style={{
-                fontSize: 'clamp(10px, 2.8vw, 13px)',
-                color: '#10b981',
-                fontWeight: 'bold',
-                marginTop: '4px'
-              }}>
-                🚗 اعثر على سيارتك
-              </span>
-            </div>
+          {/* زر القائمة (3 خطوط) - على اليمين */}
+          <button 
+            onClick={() => setIsMenuOpen(true)}
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.3)',
+              color: 'white',
+              cursor: 'pointer',
+              padding: '8px 12px',
+              borderRadius: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '5px',
+              backdropFilter: 'blur(4px)'
+            }}
+          >
+            <div style={{ width: '22px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }}></div>
+            <div style={{ width: '22px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }}></div>
+            <div style={{ width: '22px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }}></div>
+          </button>
+
+          {/* اسم الموقع بدون الشعار الأبيض */}
+          <Link href="/" style={{ textDecoration: 'none', textAlign: 'center' }}>
+            <h1 style={{
+              fontSize: 'clamp(22px, 6vw, 30px)',
+              fontWeight: '900',
+              color: '#ffffff',
+              margin: 0,
+              textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+              letterSpacing: '1px'
+            }}>
+              سيارتي ستور
+            </h1>
+            <span style={{
+              fontSize: 'clamp(11px, 3vw, 14px)',
+              color: '#10b981',
+              fontWeight: 'bold',
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)'
+            }}>
+              🚗 اعثر على سيارتك
+            </span>
           </Link>
 
-          {/* الجهة اليسرى: الأزرار */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '10px',
-            alignItems: 'center'
-          }}>
-            {/* زر الدخول - أصبح بخلفية بيضاء ليكون واضحاً جداً */}
-            <Link href="/login" style={{ textDecoration: 'none' }}>
-              <button style={{
-                backgroundColor: '#ffffff', 
-                color: '#0f172a', // نص داكن
-                border: 'none',
-                padding: 'clamp(8px, 2.5vw, 10px) clamp(14px, 4vw, 20px)',
-                borderRadius: '25px', 
-                fontSize: 'clamp(12px, 3vw, 14px)',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                boxShadow: '0 2px 8px rgba(255,255,255,0.2)'
-              }}>
-                🔑 دخول
-              </button>
-            </Link>
-            
-            {/* زر أعلن - يبقى أخضر ليكون هو زر الحركة الأساسي */}
-            <Link href="/login" style={{ textDecoration: 'none' }}>
-              <button style={{
-                backgroundColor: '#10b981',
-                color: 'white',
-                border: 'none',
-                padding: 'clamp(8px, 2.5vw, 10px) clamp(14px, 4vw, 20px)',
-                borderRadius: '25px',
-                fontSize: 'clamp(12px, 3vw, 14px)',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(16,185,129,0.4)',
-                whiteSpace: 'nowrap'
-              }}>
-                +أعلن مجانا
-              </button>
-            </Link>
-          </div>
+          {/* مساحة فارغة لموازنة التصميم */}
+          <div style={{ width: '46px' }}></div>
 
         </div>
+
+        {/* ===== القائمة المنسدلة (Sidebar) ===== */}
+        {isMenuOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 100,
+            display: 'flex',
+            justifyContent: 'flex-end' // تفتح من اليمين
+          }}>
+            <div style={{
+              width: '75%',
+              maxWidth: '300px',
+              backgroundColor: 'white',
+              height: '100%',
+              boxShadow: '-5px 0 20px rgba(0,0,0,0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'slideIn 0.3s ease-out'
+            }}>
+              {/* رأس القائمة */}
+              <div style={{
+                padding: '20px',
+                backgroundColor: '#1e293b',
+                color: 'white',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <h2 style={{ margin: 0, fontSize: '18px' }}>القائمة</h2>
+                <button 
+                  onClick={() => setIsMenuOpen(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'white',
+                    fontSize: '24px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* عناصر القائمة */}
+              <div style={{ display: 'flex', flexDirection: 'column', padding: '10px' }}>
+                <Link href="/login" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold' }}>
+                    🔑 تسجيل الدخول
+                  </div>
+                </Link>
+                
+                <Link href="/login" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#059669', fontSize: '16px', fontWeight: 'bold' }}>
+                    ➕ أعلن مجاناً
+                  </div>
+                </Link>
+
+                <Link href="/about" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold' }}>
+                    ℹ️ من نحن
+                  </div>
+                </Link>
+
+                <Link href="/faq" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold' }}>
+                    ❓ الأسئلة الشائعة
+                  </div>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       <main style={{ 
@@ -212,6 +276,9 @@ export default function HomePage() {
           boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
           width: '100%',
           maxWidth: '100%',
+          marginTop: '-20px', // سحب شريط البحث قليلاً ليتداخل مع الهيدر بشكل جميل
+          position: 'relative',
+          zIndex: 10
         }}>
           <div style={{ display: 'flex', gap: 'clamp(6px, 1.5vw, 8px)', alignItems: 'center' }}>
             <input 
@@ -306,7 +373,7 @@ export default function HomePage() {
 
         {/* ===== Recent Cars - عمود واحد ===== */}
         <section>
-          <h2 style={{ fontSize: 'clamp(12px, 2.8vw, 14px)', fontWeight: 'bold', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px', color: '#0f172a' }}>🚙 أحدث السيارات المستعملة المعروضة</h2>
+          <h2 style={{ fontSize: 'clamp(12px, 2.8vw, 14px)', fontWeight: 'bold', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px', color: '#0f172a' }}>🚙 أحدث السيارات المعروضة</h2>
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#94a3b8', fontSize: '13px' }}>⏳ جاري تحميل السيارات...</div>
