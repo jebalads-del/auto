@@ -113,11 +113,11 @@ export default function HomePage() {
         alignItems: 'center'
       }}>
         
-        {/* طبقة تظليل خفيفة جداً للحفاظ على وضوح الصورة */}
+        {/* طبقة تظليل خفيفة */}
         <div style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.2)', // تم تقليل الشفافية إلى 0.2
+          backgroundColor: 'rgba(15, 23, 42, 0.2)',
           zIndex: 1
         }} />
 
@@ -161,7 +161,6 @@ export default function HomePage() {
               fontWeight: '900',
               color: '#ffffff',
               margin: 0,
-              // توهج قوي للنص ليكون واضحاً فوق الصورة
               textShadow: '0px 4px 10px rgba(0,0,0,0.9), 0px 0px 20px rgba(0,0,0,0.6)',
               letterSpacing: '1px'
             }}>
@@ -171,7 +170,6 @@ export default function HomePage() {
               fontSize: 'clamp(11px, 3vw, 14px)',
               color: '#10b981',
               fontWeight: 'bold',
-              // توهج للنص الأخضر
               textShadow: '0px 2px 6px rgba(0,0,0,0.9)'
             }}>
               🚗 اعثر على سيارتك
@@ -270,17 +268,18 @@ export default function HomePage() {
         width: '100%',
         boxSizing: 'border-box' as const
       }}>
-        {/* ===== Search Bar ===== */}
+        
+        {/* ===== Search Bar (بإطار ذهبي بارز) ===== */}
         <div style={{
           backgroundColor: 'white',
-          padding: 'clamp(8px, 2vw, 12px)',
-          borderRadius: 'clamp(10px, 2vw, 16px)',
-          border: '1px solid #3d45eb',
-          marginBottom: 'clamp(10px, 2vw, 16px)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          padding: 'clamp(10px, 2.5vw, 14px)',
+          borderRadius: 'clamp(12px, 2.5vw, 16px)',
+          border: '2px solid #f59e0b', // الإطار الذهبي بسماكة 2px
+          marginBottom: 'clamp(15px, 3vw, 20px)',
+          boxShadow: '0 8px 20px rgba(245, 158, 11, 0.2)', // توهج ذهبي خفيف
           width: '100%',
           maxWidth: '100%',
-          marginTop: '-20px', 
+          marginTop: '15px', // تنزيله قليلاً ليفصل عن الهيدر
           position: 'relative',
           zIndex: 10
         }}>
@@ -292,10 +291,10 @@ export default function HomePage() {
               onChange={(e) => setSearchQuery(e.target.value)} 
               style={{
                 width: '100%',
-                backgroundColor: '#f1f5f9',
+                backgroundColor: '#f8fafc',
                 color: '#000000',
-                fontSize: 'clamp(11px, 2.5vw, 13px)',
-                padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px)',
+                fontSize: 'clamp(12px, 2.8vw, 14px)',
+                padding: 'clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 16px)',
                 borderRadius: 'clamp(8px, 2vw, 12px)',
                 border: '1px solid #cbd5e1',
                 outline: 'none',
@@ -305,15 +304,16 @@ export default function HomePage() {
             <button 
               onClick={() => setShowAdvanced(!showAdvanced)} 
               style={{
-                padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px)',
+                padding: 'clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 16px)',
                 borderRadius: 'clamp(10px, 2vw, 14px)',
-                fontSize: 'clamp(11px, 2.2vw, 12px)',
+                fontSize: 'clamp(12px, 2.5vw, 13px)',
                 fontWeight: 'bold',
                 border: 'none',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
-                backgroundColor: showAdvanced ? '#2563eb' : '#f1f5f9',
-                color: showAdvanced ? 'white' : '#475569'
+                backgroundColor: showAdvanced ? '#d97706' : '#fef3c7',
+                color: showAdvanced ? 'white' : '#92400e',
+                transition: 'all 0.2s ease'
               }}
             >
               ⚙️ فلتر
