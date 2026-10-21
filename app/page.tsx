@@ -98,12 +98,11 @@ export default function HomePage() {
       
       {/* ===== Top Header (خلفية سيارة + قائمة منسدلة) ===== */}
       <header style={{
-        position: 'sticky' as const,
+        position: 'sticky' as const, // تأكدنا من وجودها هنا فقط
         top: 0,
         zIndex: 50,
         width: '100%',
-        height: 'clamp(140px, 25vw, 180px)', // ارتفاع ثابت ومناسب
-        // استخدمنا صورة سيارة هنا (يمكنك تغيير رابط الصورة لاحقاً)
+        height: 'clamp(140px, 25vw, 180px)', 
         backgroundImage: 'url("https://images.unsplash.com/photo-1503376712344-4c6b8f2e0c3b?q=80&w=2000&auto=format&fit=crop")', 
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -112,8 +111,7 @@ export default function HomePage() {
         display: 'flex',
         flexDirection: 'column' as const,
         justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative'
+        alignItems: 'center'
       }}>
         
         {/* طبقة تظليل سوداء لضمان وضوح النص */}
@@ -192,7 +190,7 @@ export default function HomePage() {
             backgroundColor: 'rgba(0,0,0,0.5)',
             zIndex: 100,
             display: 'flex',
-            justifyContent: 'flex-end' // تفتح من اليمين
+            justifyContent: 'flex-end'
           }}>
             <div style={{
               width: '75%',
@@ -201,8 +199,7 @@ export default function HomePage() {
               height: '100%',
               boxShadow: '-5px 0 20px rgba(0,0,0,0.2)',
               display: 'flex',
-              flexDirection: 'column',
-              animation: 'slideIn 0.3s ease-out'
+              flexDirection: 'column'
             }}>
               {/* رأس القائمة */}
               <div style={{
@@ -276,7 +273,7 @@ export default function HomePage() {
           boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
           width: '100%',
           maxWidth: '100%',
-          marginTop: '-20px', // سحب شريط البحث قليلاً ليتداخل مع الهيدر بشكل جميل
+          marginTop: '-20px', 
           position: 'relative',
           zIndex: 10
         }}>
