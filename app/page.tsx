@@ -30,7 +30,6 @@ export default function HomePage() {
   const [filterYear, setFilterYear] = useState('');
   const [filterColor, setFilterColor] = useState('');
   
-  // حالة التحكم في فتح وإغلاق القائمة
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -103,7 +102,7 @@ export default function HomePage() {
         zIndex: 50,
         width: '100%',
         height: 'clamp(140px, 25vw, 180px)', 
-         backgroundImage: 'url("/logo.png")',
+        backgroundImage: 'url("/logo.png")', 
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
@@ -114,11 +113,11 @@ export default function HomePage() {
         alignItems: 'center'
       }}>
         
-        {/* طبقة تظليل */}
+        {/* طبقة تظليل خفيفة جداً للحفاظ على وضوح الصورة */}
         <div style={{
           position: 'absolute',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.4)', // قللنا الرقم من 0.65 إلى 0.4
+          backgroundColor: 'rgba(15, 23, 42, 0.2)', // تم تقليل الشفافية إلى 0.2
           zIndex: 1
         }} />
 
@@ -138,8 +137,8 @@ export default function HomePage() {
           <button 
             onClick={() => setIsMenuOpen(true)}
             style={{
-              background: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.3)',
+              background: 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.4)',
               color: 'white',
               cursor: 'pointer',
               padding: '8px 12px',
@@ -162,7 +161,8 @@ export default function HomePage() {
               fontWeight: '900',
               color: '#ffffff',
               margin: 0,
-              textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+              // توهج قوي للنص ليكون واضحاً فوق الصورة
+              textShadow: '0px 4px 10px rgba(0,0,0,0.9), 0px 0px 20px rgba(0,0,0,0.6)',
               letterSpacing: '1px'
             }}>
               سيارتي ستور
@@ -171,7 +171,8 @@ export default function HomePage() {
               fontSize: 'clamp(11px, 3vw, 14px)',
               color: '#10b981',
               fontWeight: 'bold',
-              textShadow: '0 1px 4px rgba(0,0,0,0.8)'
+              // توهج للنص الأخضر
+              textShadow: '0px 2px 6px rgba(0,0,0,0.9)'
             }}>
               🚗 اعثر على سيارتك
             </span>
@@ -180,10 +181,9 @@ export default function HomePage() {
           <div style={{ width: '46px' }}></div>
         </div>
 
-        {/* ===== القائمة المنسدلة (Sidebar) - معدلة لتفتح من اليمين تماماً ===== */}
+        {/* ===== القائمة المنسدلة (Sidebar) ===== */}
         {isMenuOpen && (
           <>
-            {/* خلفية التعتيم */}
             <div 
               onClick={() => setIsMenuOpen(false)}
               style={{
@@ -194,11 +194,10 @@ export default function HomePage() {
               }} 
             />
             
-            {/* القائمة نفسها */}
             <div style={{
               position: 'fixed',
               top: 0,
-              right: 0, // ملتصقة باليمين
+              right: 0, 
               bottom: 0,
               width: '75%',
               maxWidth: '300px',
@@ -207,11 +206,9 @@ export default function HomePage() {
               boxShadow: '-5px 0 25px rgba(0,0,0,0.3)',
               display: 'flex',
               flexDirection: 'column',
-              borderTopLeftRadius: '15px', // حواف دائرية للجهة اليسرى
+              borderTopLeftRadius: '15px',
               borderBottomLeftRadius: '15px',
-              animation: 'slideInRight 0.3s ease-out forwards',
             }}>
-              {/* رأس القائمة */}
               <div style={{
                 padding: '20px',
                 backgroundColor: '#1e293b',
@@ -236,7 +233,6 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* عناصر القائمة */}
               <div style={{ display: 'flex', flexDirection: 'column', padding: '10px', overflowY: 'auto' }}>
                 <Link href="/login" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
                   <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
