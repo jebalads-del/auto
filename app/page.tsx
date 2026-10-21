@@ -269,21 +269,41 @@ export default function HomePage() {
         boxSizing: 'border-box' as const
       }}>
         
-        {/* ===== Search Bar (بإطار ذهبي بارز) ===== */}
+        {/* ===== Search Bar (بإطار ذهبي مطابق للبطاقات) ===== */}
         <div style={{
           backgroundColor: 'white',
           padding: 'clamp(10px, 2.5vw, 14px)',
           borderRadius: 'clamp(12px, 2.5vw, 16px)',
-          border: '2px solid #f59e0b', // الإطار الذهبي بسماكة 2px
+          border: '2px solid #fbbf24', // لون ذهبي مطابق لبطاقات السيارات
           marginBottom: 'clamp(15px, 3vw, 20px)',
-          boxShadow: '0 8px 20px rgba(245, 158, 11, 0.2)', // توهج ذهبي خفيف
+          boxShadow: '0 6px 15px rgba(251, 191, 36, 0.15)', 
           width: '100%',
           maxWidth: '100%',
-          marginTop: '15px', // تنزيله قليلاً ليفصل عن الهيدر
+          marginTop: '15px', 
           position: 'relative',
           zIndex: 10
         }}>
           <div style={{ display: 'flex', gap: 'clamp(6px, 1.5vw, 8px)', alignItems: 'center' }}>
+            
+            {/* زر الفلتر تم نقله لليمين */}
+            <button 
+              onClick={() => setShowAdvanced(!showAdvanced)} 
+              style={{
+                padding: 'clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 16px)',
+                borderRadius: 'clamp(10px, 2vw, 14px)',
+                fontSize: 'clamp(12px, 2.5vw, 13px)',
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                backgroundColor: showAdvanced ? '#f59e0b' : '#fef3c7',
+                color: showAdvanced ? 'white' : '#92400e',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              ⚙️ فلتر
+            </button>
+
             <input 
               type="text" 
               placeholder="ابحث عن سيارة، ماركة، موديل..." 
@@ -301,23 +321,7 @@ export default function HomePage() {
                 boxSizing: 'border-box' as const
               }}
             />
-            <button 
-              onClick={() => setShowAdvanced(!showAdvanced)} 
-              style={{
-                padding: 'clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 16px)',
-                borderRadius: 'clamp(10px, 2vw, 14px)',
-                fontSize: 'clamp(12px, 2.5vw, 13px)',
-                fontWeight: 'bold',
-                border: 'none',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                backgroundColor: showAdvanced ? '#d97706' : '#fef3c7',
-                color: showAdvanced ? 'white' : '#92400e',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              ⚙️ فلتر
-            </button>
+            
           </div>
 
           {showAdvanced && (
