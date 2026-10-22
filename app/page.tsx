@@ -312,7 +312,7 @@ export default function HomePage() {
               onChange={(e) => setSearchQuery(e.target.value)} 
               style={{
                 flex: 1, // يجعله يتمدد ليملأ المساحة المتبقية
-                width: '100%',
+                minWidth: 0, // السطر السحري لمنع خروج المربع
                 backgroundColor: '#f8fafc',
                 color: '#000000',
                 fontSize: 'clamp(12px, 2.8vw, 14px)',
