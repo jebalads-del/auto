@@ -274,18 +274,20 @@ export default function HomePage() {
           backgroundColor: 'white',
           padding: 'clamp(10px, 2.5vw, 14px)',
           borderRadius: 'clamp(12px, 2.5vw, 16px)',
-          border: '2px solid #fbbf24', // لون ذهبي مطابق لبطاقات السيارات
+          border: '2px solid #fbbf24', 
           marginBottom: 'clamp(15px, 3vw, 20px)',
           boxShadow: '0 6px 15px rgba(251, 191, 36, 0.15)', 
           width: '100%',
           maxWidth: '100%',
           marginTop: '15px', 
           position: 'relative',
-          zIndex: 10
+          zIndex: 10,
+          overflow: 'hidden', // يمنع خروج أي عنصر داخل الحاوية
+          boxSizing: 'border-box' as const
         }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
             
-            {/* زر الفلتر تم نقله لليمين */}
+            {/* زر الفلتر */}
             <button 
               onClick={() => setShowAdvanced(!showAdvanced)} 
               style={{
@@ -299,20 +301,21 @@ export default function HomePage() {
                 backgroundColor: showAdvanced ? '#f59e0b' : '#fef3c7',
                 color: showAdvanced ? 'white' : '#92400e',
                 transition: 'all 0.2s ease',
-                flexShrink: 0 // يمنع الزر من الانكماش
+                flexShrink: 0 
               }}
             >
               ⚙️ فلتر
             </button>
 
+            {/* مربع البحث (تم حذف width: 100% وإضافة minWidth: 0) */}
             <input 
               type="text" 
               placeholder="ابحث عن سيارة، ماركة، موديل..." 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
               style={{
-                flex: 1, // يجعله يتمدد ليملأ المساحة المتبقية
-                minWidth: 0, // السطر السحري لمنع خروج المربع
+                flex: 1, 
+                minWidth: 0, // السطر السحري
                 backgroundColor: '#f8fafc',
                 color: '#000000',
                 fontSize: 'clamp(12px, 2.8vw, 14px)',
