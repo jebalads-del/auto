@@ -415,10 +415,10 @@ export default function HomePage() {
                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '14px' }}>🚗 لا توجد صورة</div>
                           )}
                           {car.status === 'sold' && (
-                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#10b981', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>💰 تم البيع</span>
+                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#10b981', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>💰 مباعه</span>
                           )}
                           {car.is_featured && (
-                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#f59e0b', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>⭐ مميز</span>
+                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#f59e0b', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>⭐ اعلان مميز</span>
                           )}
                         </div>
 
