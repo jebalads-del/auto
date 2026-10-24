@@ -12,6 +12,10 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    // ✅ سطر التأخير السحري: يضمن حفظ الكوكيز قبل إعادة التوجيه
+    await new Promise((r) => setTimeout(r, 0))
+
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     }
