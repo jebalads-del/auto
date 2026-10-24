@@ -428,7 +428,7 @@ export default function HomePage() {
                           
                           <div style={{ display: 'flex', gap: 'clamp(8px, 2vw, 12px)', flexWrap: 'wrap', fontSize: 'clamp(11px, 2.5vw, 13px)', color: '#64748b' }}>
                             {car.year && <span>📅 {car.year}</span>}
-                            {car.kilometers && <span>📊 {car.kilometers.toLocaleString()} كم</span>}
+                            {car.kilometers && <span>📊 {car.kilometers.toLocaleString()} كيلومترات</span>}
                             {car.color && <span>🎨 {car.color}</span>}
                           </div>
 
