@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
-import GoogleLoginButton from '@/components/GoogleLoginButton'; // ✅ استيراد زر جوجل
+import GoogleLoginButton from '@/app/components/GoogleLoginButton'; // ✅ استيراد زر جوجل
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
