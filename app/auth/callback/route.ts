@@ -10,12 +10,8 @@ export async function GET(request: NextRequest) {
   if (code) {
     const cookieStore = cookies()
     
-    // 1. إنشاء كائن استجابة مبدئي
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    })
+    // مصفوفة لتجميع ملفات تعريف الارتباط التي سيتم إنشاؤها
+    const pendingCookies: { name: string; value: string; options: CookieOptions }[] = []
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,13 +22,11 @@ export async function GET(request: NextRequest) {
             return cookieStore.get(name)?.value
           },
           set(name: string, value: string, options: CookieOptions) {
-            // 2. تعيين الـ Cookies على كل من الـ cookieStore و response
-            cookieStore.set({ name, value, ...options })
-            response.cookies.set({ name, value, ...options })
+            // نقوم بتخزينها في المصفوفة بدلاً من تعيينها مباشرة
+            pendingCookies.push({ name, value, options })
           },
           remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: '', ...options })
-            response.cookies.set({ name, value: '', ...options })
+            pendingCookies.push({ name, value: '', options })
           },
         },
       }
@@ -41,13 +35,13 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // 3. إعادة التوجيه مع الاستجابة التي تحتوي على الـ Cookies
+      // إنشاء استجابة إعادة التوجيه
       const redirectUrl = `${origin}${next}`
       const redirectResponse = NextResponse.redirect(redirectUrl)
       
-      // نسخ الـ Cookies من الاستجابة المؤقتة إلى استجابة إعادة التوجيه
-      response.cookies.getAll().forEach((cookie) => {
-        redirectResponse.cookies.set(cookie)
+      // تطبيق جميع ملفات تعريف الارتباط المخزنة على الاستجابة الجديدة
+      pendingCookies.forEach(({ name, value, options }) => {
+        redirectResponse.cookies.set(name, value, options)
       })
       
       return redirectResponse
