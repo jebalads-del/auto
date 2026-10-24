@@ -134,24 +134,23 @@ export default function HomePage() {
         }}>
           
           {/* زر القائمة */}
-          <button 
+                    <button 
             onClick={() => setIsMenuOpen(true)}
             style={{
-              background: 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.4)',
-              color: 'white',
+              backgroundColor: '#ffffff', // خلفية بيضاء
+              border: 'none', // إزالة الإطار
               cursor: 'pointer',
               padding: '8px 12px',
               borderRadius: '10px',
               display: 'flex',
               flexDirection: 'column',
               gap: '5px',
-              backdropFilter: 'blur(4px)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)' // ظل خفيف ليعطي بروز
             }}
           >
-            <div style={{ width: '22px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }}></div>
-            <div style={{ width: '22px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }}></div>
-            <div style={{ width: '22px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }}></div>
+            <div style={{ width: '22px', height: '2px', backgroundColor: '#0f172a', borderRadius: '2px' }}></div> {/* شرطة سوداء */}
+            <div style={{ width: '22px', height: '2px', backgroundColor: '#0f172a', borderRadius: '2px' }}></div> {/* شرطة سوداء */}
+            <div style={{ width: '22px', height: '2px', backgroundColor: '#0f172a', borderRadius: '2px' }}></div> {/* شرطة سوداء */}
           </button>
 
           {/* اسم الموقع */}
