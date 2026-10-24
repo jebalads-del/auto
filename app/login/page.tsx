@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
+import GoogleLoginButton from '@/components/GoogleLoginButton'; // ✅ استيراد زر جوجل
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -178,6 +179,16 @@ export default function LoginPage() {
             {loading ? '⏳ جاري تسجيل الدخول...' : '🚪 دخول'}
           </button>
         </form>
+
+        {/* ✅ إضافة زر جوجل تحت زر الدخول */}
+        <div style={{ marginTop: '25px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+            <span style={{ padding: '0 10px', color: '#94a3b8', fontSize: '13px' }}>أو</span>
+            <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+          </div>
+          <GoogleLoginButton />
+        </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '25px', fontSize: '14px', borderTop: '1px solid #f1f5f9', paddingTop: '20px', gap: '15px' }}>
           <Link href="/register" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '500' }}>تسجيل حساب جديد</Link>
