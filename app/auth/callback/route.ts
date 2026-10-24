@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   if (code) {
     const cookieStore = cookies()
     
-    // مصفوفة لتجميع ملفات تعريف الارتباط
+    // مصفوفة لتجميع الكوكيز
     const pendingCookies: { name: string; value: string; options: CookieOptions }[] = []
 
     const supabase = createServerClient(
@@ -33,11 +33,14 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
+    // إضافة تأخير بسيط (لحل مشكلة الإصدار 2.91.0)
+    await new Promise((r) => setTimeout(r, 0))
+
     if (!error) {
       const redirectUrl = `${origin}${next}`
       const redirectResponse = NextResponse.redirect(redirectUrl)
       
-      // تطبيق الكوكيز على استجابة إعادة التوجيه
+      // تطبيق الكوكيز مباشرة على كائن إعادة التوجيه
       pendingCookies.forEach(({ name, value, options }) => {
         redirectResponse.cookies.set(name, value, options)
       })
