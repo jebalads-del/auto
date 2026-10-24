@@ -171,7 +171,7 @@ export default function HomePage() {
               fontWeight: 'bold',
               textShadow: '0px 2px 6px rgba(0,0,0,0.9)'
             }}>
-              🚗 اعثر على سيارتك المفضله 
+              🚗 ابحث عن سيارتك المفضله 
             </span>
           </Link>
 
