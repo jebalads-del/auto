@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  // if "next" is in param, use it as the redirect address
   const next = searchParams.get('next') ?? '/'
 
   if (code) {
@@ -21,16 +22,18 @@ export async function GET(request: Request) {
             cookieStore.set({ name, value, ...options })
           },
           remove(name: string, options: CookieOptions) {
-            cookieStore.delete({ name, ...options })
+            cookieStore.set({ name, value: '', ...options })
           },
         },
       }
     )
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // تأكد من أنك تستخدم الرابط الصحيح هنا
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
+  // إذا حدث خطأ، أعد التوجيه إلى صفحة تسجيل الدخول
   return NextResponse.redirect(`${origin}/login?error=auth_failed`)
 }
