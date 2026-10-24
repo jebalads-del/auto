@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   if (code) {
     const cookieStore = cookies()
     
-    // مصفوفة لتجميع ملفات تعريف الارتباط التي سيتم إنشاؤها
+    // مصفوفة لتجميع ملفات تعريف الارتباط
     const pendingCookies: { name: string; value: string; options: CookieOptions }[] = []
 
     const supabase = createServerClient(
@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
             return cookieStore.get(name)?.value
           },
           set(name: string, value: string, options: CookieOptions) {
-            // نقوم بتخزينها في المصفوفة بدلاً من تعيينها مباشرة
             pendingCookies.push({ name, value, options })
           },
           remove(name: string, options: CookieOptions) {
@@ -35,11 +34,10 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // إنشاء استجابة إعادة التوجيه
       const redirectUrl = `${origin}${next}`
       const redirectResponse = NextResponse.redirect(redirectUrl)
       
-      // تطبيق جميع ملفات تعريف الارتباط المخزنة على الاستجابة الجديدة
+      // تطبيق الكوكيز على استجابة إعادة التوجيه
       pendingCookies.forEach(({ name, value, options }) => {
         redirectResponse.cookies.set(name, value, options)
       })
@@ -48,6 +46,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // إذا حدث خطأ، أعد التوجيه إلى صفحة تسجيل الدخول
   return NextResponse.redirect(`${origin}/login?error=auth_failed`)
 }
