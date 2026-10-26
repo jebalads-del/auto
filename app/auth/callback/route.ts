@@ -9,6 +9,15 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = await cookies()
+    
+    // إنشاء كائن الـ Redirect أولاً لنربط عليه الكوكيز المحدثة
+    const forwardedHost = request.headers.get('x-forwarded-host')
+    const host = forwardedHost ?? request.headers.get('host') ?? new URL(origin).host
+    const protocol = host.includes('localhost') ? 'http' : 'https'
+    const redirectUrl = `${protocol}://${host}${next}`
+    
+    const response = NextResponse.redirect(redirectUrl)
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -18,13 +27,11 @@ export async function GET(request: Request) {
             return cookieStore.getAll()
           },
           setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // Ignore
-            }
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options)
+              // تثبيت الكوكيز مباشرة على الاستجابة الخاصة بالتوجيه
+              response.cookies.set(name, value, options)
+            })
           },
         },
       }
@@ -33,14 +40,9 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // التقاط الدومين الحالي بدقة (سواء sayarty.store أو vercel.app) لتثبيت الكوكيز عليه
-      const forwardedHost = request.headers.get('x-forwarded-host')
-      const host = forwardedHost ?? request.headers.get('host') ?? new URL(origin).host
-      const protocol = host.includes('localhost') ? 'http' : 'https'
-
-      return NextResponse.redirect(`${protocol}://${host}${next}`)
+      return response
     } else {
-      console.error('❌ Error exchanging code for session:', error.message)
+      console.error('❌ Authentication Error:', error.message)
     }
   }
 
