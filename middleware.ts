@@ -20,21 +20,22 @@ export async function middleware(request: NextRequest) {
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              sameSite: 'lax',
+              secure: process.env.NODE_ENV === 'production',
+            })
           )
         },
       },
     }
   )
 
-  // ⚠️ مهم جداً: استدعاء getUser يقيم الجلسة ويحدث التوكن بشكل موثوق في الكوكيز
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
-
-  console.log(`🔍 Middleware: ${path} | User: ${user ? user.email : 'غير موجود'}`)
 
   // ✅ حماية لوحة الأدمن
   if (path.startsWith('/dashboard/admin')) {
@@ -63,13 +64,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * تطبيق الـ Middleware على كل المسارات باستثناء:
-     * - _next/static (الملفات الثابتة)
-     * - _next/image (الصور المعتمدة من Next)
-     * - favicon.ico (أيقونة الموقع)
-     * - الصور وملفات SVG/PNG الخ
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

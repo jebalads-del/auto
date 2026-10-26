@@ -19,12 +19,12 @@ export default function LoginPage() {
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
   // ✅ دالة تسجيل الدخول بواسطة Google السليمة والمجربة
-  const handleGoogleLogin = async () => {
+const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/profile`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) {
@@ -34,7 +34,6 @@ export default function LoginPage() {
       setError('حدث خطأ أثناء الاتصال بجوجل');
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
