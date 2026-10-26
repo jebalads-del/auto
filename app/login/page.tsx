@@ -4,34 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
-<button
-  onClick={handleGoogleLogin}
-  style={{
-    width: '100%',
-    padding: '12px',
-    backgroundColor: '#ffffff',
-    color: '#334155',
-    border: '1px solid #cbd5e1',
-    borderRadius: '12px',
-    fontSize: '15px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-  }}
->
-  {/* أيقونة Google ملونة */}
-  <svg width="20" height="20" viewBox="0 0 24 24">
-    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.15 21.32 7.23 24 12 24z"/>
-    <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.6H1.18C.43 8.13 0 9.87 0 11.7s.43 3.57 1.18 5.1l4.09-3.15z"/>
-    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.15 2.68 1.18 6.6l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
-  </svg>
-  تسجيل الدخول بواسطة Google
-</button>
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,6 +18,23 @@ export default function LoginPage() {
 
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
+  // ✅ دالة تسجيل الدخول بواسطة Google السليمة والمجربة
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/profile`,
+        },
+      });
+      if (error) {
+        setError(error.message);
+      }
+    } catch (err: any) {
+      setError('حدث خطأ أثناء الاتصال بجوجل');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -53,21 +43,17 @@ export default function LoginPage() {
     const trimmedEmail = email.trim().toLowerCase();
 
     try {
-      console.log('🚀 بدء الدخول:', trimmedEmail);
-
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password: password,
       });
 
       if (authError || !authData?.user) {
-        console.log('❌ فشل الدخول:', authError?.message);
         setError('البريد الإلكتروني أو كلمة المرور غير صحيحة');
         setLoading(false);
         return;
       }
 
-      console.log('🔑 تم الدخول:', authData.user.id);
       localStorage.setItem('userId', authData.user.id);
 
       const { data: userData } = await supabase
@@ -75,8 +61,6 @@ export default function LoginPage() {
         .select('role')
         .eq('id', authData.user.id)
         .single();
-
-      console.log('👤 الدور:', userData?.role);
 
       if (userData?.role === 'admin') {
         router.push('/dashboard/admin');
@@ -86,7 +70,6 @@ export default function LoginPage() {
       router.refresh();
 
     } catch (err: any) {
-      console.error('❌ خطأ:', err);
       setError('حدث خطأ أثناء الاتصال');
       setLoading(false);
     }
@@ -96,7 +79,7 @@ export default function LoginPage() {
     <div style={{ direction: 'rtl', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '20px', fontFamily: 'sans-serif' }}>
       <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', width: '100%', maxWidth: '420px' }}>
         
-        {/* ✅ زر العودة للرئيسية */}
+        {/* زر العودة للرئيسية */}
         <div style={{ marginBottom: '20px' }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
             <button style={{
@@ -206,14 +189,42 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* ✅ إضافة زر جوجل تحت زر الدخول */}
+        {/* ✅ زر Google الاحترافي مع الشعار الملون ودالة التوجيه المرنة */}
         <div style={{ marginTop: '25px' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
             <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
             <span style={{ padding: '0 10px', color: '#94a3b8', fontSize: '13px' }}>أو</span>
             <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
           </div>
-          <GoogleLoginButton />
+          
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: '#ffffff',
+              color: '#334155',
+              border: '1px solid #cbd5e1',
+              borderRadius: '12px',
+              fontSize: '15px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.15 21.32 7.23 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.6H1.18C.43 8.13 0 9.87 0 11.7s.43 3.57 1.18 5.1l4.09-3.15z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.15 2.68 1.18 6.6l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+            </svg>
+            تسجيل الدخول بواسطة Google
+          </button>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '25px', fontSize: '14px', borderTop: '1px solid #f1f5f9', paddingTop: '20px', gap: '15px' }}>
