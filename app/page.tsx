@@ -24,6 +24,7 @@ interface Car {
 export default function HomePage() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null); // حالة المستخدم لتحديث القوائم ديناميكياً
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -55,6 +56,17 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    // التحقق من حالة تسجيل الدخول ومتابعة التغييرات فوراً
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+    };
+    checkUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
     const fetchCars = async () => {
       try {
         setLoading(true);
@@ -80,7 +92,18 @@ export default function HomePage() {
       }
     };
     fetchCars();
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, [supabase]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setIsMenuOpen(false);
+    window.location.reload();
+  };
 
   return (
     <div style={{
@@ -134,23 +157,23 @@ export default function HomePage() {
         }}>
           
           {/* زر القائمة */}
-                    <button 
+          <button 
             onClick={() => setIsMenuOpen(true)}
             style={{
-              backgroundColor: '#ffffff', // خلفية بيضاء
-              border: 'none', // إزالة الإطار
+              backgroundColor: '#ffffff',
+              border: 'none',
               cursor: 'pointer',
               padding: '8px 12px',
               borderRadius: '10px',
               display: 'flex',
               flexDirection: 'column',
               gap: '5px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)' // ظل خفيف ليعطي بروز
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
             }}
           >
-            <div style={{ width: '22px', height: '2px', backgroundColor: '#0f172a', borderRadius: '2px' }}></div> {/* شرطة سوداء */}
-            <div style={{ width: '22px', height: '2px', backgroundColor: '#0f172a', borderRadius: '2px' }}></div> {/* شرطة سوداء */}
-            <div style={{ width: '22px', height: '2px', backgroundColor: '#0f172a', borderRadius: '2px' }}></div> {/* شرطة سوداء */}
+            <div style={{ width: '22px', height: '2px', backgroundColor: '#0f172a', borderRadius: '2px' }}></div>
+            <div style={{ width: '22px', height: '2px', backgroundColor: '#0f172a', borderRadius: '2px' }}></div>
+            <div style={{ width: '22px', height: '2px', backgroundColor: '#0f172a', borderRadius: '2px' }}></div>
           </button>
 
           {/* اسم الموقع */}
@@ -178,7 +201,7 @@ export default function HomePage() {
           <div style={{ width: '46px' }}></div>
         </div>
 
-        {/* ===== القائمة المنسدلة (Sidebar) ===== */}
+        {/* ===== القائمة الجانبية (Sidebar) ===== */}
         {isMenuOpen && (
           <>
             <div 
@@ -231,13 +254,26 @@ export default function HomePage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', padding: '10px', overflowY: 'auto' }}>
-                <Link href="/login" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
-                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '20px' }}>🔑</span> تسجيل الدخول
-                  </div>
-                </Link>
+                {user ? (
+                  <>
+                    <Link href="/profile" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                      <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '20px' }}>👤</span> ملفي الشخصي
+                      </div>
+                    </Link>
+                    <button onClick={handleSignOut} style={{ background: 'none', border: 'none', textAlign: 'right', padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#dc2626', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', width: '100%' }}>
+                      <span style={{ fontSize: '20px' }}>🚪</span> تسجيل الخروج
+                    </button>
+                  </>
+                ) : (
+                  <Link href="/login" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                    <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '20px' }}>🔑</span> تسجيل الدخول
+                    </div>
+                  </Link>
+                )}
                 
-                <Link href="/login" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                <Link href={user ? "/profile" : "/login"} onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
                   <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#059669', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '20px' }}>➕</span> أعلن مجاناً
                   </div>
@@ -268,7 +304,7 @@ export default function HomePage() {
         boxSizing: 'border-box' as const
       }}>
         
-        {/* ===== Search Bar (بإطار ذهبي مطابق للبطاقات) ===== */}
+        {/* ===== Search Bar ===== */}
         <div style={{
           backgroundColor: 'white',
           padding: 'clamp(10px, 2.5vw, 14px)',
@@ -281,12 +317,11 @@ export default function HomePage() {
           marginTop: '15px', 
           position: 'relative',
           zIndex: 10,
-          overflow: 'hidden', // يمنع خروج أي عنصر داخل الحاوية
+          overflow: 'hidden',
           boxSizing: 'border-box' as const
         }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
             
-            {/* زر الفلتر */}
             <button 
               onClick={() => setShowAdvanced(!showAdvanced)} 
               style={{
@@ -306,7 +341,6 @@ export default function HomePage() {
               ⚙️ فلتر
             </button>
 
-            {/* مربع البحث (تم حذف width: 100% وإضافة minWidth: 0) */}
             <input 
               type="text" 
               placeholder="ابحث عن سيارة، ماركة، موديل..." 
@@ -314,7 +348,7 @@ export default function HomePage() {
               onChange={(e) => setSearchQuery(e.target.value)} 
               style={{
                 flex: 1, 
-                minWidth: 0, // السطر السحري
+                minWidth: '0',
                 backgroundColor: '#f8fafc',
                 color: '#000000',
                 fontSize: 'clamp(12px, 2.8vw, 14px)',
@@ -383,7 +417,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ===== Recent Cars - عمود واحد ===== */}
+        {/* ===== Recent Cars ===== */}
         <section>
           <h2 style={{ fontSize: 'clamp(12px, 2.8vw, 14px)', fontWeight: 'bold', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px', color: '#0f172a' }}>🚙 أحدث السيارات المعروضة</h2>
 
@@ -456,7 +490,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* ===== Bottom Navigation Bar ===== */}
+      {/* ===== Bottom Navigation Bar (متكيف حسب حالة تسجيل الدخول) ===== */}
       <nav style={{
         position: 'fixed',
         bottom: 0,
@@ -478,7 +512,7 @@ export default function HomePage() {
           الرئيسية
         </Link>
         
-        <Link href="/login" style={{ textDecoration: 'none', color: '#059669', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
+        <Link href={user ? "/profile" : "/login"} style={{ textDecoration: 'none', color: '#059669', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
           <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>➕</div>
           أضف إعلان
         </Link>
@@ -491,9 +525,9 @@ export default function HomePage() {
           اتصل بنا
         </a>
         
-        <Link href="/login" style={{ textDecoration: 'none', color: '#64748b', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
-          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>👤</div>
-          حسابي
+        <Link href={user ? "/profile" : "/login"} style={{ textDecoration: 'none', color: '#64748b', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
+          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>{user ? '👤' : '🔑'}</div>
+          {user ? 'حسابي' : 'دخول'}
         </Link>
       </nav>
     </div>
