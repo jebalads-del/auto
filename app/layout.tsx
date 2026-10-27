@@ -132,6 +132,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
+      <meta name="msvalidate.01" content="20453F668171330FD1289C4BB0281491" />
       <body style={{ margin: 0, padding: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
         {children}
         {/* ✅ إضافة البيانات المنظمة */}
