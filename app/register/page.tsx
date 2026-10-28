@@ -143,7 +143,6 @@ export default function RegisterPage() {
               style={{
                 width: '100%',
                 padding: '12px',
-                backgroundColor: '#white',
                 border: '1px solid #cbd5e1',
                 borderRadius: '8px',
                 fontWeight: '600',
@@ -188,4 +187,28 @@ export default function RegisterPage() {
               {loading ? '⏳ جاري إرسال رمز الأمان...' : '✉️ تسجيل الحساب وإرسال كود OTP'}
             </button>
 
-            {/* الرابط التوجيه
+            <div style={{ textAlign: 'center', marginTop: '5px', fontSize: '14px', color: '#64748b' }}>
+              هل لديك حساب بالفعل؟{' '}
+              <Link href="/login" style={{ color: '#2563eb', fontWeight: '700', textDecoration: 'none' }}>
+                سجل الدخول
+              </Link>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp} style={{ textAlign: 'center' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '12px' }}>🔐 رمز تفعيل الحساب</h2>
+            <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '25px' }}>يرجى كتابة رمز الـ OTP المكون من 6 أرقام المرسل لبريدك الإلكتروني لتأكيد التسجيل:</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', direction: 'ltr', marginBottom: '30px' }}>
+              {code.map((num, idx) => (
+                <input key={idx} id={`otp-${idx}`} type="text" maxLength={1} value={num} onChange={(e) => handleOtpChange(e.target.value, idx)} required style={{ width: '42px', height: '46px', borderRadius: '8px', border: '1px solid #cbd5e1', textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }} />
+              ))}
+            </div>
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
+              {loading ? '⏳ جاري تفعيل الحساب...' : 'تحقق من الرمز وتأكيد الحساب ✅'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
