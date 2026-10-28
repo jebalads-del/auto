@@ -238,7 +238,6 @@ export default function NewCarPage() {
 
       const carId = data.data?.[0]?.id || data.id;
 
-      // ✅ إرسال إشعار للأدمن
       try {
         await fetch('/api/notify-admin', {
           method: 'POST',
@@ -257,12 +256,10 @@ export default function NewCarPage() {
             ownerEmail: userEmail || '',
           }),
         });
-        console.log('✅ تم إرسال الإشعار للأدمن');
       } catch (err) {
         console.error('⚠️ فشل إرسال الإشعار:', err);
       }
 
-      // ===== رفع الصور =====
       if (images.length > 0 && carId) {
         const uploadedUrls: string[] = [];
 
@@ -272,8 +269,6 @@ export default function NewCarPage() {
           const fileName = `${carId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           const filePath = `cars/${fileName}`;
 
-          console.log(`📤 رفع الصورة ${i + 1}/${images.length}:`, fileName);
-
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('car-images')
             .upload(filePath, file, {
@@ -282,12 +277,7 @@ export default function NewCarPage() {
               contentType: file.type,
             });
 
-          if (uploadError) {
-            console.error(`❌ فشل رفع الصورة ${i + 1}:`, uploadError);
-            continue;
-          }
-
-          console.log('✅ تم رفع الصورة:', uploadData);
+          if (uploadError) continue;
 
           const { data: urlData } = supabase.storage
             .from('car-images')
@@ -295,24 +285,19 @@ export default function NewCarPage() {
 
           if (urlData?.publicUrl) {
             uploadedUrls.push(urlData.publicUrl);
-            console.log('🔗 الرابط:', urlData.publicUrl);
           }
         }
 
-        console.log('📦 جميع الروابط:', uploadedUrls);
-
         if (uploadedUrls.length > 0) {
-          const { data: updateData, error: updateError } = await supabase
+          const { error: updateError } = await supabase
             .from('cars')
             .update({ images: uploadedUrls })
             .eq('id', carId)
             .select();
 
           if (updateError) {
-            console.error('❌ فشل تحديث الإعلان:', updateError);
             setSuccess('⚠️ تم نشر الإعلان لكن فشل حفظ الصور');
           } else {
-            console.log('✅ تم حفظ الصور في الإعلان:', updateData);
             setSuccess(`✅ تم نشر الإعلان مع ${uploadedUrls.length} صور بنجاح!`);
           }
         } else {
@@ -455,4 +440,242 @@ export default function NewCarPage() {
           </select>
         </div>
 
-        <div style={{ marginBottom: '14px'
+        <div style={{ marginBottom: '14px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>الموديل *</label>
+          <select required value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })} style={styIn} disabled={!formData.brand}>
+            <option value="">{formData.brand ? 'اختر الموديل' : 'اختر الماركة أولاً'}</option>
+            {formData.brand && (MODELS[formData.brand] || []).map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px', marginBottom: '14px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>السعر *</label>
+            <input type="number" required placeholder="0.00" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={styIn} />
+          </div>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>العملة</label>
+            <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} style={styIn}>
+              {currencies.map(c => <option key={c.code} value={c.code}>{c.symbol}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>سنة الصنع</label>
+            <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} style={styIn}>
+              {Array.from({ length: 40 }, (_, i) => new Date().getFullYear() + 1 - i).map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>اللون</label>
+            <select value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} style={styIn}>
+              <option value="">اختر اللون</option>
+              {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '14px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>المسافة المقطوعة (كيلومترات)</label>
+          <input type="number" placeholder="مثال: 50000" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} />
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>
+              صور السيارة (حتى {MAX_IMAGES} صور)
+            </label>
+            <span style={{
+              fontSize: '12px',
+              fontWeight: 'bold',
+              padding: '3px 10px',
+              borderRadius: '12px',
+              backgroundColor: images.length === 0 ? '#f1f5f9' : images.length < MAX_IMAGES ? '#fef3c7' : '#d1fae5',
+              color: images.length === 0 ? '#64748b' : images.length < MAX_IMAGES ? '#92400e' : '#065f46',
+            }}>
+              📸 {images.length} / {MAX_IMAGES}
+            </span>
+          </div>
+          
+          <div style={{ border: '2px dashed #cbd5e1', padding: '16px', borderRadius: '12px', textAlign: 'center', backgroundColor: '#f8fafc', cursor: 'pointer' }}>
+            <input 
+              type="file" 
+              id="file-input"
+              multiple 
+              accept="image/*" 
+              onChange={handleImageUpload} 
+              style={{ display: 'none' }} 
+              disabled={images.length >= MAX_IMAGES}
+            />
+            <label htmlFor="file-input" style={{ cursor: images.length >= MAX_IMAGES ? 'not-allowed' : 'pointer', display: 'block' }}>
+              <div style={{ fontSize: '28px', marginBottom: '4px' }}>📸</div>
+              <span style={{ fontSize: '13px', color: images.length >= MAX_IMAGES ? '#94a3b8' : '#2563eb', fontWeight: 'bold' }}>
+                {images.length >= MAX_IMAGES ? '✅ تم الوصول للحد الأقصى' : 'اضغط هنا لاختيار الصور'}
+              </span>
+            </label>
+          </div>
+
+          {imagePreviews.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+              {imagePreviews.map((p, i) => (
+                <div key={i} style={{ position: 'relative', width: '75px', height: '75px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                  <img src={p} alt="car preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    style={{
+                      position: 'absolute',
+                      top: '2px',
+                      right: '2px',
+                      backgroundColor: 'rgba(220, 38, 38, 0.85)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '20px',
+                      height: '20px',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>الوصف</label>
+          <textarea 
+            placeholder="اكتب تفاصيل إضافية عن حالة السيارة، الفحص، المواصفات..."
+            value={formData.description} 
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+            style={{ ...styIn, height: '90px', resize: 'vertical' }} 
+          />
+        </div>
+
+        <div style={{ 
+          backgroundColor: '#fef2f2', 
+          padding: '16px', 
+          borderRadius: '12px', 
+          border: '1px solid #fecaca',
+          marginBottom: '20px',
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            marginBottom: '10px',
+            paddingBottom: '8px',
+            borderBottom: '1px solid #fecaca',
+          }}>
+            <span style={{ fontSize: '20px' }}>📜</span>
+            <h3 style={{ 
+              fontSize: '14px', 
+              fontWeight: 'bold', 
+              color: '#dc2626', 
+              margin: 0,
+            }}>
+              الشروط والأحكام
+            </h3>
+          </div>
+
+          <div style={{ 
+            fontSize: '12px', 
+            color: '#7f1d1d', 
+            lineHeight: '1.7', 
+            marginBottom: '12px',
+            backgroundColor: '#ffffff',
+            padding: '10px',
+            borderRadius: '8px',
+            border: '1px solid #fecaca',
+          }}>
+            <p style={{ margin: '0 0 6px', fontWeight: 'bold', color: '#991b1b' }}>
+              🚫 يُمنع منعاً باتاً:
+            </p>
+            <ul style={{ paddingRight: '16px', margin: '0 0 10px' }}>
+              <li>نقل الإعلانات من مواقع أخرى</li>
+              <li>نشر معلومات مضللة أو صور غير حقيقية</li>
+              <li>استخدام صور لا تملك حقوقها</li>
+              <li>نشر إعلانات مكررة لنفس السيارة</li>
+              <li>انتحال شخصية البائع الحقيقي</li>
+            </ul>
+
+            <p style={{ margin: '0 0 6px', fontWeight: 'bold', color: '#991b1b' }}>
+              ✅ أقر وأتعهد بما يلي:
+            </p>
+            <ul style={{ paddingRight: '16px', margin: 0 }}>
+              <li>أن الإعلان خاص بي وليس منقولاً من أي موقع آخر</li>
+              <li>أن جميع المعلومات والصور المرفقة مملوكة لي</li>
+              <li>أنني المسؤول الكامل عن صحة المعلومات المذكورة</li>
+            </ul>
+          </div>
+
+          <label 
+            htmlFor="agree-terms" 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              gap: '10px',
+              cursor: 'pointer',
+              backgroundColor: agreeToTerms ? '#f0fdf4' : '#ffffff',
+              padding: '10px',
+              borderRadius: '8px',
+              border: agreeToTerms ? '2px solid #16a34a' : '1px solid #cbd5e1',
+              transition: 'all 0.2s',
+            }}
+          >
+            <input 
+              type="checkbox" 
+              id="agree-terms" 
+              checked={agreeToTerms}
+              onChange={(e) => setAgreeToTerms(e.target.checked)}
+              style={{ 
+                marginTop: '2px', 
+                width: '18px', 
+                height: '18px', 
+                cursor: 'pointer', 
+                flexShrink: 0,
+                accentColor: '#16a34a',
+              }} 
+            />
+            <span style={{ 
+              fontSize: '12px', 
+              color: agreeToTerms ? '#166534' : '#475569', 
+              lineHeight: '1.5', 
+              fontWeight: 'bold',
+            }}>
+              أوافق على الشروط والأحكام، وأتعهد بأن الإعلان خاص بي وأتحمل كامل المسؤولية عنه.
+            </span>
+          </label>
+        </div>
+
+        <button 
+          type="submit" 
+          disabled={loading || !agreeToTerms}
+          style={{ 
+            width: '100%', 
+            padding: '14px', 
+            backgroundColor: loading || !agreeToTerms ? '#94a3b8' : '#2563eb', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '10px', 
+            fontSize: '15px', 
+            fontWeight: 'bold', 
+            cursor: loading || !agreeToTerms ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s',
+            opacity: !agreeToTerms ? 0.7 : 1,
+          }}
+        >
+          {loading ? '⏳ جاري النشر...' : !agreeToTerms ? '⚠️ يجب الموافقة على الشروط أولاً' : '🚙 نشر الإعلان'}
+        </button>
+      </form>
+    </div>
+  );
+}
