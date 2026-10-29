@@ -290,6 +290,11 @@ export default function HomePage() {
                     <span style={{ fontSize: '20px' }}>❓</span> الأسئلة الشائعة
                   </div>
                 </Link>
+                <Link href="/privacy" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                  <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '20px' }}>❓</span> سياسة الخصوصية
+                  </div>
+                </Link>
               </div>
             </div>
           </>
