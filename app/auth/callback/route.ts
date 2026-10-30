@@ -45,21 +45,27 @@ export async function GET(request: Request) {
     if (!error && authData?.user) {
       const userId = authData.user.id
 
-      // 🔍 الفحص الذكي: فحص جدول profiles وعمود account_type
+      // 🔍 الفحص الذكي: فحص جدول profiles وعمود account_type و role
       const { data: profile } = await supabase
         .from('profiles')
         .select('account_type, role')
         .eq('id', userId)
         .single()
 
-      // إذا لم يحدد نوع حسابه بعد، نحوله لصفحة اختيار الدور
-      if (!profile || !profile.account_type) {
-        redirectPath = '/select-role'
-      } else if (profile.role === 'admin') {
+      // 🛑 1. إذا كان أدمن، يتخطى الاختيار فوراً ويتجه للوحة الإدارة
+      if (profile && profile.role === 'admin') {
         redirectPath = '/dashboard/admin'
-      } else if (profile.account_type === 'dealer') {
+      } 
+      // 🛑 2. إذا لم يكن لديه account_type، يتوجه لاختيار نوع الحساب
+      else if (!profile || !profile.account_type) {
+        redirectPath = '/select-role'
+      } 
+      // 🛑 3. المعارض والشركات
+      else if (profile.account_type === 'dealer') {
         redirectPath = '/dashboard/dealer'
-      } else {
+      } 
+      // 🛑 4. الحسابات الفردية العادية
+      else {
         redirectPath = '/profile'
       }
 
