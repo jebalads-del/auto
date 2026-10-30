@@ -466,4 +466,117 @@ export default function HomePage() {
 
         {/* ===== Recent Cars ===== */}
         <section>
-          <h2 style={{ fontSize: 'clamp(12px, 2.8vw, 14px)', fontWeight: 'bold', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px', color: '#0f172a' }}>🚙 أحدث السيارات
+          <h2 style={{ fontSize: 'clamp(12px, 2.8vw, 14px)', fontWeight: 'bold', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px', color: '#0f172a' }}>🚙 أحدث السيارات المعروضة</h2>
+
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#94a3b8', fontSize: '13px' }}>⏳ جاري تحميل السيارات...</div>
+          ) : cars.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', backgroundColor: 'white', borderRadius: '14px', border: '1px solid #e2e8f0', color: '#64748b', fontSize: '13px' }}>
+              📭 لا توجد سيارات معروضة حالياً
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 2.5vw, 16px)' }}>
+              {cars
+                .filter((car) => {
+                  const matchesQuery = !searchQuery || car.brand?.toLowerCase().includes(searchQuery.toLowerCase()) || car.model?.toLowerCase().includes(searchQuery.toLowerCase());
+                  const matchesYear = !filterYear || car.year?.toString() === filterYear;
+                  const matchesColor = !filterColor || car.color?.toLowerCase().includes(filterColor.toLowerCase());
+                  return matchesQuery && matchesYear && matchesColor;
+                })
+                .map((car) => {
+                  const firstImage = getFirstImage(car.images);
+                  return (
+                    <Link key={car.id} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                      <div style={{ backgroundColor: 'white', borderRadius: 'clamp(12px, 2.5vw, 16px)', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', width: '100%' }}>
+                        <div style={{ width: '100%', height: 'clamp(180px, 50vw, 240px)', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden', border: '1px solid #fbbf24' }}>
+                          {firstImage ? (
+                            <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '14px' }}>🚗 لا توجد صورة</div>
+                          )}
+                          {car.status === 'sold' && (
+                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#10b981', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>💰 مباعه</span>
+                          )}
+                          {car.is_featured && (
+                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#f59e0b', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>⭐ اعلان مميز</span>
+                          )}
+                        </div>
+
+                        <div style={{ padding: 'clamp(10px, 2.5vw, 16px)', display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1.5vw, 10px)' }}>
+                          <h3 style={{ fontSize: 'clamp(15px, 3.5vw, 18px)', fontWeight: 'bold', margin: 0, color: '#0f172a' }}>
+                            {car.brand} {car.model}
+                          </h3>
+                          
+                          <div style={{ display: 'flex', gap: 'clamp(8px, 2vw, 12px)', flexWrap: 'wrap', fontSize: 'clamp(11px, 2.5vw, 13px)', color: '#64748b' }}>
+                            {car.year && <span>📅 {car.year}</span>}
+                            {car.kilometers && <span>📊 {car.kilometers.toLocaleString()} كيلومترات</span>}
+                            {car.color && <span>🎨 {car.color}</span>}
+                          </div>
+
+                          {car.description && (
+                            <p style={{ fontSize: 'clamp(11px, 2.5vw, 13px)', color: '#475569', margin: 0, lineHeight: '1.5' }}>
+                              {car.description.substring(0, 120)}{car.description.length > 120 ? '...' : ''}
+                            </p>
+                          )}
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 'clamp(6px, 1.5vw, 10px)', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
+                            <span style={{ fontSize: 'clamp(16px, 4vw, 22px)', fontWeight: 'bold', color: '#059669' }}>
+                              {car.price ? car.price.toLocaleString() : car.price} <span style={{ fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
+                            </span>
+                            <span style={{ fontSize: 'clamp(11px, 2.5vw, 13px)', color: '#2563eb', fontWeight: 'bold' }}>
+                              التفاصيل ←
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* ===== Bottom Navigation Bar ===== */}
+      <nav style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
+        backdropFilter: 'blur(8px)',
+        borderTop: '1px solid #e2e8f0',
+        padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 16px)',
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
+        zIndex: 50,
+        maxWidth: '100%'
+      }}>
+        <Link href="/" style={{ textDecoration: 'none', color: '#2563eb', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
+          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>🏠</div>
+          الرئيسية
+        </Link>
+        
+        <Link href={user ? "/profile" : "/login"} style={{ textDecoration: 'none', color: '#059669', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
+          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>➕</div>
+          أضف إعلان
+        </Link>
+        
+        <a 
+          href="mailto:admin@sayarty.store?subject=استفسار من موقع سيارتي ستور"
+          style={{ textDecoration: 'none', color: '#dc2626', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}
+        >
+          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>📧</div>
+          اتصل بنا
+        </a>
+        
+        <Link href={user ? "/profile" : "/login"} style={{ textDecoration: 'none', color: '#64748b', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
+          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>{user ? '👤' : '🔑'}</div>
+          {user ? 'حسابي' : 'دخول'}
+        </Link>
+      </nav>
+    </div>
+  );
+}
