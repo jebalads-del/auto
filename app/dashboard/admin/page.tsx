@@ -20,7 +20,20 @@ interface Car {
 }
 
 interface User {
-  id: string; name?: string; email?: string; role?: string;
+  id: string; name?: string; email?: string; role?: string; phone?: string;
+}
+
+interface Dealer {
+  id: string;
+  user_id: string;
+  name: string;
+  slug: string;
+  phone: string;
+  whatsapp: string;
+  address: string;
+  cr_number?: string;
+  is_verified: boolean;
+  created_at: string;
 }
 
 export default function AdminDashboardForm() {
@@ -32,13 +45,15 @@ export default function AdminDashboardForm() {
 
   const [cars, setCars] = useState<Car[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [dealers, setDealers] = useState<Dealer[]>([]);
+  
   const [carsLoading, setCarsLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [dealersLoading, setDealersLoading] = useState(true);
 
-  const [activeTab, setActiveTab] = useState<'cars' | 'users' | 'settings' | 'featured_requests'>('cars');
+  const [activeTab, setActiveTab] = useState<'cars' | 'users' | 'dealers' | 'settings' | 'featured_requests'>('cars');
   const [message, setMessage] = useState({ text: '', type: '' });
 
-  const [siteName, setSiteName] = useState('سيارتي ستور');
   const [featuredPrice, setFeaturedPrice] = useState('15');
   const [westernUnionInfo, setWesternUnionInfo] = useState('');
   const [paypalEmail, setPaypalEmail] = useState('');
@@ -113,7 +128,24 @@ export default function AdminDashboardForm() {
     } catch { setUsers([]); } finally { setUsersLoading(false); }
   };
 
-  useEffect(() => { fetchCars(); fetchUsers(); fetchSettings(); }, []);
+  const fetchDealers = async () => {
+    try {
+      setDealersLoading(true);
+      const { data, error } = await supabase.from('dealers').select('*').order('created_at', { ascending: false });
+      if (!error && data) setDealers(data);
+    } catch (err) {
+      console.error('Error fetching dealers:', err);
+    } finally {
+      setDealersLoading(false);
+    }
+  };
+
+  useEffect(() => { 
+    fetchCars(); 
+    fetchUsers(); 
+    fetchDealers();
+    fetchSettings(); 
+  }, []);
 
   const getFeaturedDaysLeft = (car: Car) => {
     if (!car.is_featured || !car.featured_until) return null;
@@ -201,6 +233,40 @@ export default function AdminDashboardForm() {
     } catch { showMessage('❌ خطأ في الاتصال', 'error'); }
   };
 
+  // إدارة المعارض: قبول أو حذف
+  const handleDealerAction = async (dealerId: string, verifyStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('dealers')
+        .update({ is_verified: verifyStatus })
+        .eq('id', dealerId);
+
+      if (!error) {
+        showMessage(verifyStatus ? '✅ تم توثيق وقبول المعرض بنجاح' : '⚠️ تم إلغاء توثيق المعرض', 'success');
+        fetchDealers();
+      } else {
+        showMessage('❌ حدث خطأ: ' + error.message, 'error');
+      }
+    } catch {
+      showMessage('❌ خطأ في الاتصال', 'error');
+    }
+  };
+
+  const handleDealerDelete = async (dealerId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المعرض نهائياً؟')) return;
+    try {
+      const { error } = await supabase.from('dealers').delete().eq('id', dealerId);
+      if (!error) {
+        showMessage('🗑️ تم حذف المعرض بنجاح', 'success');
+        fetchDealers();
+      } else {
+        showMessage('❌ خطأ أثناء الحذف: ' + error.message, 'error');
+      }
+    } catch {
+      showMessage('❌ خطأ في الاتصال', 'error');
+    }
+  };
+
   return (
     <div style={{ direction: 'rtl', padding: '15px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
@@ -213,11 +279,12 @@ export default function AdminDashboardForm() {
 
       {message.text && <div style={{ padding: '12px 15px', backgroundColor: message.type === 'success' ? '#d1fae5' : '#fee2e2', color: message.type === 'success' ? '#065f46' : '#dc2626', borderRadius: '8px', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>{message.text}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
-        <button onClick={() => setActiveTab('cars')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'cars' ? '#2563eb' : 'white', color: activeTab === 'cars' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>🚗 الإعلانات ({cars.length})</button>
-        <button onClick={() => setActiveTab('featured_requests')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'featured_requests' ? '#eab308' : 'white', color: activeTab === 'featured_requests' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>⭐ طلبات التمييز ({cars.filter(c => c.status === 'pending_featured').length})</button>
-        <button onClick={() => setActiveTab('users')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'users' ? '#2563eb' : 'white', color: activeTab === 'users' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>👥 المستخدمين ({users.length})</button>
-        <button onClick={() => setActiveTab('settings')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'settings' ? '#2563eb' : 'white', color: activeTab === 'settings' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>⚙️ الإعدادات</button>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
+        <button onClick={() => setActiveTab('cars')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'cars' ? '#2563eb' : 'white', color: activeTab === 'cars' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>🚗 الإعلانات ({cars.length})</button>
+        <button onClick={() => setActiveTab('dealers')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'dealers' ? '#2563eb' : 'white', color: activeTab === 'dealers' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>🏢 المعارض ({dealers.length})</button>
+        <button onClick={() => setActiveTab('featured_requests')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'featured_requests' ? '#eab308' : 'white', color: activeTab === 'featured_requests' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>⭐ طلبات التمييز ({cars.filter(c => c.status === 'pending_featured').length})</button>
+        <button onClick={() => setActiveTab('users')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'users' ? '#2563eb' : 'white', color: activeTab === 'users' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>👥 المستخدمين ({users.length})</button>
+        <button onClick={() => setActiveTab('settings')} style={{ padding: '12px 10px', backgroundColor: activeTab === 'settings' ? '#2563eb' : 'white', color: activeTab === 'settings' ? 'white' : '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', gridColumn: 'span 2' }}>⚙️ الإعدادات</button>
       </div>
 
       {activeTab === 'cars' && (
@@ -293,6 +360,69 @@ export default function AdminDashboardForm() {
         </div>
       )}
 
+      {/* قسم إدارة المعارض والشركات */}
+      {activeTab === 'dealers' && (
+        <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold', color: '#2563eb' }}>🏢 إدارة معارض وشركات السيارات ({dealers.length})</h2>
+          
+          {dealersLoading ? (
+            <p>جاري تحميل المعارض...</p>
+          ) : dealers.length === 0 ? (
+            <p style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>📭 لا توجد معارض مسجلة حتى الآن.</p>
+          ) : (
+            dealers.map((dealer) => (
+              <div key={dealer.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '15px 10px', borderBottom: '1px solid #e2e8f0', gap: '15px', backgroundColor: dealer.is_verified ? '#f8fafc' : '#fffbeb', borderRadius: '8px', marginBottom: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>{dealer.name}</span>
+                    {dealer.is_verified ? (
+                      <span style={{ backgroundColor: '#d1fae5', color: '#065f46', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>معرض موثق ✓</span>
+                    ) : (
+                      <span style={{ backgroundColor: '#fef3c7', color: '#92400e', fontSize: '11px', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>⏳ بانتظار الموافقة</span>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: '#475569', marginBottom: '6px' }}>
+                    🔗 الرابط المخصص: <a href={`/dealers/${dealer.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>sayarty.store/dealers/{dealer.slug}</a>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '15px', fontSize: '12px', color: '#64748b', flexWrap: 'wrap' }}>
+                    <span>📍 {dealer.address}</span>
+                    <span>📞 {dealer.phone}</span>
+                    <span>💬 {dealer.whatsapp}</span>
+                    {dealer.cr_number && <span>📄 السجل التجاري: {dealer.cr_number}</span>}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', flexShrink: 0 }}>
+                  {dealer.is_verified ? (
+                    <button 
+                      onClick={() => handleDealerAction(dealer.id, false)} 
+                      style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      إلغاء التوثيق
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleDealerAction(dealer.id, true)} 
+                      style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      ✅ توثيق وقبول
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => handleDealerDelete(dealer.id)} 
+                    style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    حذف المعرض
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {activeTab === 'featured_requests' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold', color: '#eab308' }}>⭐ طلبات التمييز قيد الانتظار</h2>
@@ -304,160 +434,4 @@ export default function AdminDashboardForm() {
               </div>
               
               <div style={{ 
-                marginBottom: '10px', 
-                padding: '8px 12px', 
-                backgroundColor: '#eff6ff', 
-                borderRadius: '6px',
-                fontSize: '12px',
-                borderRight: '3px solid #3b82f6'
-              }}>
-                <div style={{ fontWeight: 'bold', color: '#1e40af' }}>👤 صاحب الإعلان: {car.owner_name}</div>
-                <div style={{ color: '#64748b' }}>📧 {car.owner_email}</div>
-                {car.owner_phone && <div style={{ color: '#64748b' }}>📞 {car.owner_phone}</div>}
-              </div>
-              
-              <div style={{ backgroundColor: '#fef3c7', padding: '10px', borderRadius: '8px', fontSize: '13px', color: '#d97706', marginBottom: '10px', border: '1px solid #fde68a' }}><strong>💳 بيانات الحوالة:</strong> {car.featured_payment_ref}</div>
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button onClick={() => handleCarAction(car.id, 'approve_featured')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>⭐ موافقة وتمييز 30 يوم</button>
-                <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#64748b', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>رفض كلي</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {activeTab === 'users' && (
-        <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>👥 إدارة الحسابات ({users.length})</h2>
-          {usersLoading ? <p>جاري تحميل الحسابات...</p> : users.map((user) => (
-            <div key={user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 5px', borderBottom: '1px solid #e2e8f0' }}>
-              <div><div style={{ fontWeight: 'bold', fontSize: '14px' }}>{user.name || 'مستخدم جديد'}</div><div style={{ fontSize: '12px', color: '#64748b' }}>{user.email}</div></div>
-              {user.email !== 'admin@sayarty.store' ? <button onClick={() => handleUserDelete(user.id, user.email || '')} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>حذف الحساب</button> : <span style={{ fontSize: '12px', color: '#2563eb', fontWeight: 'bold', backgroundColor: '#e0f2fe', padding: '4px 8px', borderRadius: '6px' }}>المدير 👑</span>}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {activeTab === 'settings' && (
-        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ fontSize: '16px', marginBottom: '20px', fontWeight: 'bold', color: '#2563eb' }}>⚙️ التحكم المالي وإعدادات الدفع للموقع</h2>
-          <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            
-            {/* تفعيل/تعطيل طرق الدفع */}
-            <div style={{ 
-              backgroundColor: '#f0f9ff', 
-              padding: '15px', 
-              borderRadius: '10px', 
-              border: '1px solid #bae6fd',
-            }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#0369a1', marginBottom: '12px', marginTop: 0 }}>
-                💳 تفعيل طرق الدفع (تظهر للمستخدمين)
-              </h3>
-
-              {/* تفعيل PayPal */}
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '10px',
-                padding: '12px',
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                marginBottom: '8px',
-                cursor: 'pointer',
-                border: paypalEnabled ? '2px solid #10b981' : '1px solid #cbd5e1',
-                transition: 'all 0.2s',
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={paypalEnabled}
-                  onChange={(e) => setPaypalEnabled(e.target.checked)}
-                  style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }} 
-                />
-                <span style={{ fontWeight: 'bold', color: paypalEnabled ? '#059669' : '#64748b', fontSize: '14px' }}>
-                  {paypalEnabled ? '✅' : '⛔'} تفعيل PayPal
-                </span>
-              </label>
-
-              {/* تفعيل Western Union */}
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '10px',
-                padding: '12px',
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                border: westernUnionEnabled ? '2px solid #10b981' : '1px solid #cbd5e1',
-                transition: 'all 0.2s',
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={westernUnionEnabled}
-                  onChange={(e) => setWesternUnionEnabled(e.target.checked)}
-                  style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }} 
-                />
-                <span style={{ fontWeight: 'bold', color: westernUnionEnabled ? '#059669' : '#64748b', fontSize: '14px' }}>
-                  {westernUnionEnabled ? '✅' : '⛔'} تفعيل Western Union
-                </span>
-              </label>
-
-              {!paypalEnabled && !westernUnionEnabled && (
-                <div style={{ 
-                  marginTop: '10px', 
-                  padding: '10px', 
-                  backgroundColor: '#fee2e2', 
-                  color: '#991b1b', 
-                  borderRadius: '6px', 
-                  fontSize: '12px',
-                  textAlign: 'center',
-                }}>
-                  ⚠️ تحذير: جميع طرق الدفع معطلة! لن يستطيع المستخدمون طلب التمييز.
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>تكلفة تمييز الإعلان شهرياً (بالدينار الكويتي)</label>
-              <input 
-                type="number" 
-                value={featuredPrice} 
-                onChange={e => setFeaturedPrice(e.target.value)} 
-                required 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} 
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>بيانات استلام ويسترن يونيون</label>
-              <textarea 
-                value={westernUnionInfo} 
-                onChange={e => setWesternUnionInfo(e.target.value)} 
-                required 
-                rows={2} 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} 
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>حساب PayPal الرسمي لاستقبال الأموال فوراً</label>
-              <input 
-                type="email" 
-                value={paypalEmail} 
-                onChange={e => setPaypalEmail(e.target.value)} 
-                required 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} 
-              />
-            </div>
-
-            <button 
-              type="submit" 
-              style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}
-            >
-              💾 حفظ وتثبيت الإعدادات المالية الحية
-            </button>
-          </form>
-        </div>
-      )}
-    </div>
-  );
-}
+                marginBottom: '10px',
