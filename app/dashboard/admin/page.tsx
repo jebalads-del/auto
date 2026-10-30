@@ -233,7 +233,6 @@ export default function AdminDashboardForm() {
     } catch { showMessage('❌ خطأ في الاتصال', 'error'); }
   };
 
-  // إدارة المعارض: قبول أو حذف
   const handleDealerAction = async (dealerId: string, verifyStatus: boolean) => {
     try {
       const { error } = await supabase
@@ -360,7 +359,6 @@ export default function AdminDashboardForm() {
         </div>
       )}
 
-      {/* قسم إدارة المعارض والشركات */}
       {activeTab === 'dealers' && (
         <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold', color: '#2563eb' }}>🏢 إدارة معارض وشركات السيارات ({dealers.length})</h2>
@@ -434,4 +432,143 @@ export default function AdminDashboardForm() {
               </div>
               
               <div style={{ 
-                marginBottom: '10px',
+                marginBottom: '10px', 
+                padding: '8px 12px', 
+                backgroundColor: '#eff6ff', 
+                borderRadius: '6px',
+                fontSize: '12px',
+                borderRight: '3px solid #3b82f6'
+              }}>
+                <div style={{ fontWeight: 'bold', color: '#1e40af' }}>👤 صاحب الإعلان: {car.owner_name}</div>
+                <div style={{ color: '#64748b' }}>📧 {car.owner_email}</div>
+                {car.owner_phone && <div style={{ color: '#64748b' }}>📞 {car.owner_phone}</div>}
+              </div>
+              
+              <div style={{ backgroundColor: '#fef3c7', padding: '10px', borderRadius: '8px', fontSize: '13px', color: '#d97706', marginBottom: '10px', border: '1px solid #fde68a' }}><strong>💳 بيانات الحوالة:</strong> {car.featured_payment_ref}</div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <button onClick={() => handleCarAction(car.id, 'approve_featured')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>⭐ موافقة وتمييز 30 يوم</button>
+                <button onClick={() => handleCarAction(car.id, 'approve')} style={{ backgroundColor: '#64748b', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>رفض كلي</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'users' && (
+        <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ fontSize: '16px', marginBottom: '15px', fontWeight: 'bold' }}>👥 إدارة الحسابات ({users.length})</h2>
+          {usersLoading ? <p>جاري تحميل الحسابات...</p> : users.map((user) => (
+            <div key={user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 5px', borderBottom: '1px solid #e2e8f0' }}>
+              <div><div style={{ fontWeight: 'bold', fontSize: '14px' }}>{user.name || 'مستخدم جديد'}</div><div style={{ fontSize: '12px', color: '#64748b' }}>{user.email}</div></div>
+              {user.email !== 'admin@sayarty.store' ? <button onClick={() => handleUserDelete(user.id, user.email || '')} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>حذف الحساب</button> : <span style={{ fontSize: '12px', color: '#2563eb', fontWeight: 'bold', backgroundColor: '#e0f2fe', padding: '4px 8px', borderRadius: '6px' }}>المدير 👑</span>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ fontSize: '16px', marginBottom: '20px', fontWeight: 'bold', color: '#2563eb' }}>⚙️ التحكم المالي وإعدادات الدفع للموقع</h2>
+          <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            
+            <div style={{ 
+              backgroundColor: '#f0f9ff', 
+              padding: '15px', 
+              borderRadius: '10px', 
+              border: '1px solid #bae6fd',
+            }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#0369a1', marginBottom: '12px', marginTop: 0 }}>
+                💳 تفعيل طرق الدفع (تظهر للمستخدمين)
+              </h3>
+
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px',
+                padding: '12px',
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                marginBottom: '8px',
+                cursor: 'pointer',
+                border: paypalEnabled ? '2px solid #10b981' : '1px solid #cbd5e1',
+                transition: 'all 0.2s',
+              }}>
+                <input 
+                  type="checkbox" 
+                  checked={paypalEnabled}
+                  onChange={(e) => setPaypalEnabled(e.target.checked)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }} 
+                />
+                <span style={{ fontWeight: 'bold', color: paypalEnabled ? '#059669' : '#64748b', fontSize: '14px' }}>
+                  {paypalEnabled ? '✅' : '⛔'} تفعيل PayPal
+                </span>
+              </label>
+
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px',
+                padding: '12px',
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                border: westernUnionEnabled ? '2px solid #10b981' : '1px solid #cbd5e1',
+                transition: 'all 0.2s',
+              }}>
+                <input 
+                  type="checkbox" 
+                  checked={westernUnionEnabled}
+                  onChange={(e) => setWesternUnionEnabled(e.target.checked)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }} 
+                />
+                <span style={{ fontWeight: 'bold', color: westernUnionEnabled ? '#059669' : '#64748b', fontSize: '14px' }}>
+                  {westernUnionEnabled ? '✅' : '⛔'} تفعيل Western Union
+                </span>
+              </label>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>تكلفة تمييز الإعلان شهرياً (بالدينار الكويتي)</label>
+              <input 
+                type="number" 
+                value={featuredPrice} 
+                onChange={e => setFeaturedPrice(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} 
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>بيانات استلام ويسترن يونيون</label>
+              <textarea 
+                value={westernUnionInfo} 
+                onChange={e => setWesternUnionInfo(e.target.value)} 
+                required 
+                rows={2} 
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} 
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px', fontWeight: 'bold' }}>حساب PayPal الرسمي لاستقبال الأموال فوراً</label>
+              <input 
+                type="email" 
+                value={paypalEmail} 
+                onChange={e => setPaypalEmail(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 'bold', boxSizing: 'border-box' }} 
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}
+            >
+              💾 حفظ وتثبيت الإعدادات المالية الحية
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
