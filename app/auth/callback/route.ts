@@ -13,8 +13,10 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = await cookies()
-    const redirectUrl = `${protocol}://${host}/profile`
-    const response = NextResponse.redirect(redirectUrl)
+    
+    // المبدأ الافتراضي للتوجه (يمكن تعديله لاحقاً حسب الـ role)
+    let redirectPath = '/profile'
+    const response = NextResponse.redirect(`${protocol}://${host}${redirectPath}`)
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,10 +41,38 @@ export async function GET(request: Request) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data: authData, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
-      return response
+    if (!error && authData?.user) {
+      const userId = authData.user.id
+
+      // 🔍 الفحص الذكي: هل المستخدم مسجل ولديه role في قاعدة البيانات؟
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single()
+
+      // إذا لم يكن لديه سجل أو الـ role فارغ (مستخدم جديد يسجل لأول مرة عبر جوجل)
+      if (!userData || !userData.role) {
+        redirectPath = '/select-role'
+      } else if (userData.role === 'admin') {
+        redirectPath = '/dashboard/admin'
+      } else if (userData.role === 'dealer') {
+        redirectPath = '/dashboard/dealer'
+      } else {
+        redirectPath = '/profile'
+      }
+
+      // إعادة توجيه الاستجابة بناءً على المسار المحدّث
+      const finalResponse = NextResponse.redirect(`${protocol}://${host}${redirectPath}`)
+      
+      // نسخ الكوكيز الجديدة لضمان استمرار الجلسة
+      response.cookies.getAll().forEach((cookie) => {
+        finalResponse.cookies.set(cookie.name, cookie.value, cookie)
+      })
+
+      return finalResponse
     }
   }
 
