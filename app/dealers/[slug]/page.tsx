@@ -2,10 +2,11 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 
 export default async function DealerPublicProfile({ params }: { params: { slug: string } }) {
-  const supabase = createClient();
-  const { slug } = params;
+  // 1. انتظار الجلسة ودالة العميل
+  const supabase = await createClient();
+  const { slug } = await params;
 
-  // 1. جلب بيانات المعرض بواسطة الـ slug
+  // 2. جلب بيانات المعرض بواسطة الـ slug
   const { data: dealer, error: dealerError } = await supabase
     .from('dealers')
     .select('*')
@@ -16,8 +17,8 @@ export default async function DealerPublicProfile({ params }: { params: { slug: 
     return notFound();
   }
 
-  // 2. جلب السيارات التابعة لهذا المعرض فقط
-  const { data: cars, error: carsError } = await supabase
+  // 3. جلب السيارات التابعة لهذا المعرض فقط
+  const { data: cars } = await supabase
     .from('cars')
     .select('*')
     .eq('dealer_id', dealer.id);
@@ -30,7 +31,7 @@ export default async function DealerPublicProfile({ params }: { params: { slug: 
         <div style={{ backgroundColor: '#ffffff', padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '30px', textAlign: 'center' }}>
           
           <div style={{ width: '80px', height: '80px', backgroundColor: '#e0e7ff', color: '#2563eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 15px', fontWeight: 'bold' }}>
-            {dealer.name.charAt(0)}
+            {dealer.name ? dealer.name.charAt(0) : '🏢'}
           </div>
 
           <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
@@ -76,7 +77,7 @@ export default async function DealerPublicProfile({ params }: { params: { slug: 
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            {cars.map((car) => (
+            {cars.map((car: any) => (
               <div key={car.id} style={{ backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0', padding: '20px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
                   {car.title || car.model || 'سيارة للبيع'}
