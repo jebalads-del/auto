@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   
-  // الحصول على الدومين الحقيقي الحالي (سواء Vercel أو sayarty.store)
+  // الحصول على الدومين الحقيقي الحالي
   const forwardedHost = request.headers.get('x-forwarded-host')
   const host = forwardedHost ?? request.headers.get('host') ?? new URL(origin).host
   const protocol = host.includes('localhost') ? 'http' : 'https'
@@ -45,14 +45,14 @@ export async function GET(request: Request) {
     if (!error && authData?.user) {
       const userId = authData.user.id
 
-      // 🔍 الفحص الذكي: فحص جدول profiles وعمود account_type و role
+      // 🔍 الفحص الذكي: فحص جدول profiles وعمود account_type
       const { data: profile } = await supabase
         .from('profiles')
         .select('account_type, role')
         .eq('id', userId)
         .single()
 
-      // إذا لم يكن لديه سجل أو لم يحدد نوع حسابه بعد (account_type فارغ)
+      // إذا لم يحدد نوع حسابه بعد، نحوله لصفحة اختيار الدور
       if (!profile || !profile.account_type) {
         redirectPath = '/select-role'
       } else if (profile.role === 'admin') {
@@ -63,10 +63,8 @@ export async function GET(request: Request) {
         redirectPath = '/profile'
       }
 
-      // إعادة توجيه الاستجابة بناءً على المسار المحدّث
       const finalResponse = NextResponse.redirect(`${protocol}://${host}${redirectPath}`)
       
-      // نسخ الكوكيز الجديدة لضمان استمرار الجلسة
       response.cookies.getAll().forEach((cookie) => {
         finalResponse.cookies.set(cookie.name, cookie.value, cookie)
       })
@@ -75,6 +73,5 @@ export async function GET(request: Request) {
     }
   }
 
-  // في حال حدث أي خطأ، يعود للوجين بأمان
   return NextResponse.redirect(`${protocol}://${host}/login`)
 }
