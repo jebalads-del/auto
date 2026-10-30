@@ -20,8 +20,9 @@ export default function SelectRolePage() {
         .upsert({
           id: user.id,
           email: user.email,
-          account_type: role,
-          dealer_status: role === 'dealer' ? 'pending' : 'none'
+          account_type: role, // 'individual' أو 'dealer'
+          dealer_status: role === 'dealer' ? 'pending' : 'none',
+          updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
@@ -31,6 +32,7 @@ export default function SelectRolePage() {
       } else {
         router.push('/');
       }
+      router.refresh();
     } catch (err) {
       console.error('Error updating role:', err);
       alert('حدث خطأ أثناء حفظ الاختيار، يرجى المحاولة مرة أخرى.');
