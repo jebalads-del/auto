@@ -14,7 +14,6 @@ export async function GET(request: Request) {
   if (code) {
     const cookieStore = await cookies()
     
-    // المبدأ الافتراضي للتوجه (يمكن تعديله لاحقاً حسب الـ role)
     let redirectPath = '/profile'
     const response = NextResponse.redirect(`${protocol}://${host}${redirectPath}`)
 
@@ -46,19 +45,19 @@ export async function GET(request: Request) {
     if (!error && authData?.user) {
       const userId = authData.user.id
 
-      // 🔍 الفحص الذكي: هل المستخدم مسجل ولديه role في قاعدة البيانات؟
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role')
+      // 🔍 الفحص الذكي: فحص جدول profiles وعمود account_type و role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_type, role')
         .eq('id', userId)
         .single()
 
-      // إذا لم يكن لديه سجل أو الـ role فارغ (مستخدم جديد يسجل لأول مرة عبر جوجل)
-      if (!userData || !userData.role) {
+      // إذا لم يكن لديه سجل أو لم يحدد نوع حسابه بعد (account_type فارغ)
+      if (!profile || !profile.account_type) {
         redirectPath = '/select-role'
-      } else if (userData.role === 'admin') {
+      } else if (profile.role === 'admin') {
         redirectPath = '/dashboard/admin'
-      } else if (userData.role === 'dealer') {
+      } else if (profile.account_type === 'dealer') {
         redirectPath = '/dashboard/dealer'
       } else {
         redirectPath = '/profile'
