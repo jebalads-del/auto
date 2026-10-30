@@ -1,12 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 
 export default async function DealerPublicProfile({ params }: { params: { slug: string } }) {
-  // 1. انتظار الجلسة ودالة العميل
   const supabase = await createClient();
   const { slug } = await params;
 
-  // 2. جلب بيانات المعرض بواسطة الـ slug
+  // 1. جلب بيانات المعرض بواسطة الـ slug
   const { data: dealer, error: dealerError } = await supabase
     .from('dealers')
     .select('*')
@@ -17,16 +17,39 @@ export default async function DealerPublicProfile({ params }: { params: { slug: 
     return notFound();
   }
 
-  // 3. جلب السيارات التابعة لهذا المعرض فقط
+  // 2. جلب السيارات التابعة لهذا المعرض فقط
   const { data: cars } = await supabase
     .from('cars')
     .select('*')
     .eq('dealer_id', dealer.id);
 
   return (
-    <div style={{ direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '40px 20px', fontFamily: 'sans-serif' }}>
+    <div style={{ direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '30px 20px', fontFamily: 'sans-serif' }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         
+        {/* زر العودة للرئيسية */}
+        <div style={{ marginBottom: '20px' }}>
+          <Link 
+            href="/" 
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              backgroundColor: '#ffffff', 
+              color: '#0f172a', 
+              padding: '8px 16px', 
+              borderRadius: '8px', 
+              textDecoration: 'none', 
+              fontSize: '14px', 
+              fontWeight: 'bold', 
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.02)'
+            }}
+          >
+            ← العودة للرئيسية
+          </Link>
+        </div>
+
         {/* رأس صفحة المعرض (الهوية وبطاقة التعريف) */}
         <div style={{ backgroundColor: '#ffffff', padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '30px', textAlign: 'center' }}>
           
@@ -85,12 +108,12 @@ export default async function DealerPublicProfile({ params }: { params: { slug: 
                 <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#2563eb', marginBottom: '15px' }}>
                   {car.price ? `${car.price} ريال` : 'السعر عند الاتصال'}
                 </p>
-                <a 
+                <Link 
                   href={`/cars/${car.id}`}
                   style={{ display: 'block', textAlign: 'center', backgroundColor: '#f1f5f9', color: '#0f172a', padding: '8px', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold' }}
                 >
                   عرض التفاصيل
-                </a>
+                </Link>
               </div>
             ))}
           </div>
