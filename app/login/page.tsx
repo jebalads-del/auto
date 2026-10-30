@@ -18,8 +18,7 @@ export default function LoginPage() {
 
   const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!);
 
-  // ✅ دالة تسجيل الدخول بواسطة Google السليمة والمجربة
-const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -34,6 +33,7 @@ const handleGoogleLogin = async () => {
       setError('حدث خطأ أثناء الاتصال بجوجل');
     }
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -55,17 +55,24 @@ const handleGoogleLogin = async () => {
 
       localStorage.setItem('userId', authData.user.id);
 
+      // فحص الدور في جدول users أو profiles
       const { data: userData } = await supabase
         .from('users')
         .select('role')
         .eq('id', authData.user.id)
         .single();
 
-      if (userData?.role === 'admin') {
+      // 🛑 الفحص الذكي: إذا لم يحدد دوره بعد، نحوله إجبارياً لاختيار نوع الحساب
+      if (!userData || !userData.role) {
+        router.push('/select-role');
+      } else if (userData.role === 'admin') {
         router.push('/dashboard/admin');
+      } else if (userData.role === 'dealer') {
+        router.push('/dashboard/dealer');
       } else {
         router.push('/profile');
       }
+      
       router.refresh();
 
     } catch (err: any) {
@@ -188,7 +195,6 @@ const handleGoogleLogin = async () => {
           </button>
         </form>
 
-        {/* ✅ زر Google الاحترافي مع الشعار الملون ودالة التوجيه المرنة */}
         <div style={{ marginTop: '25px' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
             <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
