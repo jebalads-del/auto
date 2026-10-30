@@ -55,18 +55,18 @@ export default function LoginPage() {
 
       localStorage.setItem('userId', authData.user.id);
 
-      // فحص الدور في جدول profiles وعمود account_type
+      // فحص الدور في جدول profiles وعمود account_type و role
       const { data: profile } = await supabase
         .from('profiles')
         .select('account_type, role')
         .eq('id', authData.user.id)
         .single();
 
-      // حارس التوجيه الذكي
-      if (!profile || !profile.account_type) {
-        router.push('/select-role');
-      } else if (profile.role === 'admin') {
+      // 🛑 حارس التوجيه الذكي (فحص الأدمن أولاً وقبل كل شيء)
+      if (profile && profile.role === 'admin') {
         router.push('/dashboard/admin');
+      } else if (!profile || !profile.account_type) {
+        router.push('/select-role');
       } else if (profile.account_type === 'dealer') {
         router.push('/dashboard/dealer');
       } else {
