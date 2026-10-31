@@ -1,31 +1,79 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
 export default function SelectRolePage() {
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    async function checkUserStatus() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          router.push('/login');
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('account_type, role')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.role === 'admin' || profile?.account_type === 'admin') {
+          router.push('/dashboard/admin');
+          return;
+        }
+
+        if (profile?.account_type) {
+          if (profile.account_type === 'dealer') {
+            router.push('/dashboard/dealer');
+          } else {
+            router.push('/');
+          }
+          return;
+        }
+      } catch (err) {
+        console.error('Error checking user:', err);
+      } finally {
+        setChecking(false);
+      }
+    }
+
+    checkUserStatus();
+  }, [router, supabase]);
 
   const handleSelectRole = async (role: 'individual' | 'dealer') => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push('/login');
+      if (!user) {
+        router.push('/login');
+        return;
+      }
 
+      // 🛠️ محاولة الحفظ مع طباعة الخطأ الحقيقي في حال فشل Supabase
       const { error } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
           email: user.email,
-          account_type: role, // 'individual' أو 'dealer'
+          account_type: role,
           dealer_status: role === 'dealer' ? 'pending' : 'none',
           updated_at: new Date().toISOString()
-        });
+        }, { onConflict: 'id' });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase Upsert Error:', error.message, error.details, error.hint);
+        alert(`خطأ في قاعدة البيانات: ${error.message}`);
+        setLoading(false);
+        return;
+      }
 
       if (role === 'dealer') {
         router.push('/dealer/setup');
@@ -33,13 +81,20 @@ export default function SelectRolePage() {
         router.push('/');
       }
       router.refresh();
-    } catch (err) {
-      console.error('Error updating role:', err);
-      alert('حدث خطأ أثناء حفظ الاختيار، يرجى المحاولة مرة أخرى.');
-    } finally {
+    } catch (err: any) {
+      console.error('Unexpected Error:', err);
+      alert('حدث خطأ غير متوقع أثناء الاتصال.');
       setLoading(false);
     }
   };
+
+  if (checking) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', fontFamily: 'sans-serif' }}>
+        <p style={{ color: '#64748b', fontWeight: 'bold' }}>⏳ جاري التحقق من الحساب...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
@@ -78,7 +133,7 @@ export default function SelectRolePage() {
 
         </div>
 
-        {loading && <p style={{ color: '#2563eb', fontWeight: 'bold', marginTop: '15px' }}>جاري حفظ اختيارك...</p>}
+        {loading && <p style={{ color: '#2563eb', fontWeight: 'bold', marginTop: '15px' }}>⏳ جاري حفظ اختيارك وتوجيهك...</p>}
 
       </div>
     </div>
