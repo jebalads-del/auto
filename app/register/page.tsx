@@ -50,13 +50,13 @@ export default function RegisterPage() {
     }
   };
 
-  // 2. تسجيل الدخول أو التسجيل باستخدام جوجل (Google OAuth)
+  // 2. تسجيل الدخول أو التسجيل باستخدام جوجل (Google OAuth) - توجيه حصري لـ /select-role
   const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/profile`,
+          redirectTo: `${window.location.origin}/select-role`,
         },
       });
       if (error) {
@@ -67,7 +67,7 @@ export default function RegisterPage() {
     }
   };
 
-  // 3. التحقق من كود الـ OTP ومزامنته مع الأدمن الجدول الخارجي
+  // 3. التحقق من كود الـ OTP وتوجيه المستخدم حصرياً لصفحة اختيار نوع الحساب
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -89,18 +89,20 @@ export default function RegisterPage() {
 
       if (data?.user) {
         localStorage.setItem('userId', data.user.id);
+        
+        // 🛠️ تهيئة البروفايل في جدول profiles (وليس users) ليتمكن من اختيار نوع الحساب لاحقاً
         await supabase
-          .from('users')
-          .insert([{ 
+          .from('profiles')
+          .upsert({ 
             id: data.user.id, 
             email: email.trim().toLowerCase(), 
-            name: name.trim(), 
-            role: 'user', 
-            password: password 
-          }]);
+            role: 'user',
+            account_type: null // تركها فارغة إجباراً لتظهر له صفحة اختيار الدور
+          }, { onConflict: 'id' });
       }
 
-      router.push('/profile');
+      // 🚀 التوجيه لصفحة اختيار الدور حصرياً لكل مستخدم جديد
+      router.push('/select-role');
       router.refresh();
     } catch (err) {
       setError('حدث خطأ أثناء التفعيل');
