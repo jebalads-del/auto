@@ -81,6 +81,7 @@ export default function NewCarPage() {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [dealerId, setDealerId] = useState<string | null>(null); // 👈 معرف المعرض الذكي
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [userRole, setUserRole] = useState<string>('user');
   const [userName, setUserName] = useState<string>('');
@@ -101,51 +102,41 @@ export default function NewCarPage() {
     const getUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        let currentUserId = session?.user?.id;
+        const email = session?.user?.email || '';
 
-        if (session?.user) {
-          const id = session.user.id;
-          const email = session.user.email || '';
-          
-          if (id && id.length > 10 && id.includes('-')) {
-            setUserId(id);
-            setUserEmail(email);
-            localStorage.setItem('userId', id);
-
-            const { data: userData } = await supabase
-              .from('users')
-              .select('role, name')
-              .eq('id', id)
-              .single();
-
-            if (userData?.role) setUserRole(userData.role);
-            if (userData?.name) setUserName(userData.name);
-            else setUserName(email.split('@')[0] || 'مستخدم');
-
-            setIsCheckingAuth(false);
-            return;
-          }
+        if (!currentUserId) {
+          currentUserId = localStorage.getItem('userId') || MY_USER_ID;
         }
 
-        const savedUserId = localStorage.getItem('userId');
-        if (savedUserId && savedUserId.length > 10 && savedUserId.includes('-')) {
-          setUserId(savedUserId);
+        if (currentUserId) {
+          setUserId(currentUserId);
+          setUserEmail(email);
+          localStorage.setItem('userId', currentUserId);
 
+          // جلب بيانات المستخدم من جدول users
           const { data: userData } = await supabase
             .from('users')
             .select('role, name, email')
-            .eq('id', savedUserId)
+            .eq('id', currentUserId)
             .single();
 
           if (userData?.role) setUserRole(userData.role);
           if (userData?.name) setUserName(userData.name);
+          else setUserName(email.split('@')[0] || 'مستخدم');
           if (userData?.email) setUserEmail(userData.email);
 
-          setIsCheckingAuth(false);
-          return;
-        }
+          // 🏢 فحص ما إذا كان المستخدم يمتلك معرضاً (Dealer) لجلب الـ dealer_id تلقائياً
+          const { data: dealerData } = await supabase
+            .from('dealers')
+            .select('id')
+            .eq('user_id', currentUserId)
+            .single();
 
-        setUserId(MY_USER_ID);
-        localStorage.setItem('userId', MY_USER_ID);
+          if (dealerData?.id) {
+            setDealerId(dealerData.id);
+          }
+        }
       } catch (err) {
         console.error('❌ Error getting user:', err);
       } finally {
@@ -154,7 +145,7 @@ export default function NewCarPage() {
     };
 
     getUser();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -205,6 +196,7 @@ export default function NewCarPage() {
         return;
       }
 
+      // 🚗 إعداد الـ payload مع إرفاق dealer_id إن وجد (ليظهر بالمعرض والموقع معاً)
       const payload = {
         brand: formData.brand,
         model: formData.model,
@@ -215,6 +207,7 @@ export default function NewCarPage() {
         description: formData.description || null,
         images: [],
         user_id: userId,
+        dealer_id: dealerId, // 👈 الربط السحري التلقائي للمعرض
         currency: formData.currency || 'KWD',
         status: 'pending',
         terms_accepted: true,
@@ -269,7 +262,7 @@ export default function NewCarPage() {
           const fileName = `${carId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           const filePath = `cars/${fileName}`;
 
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('car-images')
             .upload(filePath, file, {
               cacheControl: '3600',
