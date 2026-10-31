@@ -100,22 +100,38 @@ export default async function DealerPublicProfile({ params }: { params: { slug: 
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            {cars.map((car: any) => (
-              <div key={car.id} style={{ backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0', padding: '20px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
-                  {car.title || car.model || 'سيارة للبيع'}
-                </h3>
-                <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#2563eb', marginBottom: '15px' }}>
-                  {car.price ? `${car.price} ريال` : 'السعر عند الاتصال'}
-                </p>
-                <Link 
-                  href={`/cars/${car.id}`}
-                  style={{ display: 'block', textAlign: 'center', backgroundColor: '#f1f5f9', color: '#0f172a', padding: '8px', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold' }}
-                >
-                  عرض التفاصيل
-                </Link>
-              </div>
-            ))}
+            {cars.map((car: any) => {
+              const carImage = car.images && car.images.length > 0 ? car.images[0] : null;
+
+              return (
+                <div key={car.id} style={{ backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0', padding: '15px' }}>
+                  
+                  {/* معاينة صورة السيارة */}
+                  {carImage ? (
+                    <img src={carImage} alt={car.brand || 'سيارة'} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '12px' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '150px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', marginBottom: '12px', color: '#94a3b8', fontSize: '13px' }}>
+                      لا توجد صورة
+                    </div>
+                  )}
+
+                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
+                    {car.brand} {car.model || car.title || ''}
+                  </h3>
+                  <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#2563eb', marginBottom: '15px' }}>
+                    {car.price ? `${car.price} ${car.currency || 'ريال'}` : 'السعر عند الاتصال'}
+                  </p>
+                  
+                  {/* الرابط المعدل إلى المسار المفرد الصحيح /car/[id] */}
+                  <Link 
+                    href={`/car/${car.id}`}
+                    style={{ display: 'block', textAlign: 'center', backgroundColor: '#f1f5f9', color: '#0f172a', padding: '8px', borderRadius: '6px', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold' }}
+                  >
+                    عرض التفاصيل
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         )}
 
