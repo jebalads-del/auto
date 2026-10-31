@@ -103,7 +103,7 @@ export default function DealerDashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>سيارات المعرض</h2>
             <button 
-              onClick={() => router.push('/cars/add')} 
+              onClick={() => router.push('/dashboard/cars/new')} // 👈 تم تصحيح الرابط هنا ليطابق مسار صفحة النشر لديك
               style={{ backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
             >
               + إضافة سيارة جديدة
