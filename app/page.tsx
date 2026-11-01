@@ -410,9 +410,18 @@ export default function HomePage() {
               {dealers.map((dealer) => (
                 <Link key={dealer.id} href={`/dealers/${dealer.slug}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(160px, 45vw, 200px)' }}>
                   <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '16px', textAlign: 'center', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: '50px', height: '50px', backgroundColor: '#eff6ff', color: '#2563eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', marginBottom: '10px', fontWeight: 'bold' }}>
-                      {dealer.name ? dealer.name.charAt(0) : '🏢'}
+                    
+                    {/* تعديل عرض شعار المعرض الحقيقي إذا وجد، وإلا عرض الحرف الأول */}
+                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', border: '1px solid #e2e8f0' }}>
+                      {dealer.logo_url ? (
+                        <img src={dealer.logo_url} alt={dealer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '20px', color: '#2563eb', fontWeight: 'bold' }}>
+                          {dealer.name ? dealer.name.charAt(0) : '🏢'}
+                        </span>
+                      )}
                     </div>
+
                     <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
                       {dealer.name} {dealer.is_verified && <span style={{ color: '#2563eb' }} title="معرض موثق">✓</span>}
                     </h3>
