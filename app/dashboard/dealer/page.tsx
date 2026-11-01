@@ -31,12 +31,34 @@ export default function DealerDashboardPage() {
 
       if (!user) return;
 
-      // 1. جلب بيانات المعرض
-      const { data: dealerData, error: dealerError } = await supabase
+      // 1. محاولة جلب بيانات المعرض الخاص بالمستخدم
+      let { data: dealerData, error: dealerError } = await supabase
         .from('dealers')
         .select('*')
         .eq('user_id', user.id)
         .single();
+
+      // 2. إذا لم يكن لديه معرض (تم حذفه مسبقاً)، نقوم بإنشاء معرض افتراضي جديد تلقائياً
+      if (!dealerData) {
+        const defaultSlug = `dealer-${Math.random().toString(36.substring(2, 8))}`;
+        const { data: newDealer, error: createError } = await supabase
+          .from('dealers')
+          .insert([
+            {
+              user_id: user.id,
+              owner_email: user.email,
+              name: 'معرض جديد',
+              slug: defaultSlug,
+              is_verified: false
+            }
+          ])
+          .select()
+          .single();
+
+        if (!createError && newDealer) {
+          dealerData = newDealer;
+        }
+      }
 
       if (dealerData) {
         setDealer(dealerData);
@@ -49,7 +71,7 @@ export default function DealerDashboardPage() {
           logo_url: dealerData.logo_url || ''
         });
 
-        // 2. جلب سيارات هذا المعرض
+        // 3. جلب سيارات هذا المعرض
         const { data: carsData } = await supabase
           .from('cars')
           .select('*')
@@ -69,6 +91,10 @@ export default function DealerDashboardPage() {
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     try {
       if (!e.target.files || e.target.files.length === 0) return;
+      if (!dealer) {
+        alert('يرجى الانتظار حتى يتم تهيئة المعرض.');
+        return;
+      }
       setUploading(true);
 
       const file = e.target.files[0];
@@ -105,6 +131,10 @@ export default function DealerDashboardPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
+      if (!dealer) {
+        alert('لا يوجد معرض مرتبط حالياً.');
+        return;
+      }
       setLoading(true);
       const { error } = await supabase
         .from('dealers')
