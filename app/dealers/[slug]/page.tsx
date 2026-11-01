@@ -17,11 +17,13 @@ export default async function DealerPublicProfile({ params }: { params: { slug: 
     return notFound();
   }
 
-  // 2. جلب السيارات التابعة لهذا المعرض فقط
-  const { data: cars } = await supabase
-    .from('cars')
-    .select('*')
-    .eq('dealer_id', dealer.id);
+  // جلب سيارات المعرض المعتمدة فقط للجمهور العام
+const { data: cars } = await supabase
+  .from('cars')
+  .select('*')
+  .eq('dealer_id', dealer.id)
+  .eq('status', 'approved') // 👈 هذا الشرط هو الذي يمنع ظهور السيارات قيد المراجعة في المعرض العام
+  .order('created_at', { ascending: false });
 
   return (
     <div style={{ direction: 'rtl', minHeight: '100vh', backgroundColor: '#f8fafc', padding: '30px 20px', fontFamily: 'sans-serif' }}>
