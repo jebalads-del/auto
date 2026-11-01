@@ -243,7 +243,7 @@ export default function DealerDashboardPage() {
         </form>
       </div>
 
-      {/* 3. قسم عرض إدارة سيارات المعرض الحالية */}
+      {/* 3. قسم عرض إدارة سيارات المعرض الحالية مع حالة الموافقة */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '25px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', marginBottom: '20px' }}>
           🚗 سيارات المعرض الحالية ({cars.length})
@@ -255,11 +255,28 @@ export default function DealerDashboardPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
             {cars.map((car) => {
               const carImage = car.images && car.images.length > 0 ? car.images[0] : null;
+              const isApproved = car.status === 'approved';
               return (
-                <div key={car.id} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', backgroundColor: '#f8fafc' }}>
+                <div key={car.id} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', backgroundColor: '#f8fafc', position: 'relative' }}>
+                  
+                  {/* شارة الحالة (معتمد / قيد المراجعة) */}
+                  <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      backgroundColor: isApproved ? '#d1fae5' : '#fef3c7',
+                      color: isApproved ? '#065f46' : '#92400e'
+                    }}>
+                      {isApproved ? '✅ منشور' : '⏳ قيد المراجعة'}
+                    </span>
+                  </div>
+
                   {carImage && <img src={carImage} alt={car.brand} style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '6px', marginBottom: '8px' }} />}
                   <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#0f172a' }}>{car.brand} {car.model}</h3>
                   <p style={{ color: '#2563eb', fontWeight: 'bold', fontSize: '14px' }}>{car.price ? `${car.price} ريال` : 'السعر عند الاتصال'}</p>
+                  
                   <Link href={`/car/${car.id}`} style={{ display: 'block', textAlign: 'center', backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#0f172a', padding: '6px', borderRadius: '6px', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', marginTop: '8px' }}>
                     معاينة الإعلان 👁️
                   </Link>
