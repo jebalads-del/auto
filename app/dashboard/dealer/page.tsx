@@ -40,7 +40,7 @@ export default function DealerDashboardPage() {
 
       // 2. إذا لم يكن لديه معرض (تم حذفه مسبقاً)، نقوم بإنشاء معرض افتراضي جديد تلقائياً
       if (!dealerData) {
-        const defaultSlug = `dealer-${Math.random().toString(36.substring(2, 8))}`;
+        const defaultSlug = `dealer-${Math.random().toString(36).substring(2, 8)}`;
         const { data: newDealer, error: createError } = await supabase
           .from('dealers')
           .insert([
