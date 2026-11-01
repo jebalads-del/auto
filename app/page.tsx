@@ -28,6 +28,7 @@ interface Dealer {
   logo_url?: string;
   address?: string;
   is_verified?: boolean;
+  user_id?: string;
 }
 
 export default function HomePage() {
@@ -35,6 +36,7 @@ export default function HomePage() {
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [userDealer, setUserDealer] = useState<Dealer | null>(null); // 🏢 معرفة ما إذا كان المستخدم صاحب معرض
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -66,14 +68,39 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
-    };
-    checkUser();
+    const checkUserAndDealer = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user || null;
+      setUser(currentUser);
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (currentUser) {
+        // فحص هل يمتلك المستخدم معرضاً مسجلاً
+        const { data: dealerData } = await supabase
+          .from('dealers')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (dealerData) {
+          setUserDealer(dealerData);
+        }
+      }
+    };
+    checkUserAndDealer();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const { data: dealerData } = await supabase
+          .from('dealers')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .single();
+        setUserDealer(dealerData || null);
+      } else {
+        setUserDealer(null);
+      }
     });
 
     const fetchData = async () => {
@@ -120,9 +147,13 @@ export default function HomePage() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setUserDealer(null);
     setIsMenuOpen(false);
     window.location.reload();
   };
+
+  // الوجهة الذكية لحساب المستخدم (إذا كان صاحب معرض يذهب للوحة التحكم، وإلا لملفه الشخصي)
+  const accountLink = userDealer ? "/dashboard/dealer" : (user ? "/profile" : "/login");
 
   return (
     <div style={{
@@ -271,11 +302,20 @@ export default function HomePage() {
               <div style={{ display: 'flex', flexDirection: 'column', padding: '10px', overflowY: 'auto' }}>
                 {user ? (
                   <>
-                    <Link href="/profile" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                    {userDealer && (
+                      <Link href="/dashboard/dealer" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
+                        <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#2563eb', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#eff6ff', borderRadius: '8px', marginBottom: '5px' }}>
+                          <span style={{ fontSize: '20px' }}>🏢</span> إدارة المعرض
+                        </div>
+                      </Link>
+                    )}
+
+                    <Link href={accountLink} onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none' }}>
                       <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#0f172a', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '20px' }}>👤</span> ملفي الشخصي
+                        <span style={{ fontSize: '20px' }}>👤</span> {userDealer ? 'إعدادات الحساب' : 'ملفي الشخصي'}
                       </div>
                     </Link>
+
                     <button onClick={handleSignOut} style={{ background: 'none', border: 'none', textAlign: 'right', padding: '15px', borderBottom: '1px solid #f1f5f9', color: '#dc2626', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', width: '100%' }}>
                       <span style={{ fontSize: '20px' }}>🚪</span> تسجيل الخروج
                     </button>
@@ -411,7 +451,6 @@ export default function HomePage() {
                 <Link key={dealer.id} href={`/dealers/${dealer.slug}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(160px, 45vw, 200px)' }}>
                   <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '16px', textAlign: 'center', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     
-                    {/* تعديل عرض شعار المعرض الحقيقي إذا وجد، وإلا عرض الحرف الأول */}
                     <div style={{ width: '50px', height: '50px', borderRadius: '50%', overflow: 'hidden', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', border: '1px solid #e2e8f0' }}>
                       {dealer.logo_url ? (
                         <img src={dealer.logo_url} alt={dealer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -581,9 +620,10 @@ export default function HomePage() {
           اتصل بنا
         </a>
         
-        <Link href={user ? "/profile" : "/login"} style={{ textDecoration: 'none', color: '#64748b', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
-          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>{user ? '👤' : '🔑'}</div>
-          {user ? 'حسابي' : 'دخول'}
+        {/* زر الحساب أو إدارة المعرض الذكي في الشريط السفلي */}
+        <Link href={accountLink} style={{ textDecoration: 'none', color: userDealer ? '#2563eb' : '#64748b', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
+          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>{userDealer ? '🏢' : (user ? '👤' : '🔑')}</div>
+          {userDealer ? 'إدارة المعرض' : (user ? 'حسابي' : 'دخول')}
         </Link>
       </nav>
     </div>
