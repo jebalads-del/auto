@@ -17,7 +17,7 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, serviceRoleKey);
 }
 
-// ===== GET: جلب جميع الإعلانات (جديد!) =====
+// ===== GET: جلب جميع الإعلانات =====
 export async function GET() {
   try {
     console.log('📋 [GET CARS] جلب الإعلانات...');
@@ -106,8 +106,12 @@ export async function POST(request: Request) {
         description: body.description || null,
         images: body.images || [],
         user_id: body.user_id,
+        dealer_id: body.dealer_id || null, // 👈 الربط السحري بالمعرض تم إضافته بنجاح!
         currency: body.currency || 'KWD',
         status: body.status || 'pending',
+        terms_accepted: body.terms_accepted || false,
+        terms_accepted_at: body.terms_accepted_at || null,
+        terms_version: body.terms_version || null,
         created_at: new Date().toISOString(),
       }])
       .select();
