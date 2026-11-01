@@ -53,8 +53,15 @@ export default async function DealerPublicProfile({ params }: { params: { slug: 
         {/* رأس صفحة المعرض (الهوية وبطاقة التعريف) */}
         <div style={{ backgroundColor: '#ffffff', padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', marginBottom: '30px', textAlign: 'center' }}>
           
-          <div style={{ width: '80px', height: '80px', backgroundColor: '#e0e7ff', color: '#2563eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 15px', fontWeight: 'bold' }}>
-            {dealer.name ? dealer.name.charAt(0) : '🏢'}
+          {/* عرض شعار المعرض الحقيقي إذا وجد، وإلا الحرف الأول */}
+          <div style={{ width: '90px', height: '90px', margin: '0 auto 15px', borderRadius: '50%', overflow: 'hidden', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #e2e8f0' }}>
+            {dealer.logo_url ? (
+              <img src={dealer.logo_url} alt={dealer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: '32px', color: '#2563eb', fontWeight: 'bold' }}>
+                {dealer.name ? dealer.name.charAt(0) : '🏢'}
+              </span>
+            )}
           </div>
 
           <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>
