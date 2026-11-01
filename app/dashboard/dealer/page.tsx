@@ -131,7 +131,7 @@ export default function DealerDashboardPage() {
   return (
     <div style={{ direction: 'rtl', maxWidth: '900px', margin: '30px auto', fontFamily: 'sans-serif', padding: '15px' }}>
       
-      {/* 1. رأس الصفحة وأزرار التنقل السريع بين اللوحة والصفحة العامة */}
+      {/* 1. رأس الصفحة وأزرار التنقل السريع بالمستويات الصحيحة */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>🏢 لوحة إدارة المعرض</h1>
         
@@ -145,7 +145,7 @@ export default function DealerDashboardPage() {
             </Link>
           )}
           <Link 
-            href="/add-car" 
+            href="/dashboard/cars/new" 
             style={{ backgroundColor: '#16a34a', color: '#fff', padding: '8px 14px', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}
           >
             ➕ إضافة سيارة
