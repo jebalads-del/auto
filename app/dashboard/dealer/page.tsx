@@ -131,14 +131,14 @@ export default function DealerDashboardPage() {
   return (
     <div style={{ direction: 'rtl', maxWidth: '900px', margin: '30px auto', fontFamily: 'sans-serif', padding: '15px' }}>
       
-      {/* 1. رأس الصفحة وأزرار التنقل السريع بالمستويات الصحيحة */}
+      {/* 1. رأس الصفحة وأزرار التنقل السريع */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>🏢 لوحة إدارة المعرض</h1>
         
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {dealer?.slug && (
             <Link 
-              href={`/dealer/${dealer.slug}`} 
+              href={`/dealers/${dealer.slug}`} 
               style={{ backgroundColor: '#2563eb', color: '#fff', padding: '8px 14px', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}
             >
               🌐 عرض المعرض العام
