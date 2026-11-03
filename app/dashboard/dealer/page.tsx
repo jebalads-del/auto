@@ -31,14 +31,12 @@ export default function DealerDashboardPage() {
 
       if (!user) return;
 
-      // 1. محاولة جلب بيانات المعرض الخاص بالمستخدم
       let { data: dealerData, error: dealerError } = await supabase
         .from('dealers')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      // 2. إذا لم يكن لديه معرض (تم حذفه مسبقاً)، نقوم بإنشاء معرض افتراضي جديد تلقائياً
       if (!dealerData) {
         const defaultSlug = `dealer-${Math.random().toString(36).substring(2, 8)}`;
         const { data: newDealer, error: createError } = await supabase
@@ -71,7 +69,6 @@ export default function DealerDashboardPage() {
           logo_url: dealerData.logo_url || ''
         });
 
-        // 3. جلب سيارات هذا المعرض
         const { data: carsData } = await supabase
           .from('cars')
           .select('*')
@@ -87,7 +84,6 @@ export default function DealerDashboardPage() {
     }
   }
 
-  // رفع الشعار إلى Supabase Storage
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     try {
       if (!e.target.files || e.target.files.length === 0) return;
@@ -127,7 +123,6 @@ export default function DealerDashboardPage() {
     }
   }
 
-  // حفظ التعديلات العامة
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
@@ -161,6 +156,13 @@ export default function DealerDashboardPage() {
   return (
     <div style={{ direction: 'rtl', maxWidth: '900px', margin: '30px auto', fontFamily: 'sans-serif', padding: '15px' }}>
       
+      {/* ⚠️ تنبيه بانتظار الموافقة إذا لم يتم توثيق المعرض بعد */}
+      {dealer && !dealer.is_verified && (
+        <div style={{ backgroundColor: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '12px', padding: '15px', marginBottom: '20px', textAlign: 'center', color: '#92400e', fontWeight: 'bold', fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          ⏳ معرضك حالياً قيد المراجعة وبانتظار موافقة وتوثيق الإدارة ليتم عرضه للزوار في الموقع العام.
+        </div>
+      )}
+
       {/* 1. رأس الصفحة وأزرار التنقل السريع */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>🏢 لوحة إدارة المعرض</h1>
@@ -193,7 +195,6 @@ export default function DealerDashboardPage() {
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '25px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', marginBottom: '30px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', marginBottom: '20px' }}>⚙️ إعدادات المعرض والشعار</h2>
 
-        {/* رفع الشعار */}
         <div style={{ textAlign: 'center', marginBottom: '25px' }}>
           <div style={{ width: '100px', height: '100px', borderRadius: '50%', margin: '0 auto 12px', overflow: 'hidden', border: '3px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {formData.logo_url ? (
@@ -209,7 +210,6 @@ export default function DealerDashboardPage() {
           </label>
         </div>
 
-        {/* نموذج بيانات المعرض */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#475569', marginBottom: '5px' }}>📧 بريد مالك المعرض (مرئي للأدمن)</label>
@@ -243,7 +243,7 @@ export default function DealerDashboardPage() {
         </form>
       </div>
 
-      {/* 3. قسم عرض إدارة سيارات المعرض الحالية مع حالة الموافقة */}
+      {/* 3. قسم عرض إدارة سيارات المعرض الحالية */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '25px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b', marginBottom: '20px' }}>
           🚗 سيارات المعرض الحالية ({cars.length})
@@ -259,7 +259,6 @@ export default function DealerDashboardPage() {
               return (
                 <div key={car.id} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', backgroundColor: '#f8fafc', position: 'relative' }}>
                   
-                  {/* شارة الحالة (معتمد / قيد المراجعة) */}
                   <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{
                       padding: '3px 8px',
