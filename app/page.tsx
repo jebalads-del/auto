@@ -36,7 +36,7 @@ export default function HomePage() {
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [userDealer, setUserDealer] = useState<Dealer | null>(null); // 🏢 معرفة ما إذا كان المستخدم صاحب معرض
+  const [userDealer, setUserDealer] = useState<Dealer | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -74,7 +74,6 @@ export default function HomePage() {
       setUser(currentUser);
 
       if (currentUser) {
-        // فحص هل يمتلك المستخدم معرضاً مسجلاً
         const { data: dealerData } = await supabase
           .from('dealers')
           .select('*')
@@ -114,7 +113,7 @@ export default function HomePage() {
           .lt('featured_until', now)
           .eq('is_featured', true);
 
-        // جلب السيارات
+        // جلب السيارات المعتمدة والمباعة
         const { data: carsData, error: carsError } = await supabase
           .from('cars')
           .select('*')
@@ -123,10 +122,11 @@ export default function HomePage() {
 
         if (!carsError && carsData) setCars(carsData);
 
-        // جلب المعارض والشركات
+        // جلب المعارض والشركات الموثقة فقط 🟢
         const { data: dealersData, error: dealersError } = await supabase
           .from('dealers')
           .select('*')
+          .eq('is_verified', true) // 👈 يمنع ظهور المعارض التي بانتظار الموافقة في الصفحة الرئيسية
           .limit(6);
 
         if (!dealersError && dealersData) setDealers(dealersData);
@@ -152,7 +152,6 @@ export default function HomePage() {
     window.location.reload();
   };
 
-  // الوجهة الذكية لحساب المستخدم (إذا كان صاحب معرض يذهب للوحة التحكم، وإلا لملفه الشخصي)
   const accountLink = userDealer ? "/dashboard/dealer" : (user ? "/profile" : "/login");
 
   return (
@@ -620,7 +619,6 @@ export default function HomePage() {
           اتصل بنا
         </a>
         
-        {/* زر الحساب أو إدارة المعرض الذكي في الشريط السفلي */}
         <Link href={accountLink} style={{ textDecoration: 'none', color: userDealer ? '#2563eb' : '#64748b', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
           <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>{userDealer ? '🏢' : (user ? '👤' : '🔑')}</div>
           {userDealer ? 'إدارة المعرض' : (user ? 'حسابي' : 'دخول')}
