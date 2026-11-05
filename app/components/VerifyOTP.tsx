@@ -19,13 +19,13 @@ export default function VerifyOTP({ email, onSuccess, onBack }: VerifyOTPProps) 
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/auth/send-otp', {
+      const res = await fetch('/api/my-car/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
       const data = await res.json();
-      if (!data.success) {
+      if (!res.ok || !data.success) {
         setError(data.message || 'فشل إرسال رمز التحقق');
       } else {
         alert('تم إرسال رمز التحقق إلى بريدك الإلكتروني');
@@ -42,14 +42,14 @@ export default function VerifyOTP({ email, onSuccess, onBack }: VerifyOTPProps) 
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/auth/verify-otp', {
+      const res = await fetch('/api/my-car/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp })
       });
       const data = await res.json();
-      if (!data.success) {
-        setError(data.message || 'رمز التحقق غير صحيح');
+      if (!res.ok || !data.success) {
+        setError(data.error || data.message || 'رمز التحقق غير صحيح');
       } else {
         onSuccess();
       }

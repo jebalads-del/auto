@@ -56,7 +56,7 @@ function VerifyForm() {
 
     try {
       // استخدام API للتحقق
-      const response = await fetch('/api/verify-otp', {
+      const response = await fetch('/api/my-car/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp: fullOtp }),
