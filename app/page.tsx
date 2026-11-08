@@ -476,7 +476,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ===== Featured Cars Horizontal Slider (شريط الإعلانات المميزة المحدث) ===== */}
+        {/* ===== Featured Cars Horizontal Slider (شريط الإعلانات المميزة بخط أكبر وأوضح) ===== */}
         {cars.filter((car) => car.is_featured).length > 0 && (
           <section style={{ marginBottom: 'clamp(14px, 3vw, 20px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px' }}>
@@ -487,15 +487,15 @@ export default function HomePage() {
               {cars.filter((car) => car.is_featured).map((car) => {
                 const firstImage = getFirstImage(car.images);
                 return (
-                  <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(140px, 42vw, 180px)' }}>
+                  <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(150px, 45vw, 190px)' }}>
                     <div style={{ backgroundColor: 'white', borderRadius: 'clamp(10px, 2vw, 14px)', overflow: 'hidden', border: '1px solid #fde68a', boxShadow: '0 2px 5px rgba(0,0,0,0.04)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                       
-                      {/* شريط الإعلان المميز الأفقي الكامل أعلى الصورة */}
-                      <div style={{ backgroundColor: '#f59e0b', color: 'white', textAlign: 'center', padding: '6px 4px', fontSize: '12px', fontWeight: 'bold', width: '100%', letterSpacing: '0.5px' }}>
+                      {/* شريط الإعلان المميز بخط أكبر وواضح */}
+                      <div style={{ backgroundColor: '#f59e0b', color: 'white', textAlign: 'center', padding: '8px 6px', fontSize: '14px', fontWeight: 'bold', width: '100%', letterSpacing: '0.5px' }}>
                         ⭐ إعلان مميز
                       </div>
 
-                      <div style={{ width: '100%', height: 'clamp(90px, 28vw, 110px)', backgroundColor: '#f1f5f9', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: 'clamp(95px, 28vw, 120px)', backgroundColor: '#f1f5f9', overflow: 'hidden' }}>
                         {firstImage ? (
                           <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
@@ -503,10 +503,10 @@ export default function HomePage() {
                         )}
                       </div>
                       
-                      <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1 }}>
-                        <h3 style={{ fontSize: 'clamp(12px, 2.8vw, 13px)', fontWeight: 'bold', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{car.brand} {car.model}</h3>
-                        <p style={{ fontSize: 'clamp(13px, 3vw, 14px)', fontWeight: 'bold', color: '#059669', margin: 0 }}>
-                          {car.price} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
+                      <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1 }}>
+                        <h3 style={{ fontSize: 'clamp(13px, 3vw, 14px)', fontWeight: 'bold', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{car.brand} {car.model}</h3>
+                        <p style={{ fontSize: 'clamp(14px, 3.2vw, 15px)', fontWeight: 'bold', color: '#059669', margin: 0 }}>
+                          {car.price} <span style={{ fontSize: '11px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
                         </p>
                       </div>
                     </div>
