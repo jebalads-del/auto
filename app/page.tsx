@@ -113,7 +113,6 @@ export default function HomePage() {
           .lt('featured_until', now)
           .eq('is_featured', true);
 
-        // جلب السيارات المعتمدة والمباعة
         const { data: carsData, error: carsError } = await supabase
           .from('cars')
           .select('*')
@@ -122,11 +121,10 @@ export default function HomePage() {
 
         if (!carsError && carsData) setCars(carsData);
 
-        // جلب المعارض والشركات الموثقة فقط 🟢
         const { data: dealersData, error: dealersError } = await supabase
           .from('dealers')
           .select('*')
-          .eq('is_verified', true) // 👈 يمنع ظهور المعارض التي بانتظار الموافقة في الصفحة الرئيسية
+          .eq('is_verified', true) 
           .limit(6);
 
         if (!dealersError && dealersData) setDealers(dealersData);
@@ -437,7 +435,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* ===== Featured Dealers Section (المعارض والشركات الموثوقة) ===== */}
+        {/* ===== Featured Dealers Section ===== */}
         {dealers.length > 0 && (
           <section style={{ marginBottom: 'clamp(20px, 4vw, 30px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'clamp(10px, 2vw, 12px)', padding: '0 2px' }}>
@@ -464,7 +462,7 @@ export default function HomePage() {
                       {dealer.name} {dealer.is_verified && <span style={{ color: '#2563eb' }} title="معرض موثق">✓</span>}
                     </h3>
                     <p style={{ fontSize: '11px', color: '#64748b', margin: '0 0 10px 0' }}>
-                      📍 {dealer.address || 'السعودية'}
+                      📍 {dealer.address || 'الكويت'}
                     </p>
                     <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 'bold', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: '6px' }}>
                       تصفح المعرض
@@ -495,7 +493,21 @@ export default function HomePage() {
                         ) : (
                           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '11px' }}>🚗 لا توجد صورة</div>
                         )}
-                        <span style={{ position: 'absolute', top: '6px', right: '6px', backgroundColor: '#f59e0b', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 'bold' }}>⭐ اعلان مميز</span>
+                        {/* ✅ الشارة الجديدة: ملتصقة بالأعلى وأكبر حجماً */}
+                        <span style={{ 
+                          position: 'absolute', 
+                          top: 0, 
+                          right: 0, 
+                          backgroundColor: '#f59e0b', 
+                          color: 'white', 
+                          padding: '4px 10px', 
+                          borderBottomLeftRadius: '10px',
+                          fontSize: 'clamp(10px, 2.5vw, 12px)', 
+                          fontWeight: 'bold',
+                          boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                        }}>
+                          ⭐ إعلان مميز
+                        </span>
                       </div>
                       <div style={{ paddingTop: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1 }}>
                         <h3 style={{ fontSize: 'clamp(11px, 2.5vw, 12px)', fontWeight: 'bold', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{car.brand} {car.model}</h3>
@@ -606,24 +618,4 @@ export default function HomePage() {
           الرئيسية
         </Link>
         
-        <Link href={user ? "/profile" : "/login"} style={{ textDecoration: 'none', color: '#059669', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
-          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>➕</div>
-          أضف إعلان
-        </Link>
-        
-        <a 
-          href="mailto:admin@sayarty.store?subject=استفسار من موقع سيارتي ستور"
-          style={{ textDecoration: 'none', color: '#dc2626', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}
-        >
-          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>📧</div>
-          اتصل بنا
-        </a>
-        
-        <Link href={accountLink} style={{ textDecoration: 'none', color: userDealer ? '#2563eb' : '#64748b', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
-          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>{userDealer ? '🏢' : (user ? '👤' : '🔑')}</div>
-          {userDealer ? 'إدارة المعرض' : (user ? 'حسابي' : 'دخول')}
-        </Link>
-      </nav>
-    </div>
-  );
-}
+        <Link href={user ? "/profile" : "/login"} style={{ textDecoration: 'none', color: '#059669', textAlign: 'center', fontSize: 'clamp
