@@ -105,8 +105,10 @@ export async function POST(request: Request) {
         color: body.color || null,
         description: body.description || null,
         images: body.images || [],
+        is_inspected: body.is_inspected || false,             // 👈 إضافة حالة الفحص هنا
+        inspection_image_url: body.inspection_image_url || null, // 👈 إضافة رابط صورة الفحص هنا
         user_id: body.user_id,
-        dealer_id: body.dealer_id || null, // 👈 الربط السحري بالمعرض تم إضافته بنجاح!
+        dealer_id: body.dealer_id || null, 
         currency: body.currency || 'KWD',
         status: body.status || 'pending',
         terms_accepted: body.terms_accepted || false,
