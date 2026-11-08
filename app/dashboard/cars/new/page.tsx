@@ -78,10 +78,18 @@ export default function NewCarPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  
+  // 🚗 صور السيارة
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  
+  // 📋 شهادة الفحص
+  const [inspectionImage, setInspectionImage] = useState<File | null>(null);
+  const [inspectionPreview, setInspectionPreview] = useState<string | null>(null);
+  const [isInspected, setIsInspected] = useState(false); // حالة مفحوصة أم لا
+
   const [userId, setUserId] = useState<string | null>(null);
-  const [dealerId, setDealerId] = useState<string | null>(null); // 👈 معرف المعرض الذكي
+  const [dealerId, setDealerId] = useState<string | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [userRole, setUserRole] = useState<string>('user');
   const [userName, setUserName] = useState<string>('');
@@ -114,7 +122,6 @@ export default function NewCarPage() {
           setUserEmail(email);
           localStorage.setItem('userId', currentUserId);
 
-          // جلب بيانات المستخدم من جدول users
           const { data: userData } = await supabase
             .from('users')
             .select('role, name, email')
@@ -126,7 +133,6 @@ export default function NewCarPage() {
           else setUserName(email.split('@')[0] || 'مستخدم');
           if (userData?.email) setUserEmail(userData.email);
 
-          // 🏢 فحص ما إذا كان المستخدم يمتلك معرضاً (Dealer) لجلب الـ dealer_id تلقائياً
           const { data: dealerData } = await supabase
             .from('dealers')
             .select('id')
@@ -171,6 +177,20 @@ export default function NewCarPage() {
     setImagePreviews(newPreviews);
   };
 
+  // 📄 التعامل مع رفع صورة الفحص
+  const handleInspectionUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setInspectionImage(file);
+      setInspectionPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeInspectionImage = () => {
+    setInspectionImage(null);
+    setInspectionPreview(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -196,7 +216,6 @@ export default function NewCarPage() {
         return;
       }
 
-      // 🚗 إعداد الـ payload مع إرفاق dealer_id إن وجد (ليظهر بالمعرض والموقع معاً)
       const payload = {
         brand: formData.brand,
         model: formData.model,
@@ -206,8 +225,10 @@ export default function NewCarPage() {
         color: formData.color || null,
         description: formData.description || null,
         images: [],
+        is_inspected: isInspected, // 👈 حالة الفحص
+        inspection_image_url: null, // سيتم تحديثه بعد الرفع
         user_id: userId,
-        dealer_id: dealerId, // 👈 الربط السحري التلقائي للمعرض
+        dealer_id: dealerId,
         currency: formData.currency || 'KWD',
         status: 'pending',
         terms_accepted: true,
@@ -244,6 +265,7 @@ export default function NewCarPage() {
               year: formData.year,
               kilometers: formData.kilometers,
               color: formData.color,
+              is_inspected: isInspected,
             },
             ownerName: userName || 'مستخدم',
             ownerEmail: userEmail || '',
@@ -253,6 +275,34 @@ export default function NewCarPage() {
         console.error('⚠️ فشل إرسال الإشعار:', err);
       }
 
+      let inspectionUrl = null;
+
+      // 📄 رفع شهادة الفحص إذا وجدت
+      if (inspectionImage && carId) {
+        const fileExt = inspectionImage.name.split('.').pop() || 'jpg';
+        const fileName = `inspection-${carId}-${Date.now()}.${fileExt}`;
+        const filePath = `cars/${fileName}`;
+
+        const { error: inspUploadError } = await supabase.storage
+          .from('car-images')
+          .upload(filePath, inspectionImage, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: inspectionImage.type,
+          });
+
+        if (!inspUploadError) {
+          const { data: urlData } = supabase.storage
+            .from('car-images')
+            .getPublicUrl(filePath);
+
+          if (urlData?.publicUrl) {
+            inspectionUrl = urlData.publicUrl;
+          }
+        }
+      }
+
+      // 📸 رفع صور السيارة الأساسية
       if (images.length > 0 && carId) {
         const uploadedUrls: string[] = [];
 
@@ -281,20 +331,23 @@ export default function NewCarPage() {
           }
         }
 
-        if (uploadedUrls.length > 0) {
+        // تحديث قاعدة البيانات بالصور ورابط الفحص
+        if (uploadedUrls.length > 0 || inspectionUrl) {
+          const updatePayload: any = {};
+          if (uploadedUrls.length > 0) updatePayload.images = uploadedUrls;
+          if (inspectionUrl) updatePayload.inspection_image_url = inspectionUrl;
+
           const { error: updateError } = await supabase
             .from('cars')
-            .update({ images: uploadedUrls })
+            .update(updatePayload)
             .eq('id', carId)
             .select();
 
           if (updateError) {
-            setSuccess('⚠️ تم نشر الإعلان لكن فشل حفظ الصور');
+            setSuccess('⚠️ تم نشر الإعلان لكن فشل حفظ بعض الملفات المرفقة');
           } else {
-            setSuccess(`✅ تم نشر الإعلان مع ${uploadedUrls.length} صور بنجاح!`);
+            setSuccess(`✅ تم نشر الإعلان مع الصور وتقرير الفحص بنجاح!`);
           }
-        } else {
-          setSuccess('⚠️ تم نشر الإعلان لكن فشل رفع الصور');
         }
       } else {
         setSuccess('✅ تم نشر الإعلان بنجاح!');
@@ -312,6 +365,9 @@ export default function NewCarPage() {
       });
       setImages([]);
       setImagePreviews([]);
+      setInspectionImage(null);
+      setInspectionPreview(null);
+      setIsInspected(false);
       setAgreeToTerms(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -475,6 +531,68 @@ export default function NewCarPage() {
           <input type="number" placeholder="مثال: 50000" value={formData.kilometers} onChange={(e) => setFormData({ ...formData, kilometers: e.target.value })} style={styIn} />
         </div>
 
+        {/* 🛡️ قسم الفحص وشارة مفحوصة */}
+        <div style={{ backgroundColor: '#f0fdf4', padding: '16px', borderRadius: '12px', border: '1px solid #bbf7d0', marginBottom: '16px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '12px' }}>
+            <input 
+              type="checkbox" 
+              checked={isInspected} 
+              onChange={(e) => setIsInspected(e.target.checked)}
+              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#16a34a' }}
+            />
+            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#166534' }}>
+              🛡️ السيارة مفحوصة (تم فحص القير، المكينة، الشاصي سليمة)
+            </span>
+          </label>
+
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#15803d', display: 'block', marginBottom: '6px' }}>
+              📄 ارفع صورة تقرير / شهادة فحص السيارة (اختياري)
+            </label>
+            
+            {!inspectionPreview ? (
+              <div style={{ border: '2px dashed #86efac', padding: '12px', borderRadius: '8px', textAlign: 'center', backgroundColor: '#ffffff', cursor: 'pointer' }}>
+                <input 
+                  type="file" 
+                  id="inspection-file" 
+                  accept="image/*" 
+                  onChange={handleInspectionUpload} 
+                  style={{ display: 'none' }} 
+                />
+                <label htmlFor="inspection-file" style={{ cursor: 'pointer', display: 'block', fontSize: '13px', color: '#16a34a', fontWeight: 'bold' }}>
+                  📎 اضغط هنا لرفع ورقة الفحص
+                </label>
+              </div>
+            ) : (
+              <div style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #16a34a' }}>
+                <img src={inspectionPreview} alt="Inspection report" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <button
+                  type="button"
+                  onClick={removeInspectionImage}
+                  style={{
+                    position: 'absolute',
+                    top: '2px',
+                    right: '2px',
+                    backgroundColor: 'rgba(220, 38, 38, 0.85)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '20px',
+                    height: '20px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div style={{ marginBottom: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
             <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>
@@ -546,7 +664,7 @@ export default function NewCarPage() {
         <div style={{ marginBottom: '16px' }}>
           <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>الوصف</label>
           <textarea 
-            placeholder="اكتب تفاصيل إضافية عن حالة السيارة، الفحص، المواصفات..."
+            placeholder="اكتب تفاصيل إضافية عن حالة السيارة، المواصفات..."
             value={formData.description} 
             onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
             style={{ ...styIn, height: '90px', resize: 'vertical' }} 
