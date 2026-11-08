@@ -126,7 +126,7 @@ export default function HomePage() {
         const { data: dealersData, error: dealersError } = await supabase
           .from('dealers')
           .select('*')
-          .eq('is_verified', true) // 👈 يمنع ظهور المعارض التي بانتظار الموافقة في الصفحة الرئيسية
+          .eq('is_verified', true)
           .limit(6);
 
         if (!dealersError && dealersData) setDealers(dealersData);
@@ -476,7 +476,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ===== Featured Cars Horizontal Slider ===== */}
+        {/* ===== Featured Cars Horizontal Slider (شريط الإعلانات المميزة المحدث) ===== */}
         {cars.filter((car) => car.is_featured).length > 0 && (
           <section style={{ marginBottom: 'clamp(14px, 3vw, 20px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px' }}>
@@ -487,19 +487,25 @@ export default function HomePage() {
               {cars.filter((car) => car.is_featured).map((car) => {
                 const firstImage = getFirstImage(car.images);
                 return (
-                  <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(130px, 40vw, 160px)' }}>
-                    <div style={{ backgroundColor: 'white', borderRadius: 'clamp(10px, 2vw, 14px)', overflow: 'hidden', border: '1px solid #fde68a', padding: 'clamp(6px, 1.5vw, 8px)', boxShadow: '0 2px 5px rgba(0,0,0,0.04)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ width: '100%', height: 'clamp(80px, 25vw, 100px)', backgroundColor: '#f1f5f9', borderRadius: 'clamp(8px, 1.5vw, 10px)', overflow: 'hidden', position: 'relative', border: '1px solid #fbbf24' }}>
+                  <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(140px, 42vw, 180px)' }}>
+                    <div style={{ backgroundColor: 'white', borderRadius: 'clamp(10px, 2vw, 14px)', overflow: 'hidden', border: '1px solid #fde68a', boxShadow: '0 2px 5px rgba(0,0,0,0.04)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      
+                      {/* شريط الإعلان المميز الأفقي الكامل أعلى الصورة */}
+                      <div style={{ backgroundColor: '#f59e0b', color: 'white', textAlign: 'center', padding: '6px 4px', fontSize: '12px', fontWeight: 'bold', width: '100%', letterSpacing: '0.5px' }}>
+                        ⭐ إعلان مميز
+                      </div>
+
+                      <div style={{ width: '100%', height: 'clamp(90px, 28vw, 110px)', backgroundColor: '#f1f5f9', overflow: 'hidden' }}>
                         {firstImage ? (
                           <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '11px' }}>🚗 لا توجد صورة</div>
                         )}
-                        <span style={{ position: 'absolute', top: '6px', right: '6px', backgroundColor: '#f59e0b', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '9px', fontWeight: 'bold' }}>⭐ اعلان مميز</span>
                       </div>
-                      <div style={{ paddingTop: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1 }}>
-                        <h3 style={{ fontSize: 'clamp(11px, 2.5vw, 12px)', fontWeight: 'bold', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{car.brand} {car.model}</h3>
-                        <p style={{ fontSize: 'clamp(12px, 2.8vw, 13px)', fontWeight: 'bold', color: '#059669', margin: 0 }}>
+                      
+                      <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1 }}>
+                        <h3 style={{ fontSize: 'clamp(12px, 2.8vw, 13px)', fontWeight: 'bold', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{car.brand} {car.model}</h3>
+                        <p style={{ fontSize: 'clamp(13px, 3vw, 14px)', fontWeight: 'bold', color: '#059669', margin: 0 }}>
                           {car.price} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
                         </p>
                       </div>
