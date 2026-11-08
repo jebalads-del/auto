@@ -18,6 +18,8 @@ interface Car {
   created_at: string; 
   images?: any; 
   is_featured?: boolean;
+  is_inspected?: boolean; // 👈 حقل الفحص
+  inspection_image_url?: string;
   featured_until?: string;
 }
 
@@ -122,7 +124,7 @@ export default function HomePage() {
 
         if (!carsError && carsData) setCars(carsData);
 
-        // جلب المعارض والشركات الموثقة فقط 🟢
+        // جلب المعارض والشركات الموثقة فقط
         const { data: dealersData, error: dealersError } = await supabase
           .from('dealers')
           .select('*')
@@ -476,7 +478,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ===== Featured Cars Horizontal Slider (شريط الإعلانات المميزة بخط أكبر وأوضح) ===== */}
+        {/* ===== Featured Cars Horizontal Slider ===== */}
         {cars.filter((car) => car.is_featured).length > 0 && (
           <section style={{ marginBottom: 'clamp(14px, 3vw, 20px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'clamp(8px, 2vw, 10px)', padding: '0 2px' }}>
@@ -490,16 +492,23 @@ export default function HomePage() {
                   <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(150px, 45vw, 190px)' }}>
                     <div style={{ backgroundColor: 'white', borderRadius: 'clamp(10px, 2vw, 14px)', overflow: 'hidden', border: '1px solid #fde68a', boxShadow: '0 2px 5px rgba(0,0,0,0.04)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                       
-                      {/* شريط الإعلان المميز بخط أكبر وواضح */}
+                      {/* شريط الإعلان المميز */}
                       <div style={{ backgroundColor: '#f59e0b', color: 'white', textAlign: 'center', padding: '8px 6px', fontSize: '14px', fontWeight: 'bold', width: '100%', letterSpacing: '0.5px' }}>
                         ⭐ إعلان مميز
                       </div>
 
-                      <div style={{ width: '100%', height: 'clamp(95px, 28vw, 120px)', backgroundColor: '#f1f5f9', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: 'clamp(95px, 28vw, 120px)', backgroundColor: '#f1f5f9', overflow: 'hidden', position: 'relative' }}>
                         {firstImage ? (
                           <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '11px' }}>🚗 لا توجد صورة</div>
+                        )}
+                        
+                        {/* 🛡️ عبارة مفحوصة فقط بدون زحمة */}
+                        {car.is_inspected && (
+                          <span style={{ position: 'absolute', bottom: '6px', right: '6px', backgroundColor: '#16a34a', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                            🛡️ مفحوصة
+                          </span>
                         )}
                       </div>
                       
@@ -547,11 +556,22 @@ export default function HomePage() {
                           ) : (
                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '14px' }}>🚗 لا توجد صورة</div>
                           )}
+                          
+                          {/* 💰 شارة مباعة */}
                           {car.status === 'sold' && (
                             <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#10b981', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>💰 مباعه</span>
                           )}
+                          
+                          {/* ⭐ شارة إعلان مميز */}
                           {car.is_featured && (
                             <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#f59e0b', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>⭐ اعلان مميز</span>
+                          )}
+
+                          {/* 🛡️ شارة عبارة مفحوصة فقط بسيطة وأنيقة */}
+                          {car.is_inspected && (
+                            <span style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: '#16a34a', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              🛡️ مفحوصة
+                            </span>
                           )}
                         </div>
 
