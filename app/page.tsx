@@ -618,4 +618,10 @@ export default function HomePage() {
           الرئيسية
         </Link>
         
-        <Link href={user ? "/profile" : "/login"} style={{ textDecoration: 'none', color: '#059669', textAlign: 'center', fontSize: 'clamp
+        <Link href={user ? "/profile" : "/login"} style={{ textDecoration: 'none', color: '#059669', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
+          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>➕</div>
+          أضف إعلان
+        </Link>
+        
+        <a 
+          href="mailto:admin@sayarty.store?subject=استفسار من موقع سيار
