@@ -559,7 +559,7 @@ export default function HomePage() {
                           
                           {/* 💰 شارة مباعة */}
                           {car.status === 'sold' && (
-                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#D1280A', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>💰 مباعه</span>
+                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#D1280A', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>💰 تم البيع</span>
                           )}
                           
                           {/* ⭐ شارة إعلان مميز */}
