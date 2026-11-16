@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     'سوق السيارات', 
     'الكويت', 
     'سيارتي ستور',
-    'سيارات للبيع في الكويت',
+    'سيارات مستعملة للبيع في الكويت',
     'حراج السيارات'
   ],
   authors: [{ name: 'سيارتي ستور', url: 'https://sayarty.store' }],
@@ -46,21 +46,21 @@ export const metadata: Metadata = {
     locale: 'ar_KW',
     url: 'https://sayarty.store',
     siteName: 'سيارتي ستور',
-    title: 'سيارتي ستور - سوق السيارات في الكويت',
-    description: 'أكبر منصة لبيع وشراء السيارات في الكويت. تصفح آلاف الإعلانات.',
+    title: 'سيارتي ستور - اعلن مجانا سوق السيارات المستعملة في الكويت',
+    description: ' منصة لبيع وشراء السيارات في الكويت. تصفح آلاف الإعلانات.',
     images: [
       {
         url: '/logo.png',
         width: 1200,
         height: 630,
-        alt: 'سيارتي ستور - سوق السيارات في الكويت',
+        alt: 'سيارتي ستور - اعلن مجانا سوق السيارات في الكويت',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'سيارتي ستور - سوق السيارات في الكويت',
-    description: 'أكبر منصة لبيع وشراء السيارات في الكويت.',
+    title: 'سيارتي ستور - سوق السيارات المستعملة في الكويت',
+    description: ' منصة لبيع وشراء السيارات المستعملة في الكويت.',
     images: ['/logo.png'],
   },
   icons: {
@@ -92,7 +92,7 @@ export default function RootLayout({
         '@id': 'https://sayarty.store/#website',
         url: 'https://sayarty.store',
         name: 'سيارتي ستور',
-        description: 'سوق السيارات في الكويت',
+        description: 'سوق السيارات ابمستعملة في الكويت',
         inLanguage: 'ar',
         potentialAction: {
           '@type': 'SearchAction',
