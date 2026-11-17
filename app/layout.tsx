@@ -63,8 +63,12 @@ export const metadata: Metadata = {
     images: ['/logo.png'],
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
   },
   verification: {
     google: 'your-google-verification-code',
@@ -84,7 +88,7 @@ export default function RootLayout({
     '@graph': [
       {
         '@type': 'WebSite',
-        '@id': 'https://sayarty.store/#website',
+        '@id': 'https://sayarty.store',
         url: 'https://sayarty.store',
         name: 'سيارتي ستور',
         description: 'سوق السيارات المستعملة في الكويت',
@@ -93,19 +97,19 @@ export default function RootLayout({
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: 'https://sayarty.store/?q={search_term_string}',
+            urlTemplate: 'https://sayarty.store{search_term_string}',
           },
           'query-input': 'required name=search_term_string',
         },
       },
       {
         '@type': 'Organization',
-        '@id': 'https://sayarty.store/#organization',
+        '@id': 'https://sayarty.store',
         name: 'سيارتي ستور',
         url: 'https://sayarty.store',
         logo: {
           '@type': 'ImageObject',
-          url: 'https://sayarty.store/logo2.jpg',
+          url: 'https://sayarty.store',
           width: 512,
           height: 512,
         },
@@ -122,7 +126,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <head>
-        <link rel="preconnect" href="https://uhtjnfeohafpnwcacssk.supabase.co" />
+        <link rel="preconnect" href="https://supabase.co" />
         <meta name="theme-color" content="#0f172a" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
