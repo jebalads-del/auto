@@ -44,10 +44,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ar_KW',
-    url: 'https://sayarty.store',
     siteName: 'سيارتي ستور',
     title: 'سيارتي ستور - اعلن مجانا سوق السيارات المستعملة في الكويت',
-    description: ' منصة لبيع وشراء السيارات في الكويت. تصفح آلاف الإعلانات.',
+    description: 'منصة لبيع وشراء السيارات في الكويت. تصفح آلاف الإعلانات.',
     images: [
       {
         url: '/logo.png',
@@ -60,7 +59,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'سيارتي ستور - سوق السيارات المستعملة في الكويت',
-    description: ' منصة لبيع وشراء السيارات المستعملة في الكويت.',
+    description: 'منصة لبيع وشراء السيارات المستعملة في الكويت.',
     images: ['/logo.png'],
   },
   icons: {
@@ -70,11 +69,8 @@ export const metadata: Metadata = {
   verification: {
     google: 'your-google-verification-code',
     other: {
-      'msvalidate.01': '20453F668171330FD1289C4BB0281491', // ✅ كود التحقق من Bing
+      'msvalidate.01': '20453F668171330FD1289C4BB0281491',
     },
-  },
-  alternates: {
-    canonical: 'https://sayarty.store',
   },
 };
 
@@ -83,7 +79,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // ✅ البيانات المنظمة للموقع (JSON-LD)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -92,7 +87,7 @@ export default function RootLayout({
         '@id': 'https://sayarty.store/#website',
         url: 'https://sayarty.store',
         name: 'سيارتي ستور',
-        description: 'سوق السيارات ابمستعملة في الكويت',
+        description: 'سوق السيارات المستعملة في الكويت',
         inLanguage: 'ar',
         potentialAction: {
           '@type': 'SearchAction',
@@ -132,10 +127,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <meta name="msvalidate.01" content="20453F668171330FD1289C4BB0281491" />
       <body style={{ margin: 0, padding: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
         {children}
-        {/* ✅ إضافة البيانات المنظمة */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ 
