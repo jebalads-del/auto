@@ -1,4 +1,4 @@
-import { MetadataRoute } from 'next';
+import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -7,18 +7,9 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: [
         '/dashboard/',
-        '/profile/',
-        '/admin/',
-        '/api/',
-        '/login/',
-        '/register/',
-        '/forgot-password/',
-        '/dashboard/*',
-        '/profile/*',
-        '/admin/*',
-        '/api/*',
+        '/select-role',
       ],
     },
-    sitemap: 'https://sayarty.store/sitemap.xml',
+    sitemap: 'https://sayarty.store',
   };
 }

@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://sayarty.store'),
   title: {
     template: '%s | سيارتي ستور - سوق السيارات في الكويت',
-    default: 'سيارتي ستور - سوق السيارات في الكويت',
+    default: 'سيارتي ستور - سوق السيارات المستعملة في الكويت',
   },
   description: 'منصة سيارتي ستور لبيع وشراء السيارات في الكويت. تصفح آلاف الإعلانات للسيارات الجديدة والمستعملة بأفضل الأسعار. اعرض سيارتك للبيع مجاناً.',
   keywords: [
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     'سوق السيارات', 
     'الكويت', 
     'سيارتي ستور',
-    'سيارات للبيع في الكويت',
+    'سيارات مستعملة للبيع في الكويت',
     'حراج السيارات'
   ],
   authors: [{ name: 'سيارتي ستور', url: 'https://sayarty.store' }],
@@ -44,37 +44,37 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ar_KW',
-    url: 'https://sayarty.store',
     siteName: 'سيارتي ستور',
-    title: 'سيارتي ستور - سوق السيارات في الكويت',
-    description: 'أكبر منصة لبيع وشراء السيارات في الكويت. تصفح آلاف الإعلانات.',
+    title: 'سيارتي ستور - اعلن مجانا سوق السيارات المستعملة في الكويت',
+    description: 'منصة لبيع وشراء السيارات في الكويت. تصفح آلاف الإعلانات.',
     images: [
       {
         url: '/logo.png',
         width: 1200,
         height: 630,
-        alt: 'سيارتي ستور - سوق السيارات في الكويت',
+        alt: 'سيارتي ستور - اعلن مجانا سوق السيارات في الكويت',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'سيارتي ستور - سوق السيارات في الكويت',
-    description: 'أكبر منصة لبيع وشراء السيارات في الكويت.',
+    title: 'سيارتي ستور - سوق السيارات المستعملة في الكويت',
+    description: 'منصة لبيع وشراء السيارات المستعملة في الكويت.',
     images: ['/logo.png'],
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
   },
   verification: {
     google: 'your-google-verification-code',
     other: {
-      'msvalidate.01': '20453F668171330FD1289C4BB0281491', // ✅ كود التحقق من Bing
+      'msvalidate.01': '20453F668171330FD1289C4BB0281491',
     },
-  },
-  alternates: {
-    canonical: 'https://sayarty.store',
   },
 };
 
@@ -83,34 +83,33 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // ✅ البيانات المنظمة للموقع (JSON-LD)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'WebSite',
-        '@id': 'https://sayarty.store/#website',
+        '@id': 'https://sayarty.store',
         url: 'https://sayarty.store',
         name: 'سيارتي ستور',
-        description: 'سوق السيارات في الكويت',
+        description: 'سوق السيارات المستعملة في الكويت',
         inLanguage: 'ar',
         potentialAction: {
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: 'https://sayarty.store/?q={search_term_string}',
+            urlTemplate: 'https://sayarty.store{search_term_string}',
           },
           'query-input': 'required name=search_term_string',
         },
       },
       {
         '@type': 'Organization',
-        '@id': 'https://sayarty.store/#organization',
+        '@id': 'https://sayarty.store',
         name: 'سيارتي ستور',
         url: 'https://sayarty.store',
         logo: {
           '@type': 'ImageObject',
-          url: 'https://sayarty.store/logo2.jpg',
+          url: 'https://sayarty.store',
           width: 512,
           height: 512,
         },
@@ -127,15 +126,13 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <head>
-        <link rel="preconnect" href="https://uhtjnfeohafpnwcacssk.supabase.co" />
+        <link rel="preconnect" href="https://supabase.co" />
         <meta name="theme-color" content="#0f172a" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <meta name="msvalidate.01" content="20453F668171330FD1289C4BB0281491" />
       <body style={{ margin: 0, padding: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
         {children}
-        {/* ✅ إضافة البيانات المنظمة */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ 

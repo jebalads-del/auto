@@ -18,6 +18,8 @@ interface Car {
   created_at: string; 
   images?: any; 
   is_featured?: boolean;
+  is_inspected?: boolean; // 👈 حقل الفحص
+  inspection_image_url?: string;
   featured_until?: string;
 }
 
@@ -113,6 +115,7 @@ export default function HomePage() {
           .lt('featured_until', now)
           .eq('is_featured', true);
 
+        // جلب السيارات المعتمدة والمباعة
         const { data: carsData, error: carsError } = await supabase
           .from('cars')
           .select('*')
@@ -121,10 +124,11 @@ export default function HomePage() {
 
         if (!carsError && carsData) setCars(carsData);
 
+        // جلب المعارض والشركات الموثقة فقط
         const { data: dealersData, error: dealersError } = await supabase
           .from('dealers')
           .select('*')
-          .eq('is_verified', true) 
+          .eq('is_verified', true)
           .limit(6);
 
         if (!dealersError && dealersData) setDealers(dealersData);
@@ -435,7 +439,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* ===== Featured Dealers Section ===== */}
+        {/* ===== Featured Dealers Section (المعارض والشركات الموثوقة) ===== */}
         {dealers.length > 0 && (
           <section style={{ marginBottom: 'clamp(20px, 4vw, 30px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'clamp(10px, 2vw, 12px)', padding: '0 2px' }}>
@@ -462,7 +466,7 @@ export default function HomePage() {
                       {dealer.name} {dealer.is_verified && <span style={{ color: '#2563eb' }} title="معرض موثق">✓</span>}
                     </h3>
                     <p style={{ fontSize: '11px', color: '#64748b', margin: '0 0 10px 0' }}>
-                      📍 {dealer.address || 'الكويت'}
+                      📍 {dealer.address || 'السعودية'}
                     </p>
                     <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 'bold', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: '6px' }}>
                       تصفح المعرض
@@ -485,34 +489,33 @@ export default function HomePage() {
               {cars.filter((car) => car.is_featured).map((car) => {
                 const firstImage = getFirstImage(car.images);
                 return (
-                  <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(130px, 40vw, 160px)' }}>
-                    <div style={{ backgroundColor: 'white', borderRadius: 'clamp(10px, 2vw, 14px)', overflow: 'hidden', border: '1px solid #fde68a', padding: 'clamp(6px, 1.5vw, 8px)', boxShadow: '0 2px 5px rgba(0,0,0,0.04)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ width: '100%', height: 'clamp(80px, 25vw, 100px)', backgroundColor: '#f1f5f9', borderRadius: 'clamp(8px, 1.5vw, 10px)', overflow: 'hidden', position: 'relative', border: '1px solid #fbbf24' }}>
+                  <Link key={`feat-${car.id}`} href={`/car/${car.id}`} style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(150px, 45vw, 190px)' }}>
+                    <div style={{ backgroundColor: 'white', borderRadius: 'clamp(10px, 2vw, 14px)', overflow: 'hidden', border: '1px solid #fde68a', boxShadow: '0 2px 5px rgba(0,0,0,0.04)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      
+                      {/* شريط الإعلان المميز */}
+                      <div style={{ backgroundColor: '#f59e0b', color: 'white', textAlign: 'center', padding: '8px 6px', fontSize: '14px', fontWeight: 'bold', width: '100%', letterSpacing: '0.5px' }}>
+                        ⭐ إعلان مميز
+                      </div>
+
+                      <div style={{ width: '100%', height: 'clamp(95px, 28vw, 120px)', backgroundColor: '#f1f5f9', overflow: 'hidden', position: 'relative' }}>
                         {firstImage ? (
                           <img src={firstImage} alt="car" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '11px' }}>🚗 لا توجد صورة</div>
                         )}
-                        {/* ✅ الشارة الجديدة: ملتصقة بالأعلى وأكبر حجماً */}
-                        <span style={{ 
-                          position: 'absolute', 
-                          top: 0, 
-                          right: 0, 
-                          backgroundColor: '#f59e0b', 
-                          color: 'white', 
-                          padding: '4px 10px', 
-                          borderBottomLeftRadius: '10px',
-                          fontSize: 'clamp(10px, 2.5vw, 12px)', 
-                          fontWeight: 'bold',
-                          boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                        }}>
-                          ⭐ إعلان مميز
-                        </span>
+                        
+                        {/* 🛡️ عبارة مفحوصة فقط بدون زحمة */}
+                        {car.is_inspected && (
+                          <span style={{ position: 'absolute', bottom: '6px', right: '6px', backgroundColor: '#16a34a', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                            🛡️ مفحوصة
+                          </span>
+                        )}
                       </div>
-                      <div style={{ paddingTop: '8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1 }}>
-                        <h3 style={{ fontSize: 'clamp(11px, 2.5vw, 12px)', fontWeight: 'bold', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{car.brand} {car.model}</h3>
-                        <p style={{ fontSize: 'clamp(12px, 2.8vw, 13px)', fontWeight: 'bold', color: '#059669', margin: 0 }}>
-                          {car.price} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
+                      
+                      <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: 1 }}>
+                        <h3 style={{ fontSize: 'clamp(13px, 3vw, 14px)', fontWeight: 'bold', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{car.brand} {car.model}</h3>
+                        <p style={{ fontSize: 'clamp(14px, 3.2vw, 15px)', fontWeight: 'bold', color: '#059669', margin: 0 }}>
+                          {car.price} <span style={{ fontSize: '11px', fontWeight: 'normal' }}>{car.currency || 'د.ك'}</span>
                         </p>
                       </div>
                     </div>
@@ -553,11 +556,22 @@ export default function HomePage() {
                           ) : (
                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '14px' }}>🚗 لا توجد صورة</div>
                           )}
+                          
+                          {/* 💰 شارة مباعة */}
                           {car.status === 'sold' && (
-                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#10b981', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>💰 مباعه</span>
+                            <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#D1280A', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>💰 تم البيع</span>
                           )}
+                          
+                          {/* ⭐ شارة إعلان مميز */}
                           {car.is_featured && (
                             <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#f59e0b', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>⭐ اعلان مميز</span>
+                          )}
+
+                          {/* 🛡️ شارة عبارة مفحوصة فقط بسيطة وأنيقة */}
+                          {car.is_inspected && (
+                            <span style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: '#16a34a', color: 'white', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              🛡️ مفحوصة
+                            </span>
                           )}
                         </div>
 
@@ -624,9 +638,18 @@ export default function HomePage() {
         </Link>
         
         <a 
-          href="mailto:admin@sayarty.store?subject=استفسار"
+          href="mailto:admin@sayarty.store?subject=استفسار من موقع سيارتي ستور"
           style={{ textDecoration: 'none', color: '#dc2626', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}
         >
           <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>📧</div>
           اتصل بنا
         </a>
+        
+        <Link href={accountLink} style={{ textDecoration: 'none', color: userDealer ? '#2563eb' : '#64748b', textAlign: 'center', fontSize: 'clamp(10px, 2.2vw, 11px)', fontWeight: 'bold' }}>
+          <div style={{ fontSize: 'clamp(18px, 4vw, 20px)', marginBottom: '2px' }}>{userDealer ? '🏢' : (user ? '👤' : '🔑')}</div>
+          {userDealer ? 'إدارة المعرض' : (user ? 'حسابي' : 'دخول')}
+        </Link>
+      </nav>
+    </div>
+  );
+}

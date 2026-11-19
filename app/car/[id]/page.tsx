@@ -21,6 +21,8 @@ interface Car {
   images?: string | string[]; 
   user_id?: string;
   user_phone?: string;
+  is_inspected?: boolean;             // 👈 حقل الفحص
+  inspection_image_url?: string;     // 👈 رابط صورة الفحص
 }
 
 interface User { 
@@ -39,6 +41,7 @@ export default function CarDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showInspectionModal, setShowInspectionModal] = useState(false); // 👈 حالة فتح نافذة الفحص
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -182,6 +185,14 @@ export default function CarDetailsPage() {
             <div style={styles.imageContainer}>
               <div style={styles.mainImageWrapper}>
                 <img src={imagesList[currentImageIndex]} alt={`${car.brand} ${car.model}`} style={styles.mainImage} />
+                
+                {/* شارة مفحوصة على الصورة */}
+                {car.is_inspected && (
+                  <span style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: '#16a34a', color: 'white', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+                    🛡️ مفحوصة
+                  </span>
+                )}
+
                 {imagesList.length > 1 && (
                   <>
                     <button 
@@ -234,6 +245,27 @@ export default function CarDetailsPage() {
             </div>
           </div>
           
+          {/* 🛡️ قسم الفحص المميز في تفاصيل السيارة */}
+          {car.is_inspected && (
+            <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '16px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🛡️</span> سيارة مفحوصة ومعتمدة
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#15803d', margin: '4px 0 0 0' }}>تم فحص المحركات، القير، والشاصي والتأكد من سلامتها.</p>
+              </div>
+
+              {car.inspection_image_url && (
+                <button
+                  onClick={() => setShowInspectionModal(true)}
+                  style={{ backgroundColor: '#16a34a', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+                >
+                  📄 معاينة تقرير الفحص
+                </button>
+              )}
+            </div>
+          )}
+
           <div style={styles.detailsGrid}>
             {car.year && (
               <div style={styles.detailItem}>
@@ -295,6 +327,23 @@ export default function CarDetailsPage() {
         </div>
       </div>
 
+      {/* 🖼️ نافذة منبثقة (Modal) لعرض ورقة الفحص بحجم كبير */}
+      {showInspectionModal && car.inspection_image_url && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%', backgroundColor: 'white', borderRadius: '16px', padding: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            
+            <button
+              onClick={() => setShowInspectionModal(false)}
+              style={{ position: 'absolute', top: '-15px', right: '-15px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              ✕
+            </button>
+
+            <img src={car.inspection_image_url} alt="تقرير فحص السيارة" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px' }} />
+          </div>
+        </div>
+      )}
+
       <div style={styles.stickyStickyContact}>
         <div style={styles.contactButtonsContainer}>
           {cleanPhone && (
@@ -319,7 +368,6 @@ export default function CarDetailsPage() {
 }
 
 const styles = {
-  // ... نفس الستايلات السابقة (لم تتغير)
   container: { direction: 'rtl' as const, backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '90px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '12px 16px', borderBottom: '1px solid #e2e8f0', position: 'sticky' as const, top: 0, zIndex: 100 },
   backButton: { backgroundColor: '#f1f5f9', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', color: '#334155', cursor: 'pointer' },
